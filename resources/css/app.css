@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-[#060a18] text-slate-100 antialiased;
+        font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    .sim-shell {
+        @apply min-h-screen bg-[radial-gradient(circle_at_top_left,_#1a2a57_0%,_#0a1025_35%,_#060a18_75%)];
+    }
+
+    .sim-card {
+        @apply rounded-2xl border border-slate-700/60 bg-slate-900/60 shadow-[0_24px_60px_-30px_rgba(6,11,27,0.8)] backdrop-blur-sm;
+    }
+
+    .sim-card-soft {
+        @apply rounded-xl border border-slate-700/40 bg-slate-900/40;
+    }
+
+    .sim-label {
+        @apply mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400;
+    }
+
+    .sim-input {
+        @apply w-full rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/35;
+    }
+
+    .sim-select {
+        @apply sim-input pr-8;
+    }
+
+    .sim-textarea {
+        @apply sim-input min-h-28 resize-y;
+    }
+
+    .sim-btn-primary {
+        @apply inline-flex items-center justify-center rounded-xl border border-cyan-400/45 bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300/60;
+    }
+
+    .sim-btn-muted {
+        @apply inline-flex items-center justify-center rounded-xl border border-slate-600/80 bg-slate-900/80 px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-slate-400 hover:bg-slate-800;
+    }
+
+    .sim-btn-danger {
+        @apply inline-flex items-center justify-center rounded-xl border border-rose-400/35 bg-rose-500/20 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/35;
+    }
+
+    .sim-nav-item {
+        @apply flex items-center justify-between rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-900/70 hover:text-white;
+    }
+
+    .sim-nav-item-active {
+        @apply border-cyan-400/40 bg-slate-900/90 text-white;
+    }
+
+    .sim-section-title {
+        @apply text-sm font-semibold uppercase tracking-[0.18em] text-slate-400;
+    }
+
+    .sim-pill {
+        @apply inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-200;
+    }
+
+    .sim-table th {
+        @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.15em] text-slate-400;
+    }
+
+    .sim-table td {
+        @apply px-4 py-3 text-sm text-slate-100;
+    }
+
+    .sim-table-compact th {
+        @apply py-2.5;
+    }
+
+    .sim-table-compact td {
+        @apply py-2.5;
+    }
+
+    .sim-table-highlight {
+        @apply bg-gradient-to-r from-fuchsia-500/10 via-transparent to-slate-900/30;
+    }
+
+    .sim-rank {
+        @apply inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-950/60 text-sm font-semibold text-white;
+    }
+
+    .sim-tab {
+        @apply inline-flex items-center rounded-xl border border-slate-700/60 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-500;
+    }
+
+    .sim-tab-active {
+        @apply border-cyan-400/50 bg-cyan-400/15 text-cyan-100;
+    }
+
+    .sim-chip {
+        @apply inline-flex items-center rounded-full border border-slate-700/60 bg-slate-900/60 px-3 py-1 text-xs font-semibold text-slate-200;
+    }
+
+    .sim-form-dot {
+        @apply h-2.5 w-2.5 rounded-full border border-slate-600/80 bg-slate-800/70;
+    }
+
+    .sim-form-win {
+        @apply border-emerald-400/70 bg-emerald-400/80;
+    }
+
+    .sim-form-draw {
+        @apply border-amber-400/70 bg-amber-300/80;
+    }
+
+    .sim-form-loss {
+        @apply border-rose-400/70 bg-rose-400/80;
+    }
+
+    .sim-page-link {
+        @apply inline-flex items-center gap-2 text-sm text-slate-300 transition hover:text-white;
+    }
+
+    .sim-stat-card {
+        @apply rounded-xl border border-slate-700/60 bg-slate-900/60 px-4 py-3 text-center;
+    }
+
+    .sim-tab-link {
+        @apply inline-flex items-center border-b-2 border-transparent pb-2 text-sm font-semibold text-slate-400 transition hover:text-white;
+    }
+
+    .sim-tab-link-active {
+        @apply border-cyan-400 text-white;
+    }
+
+    .sim-info-pill {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200;
+    }
+
+    .sim-status-badge {
+        @apply inline-flex items-center gap-1 rounded-full border border-slate-600/80 bg-slate-900/70 px-2.5 py-1 text-[11px] font-semibold text-slate-200;
+    }
+
+    .sim-ticker-row {
+        @apply flex items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3;
+    }
+
+    .sim-ticker-dot {
+        @apply h-2.5 w-2.5 rounded-full bg-cyan-400/80;
+    }
+
+    .sim-ticker-time {
+        @apply text-xs font-semibold text-cyan-200;
+    }
+
+    .sim-table tbody tr {
+        @apply border-t border-slate-800/80;
+    }
+
+    .sim-pitch {
+        @apply relative overflow-hidden rounded-2xl border border-slate-700/70 bg-[#0a1833];
+        min-height: 560px;
+        background-image:
+            radial-gradient(circle at 50% 50%, rgba(15, 36, 71, 0.7), rgba(8, 21, 42, 0.95)),
+            repeating-linear-gradient(
+                to right,
+                transparent 0,
+                transparent 11.8%,
+                rgba(255, 255, 255, 0.03) 12.2%,
+                transparent 12.6%
+            );
+    }
+
+    .sim-pitch-canvas {
+        @apply relative h-full min-h-[560px] w-full;
+    }
+
+    .sim-pitch-slot {
+        @apply absolute w-44 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-700/80 bg-slate-950/65 p-2;
+    }
+
+    .sim-pitch-slot-label {
+        @apply mb-1 block text-center text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300;
+    }
+
+    .sim-pitch-select {
+        @apply sim-select w-full py-1.5 text-xs;
+    }
+}

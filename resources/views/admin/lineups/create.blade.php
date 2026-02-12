@@ -1,0 +1,49 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div>
+            <p class="sim-section-title">ACP Aufstellungen</p>
+            <h1 class="mt-1 text-2xl font-bold text-white">Aufstellung erstellen</h1>
+        </div>
+    </x-slot>
+
+    <form method="POST" action="{{ route('admin.lineups.store') }}" class="sim-card p-6">
+        @csrf
+        <div class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label class="sim-label" for="club_id">Verein</label>
+                <select class="sim-select" id="club_id" name="club_id" required>
+                    @foreach ($clubs as $club)
+                        <option value="{{ $club->id }}" @selected(old('club_id') == $club->id)>
+                            {{ $club->name }} (Owner: {{ $club->user->name }})
+                        </option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('club_id')" class="mt-1" />
+            </div>
+            <div>
+                <label class="sim-label" for="formation">Formation</label>
+                <input class="sim-input" id="formation" name="formation" type="text" value="{{ old('formation', '4-3-3') }}" required>
+                <x-input-error :messages="$errors->get('formation')" class="mt-1" />
+            </div>
+        </div>
+        <div class="mt-4">
+            <label class="sim-label" for="name">Name</label>
+            <input class="sim-input" id="name" name="name" type="text" value="{{ old('name') }}" required>
+            <x-input-error :messages="$errors->get('name')" class="mt-1" />
+        </div>
+        <div class="mt-4">
+            <label class="sim-label" for="notes">Notizen</label>
+            <textarea class="sim-textarea" id="notes" name="notes">{{ old('notes') }}</textarea>
+            <x-input-error :messages="$errors->get('notes')" class="mt-1" />
+        </div>
+        <label class="mt-4 inline-flex items-center gap-2 text-sm text-slate-300">
+            <input type="checkbox" name="is_active" value="1" class="rounded border-slate-600 bg-slate-900 text-cyan-400 focus:ring-cyan-400" @checked(old('is_active', true))>
+            Als aktive Aufstellung setzen
+        </label>
+
+        <div class="mt-6 flex flex-wrap gap-2">
+            <button type="submit" class="sim-btn-primary">Erstellen</button>
+            <a href="{{ route('admin.lineups.index') }}" class="sim-btn-muted">Zurueck</a>
+        </div>
+    </form>
+</x-app-layout>
