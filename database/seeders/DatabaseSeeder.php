@@ -276,17 +276,17 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $players = collect([
-            ['Max', 'Torwart', 'GK', 69, 45, 35, 58, 73, 70],
-            ['Jonas', 'Links', 'DEF', 66, 63, 44, 55, 71, 72],
-            ['Luca', 'Innen', 'DEF', 70, 55, 43, 59, 76, 75],
-            ['Niko', 'Innen', 'DEF', 68, 56, 42, 60, 74, 74],
-            ['Elias', 'Rechts', 'DEF', 67, 64, 47, 56, 70, 72],
-            ['Can', 'Sechs', 'MID', 71, 61, 58, 72, 68, 73],
-            ['Rami', 'Acht', 'MID', 69, 66, 61, 70, 62, 69],
-            ['Noah', 'Acht', 'MID', 68, 65, 57, 68, 61, 67],
-            ['Mika', 'Links', 'FWD', 72, 79, 73, 60, 40, 66],
-            ['Emir', 'Sturm', 'FWD', 74, 78, 76, 57, 39, 70],
-            ['Timo', 'Rechts', 'FWD', 71, 77, 71, 62, 38, 65],
+            ['Max', 'Torwart', 'TW', 69, 45, 35, 58, 73, 70],
+            ['Jonas', 'Links', 'LV', 66, 63, 44, 55, 71, 72],
+            ['Luca', 'Innen', 'IV', 70, 55, 43, 59, 76, 75],
+            ['Niko', 'Innen', 'IV', 68, 56, 42, 60, 74, 74],
+            ['Elias', 'Rechts', 'RV', 67, 64, 47, 56, 70, 72],
+            ['Can', 'Sechs', 'DM', 71, 61, 58, 72, 68, 73],
+            ['Rami', 'Acht', 'ZM', 69, 66, 61, 70, 62, 69],
+            ['Noah', 'Acht', 'ZM', 68, 65, 57, 68, 61, 67],
+            ['Mika', 'Links', 'LW', 72, 79, 73, 60, 40, 66],
+            ['Emir', 'Sturm', 'ST', 74, 78, 76, 57, 39, 70],
+            ['Timo', 'Rechts', 'RW', 71, 77, 71, 62, 38, 65],
         ])->map(function (array $data) use ($club) {
             return Player::create([
                 'club_id' => $club->id,
@@ -313,17 +313,17 @@ class DatabaseSeeder extends Seeder
         });
 
         $opponentPlayers = collect([
-            ['Jan', 'Keeper', 'GK', 67, 41, 32, 55, 71, 68],
-            ['Miro', 'Links', 'DEF', 64, 60, 40, 53, 68, 70],
-            ['Ben', 'Innen', 'DEF', 66, 54, 38, 56, 72, 72],
-            ['Tom', 'Innen', 'DEF', 65, 55, 37, 55, 71, 71],
-            ['Leo', 'Rechts', 'DEF', 64, 62, 42, 54, 67, 70],
-            ['Pavel', 'Sechs', 'MID', 67, 58, 52, 68, 66, 70],
-            ['Kaan', 'Acht', 'MID', 66, 62, 55, 66, 60, 66],
-            ['Sven', 'Acht', 'MID', 65, 61, 53, 64, 58, 65],
-            ['Ali', 'Links', 'FWD', 69, 75, 70, 56, 38, 64],
-            ['Nils', 'Sturm', 'FWD', 70, 74, 72, 54, 37, 68],
-            ['Eren', 'Rechts', 'FWD', 68, 73, 69, 58, 36, 63],
+            ['Jan', 'Keeper', 'TW', 67, 41, 32, 55, 71, 68],
+            ['Miro', 'Links', 'LV', 64, 60, 40, 53, 68, 70],
+            ['Ben', 'Innen', 'IV', 66, 54, 38, 56, 72, 72],
+            ['Tom', 'Innen', 'IV', 65, 55, 37, 55, 71, 71],
+            ['Leo', 'Rechts', 'RV', 64, 62, 42, 54, 67, 70],
+            ['Pavel', 'Sechs', 'DM', 67, 58, 52, 68, 66, 70],
+            ['Kaan', 'Acht', 'ZM', 66, 62, 55, 66, 60, 66],
+            ['Sven', 'Acht', 'ZM', 65, 61, 53, 64, 58, 65],
+            ['Ali', 'Links', 'LW', 69, 75, 70, 56, 38, 64],
+            ['Nils', 'Sturm', 'ST', 70, 74, 72, 54, 37, 68],
+            ['Eren', 'Rechts', 'RW', 68, 73, 69, 58, 36, 63],
         ])->map(function (array $data) use ($opponentClub) {
             return Player::create([
                 'club_id' => $opponentClub->id,

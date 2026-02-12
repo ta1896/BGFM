@@ -154,7 +154,7 @@ class GameplayModulesTest extends TestCase
             'club_id' => $club->id,
             'first_name' => $name,
             'last_name' => 'Player',
-            'position' => 'MID',
+            'position' => 'ZM',
             'preferred_foot' => 'right',
             'age' => 24,
             'overall' => 65,

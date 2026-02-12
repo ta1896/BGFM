@@ -72,7 +72,7 @@ class MatchLineupAndFriendliesTest extends TestCase
 
         $players = collect();
         foreach (range(1, 16) as $i) {
-            $position = $i === 1 ? 'GK' : ($i <= 6 ? 'DEF' : ($i <= 12 ? 'MID' : 'FWD'));
+            $position = $i === 1 ? 'TW' : ($i <= 6 ? 'IV' : ($i <= 12 ? 'ZM' : 'ST'));
             $players->push($this->createPlayer($club, 'P'.$i, $position, 62 + $i));
         }
 

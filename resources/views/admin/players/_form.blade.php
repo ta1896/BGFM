@@ -39,7 +39,7 @@
         <label class="sim-label" for="position">Position</label>
         <select class="sim-select" id="position" name="position" required>
             @foreach ($positions as $positionKey => $positionLabel)
-                <option value="{{ $positionKey }}" @selected(old('position', $player->position ?? 'MID') === $positionKey)>
+                <option value="{{ $positionKey }}" @selected(old('position', $player->position ?? 'ZM') === $positionKey)>
                     {{ $positionLabel }}
                 </option>
             @endforeach

@@ -43,6 +43,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/matches', [LeagueController::class, 'matches'])->name('league.matches');
     Route::get('/matches/{match}', [MatchCenterController::class, 'show'])->name('matches.show');
     Route::post('/matches/{match}/simulate', [MatchCenterController::class, 'simulate'])->name('matches.simulate');
+    Route::post('/matches/{match}/live/start', [MatchCenterController::class, 'liveStart'])->name('matches.live.start');
+    Route::post('/matches/{match}/live/resume', [MatchCenterController::class, 'liveResume'])->name('matches.live.resume');
+    Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
+    Route::post('/matches/{match}/live/substitute', [MatchCenterController::class, 'liveSubstitute'])->name('matches.live.substitute');
+    Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
     Route::get('/matches/{match}/lineup', [MatchLineupController::class, 'edit'])->name('matches.lineup.edit');
     Route::post('/matches/{match}/lineup', [MatchLineupController::class, 'update'])->name('matches.lineup.update');
     Route::post('/matches/{match}/lineup/load-template', [MatchLineupController::class, 'loadTemplate'])->name('matches.lineup.load-template');

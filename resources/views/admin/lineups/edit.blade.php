@@ -3,7 +3,7 @@
         ->map(static fn ($value) => (int) $value)
         ->all();
 
-    $pitchOptions = ['GK', 'LB', 'LCB', 'CB', 'RCB', 'RB', 'LM', 'CM', 'RM', 'CAM', 'LW', 'RW', 'ST'];
+    $pitchOptions = ['TW', 'LV', 'IV', 'RV', 'LWB', 'RWB', 'LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'LW', 'RW', 'LS', 'MS', 'RS', 'ST'];
 @endphp
 
 <x-app-layout>

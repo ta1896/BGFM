@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('club_id')->constrained()->cascadeOnDelete();
             $table->string('first_name', 80);
             $table->string('last_name', 80);
-            $table->enum('position', ['GK', 'DEF', 'MID', 'FWD']);
+            $table->enum('position', ['TW', 'LV', 'IV', 'RV', 'LWB', 'RWB', 'LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'LS', 'MS', 'RS', 'LW', 'RW', 'ST']);
             $table->unsignedTinyInteger('age');
             $table->unsignedTinyInteger('overall')->default(50);
             $table->unsignedTinyInteger('pace')->default(50);

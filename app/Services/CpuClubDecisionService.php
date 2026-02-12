@@ -9,6 +9,10 @@ use Illuminate\Support\Collection;
 
 class CpuClubDecisionService
 {
+    public function __construct(private readonly PlayerPositionService $positionService)
+    {
+    }
+
     public function prepareForMatch(GameMatch $match): void
     {
         $match->loadMissing([
@@ -81,9 +85,12 @@ class CpuClubDecisionService
 
     private function pickStarters(Collection $players, int $limit): Collection
     {
-        $goalkeepers = $players->where('position', 'GK')->sortByDesc('overall')->values();
+        $goalkeepers = $players
+            ->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
+            ->sortByDesc('overall')
+            ->values();
         $others = $players
-            ->where('position', '!=', 'GK')
+            ->reject(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
             ->sortByDesc(function (Player $player) {
                 return ($player->overall * 2) + $player->stamina + $player->morale;
             })
@@ -110,9 +117,9 @@ class CpuClubDecisionService
 
     private function formation(Collection $players): string
     {
-        $def = $players->where('position', 'DEF')->count();
-        $mid = $players->where('position', 'MID')->count();
-        $fwd = $players->where('position', 'FWD')->count();
+        $def = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'DEF')->count();
+        $mid = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'MID')->count();
+        $fwd = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'FWD')->count();
 
         if ($def >= 4 && $mid >= 4) {
             return '4-4-2';

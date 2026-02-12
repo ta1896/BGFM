@@ -1,7 +1,30 @@
 @php
-    $playersByPosition = $clubPlayers->groupBy('position');
+    $positionService = app(\App\Services\PlayerPositionService::class);
+    $playersByPosition = $clubPlayers->groupBy(fn ($player) => $positionService->groupFromPosition($player->position) ?? 'MID');
     $selectedPlayerIds = collect($starterDraft)->filter()->values()->concat(collect($benchDraft)->filter())->unique()->all();
     $positionLabels = [
+        'TW' => 'Torwart',
+        'LV' => 'Linksverteidiger',
+        'IV' => 'Innenverteidiger',
+        'RV' => 'Rechtsverteidiger',
+        'LWB' => 'Linker Wingback',
+        'RWB' => 'Rechter Wingback',
+        'LM' => 'Linkes Mittelfeld',
+        'ZM' => 'Zentrales Mittelfeld',
+        'RM' => 'Rechtes Mittelfeld',
+        'DM' => 'Defensives Mittelfeld',
+        'OM' => 'Offensives Mittelfeld',
+        'LAM' => 'Linker Offensiver',
+        'ZOM' => 'Zentrales Offensives Mittelfeld',
+        'RAM' => 'Rechter Offensiver',
+        'LS' => 'Linker Stuermer',
+        'MS' => 'Mittelstuermer',
+        'RS' => 'Rechter Stuermer',
+        'LW' => 'Linker Fluegel',
+        'RW' => 'Rechter Fluegel',
+        'ST' => 'Stuermer',
+    ];
+    $groupLabels = [
         'GK' => 'Torwart',
         'DEF' => 'Abwehr',
         'MID' => 'Mittelfeld',
@@ -219,7 +242,7 @@
             <aside class="sim-card p-5">
                 <p class="sim-section-title">Spieler-Pool</p>
                 <div class="mt-3 space-y-4">
-                    @foreach (['GK' => 'Torwart', 'DEF' => 'Abwehr', 'MID' => 'Mittelfeld', 'FWD' => 'Sturm'] as $code => $label)
+                    @foreach ($groupLabels as $code => $label)
                         <div>
                             <h3 class="text-sm font-semibold text-white">{{ $label }}</h3>
                             <div class="mt-2 space-y-2">

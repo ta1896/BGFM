@@ -7,6 +7,10 @@ use Illuminate\Support\Collection;
 
 class FormationPlannerService
 {
+    public function __construct(private readonly PlayerPositionService $positionService)
+    {
+    }
+
     /**
      * @return array<int, string>
      */
@@ -139,11 +143,16 @@ class FormationPlannerService
 
     private function positionFitsGroup(string $position, string $group): bool
     {
+        $playerGroup = $this->positionService->groupFromPosition($position);
+        if (!$playerGroup) {
+            return false;
+        }
+
         return match ($group) {
-            'GK' => $position === 'GK',
-            'DEF' => in_array($position, ['DEF', 'MID'], true),
-            'MID' => in_array($position, ['MID', 'DEF', 'FWD'], true),
-            'FWD' => in_array($position, ['FWD', 'MID'], true),
+            'GK' => $playerGroup === 'GK',
+            'DEF' => in_array($playerGroup, ['DEF', 'MID'], true),
+            'MID' => in_array($playerGroup, ['MID', 'DEF', 'FWD'], true),
+            'FWD' => in_array($playerGroup, ['FWD', 'MID'], true),
             default => false,
         };
     }

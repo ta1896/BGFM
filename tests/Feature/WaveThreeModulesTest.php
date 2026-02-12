@@ -89,7 +89,7 @@ class WaveThreeModulesTest extends TestCase
 
         $players = collect();
         foreach (range(1, 11) as $i) {
-            $position = $i === 1 ? 'GK' : ($i <= 5 ? 'DEF' : ($i <= 8 ? 'MID' : 'FWD'));
+            $position = $i === 1 ? 'TW' : ($i <= 5 ? 'IV' : ($i <= 8 ? 'ZM' : 'ST'));
             $player = $this->createPlayer($homeClub, 'TOTD'.$i, 63 + $i, $position);
             $players->push($player);
 
@@ -101,8 +101,8 @@ class WaveThreeModulesTest extends TestCase
                 'position_code' => $position,
                 'rating' => 7.0 + ($i / 10),
                 'minutes_played' => 90,
-                'goals' => $position === 'FWD' ? 1 : 0,
-                'assists' => $position === 'MID' ? 1 : 0,
+                'goals' => $position === 'ST' ? 1 : 0,
+                'assists' => $position === 'ZM' ? 1 : 0,
                 'yellow_cards' => 0,
                 'red_cards' => 0,
                 'shots' => 2,
@@ -110,7 +110,7 @@ class WaveThreeModulesTest extends TestCase
                 'passes_failed' => 3,
                 'tackles_won' => 1,
                 'tackles_lost' => 0,
-                'saves' => $position === 'GK' ? 3 : 0,
+                'saves' => $position === 'TW' ? 3 : 0,
             ]);
         }
 
@@ -185,7 +185,7 @@ class WaveThreeModulesTest extends TestCase
         ]);
     }
 
-    private function createPlayer(Club $club, string $name, int $overall, string $position = 'MID'): Player
+    private function createPlayer(Club $club, string $name, int $overall, string $position = 'ZM'): Player
     {
         return Player::create([
             'club_id' => $club->id,

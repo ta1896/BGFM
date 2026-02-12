@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class MatchSimulationService
 {
-    public function __construct(private readonly LeagueTableService $tableService)
+    public function __construct(
+        private readonly LeagueTableService $tableService,
+        private readonly PlayerPositionService $positionService
+    )
     {
     }
 
@@ -289,7 +292,7 @@ class MatchSimulationService
                     'club_id' => $clubId,
                     'player_id' => $player->id,
                     'lineup_role' => $role,
-                    'position_code' => $player->position,
+                    'position_code' => $this->positionCodeForStat($player),
                     'rating' => max(3.5, min(10.0, round($baseRating, 2))),
                     'minutes_played' => $role === 'starter' ? mt_rand(65, 96) : mt_rand(0, 26),
                     'goals' => $goals,
@@ -301,7 +304,7 @@ class MatchSimulationService
                     'passes_failed' => mt_rand(2, 19),
                     'tackles_won' => mt_rand(0, 8),
                     'tackles_lost' => mt_rand(0, 5),
-                    'saves' => $player->position === 'GK' ? mt_rand(1, 8) : 0,
+                    'saves' => $this->isGoalkeeper($player) ? mt_rand(1, 8) : 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -312,6 +315,28 @@ class MatchSimulationService
             $build($homePlayers, $match->home_club_id),
             $build($awayPlayers, $match->away_club_id)
         ));
+    }
+
+    private function positionCodeForStat(Player $player): string
+    {
+        $slot = strtoupper(trim((string) ($player->pivot?->pitch_position ?? '')));
+        if ($slot !== '') {
+            if (str_starts_with($slot, 'BANK-')) {
+                return 'SUB';
+            }
+
+            if (strlen($slot) <= 4) {
+                return $slot;
+            }
+        }
+
+        $position = strtoupper((string) $player->position);
+        return strlen($position) <= 4 ? $position : substr($position, 0, 4);
+    }
+
+    private function isGoalkeeper(Player $player): bool
+    {
+        return $this->positionService->groupFromPosition($player->position) === 'GK';
     }
 
     private function attendance(Club $homeClub): int

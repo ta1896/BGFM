@@ -23,6 +23,10 @@ class GameMatch extends Model
         'matchday',
         'kickoff_at',
         'status',
+        'live_minute',
+        'live_paused',
+        'live_error_message',
+        'live_last_tick_at',
         'home_club_id',
         'away_club_id',
         'stadium_club_id',
@@ -42,7 +46,9 @@ class GameMatch extends Model
         return [
             'kickoff_at' => 'datetime',
             'played_at' => 'datetime',
+            'live_last_tick_at' => 'datetime',
             'extra_time' => 'boolean',
+            'live_paused' => 'boolean',
         ];
     }
 
@@ -81,6 +87,24 @@ class GameMatch extends Model
     public function playerStats(): HasMany
     {
         return $this->hasMany(MatchPlayerStat::class, 'match_id');
+    }
+
+    public function liveTeamStates(): HasMany
+    {
+        return $this->hasMany(MatchLiveTeamState::class, 'match_id');
+    }
+
+    public function livePlayerStates(): HasMany
+    {
+        return $this->hasMany(MatchLivePlayerState::class, 'match_id');
+    }
+
+    public function liveActions(): HasMany
+    {
+        return $this->hasMany(MatchLiveAction::class, 'match_id')
+            ->orderBy('minute')
+            ->orderBy('second')
+            ->orderBy('sequence');
     }
 
     public function financialSettlement(): HasOne

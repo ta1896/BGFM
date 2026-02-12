@@ -260,20 +260,9 @@ class TeamOfTheDayService
     private function positionGroupForStat(MatchPlayerStat $stat): string
     {
         $code = strtoupper((string) ($stat->position_code ?? ''));
+        $positionService = new PlayerPositionService();
+        $group = $positionService->slotGroup($code, $stat->player?->position);
 
-        if (str_contains($code, 'GK')) {
-            return 'GK';
-        }
-        if (str_contains($code, 'DEF') || str_contains($code, 'CB') || str_contains($code, 'LB') || str_contains($code, 'RB')) {
-            return 'DEF';
-        }
-        if (str_contains($code, 'MID') || str_contains($code, 'CM') || str_contains($code, 'DM') || str_contains($code, 'AM')) {
-            return 'MID';
-        }
-        if (str_contains($code, 'FWD') || str_contains($code, 'ST') || str_contains($code, 'LW') || str_contains($code, 'RW')) {
-            return 'FWD';
-        }
-
-        return strtoupper((string) ($stat->player?->position ?? 'MID'));
+        return $group ?? 'MID';
     }
 }

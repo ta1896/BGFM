@@ -7,13 +7,26 @@ use Illuminate\Support\Collection;
 
 class TeamStrengthCalculator
 {
+    public function __construct(private readonly PlayerPositionService $positionService)
+    {
+    }
+
     public function calculate(Lineup $lineup): array
     {
-        $players = $lineup->players
+        $entries = $lineup->players
             ->filter(fn ($player) => !$player->pivot->is_bench)
+            ->map(function ($player) {
+                $slot = (string) ($player->pivot->pitch_position ?? '');
+
+                return [
+                    'player' => $player,
+                    'group' => $this->positionService->slotGroup($slot, $player->position),
+                    'fit' => $this->positionService->fitFactor($player->position, $slot),
+                ];
+            })
             ->values();
 
-        if ($players->isEmpty()) {
+        if ($entries->isEmpty()) {
             return [
                 'overall' => 0,
                 'attack' => 0,
@@ -23,18 +36,18 @@ class TeamStrengthCalculator
             ];
         }
 
-        $attackers = $players->where('position', 'FWD');
-        $midfielders = $players->where('position', 'MID');
-        $defenders = $players->whereIn('position', ['DEF', 'GK']);
+        $attackers = $entries->where('group', 'FWD');
+        $midfielders = $entries->where('group', 'MID');
+        $defenders = $entries->whereIn('group', ['DEF', 'GK']);
 
         $attackScore = $this->positionScore($attackers, 'attack');
         $midfieldScore = $this->positionScore($midfielders, 'midfield');
         $defenseScore = $this->positionScore($defenders, 'defense');
 
         $baseOverall = round(($attackScore + $midfieldScore + $defenseScore) / 3);
-        $chemistry = $this->chemistry($players);
+        $chemistry = $this->chemistry($entries);
 
-        $formationFactor = $this->formationFactor($lineup->formation, $players->count());
+        $formationFactor = $this->formationFactor($lineup->formation, $entries->count());
         $overall = (int) round(min(99, $baseOverall * $formationFactor * ($chemistry / 100)));
 
         return [
@@ -52,7 +65,10 @@ class TeamStrengthCalculator
             return 0;
         }
 
-        return $players->avg(function ($player) use ($type) {
+        return $players->avg(function (array $entry) use ($type) {
+            $player = $entry['player'];
+            $fit = (float) $entry['fit'];
+
             $base = match ($type) {
                 'attack' => ($player->shooting * 0.4) + ($player->pace * 0.2) + ($player->physical * 0.15) + ($player->overall * 0.25),
                 'midfield' => ($player->passing * 0.35) + ($player->pace * 0.15) + ($player->defending * 0.2) + ($player->overall * 0.3),
@@ -61,18 +77,20 @@ class TeamStrengthCalculator
 
             $conditionFactor = (($player->stamina + $player->morale) / 200) + 0.5;
 
-            return min(99, $base * $conditionFactor);
+            return min(99, $base * $conditionFactor * $fit);
         });
     }
 
     private function chemistry(Collection $players): float
     {
-        $morale = $players->avg('morale');
-        $stamina = $players->avg('stamina');
+        $morale = $players->avg(fn (array $entry) => (float) $entry['player']->morale);
+        $stamina = $players->avg(fn (array $entry) => (float) $entry['player']->stamina);
+        $fit = $players->avg(fn (array $entry) => (float) $entry['fit']);
 
         $sizeBonus = min(10, $players->count());
+        $fitModifier = max(0.82, min(1.0, $fit ?: 1.0));
 
-        return min(100, (($morale + $stamina) / 2) + ($sizeBonus / 2));
+        return min(100, ((($morale + $stamina) / 2) + ($sizeBonus / 2)) * $fitModifier);
     }
 
     private function formationFactor(string $formation, int $count): float

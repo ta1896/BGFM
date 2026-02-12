@@ -268,10 +268,10 @@ class SeasonProgressionTest extends TestCase
     private function createPlayerForClub(Club $club, int $idx): void
     {
         $position = match (true) {
-            $idx === 1 => 'GK',
-            $idx <= 5 => 'DEF',
-            $idx <= 8 => 'MID',
-            default => 'FWD',
+            $idx === 1 => 'TW',
+            $idx <= 5 => 'IV',
+            $idx <= 8 => 'ZM',
+            default => 'ST',
         };
 
         Player::create([

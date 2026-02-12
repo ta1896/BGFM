@@ -1,8 +1,13 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4 text-sm text-emerald-300" :status="session('status')" />
 
-    <h2 class="text-2xl font-bold text-white">Login</h2>
-    <p class="mt-2 text-sm text-slate-300">Melde dich an und steuere deinen Verein.</p>
+    <h2 class="text-2xl font-bold text-white">Manager-Login</h2>
+    <p class="mt-2 text-sm text-slate-300">Melde dich an und fuehre deinen Verein durch den naechsten Spieltag.</p>
+
+    <div class="mt-4 sim-card-soft p-3">
+        <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Direkt nach Login</p>
+        <p class="mt-1 text-sm text-slate-200">Aufstellung setzen, Matchcenter starten, Transfermarkt checken.</p>
+    </div>
 
     <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
         @csrf

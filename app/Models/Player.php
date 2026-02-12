@@ -36,6 +36,8 @@ class Player extends Model
         'contract_expires_on',
         'loan_ends_on',
         'last_training_at',
+        'injury_matches_remaining',
+        'suspension_matches_remaining',
     ];
 
     protected function casts(): array
@@ -46,6 +48,8 @@ class Player extends Model
             'contract_expires_on' => 'date',
             'loan_ends_on' => 'date',
             'last_training_at' => 'datetime',
+            'injury_matches_remaining' => 'integer',
+            'suspension_matches_remaining' => 'integer',
         ];
     }
 
@@ -69,6 +73,8 @@ class Player extends Model
                 'y_coord',
                 'is_captain',
                 'is_set_piece_taker',
+                'is_bench',
+                'bench_order',
             ])
             ->withTimestamps();
     }
@@ -101,6 +107,11 @@ class Player extends Model
     public function randomEventOccurrences(): HasMany
     {
         return $this->hasMany(RandomEventOccurrence::class);
+    }
+
+    public function liveStates(): HasMany
+    {
+        return $this->hasMany(MatchLivePlayerState::class);
     }
 
     public function getFullNameAttribute(): string

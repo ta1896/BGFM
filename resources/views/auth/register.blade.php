@@ -1,6 +1,11 @@
 <x-guest-layout>
-    <h2 class="text-2xl font-bold text-white">Registrierung</h2>
-    <p class="mt-2 text-sm text-slate-300">Lege dein Managerkonto an und starte deine Simulation.</p>
+    <h2 class="text-2xl font-bold text-white">Managerkonto erstellen</h2>
+    <p class="mt-2 text-sm text-slate-300">Registriere dich und starte direkt mit deinem ersten Club-Projekt.</p>
+
+    <div class="mt-4 sim-card-soft p-3">
+        <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Nach der Registrierung</p>
+        <p class="mt-1 text-sm text-slate-200">Kader aufbauen, Taktik planen, in Liga und Freundschaftsspielen antreten.</p>
+    </div>
 
     <form method="POST" action="{{ route('register') }}" class="mt-6 space-y-4">
         @csrf

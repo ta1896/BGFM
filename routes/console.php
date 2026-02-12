@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use App\Models\CompetitionSeason;
+use App\Jobs\SimulateScheduledMatchesJob;
 use App\Services\SeasonProgressionService;
 
 Artisan::command('inspire', function () {
@@ -51,4 +52,30 @@ Artisan::command('game:process-matchday {--competition-season=}', function (Seas
 
 Schedule::command('game:process-matchday')
     ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
+Artisan::command('game:simulate-matches {--limit=0} {--types=friendly,league,cup} {--minutes-per-run=5}', function () {
+    $limit = max(0, (int) $this->option('limit'));
+    $minutesPerRun = max(1, min(90, (int) $this->option('minutes-per-run') ?: 5));
+    $allowedTypes = ['friendly', 'league', 'cup'];
+    $inputTypes = array_filter(array_map(
+        static fn (string $value): string => trim(strtolower($value)),
+        explode(',', (string) $this->option('types'))
+    ));
+    $types = array_values(array_intersect($allowedTypes, $inputTypes));
+    if ($types === []) {
+        $types = $allowedTypes;
+    }
+
+    SimulateScheduledMatchesJob::dispatchSync($limit, $types, $minutesPerRun);
+
+    $this->info(
+        'Auto-Simulation abgeschlossen (limit: '.$limit.', minutes-per-run: '.$minutesPerRun.', types: '.implode(',', $types).').'
+    );
+
+    return 0;
+})->purpose('Startet und tickt alle offenen Freundschafts-, Liga- und Pokalspiele automatisch (Live-Simulation)');
+
+Schedule::command('game:simulate-matches --limit=0 --minutes-per-run=5')
+    ->everyMinute()
     ->withoutOverlapping();

@@ -53,7 +53,7 @@ class PlayerController extends Controller
             'club_id' => ['required', 'integer', 'exists:clubs,id'],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
-            'position' => ['required', 'in:GK,DEF,MID,FWD'],
+            'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
             'pace' => ['required', 'integer', 'min:1', 'max:99'],
@@ -111,7 +111,7 @@ class PlayerController extends Controller
             'club_id' => ['required', 'integer', 'exists:clubs,id'],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
-            'position' => ['required', 'in:GK,DEF,MID,FWD'],
+            'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
             'pace' => ['required', 'integer', 'min:1', 'max:99'],
@@ -164,10 +164,26 @@ class PlayerController extends Controller
     private function positions(): array
     {
         return [
-            'GK' => 'Torwart',
-            'DEF' => 'Verteidiger',
-            'MID' => 'Mittelfeld',
-            'FWD' => 'Stuermer',
+            'TW' => 'Torwart',
+            'LV' => 'Linksverteidiger',
+            'IV' => 'Innenverteidiger',
+            'RV' => 'Rechtsverteidiger',
+            'LWB' => 'Linker Wingback',
+            'RWB' => 'Rechter Wingback',
+            'LM' => 'Linkes Mittelfeld',
+            'ZM' => 'Zentrales Mittelfeld',
+            'RM' => 'Rechtes Mittelfeld',
+            'DM' => 'Defensives Mittelfeld',
+            'OM' => 'Offensives Mittelfeld',
+            'LAM' => 'Linker Offensiver',
+            'ZOM' => 'Zentrales Offensives Mittelfeld',
+            'RAM' => 'Rechter Offensiver',
+            'LS' => 'Linker Stuermer',
+            'MS' => 'Mittelstuermer',
+            'RS' => 'Rechter Stuermer',
+            'LW' => 'Linker Fluegel',
+            'RW' => 'Rechter Fluegel',
+            'ST' => 'Stuermer',
         ];
     }
 }
