@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <form method="POST" action="{{ route('clubs.store') }}" class="sim-card p-6">
+    <form method="POST" action="{{ route('clubs.store') }}" class="sim-card p-6" enctype="multipart/form-data">
         @include('clubs._form')
 
         <div class="mt-6 flex flex-wrap gap-2">

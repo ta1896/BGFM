@@ -15,6 +15,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Typ</th>
+                    <th>Ebene</th>
                     <th>Stufe</th>
                     <th>Land</th>
                     <th>Status</th>
@@ -26,17 +27,18 @@
                     <tr>
                         <td class="font-semibold">
                             <div class="flex items-center gap-2">
-                                @if ($competition->logo_path)
-                                    <img class="h-8 w-8 rounded-full border border-slate-700/70 bg-slate-900/60 object-cover"
-                                         src="{{ Storage::url($competition->logo_path) }}"
-                                         alt="">
-                                @else
-                                    <span class="h-8 w-8 rounded-full border border-slate-700/70 bg-slate-900/60"></span>
-                                @endif
+                                <img class="sim-avatar sim-avatar-sm" src="{{ $competition->logo_url }}" alt="{{ $competition->name }}">
                                 <span>{{ $competition->name }}</span>
                             </div>
                         </td>
                         <td>{{ $competition->type === 'cup' ? 'Pokal' : 'Liga' }}</td>
+                        <td>
+                            @if ($competition->type === 'cup')
+                                {{ $competition->scope === 'international' ? 'International' : 'National' }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>{{ $competition->tier ?? '-' }}</td>
                         <td>{{ $competition->country?->name ?? '-' }}</td>
                         <td>

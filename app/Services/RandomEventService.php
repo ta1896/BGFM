@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Club;
-use App\Models\ClubFinancialTransaction;
 use App\Models\GameNotification;
 use App\Models\Player;
 use App\Models\RandomEventOccurrence;
@@ -14,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class RandomEventService
 {
+    public function __construct(private readonly ClubFinanceLedgerService $financeLedger)
+    {
+    }
+
     /**
      * @return Collection<int, RandomEventTemplate>
      */
@@ -89,7 +92,6 @@ class RandomEventService
             $boardDelta = (int) ($payload['board_confidence_delta'] ?? 0);
 
             $club->update([
-                'budget' => (float) $club->budget + $budgetDelta,
                 'fan_mood' => $this->clamp((int) $club->fan_mood + $fanMoodDelta, 0, 100),
                 'board_confidence' => $this->clamp((int) $club->board_confidence + $boardDelta, 0, 100),
             ]);
@@ -103,16 +105,11 @@ class RandomEventService
             }
 
             if ($budgetDelta !== 0) {
-                ClubFinancialTransaction::create([
-                    'club_id' => $club->id,
+                $this->financeLedger->applyBudgetChange($club, (float) $budgetDelta, [
                     'user_id' => $occurrence->triggered_by_user_id,
                     'context_type' => 'other',
-                    'direction' => $budgetDelta > 0 ? 'income' : 'expense',
-                    'amount' => abs($budgetDelta),
-                    'balance_after' => (float) $club->budget,
                     'reference_type' => 'random_event_occurrences',
                     'reference_id' => $occurrence->id,
-                    'booked_at' => now(),
                     'note' => 'Random Event: '.$occurrence->title,
                 ]);
             }

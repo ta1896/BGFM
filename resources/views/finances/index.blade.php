@@ -26,8 +26,14 @@
     @else
         <section class="sim-card p-5">
             <div class="mb-4 flex items-center justify-between">
-                <p class="text-lg font-semibold text-white">{{ $activeClub->name }}</p>
-                <span class="sim-pill">Budget {{ number_format((float) $activeClub->budget, 2, ',', '.') }} EUR</span>
+                <p class="inline-flex items-center gap-2 text-lg font-semibold text-white">
+                    <img class="sim-avatar sim-avatar-sm" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
+                    <span>{{ $activeClub->name }}</span>
+                </p>
+                <div class="flex items-center gap-2">
+                    <span class="sim-pill">Budget {{ number_format((float) $activeClub->budget, 2, ',', '.') }} EUR</span>
+                    <span class="sim-pill">Coins {{ number_format((int) $activeClub->coins, 0, ',', '.') }}</span>
+                </div>
             </div>
 
             @if ($transactions->isEmpty())
@@ -39,6 +45,7 @@
                             <tr>
                                 <th>Datum</th>
                                 <th>Typ</th>
+                                <th>Asset</th>
                                 <th>Richtung</th>
                                 <th>Betrag</th>
                                 <th>Saldo</th>
@@ -47,17 +54,34 @@
                         </thead>
                         <tbody>
                             @foreach ($transactions as $transaction)
+                                @php
+                                    $assetType = $transaction->asset_type ?? 'budget';
+                                    $isCoin = $assetType === 'coins';
+                                @endphp
                                 <tr>
                                     <td>{{ $transaction->booked_at?->format('d.m.Y H:i') }}</td>
                                     <td>{{ $transaction->context_type }}</td>
+                                    <td>{{ $assetType }}</td>
                                     <td>
                                         <span class="{{ $transaction->direction === 'income' ? 'text-emerald-300' : 'text-rose-300' }}">
                                             {{ $transaction->direction }}
                                         </span>
                                     </td>
-                                    <td>{{ number_format((float) $transaction->amount, 2, ',', '.') }} EUR</td>
                                     <td>
-                                        {{ $transaction->balance_after !== null ? number_format((float) $transaction->balance_after, 2, ',', '.') : '-' }}
+                                        {{ $isCoin
+                                            ? number_format((float) $transaction->amount, 0, ',', '.')
+                                            : number_format((float) $transaction->amount, 2, ',', '.') }}
+                                        {{ $isCoin ? 'Coins' : 'EUR' }}
+                                    </td>
+                                    <td>
+                                        @if ($transaction->balance_after !== null)
+                                            {{ $isCoin
+                                                ? number_format((float) $transaction->balance_after, 0, ',', '.')
+                                                : number_format((float) $transaction->balance_after, 2, ',', '.') }}
+                                            {{ $isCoin ? 'Coins' : 'EUR' }}
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                     <td>{{ $transaction->note ?: '-' }}</td>
                                 </tr>

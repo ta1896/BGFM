@@ -23,6 +23,17 @@
         <x-input-error :messages="$errors->get('last_name')" class="mt-1" />
     </div>
     <div>
+        <label class="sim-label" for="photo">Spielerbild</label>
+        <input class="sim-input" id="photo" name="photo" type="file" accept="image/*">
+        <x-input-error :messages="$errors->get('photo')" class="mt-1" />
+        @if (isset($player) && $player->photo_path)
+            <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                <img class="sim-avatar sim-avatar-sm" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                <span>Aktuelles Bild</span>
+            </div>
+        @endif
+    </div>
+    <div>
         <label class="sim-label" for="position">Position</label>
         <select class="sim-select" id="position" name="position" required>
             @foreach ($positions as $positionKey => $positionLabel)

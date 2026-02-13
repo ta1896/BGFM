@@ -5,8 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Season;
+use App\Services\ClubFinanceLedgerService;
+use App\Services\StatisticsAggregationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ClubController extends Controller
@@ -36,22 +41,60 @@ class ClubController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ClubFinanceLedgerService $financeLedger): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'short_name' => ['nullable', 'string', 'max:12'],
+            'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'country' => ['required', 'string', 'max:80'],
             'league' => ['required', 'string', 'max:120'],
             'founded_year' => ['nullable', 'integer', 'min:1850', 'max:'.date('Y')],
             'budget' => ['required', 'numeric', 'min:0'],
+            'coins' => ['nullable', 'integer', 'min:0'],
             'wage_budget' => ['required', 'numeric', 'min:0'],
             'reputation' => ['required', 'integer', 'min:1', 'max:99'],
             'fan_mood' => ['required', 'integer', 'min:1', 'max:100'],
+            'season_objective' => ['nullable', 'in:avoid_relegation,mid_table,promotion,title,cup_run'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        $validated = $this->handleLogoUpload($request, $validated);
 
-        $club = $request->user()->clubs()->create($validated);
+        $targetBudget = round((float) ($validated['budget'] ?? 0), 2);
+        $targetCoins = (int) ($validated['coins'] ?? 0);
+
+        unset($validated['budget'], $validated['coins']);
+
+        $club = DB::transaction(function () use ($request, $validated, $targetBudget, $targetCoins, $financeLedger): Club {
+            $clubPayload = $validated;
+            $clubPayload['budget'] = 0;
+            $clubPayload['coins'] = 0;
+
+            /** @var Club $club */
+            $club = $request->user()->clubs()->create($clubPayload);
+
+            if ($targetBudget > 0) {
+                $financeLedger->applyBudgetChange($club, $targetBudget, [
+                    'user_id' => $request->user()->id,
+                    'context_type' => 'admin_adjustment',
+                    'reference_type' => 'clubs',
+                    'reference_id' => $club->id,
+                    'note' => 'Initiales Vereinsbudget',
+                ]);
+            }
+
+            if ($targetCoins > 0) {
+                $financeLedger->applyCoinChange($club, $targetCoins, [
+                    'user_id' => $request->user()->id,
+                    'context_type' => 'admin_adjustment',
+                    'reference_type' => 'clubs',
+                    'reference_id' => $club->id,
+                    'note' => 'Initiale Vereinscoins',
+                ]);
+            }
+
+            return $club;
+        });
 
         return redirect()
             ->route('clubs.show', $club)
@@ -61,7 +104,7 @@ class ClubController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Club $club): View
+    public function show(Request $request, Club $club, StatisticsAggregationService $statisticsAggregationService): View
     {
         $this->ensureOwnership($request, $club);
 
@@ -70,6 +113,8 @@ class ClubController extends Controller
             'lineups' => fn ($query) => $query->latest()->limit(5),
             'user',
             'stadium',
+            'captain',
+            'viceCaptain',
         ]);
 
         $seasonId = (int) $request->query('season_id');
@@ -78,8 +123,11 @@ class ClubController extends Controller
             ? $seasons->firstWhere('id', $seasonId)
             : $seasons->first();
 
-        $overallStats = $this->calculateStatsForSeason($club, null);
-        $seasonStats = $this->calculateStatsForSeason($club, $activeSeason?->id);
+        $overallStats = $statisticsAggregationService->clubSummaryForClub($club, null);
+        $seasonStats = $statisticsAggregationService->clubSummaryForClub($club, $activeSeason?->id);
+        $overallStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, null);
+        $seasonStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, $activeSeason?->id);
+        $seasonHistory = $statisticsAggregationService->clubSeasonHistoryForClub($club, 5);
 
         $latestMatches = GameMatch::query()
             ->where('status', 'played')
@@ -98,6 +146,9 @@ class ClubController extends Controller
             'activeSeason' => $activeSeason,
             'overallStats' => $overallStats,
             'seasonStats' => $seasonStats,
+            'overallStatsByContext' => $overallStatsByContext,
+            'seasonStatsByContext' => $seasonStatsByContext,
+            'seasonHistory' => $seasonHistory,
             'latestMatches' => $latestMatches,
         ]);
     }
@@ -115,24 +166,73 @@ class ClubController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Club $club): RedirectResponse
+    public function update(Request $request, Club $club, ClubFinanceLedgerService $financeLedger): RedirectResponse
     {
         $this->ensureOwnership($request, $club);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'short_name' => ['nullable', 'string', 'max:12'],
+            'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'country' => ['required', 'string', 'max:80'],
             'league' => ['required', 'string', 'max:120'],
             'founded_year' => ['nullable', 'integer', 'min:1850', 'max:'.date('Y')],
             'budget' => ['required', 'numeric', 'min:0'],
+            'coins' => ['nullable', 'integer', 'min:0'],
             'wage_budget' => ['required', 'numeric', 'min:0'],
             'reputation' => ['required', 'integer', 'min:1', 'max:99'],
             'fan_mood' => ['required', 'integer', 'min:1', 'max:100'],
+            'season_objective' => ['nullable', 'in:avoid_relegation,mid_table,promotion,title,cup_run'],
+            'captain_player_id' => [
+                'nullable',
+                Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id)),
+            ],
+            'vice_captain_player_id' => [
+                'nullable',
+                Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id)),
+                'different:captain_player_id',
+            ],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        $validated = $this->handleLogoUpload($request, $validated, $club->logo_path);
 
-        $club->update($validated);
+        $targetBudget = round((float) ($validated['budget'] ?? $club->budget), 2);
+        $targetCoins = (int) ($validated['coins'] ?? $club->coins);
+
+        unset($validated['budget'], $validated['coins']);
+
+        DB::transaction(function () use ($club, $validated, $targetBudget, $targetCoins, $request, $financeLedger): void {
+            /** @var Club $lockedClub */
+            $lockedClub = Club::query()
+                ->whereKey($club->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $budgetDelta = round($targetBudget - (float) $lockedClub->budget, 2);
+            $coinDelta = $targetCoins - (int) $lockedClub->coins;
+
+            $lockedClub->update($validated);
+
+            if ($budgetDelta !== 0.0) {
+                $financeLedger->applyBudgetChange($lockedClub, $budgetDelta, [
+                    'user_id' => $request->user()->id,
+                    'context_type' => 'admin_adjustment',
+                    'reference_type' => 'clubs',
+                    'reference_id' => $club->id,
+                    'note' => 'Manuelle Budgetanpassung',
+                ]);
+            }
+
+            if ($coinDelta !== 0) {
+                $financeLedger->applyCoinChange($lockedClub, $coinDelta, [
+                    'user_id' => $request->user()->id,
+                    'context_type' => 'admin_adjustment',
+                    'reference_type' => 'clubs',
+                    'reference_id' => $club->id,
+                    'note' => 'Manuelle Coin-Anpassung',
+                ]);
+            }
+        });
 
         return redirect()
             ->route('clubs.show', $club)
@@ -146,6 +246,10 @@ class ClubController extends Controller
     {
         $this->ensureOwnership($request, $club);
 
+        if ($club->logo_path) {
+            Storage::delete($club->logo_path);
+        }
+
         $club->delete();
 
         return redirect()
@@ -158,50 +262,22 @@ class ClubController extends Controller
         abort_unless($club->user_id === $request->user()->id, 403);
     }
 
-    private function calculateStatsForSeason(Club $club, ?int $seasonId): array
+    private function handleLogoUpload(Request $request, array $validated, ?string $previousPath = null): array
     {
-        $matches = GameMatch::query()
-            ->where('status', 'played')
-            ->when($seasonId, fn ($query) => $query->where('season_id', $seasonId))
-            ->where(function ($query) use ($club) {
-                $query->where('home_club_id', $club->id)
-                    ->orWhere('away_club_id', $club->id);
-            })
-            ->get();
+        if (!$request->hasFile('logo')) {
+            unset($validated['logo']);
 
-        $wins = 0;
-        $draws = 0;
-        $losses = 0;
-        $goalsFor = 0;
-        $goalsAgainst = 0;
-
-        foreach ($matches as $match) {
-            $isHome = $match->home_club_id === $club->id;
-            $gf = (int) ($isHome ? $match->home_score : $match->away_score);
-            $ga = (int) ($isHome ? $match->away_score : $match->home_score);
-
-            $goalsFor += $gf;
-            $goalsAgainst += $ga;
-
-            if ($gf > $ga) {
-                $wins++;
-            } elseif ($gf === $ga) {
-                $draws++;
-            } else {
-                $losses++;
-            }
+            return $validated;
         }
 
-        $points = ($wins * 3) + $draws;
+        $path = $request->file('logo')->store('public/club-logos');
+        $validated['logo_path'] = $path;
+        unset($validated['logo']);
 
-        return [
-            'matches' => $matches->count(),
-            'wins' => $wins,
-            'draws' => $draws,
-            'losses' => $losses,
-            'goals_for' => $goalsFor,
-            'goals_against' => $goalsAgainst,
-            'points' => $points,
-        ];
+        if ($previousPath) {
+            Storage::delete($previousPath);
+        }
+
+        return $validated;
     }
 }

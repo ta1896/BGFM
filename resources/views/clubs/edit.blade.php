@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <form method="POST" action="{{ route('clubs.update', $club) }}" class="sim-card p-6">
+    <form method="POST" action="{{ route('clubs.update', $club) }}" class="sim-card p-6" enctype="multipart/form-data">
         @method('PUT')
         @include('clubs._form')
 

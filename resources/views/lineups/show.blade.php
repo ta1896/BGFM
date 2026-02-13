@@ -1,10 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <p class="sim-section-title">Aufstellung</p>
-                <h1 class="mt-1 text-2xl font-bold text-white">{{ $lineup->name }} ({{ $lineup->formation }})</h1>
-                <p class="mt-1 text-sm text-slate-300">{{ $lineup->club->name }}</p>
+            <div class="flex items-center gap-3">
+                <img class="sim-avatar sim-avatar-md" src="{{ $lineup->club->logo_url }}" alt="{{ $lineup->club->name }}">
+                <div>
+                    <p class="sim-section-title">Aufstellung</p>
+                    <h1 class="mt-1 text-2xl font-bold text-white">{{ $lineup->name }} ({{ $lineup->formation }})</h1>
+                    <p class="mt-1 text-sm text-slate-300">{{ $lineup->club->name }}</p>
+                </div>
             </div>
             <a href="{{ route('lineups.edit', $lineup) }}" class="sim-btn-muted">Bearbeiten</a>
         </div>
@@ -43,9 +46,12 @@
         <div class="grid gap-3 md:grid-cols-2">
             @forelse ($lineup->players as $player)
                 <div class="sim-card-soft flex items-center justify-between px-4 py-3">
-                    <div>
+                    <div class="flex items-center gap-2">
+                        <img class="sim-avatar sim-avatar-sm" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                        <div>
                         <p class="font-semibold text-white">{{ $player->full_name }}</p>
                         <p class="text-xs text-slate-400">{{ $player->position }} @if($player->pivot->pitch_position) | {{ $player->pivot->pitch_position }} @endif</p>
+                        </div>
                     </div>
                     <span class="sim-pill">OVR {{ $player->overall }}</span>
                 </div>

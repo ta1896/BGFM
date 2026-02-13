@@ -12,11 +12,12 @@ use App\Models\SponsorContract;
 use App\Models\StadiumProject;
 use App\Models\TrainingCamp;
 use App\Models\User;
+use App\Services\SimulationSettingsService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(SimulationSettingsService $simulationSettings): View
     {
         return view('admin.dashboard', [
             'stats' => [
@@ -39,6 +40,7 @@ class DashboardController extends Controller
                 ->whereHas('competition', fn ($q) => $q->where('type', 'league'))
                 ->orderBy('id')
                 ->get(),
+            'simulationSettings' => $simulationSettings->adminSettings(),
         ]);
     }
 }

@@ -26,7 +26,11 @@
                                 <p class="mt-2 text-xs text-slate-400">
                                     {{ $notification->created_at->format('d.m.Y H:i') }}
                                     @if ($notification->club)
-                                        | {{ $notification->club->name }}
+                                        | 
+                                        <span class="inline-flex items-center gap-1">
+                                            <img class="sim-avatar sim-avatar-xs" src="{{ $notification->club->logo_url }}" alt="{{ $notification->club->name }}">
+                                            {{ $notification->club->name }}
+                                        </span>
                                     @endif
                                 </p>
                             </div>

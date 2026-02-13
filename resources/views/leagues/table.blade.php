@@ -10,9 +10,10 @@
                 <p class="sim-section-title">Liga</p>
                 <h1 class="mt-1 text-2xl font-bold text-white">Ligatabelle</h1>
                 @if ($activeCompetitionSeason)
-                    <p class="mt-1 text-sm text-slate-300">
-                        {{ $activeCompetitionSeason->competition->name }} | {{ $activeCompetitionSeason->season->name }}
-                    </p>
+                    <div class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                        <img class="sim-avatar sim-avatar-sm" src="{{ $activeCompetitionSeason->competition->logo_url }}" alt="{{ $activeCompetitionSeason->competition->name }}">
+                        <span>{{ $activeCompetitionSeason->competition->name }} | {{ $activeCompetitionSeason->season->name }}</span>
+                    </div>
                 @endif
             </div>
             <form method="GET" action="{{ route('league.table') }}" class="flex flex-wrap gap-2">
@@ -79,13 +80,7 @@
                             </td>
                             <td>
                                 <div class="flex items-center gap-3">
-                                    @if ($row->club->logo_path)
-                                        <img class="h-8 w-8 rounded-full border border-slate-700/70 bg-slate-900/60 object-cover"
-                                             src="{{ Storage::url($row->club->logo_path) }}"
-                                             alt="">
-                                    @else
-                                        <span class="h-8 w-8 rounded-full border border-slate-700/70 bg-slate-900/60"></span>
-                                    @endif
+                                    <img class="sim-avatar sim-avatar-sm" src="{{ $row->club->logo_url }}" alt="{{ $row->club->name }}">
                                     <span class="font-semibold">{{ $row->club->name }}</span>
                                 </div>
                             </td>

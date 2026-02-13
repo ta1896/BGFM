@@ -147,6 +147,34 @@ Optional fuer eine konkrete Liga-Saison:
 docker compose -f compose.yaml exec -T laravel.test php artisan game:process-matchday --competition-season=1
 ```
 
+### Backfill Spieler/Verein (CLI)
+
+Dry-Run mit Audit (ohne Datenaenderung):
+
+```bash
+docker compose -f compose.yaml exec -T laravel.test php artisan game:backfill-player-club-model --dry-run
+```
+
+Ausfuehrung mit Persistenz:
+
+```bash
+docker compose -f compose.yaml exec -T laravel.test php artisan game:backfill-player-club-model --chunk=500
+```
+
+### Statistik-Rebuild / Audit (CLI)
+
+Kompletter Rebuild (League + Player):
+
+```bash
+docker compose -f compose.yaml exec -T laravel.test php artisan game:rebuild-statistics --all
+```
+
+Gezielt eine CompetitionSeason + Integritaets-Audit:
+
+```bash
+docker compose -f compose.yaml exec -T laravel.test php artisan game:rebuild-statistics --competition-season=1 --audit
+```
+
 ## Transferfenster steuern
 
 - ENV: `TRANSFER_WINDOW_ENFORCED=true|false`

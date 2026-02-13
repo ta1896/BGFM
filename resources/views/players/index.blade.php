@@ -14,7 +14,9 @@
                         @endforeach
                     </select>
                 </form>
-                <a href="{{ route('players.create') }}" class="sim-btn-primary">Neuer Spieler</a>
+                @if (auth()->user()->isAdmin())
+                    <a href="{{ route('admin.players.create') }}" class="sim-btn-primary">Spieler im ACP erstellen</a>
+                @endif
             </div>
         </div>
     </x-slot>
@@ -35,8 +37,18 @@
             <tbody>
                 @forelse ($players as $player)
                     <tr>
-                        <td>{{ $player->full_name }}</td>
-                        <td>{{ $player->club->name }}</td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-sm" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                                <span>{{ $player->full_name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $player->club->logo_url }}" alt="{{ $player->club->name }}">
+                                <span>{{ $player->club->name }}</span>
+                            </div>
+                        </td>
                         <td>{{ $player->position }}</td>
                         <td>{{ $player->overall }}</td>
                         <td>{{ $player->age }}</td>

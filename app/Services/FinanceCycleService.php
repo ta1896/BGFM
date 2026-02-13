@@ -12,7 +12,8 @@ class FinanceCycleService
 {
     public function __construct(
         private readonly StadiumService $stadiumService,
-        private readonly SponsorService $sponsorService
+        private readonly SponsorService $sponsorService,
+        private readonly ClubFinanceLedgerService $financeLedger
     ) {
     }
 
@@ -63,26 +64,41 @@ class FinanceCycleService
             $awayIncome = round($awaySponsorIncome, 2);
             $awayExpense = round($awayWageExpense + $awayTravelExpense, 2);
 
-            $homeClub->increment('budget', $homeIncome - $homeExpense);
-            $awayClub->increment('budget', $awayIncome - $awayExpense);
+            if ($homeIncome > 0) {
+                $this->financeLedger->applyBudgetChange($homeClub, $homeIncome, [
+                    'context_type' => 'match_income',
+                    'reference_type' => 'matches',
+                    'reference_id' => $match->id,
+                    'note' => 'Matchday '.$match->id.' (Heim)',
+                ]);
+            }
 
-            $homeFresh = $homeClub->fresh();
-            $awayFresh = $awayClub->fresh();
+            if ($homeExpense > 0) {
+                $this->financeLedger->applyBudgetChange($homeClub, -$homeExpense, [
+                    'context_type' => 'salary',
+                    'reference_type' => 'matches',
+                    'reference_id' => $match->id,
+                    'note' => 'Matchday '.$match->id.' (Heim)',
+                ]);
+            }
 
-            $this->bookTransactions(
-                $homeClub->id,
-                $homeIncome,
-                $homeExpense,
-                $homeFresh?->budget,
-                'Matchday '.$match->id.' (Heim)'
-            );
-            $this->bookTransactions(
-                $awayClub->id,
-                $awayIncome,
-                $awayExpense,
-                $awayFresh?->budget,
-                'Matchday '.$match->id.' (Auswaerts)'
-            );
+            if ($awayIncome > 0) {
+                $this->financeLedger->applyBudgetChange($awayClub, $awayIncome, [
+                    'context_type' => 'match_income',
+                    'reference_type' => 'matches',
+                    'reference_id' => $match->id,
+                    'note' => 'Matchday '.$match->id.' (Auswaerts)',
+                ]);
+            }
+
+            if ($awayExpense > 0) {
+                $this->financeLedger->applyBudgetChange($awayClub, -$awayExpense, [
+                    'context_type' => 'salary',
+                    'reference_type' => 'matches',
+                    'reference_id' => $match->id,
+                    'note' => 'Matchday '.$match->id.' (Auswaerts)',
+                ]);
+            }
 
             return MatchFinancialSettlement::create([
                 'match_id' => $match->id,
@@ -123,47 +139,5 @@ class FinanceCycleService
         }
 
         return round($base, 2);
-    }
-
-    private function bookTransactions(int $clubId, float $income, float $expense, ?float $balanceAfter, string $note): void
-    {
-        $rows = [];
-        if ($income > 0) {
-            $rows[] = [
-                'club_id' => $clubId,
-                'user_id' => null,
-                'context_type' => 'match_income',
-                'direction' => 'income',
-                'amount' => $income,
-                'balance_after' => $balanceAfter,
-                'reference_type' => 'matches',
-                'reference_id' => null,
-                'booked_at' => now(),
-                'note' => $note,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        if ($expense > 0) {
-            $rows[] = [
-                'club_id' => $clubId,
-                'user_id' => null,
-                'context_type' => 'salary',
-                'direction' => 'expense',
-                'amount' => $expense,
-                'balance_after' => $balanceAfter,
-                'reference_type' => 'matches',
-                'reference_id' => null,
-                'booked_at' => now(),
-                'note' => $note,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        if ($rows !== []) {
-            DB::table('club_financial_transactions')->insert($rows);
-        }
     }
 }

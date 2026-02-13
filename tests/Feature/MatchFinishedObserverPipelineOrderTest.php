@@ -24,4 +24,22 @@ class MatchFinishedObserverPipelineOrderTest extends TestCase
             SettleMatchFinanceObserver::class,
         ], $pipeline->observerClassNames());
     }
+
+    public function test_pipeline_respects_granular_observer_toggles(): void
+    {
+        config()->set('simulation.observers.match_finished.enabled', true);
+        config()->set('simulation.observers.match_finished.rebuild_match_player_stats', true);
+        config()->set('simulation.observers.match_finished.aggregate_player_competition_stats', false);
+        config()->set('simulation.observers.match_finished.apply_match_availability', true);
+        config()->set('simulation.observers.match_finished.update_competition_after_match', true);
+        config()->set('simulation.observers.match_finished.settle_match_finance', false);
+
+        $pipeline = app(MatchFinishedObserverPipeline::class);
+
+        $this->assertSame([
+            RebuildMatchPlayerStatsObserver::class,
+            ApplyMatchAvailabilityObserver::class,
+            UpdateCompetitionAfterMatchObserver::class,
+        ], $pipeline->observerClassNames());
+    }
 }

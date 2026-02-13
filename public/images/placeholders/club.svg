@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Club">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="url(#g)" />
+  <path d="M128 34l66 26v60c0 44-28 83-66 102-38-19-66-58-66-102V60l66-26z" fill="#0ea5e9" opacity="0.25" />
+  <path d="M128 52l52 21v47c0 35-22 66-52 82-30-16-52-47-52-82V73l52-21z" fill="none" stroke="#67e8f9" stroke-width="10" />
+  <path d="M96 118h64M128 86v96" stroke="#67e8f9" stroke-width="10" stroke-linecap="round" />
+</svg>

@@ -24,8 +24,14 @@
                         <div class="sim-card-soft p-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
-                                    <p class="text-sm text-slate-300">{{ $listing->lenderClub->name }} | OVR {{ $listing->player->overall }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <img class="sim-avatar sim-avatar-sm" src="{{ $listing->player->photo_url }}" alt="{{ $listing->player->full_name }}">
+                                        <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
+                                    </div>
+                                    <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                                        <img class="sim-avatar sim-avatar-xs" src="{{ $listing->lenderClub->logo_url }}" alt="{{ $listing->lenderClub->name }}">
+                                        <span>{{ $listing->lenderClub->name }} | OVR {{ $listing->player->overall }}</span>
+                                    </p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         <span class="sim-pill">Min/Woche {{ number_format((float) $listing->min_weekly_fee, 0, ',', '.') }} EUR</span>
                                         <span class="sim-pill">Laufzeit {{ $listing->loan_months }} Monate</span>
@@ -96,7 +102,10 @@
                     @foreach ($myListings as $listing)
                         <div class="sim-card-soft p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
+                                <p class="flex items-center gap-2 font-semibold text-white">
+                                    <img class="sim-avatar sim-avatar-sm" src="{{ $listing->player->photo_url }}" alt="{{ $listing->player->full_name }}">
+                                    <span>{{ $listing->player->full_name }}</span>
+                                </p>
                                 <span class="sim-pill">{{ $listing->status }}</span>
                             </div>
                             @if ($listing->status === 'open')
@@ -111,7 +120,10 @@
                                     @foreach ($listing->bids as $bid)
                                         <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/70 px-3 py-2 text-sm">
                                             <div>
-                                                <span class="font-semibold text-white">{{ $bid->borrowerClub->name }}</span>
+                                                <span class="inline-flex items-center gap-2 font-semibold text-white">
+                                                    <img class="sim-avatar sim-avatar-xs" src="{{ $bid->borrowerClub->logo_url }}" alt="{{ $bid->borrowerClub->name }}">
+                                                    {{ $bid->borrowerClub->name }}
+                                                </span>
                                                 <span class="text-slate-300"> {{ number_format((float) $bid->weekly_fee, 0, ',', '.') }} EUR/Woche</span>
                                             </div>
                                             @if ($bid->status === 'pending')
@@ -140,9 +152,21 @@
                 <div class="mt-3 space-y-2">
                     @foreach ($activeLoans as $loan)
                         <div class="sim-card-soft p-3">
-                            <p class="font-semibold text-white">{{ $loan->player->full_name }}</p>
+                            <p class="flex items-center gap-2 font-semibold text-white">
+                                <img class="sim-avatar sim-avatar-sm" src="{{ $loan->player->photo_url }}" alt="{{ $loan->player->full_name }}">
+                                <span>{{ $loan->player->full_name }}</span>
+                            </p>
                             <p class="mt-1 text-xs text-slate-300">
-                                {{ $loan->lenderClub->name }} -> {{ $loan->borrowerClub->name }} | bis {{ $loan->ends_on?->format('d.m.Y') }}
+                                <span class="inline-flex items-center gap-2">
+                                    <img class="sim-avatar sim-avatar-xs" src="{{ $loan->lenderClub->logo_url }}" alt="{{ $loan->lenderClub->name }}">
+                                    {{ $loan->lenderClub->name }}
+                                </span>
+                                -> 
+                                <span class="inline-flex items-center gap-2">
+                                    <img class="sim-avatar sim-avatar-xs" src="{{ $loan->borrowerClub->logo_url }}" alt="{{ $loan->borrowerClub->name }}">
+                                    {{ $loan->borrowerClub->name }}
+                                </span>
+                                | bis {{ $loan->ends_on?->format('d.m.Y') }}
                             </p>
                             <div class="mt-2 flex flex-wrap gap-2">
                                 <span class="sim-pill">Kaufoption: {{ $loan->buy_option_price ? number_format((float) $loan->buy_option_price, 0, ',', '.') . ' EUR' : 'Keine' }}</span>

@@ -36,8 +36,18 @@
             <tbody>
                 @forelse ($players as $player)
                     <tr>
-                        <td>{{ $player->full_name }}</td>
-                        <td>{{ $player->club->name }}</td>
+                        <td>
+                            <span class="inline-flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                                <span>{{ $player->full_name }}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="inline-flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $player->club->logo_url }}" alt="{{ $player->club->name }}">
+                                <span>{{ $player->club->name }}</span>
+                            </span>
+                        </td>
                         <td>{{ $player->club->user->name }}</td>
                         <td>{{ $player->position }}</td>
                         <td>{{ $player->overall }}</td>

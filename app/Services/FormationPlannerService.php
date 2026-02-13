@@ -97,8 +97,9 @@ class FormationPlannerService
      * @param Collection<int, Player> $players
      * @return array{starters: array<string, int|null>, bench: array<int, int>}
      */
-    public function strongestByFormation(Collection $players, string $formation): array
+    public function strongestByFormation(Collection $players, string $formation, int $maxBenchPlayers = 5): array
     {
+        $benchLimit = max(1, min(10, $maxBenchPlayers));
         $slots = $this->starterSlots($formation);
         $available = $players
             ->sortByDesc(fn (Player $player) => ($player->overall * 2) + $player->stamina + $player->morale)
@@ -130,7 +131,7 @@ class FormationPlannerService
 
         $bench = $available
             ->whereNotIn('id', $usedIds)
-            ->take(5)
+            ->take($benchLimit)
             ->pluck('id')
             ->values()
             ->all();

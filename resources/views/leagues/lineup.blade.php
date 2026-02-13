@@ -1,7 +1,23 @@
 @php
     $positionService = app(\App\Services\PlayerPositionService::class);
-    $playersByPosition = $clubPlayers->groupBy(fn ($player) => $positionService->groupFromPosition($player->position) ?? 'MID');
-    $selectedPlayerIds = collect($starterDraft)->filter()->values()->concat(collect($benchDraft)->filter())->unique()->all();
+    $playersByPosition = $clubPlayers->groupBy(fn ($player) => $positionService->groupFromPosition($player->position_main ?? $player->position) ?? 'MID');
+    $effectiveStarterDraft = old('starter_slots');
+    $effectiveStarterDraft = is_array($effectiveStarterDraft) ? $effectiveStarterDraft : $starterDraft;
+    $effectiveBenchDraft = old('bench_slots');
+    $effectiveBenchDraft = is_array($effectiveBenchDraft) ? $effectiveBenchDraft : $benchDraft;
+    $maxBenchPlayers = max(1, min(10, (int) ($maxBenchPlayers ?? 5)));
+    $selectedPlayerIds = collect($effectiveStarterDraft)
+        ->filter()
+        ->map(static fn ($value) => (int) $value)
+        ->values()
+        ->concat(
+            collect($effectiveBenchDraft)
+                ->filter()
+                ->map(static fn ($value) => (int) $value)
+                ->values()
+        )
+        ->unique()
+        ->all();
     $positionLabels = [
         'TW' => 'Torwart',
         'LV' => 'Linksverteidiger',
@@ -38,12 +54,36 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <p class="sim-section-title">Aufstellung</p>
-                    <h1 class="mt-1 text-2xl font-bold text-white">{{ $club->name }} vs {{ $opponentClub->name }}</h1>
+                    <div class="mt-1 flex items-center gap-2 text-2xl font-bold text-white">
+                        <img class="sim-avatar sim-avatar-sm" src="{{ $club->logo_url }}" alt="{{ $club->name }}">
+                        <span>{{ $club->name }}</span>
+                        <span class="text-slate-400">vs</span>
+                        <img class="sim-avatar sim-avatar-sm" src="{{ $opponentClub->logo_url }}" alt="{{ $opponentClub->name }}">
+                        <span>{{ $opponentClub->name }}</span>
+                    </div>
                     <p class="mt-1 text-sm text-slate-300">
                         {{ $match->kickoff_at?->format('d.m.Y H:i') }} Uhr | {{ $match->type === 'friendly' ? 'Freundschaft' : 'Pflichtspiel' }}
                     </p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-end gap-2">
+                    <div>
+                        <label class="sim-label mb-1">Match waehlen</label>
+                        <select id="matchSwitch" class="sim-select w-72">
+                            @foreach ($clubMatches as $clubMatch)
+                                @php
+                                    $isHome = (int) $clubMatch->home_club_id === (int) $club->id;
+                                    $opponent = $isHome ? $clubMatch->awayClub : $clubMatch->homeClub;
+                                    $statusLabel = $clubMatch->status === 'live' ? 'LIVE' : strtoupper($clubMatch->status);
+                                @endphp
+                                <option
+                                    value="{{ route('matches.lineup.edit', ['match' => $clubMatch->id, 'club' => $club->id]) }}"
+                                    @selected((int) $clubMatch->id === (int) $match->id)
+                                >
+                                    {{ $clubMatch->kickoff_at?->format('d.m H:i') }} | vs {{ $opponent?->name ?? 'Unbekannt' }} | {{ $statusLabel }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <a href="{{ route('matches.show', $match) }}" class="sim-btn-muted">Zum Matchcenter</a>
                     <a href="{{ route('league.matches') }}" class="sim-btn-muted">Spiele</a>
                 </div>
@@ -201,17 +241,26 @@
                 </div>
 
                 <div class="mt-6">
-                    <p class="sim-section-title mb-2">Auswechselbank</p>
+                    <p class="sim-section-title mb-2">Auswechselbank (max. {{ $maxBenchPlayers }})</p>
                     <div class="grid gap-2 sm:grid-cols-5">
-                        @for ($i = 0; $i < 5; $i++)
-                            <select name="bench_slots[]" class="sim-select">
-                                <option value="">Slot {{ $i + 1 }}</option>
-                                @foreach ($clubPlayers as $player)
-                                    <option value="{{ $player->id }}" @selected((int) ($benchDraft[$i] ?? 0) === $player->id)>
-                                        {{ $player->full_name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        @for ($i = 0; $i < $maxBenchPlayers; $i++)
+                            @php
+                                $benchSelectId = 'bench_slot_'.$i;
+                            @endphp
+                            <div class="space-y-1">
+                                <div class="sim-dropzone" data-drop-select="{{ $benchSelectId }}" data-empty-label="Slot {{ $i + 1 }}: - Kein Spieler -">
+                                    <span class="sim-dropzone-label" data-drop-label>Slot {{ $i + 1 }}: - Kein Spieler -</span>
+                                    <button type="button" class="sim-dropzone-clear hidden" data-drop-clear title="Slot leeren">x</button>
+                                </div>
+                                <select id="{{ $benchSelectId }}" name="bench_slots[]" class="sim-select" data-dnd-select>
+                                    <option value="">Slot {{ $i + 1 }}</option>
+                                    @foreach ($clubPlayers as $player)
+                                        <option value="{{ $player->id }}" @selected((int) ($effectiveBenchDraft[$i] ?? 0) === $player->id)>
+                                            {{ $player->full_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         @endfor
                     </div>
                 </div>
@@ -219,12 +268,19 @@
                 <div class="mt-6 sim-pitch">
                     <div class="sim-pitch-canvas">
                         @foreach ($slots as $slot)
+                            @php
+                                $slotSelectId = 'starter_slot_'.\Illuminate\Support\Str::slug($slot['slot'], '_');
+                            @endphp
                             <div class="sim-pitch-slot" style="left: {{ $slot['x'] }}%; top: {{ $slot['y'] }}%;">
                                 <span class="sim-pitch-slot-label">{{ $slot['label'] }}</span>
-                                <select name="starter_slots[{{ $slot['slot'] }}]" class="sim-pitch-select">
+                                <div class="sim-dropzone mb-1" data-drop-select="{{ $slotSelectId }}" data-empty-label="- Kein Spieler -">
+                                    <span class="sim-dropzone-label" data-drop-label>- Kein Spieler -</span>
+                                    <button type="button" class="sim-dropzone-clear hidden" data-drop-clear title="Slot leeren">x</button>
+                                </div>
+                                <select id="{{ $slotSelectId }}" name="starter_slots[{{ $slot['slot'] }}]" class="sim-pitch-select" data-dnd-select>
                                     <option value="">- Kein Spieler -</option>
                                     @foreach ($clubPlayers as $player)
-                                        <option value="{{ $player->id }}" @selected((int) ($starterDraft[$slot['slot']] ?? 0) === $player->id)>
+                                        <option value="{{ $player->id }}" @selected((int) ($effectiveStarterDraft[$slot['slot']] ?? 0) === $player->id)>
                                             {{ $player->full_name }}
                                         </option>
                                     @endforeach
@@ -247,18 +303,28 @@
                             <h3 class="text-sm font-semibold text-white">{{ $label }}</h3>
                             <div class="mt-2 space-y-2">
                                 @forelse ($playersByPosition->get($code, collect()) as $player)
-                                    <div class="sim-card-soft px-3 py-2">
+                                    @php
+                                        $position = $player->position_main ?? $player->position;
+                                        $isSelected = in_array($player->id, $selectedPlayerIds, true);
+                                    @endphp
+                                    <div
+                                        class="sim-card-soft sim-player-card px-3 py-2"
+                                        draggable="true"
+                                        data-player-id="{{ $player->id }}"
+                                        data-player-name="{{ $player->full_name }}"
+                                    >
                                         <div class="flex items-center justify-between gap-2">
-                                            <p class="text-sm font-semibold text-white">{{ $player->full_name }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                                                <p class="text-sm font-semibold text-white">{{ $player->full_name }}</p>
+                                            </div>
                                             <span class="sim-pill">OVR {{ $player->overall }}</span>
                                         </div>
                                         <p class="mt-1 text-xs text-slate-400">
-                                            <span class="sim-pill !px-2 !py-0.5 text-[10px]">{{ $positionLabels[$player->position] ?? $player->position }}</span>
+                                            <span class="sim-pill !px-2 !py-0.5 text-[10px]">{{ $positionLabels[$position] ?? $position }}</span>
                                             <span class="ml-1">{{ $player->age }} J.</span>
                                             <span class="ml-1">| {{ number_format((float) $player->market_value, 0, ',', '.') }} EUR</span>
-                                            @if (in_array($player->id, $selectedPlayerIds, true))
-                                                <span class="ml-1">| Aufgestellt</span>
-                                            @endif
+                                            <span class="ml-1 {{ $isSelected ? '' : 'hidden' }}" data-player-picked>| Aufgestellt</span>
                                         </p>
                                     </div>
                                 @empty
@@ -271,4 +337,154 @@
             </aside>
         </section>
     </form>
+
+    <script>
+        (function () {
+            const matchSwitch = document.getElementById('matchSwitch');
+            const formationSelect = document.getElementById('formation');
+
+            if (matchSwitch) {
+                matchSwitch.addEventListener('change', function () {
+                    if (this.value) {
+                        window.location.href = this.value;
+                    }
+                });
+            }
+
+            if (formationSelect) {
+                formationSelect.addEventListener('change', function () {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('formation', this.value);
+                    window.location.href = url.toString();
+                });
+            }
+
+            const playerCards = Array.from(document.querySelectorAll('[data-player-id]'));
+            const dropzones = Array.from(document.querySelectorAll('[data-drop-select]'));
+            const managedSelects = Array.from(document.querySelectorAll('[data-dnd-select]'));
+            const playerMap = new Map(playerCards.map(function (card) {
+                return [String(card.dataset.playerId), card];
+            }));
+
+            function selectedPlayerIds() {
+                return managedSelects
+                    .map(function (select) { return select.value; })
+                    .filter(function (value) { return value !== ''; });
+            }
+
+            function syncPoolHighlights() {
+                const selected = new Set(selectedPlayerIds());
+                playerCards.forEach(function (card) {
+                    const pickedMarker = card.querySelector('[data-player-picked]');
+                    const isPicked = selected.has(String(card.dataset.playerId));
+                    card.classList.toggle('sim-player-card-active', isPicked);
+                    if (pickedMarker) {
+                        pickedMarker.classList.toggle('hidden', !isPicked);
+                    }
+                });
+            }
+
+            function syncDropzone(dropzone) {
+                const selectId = dropzone.dataset.dropSelect;
+                const select = document.getElementById(selectId);
+                const label = dropzone.querySelector('[data-drop-label]');
+                const clearBtn = dropzone.querySelector('[data-drop-clear]');
+                if (!select || !label) {
+                    return;
+                }
+
+                if (select.value) {
+                    const option = select.options[select.selectedIndex];
+                    label.textContent = option ? option.text : 'Spieler gesetzt';
+                    dropzone.classList.add('sim-dropzone-filled');
+                    if (clearBtn) {
+                        clearBtn.classList.remove('hidden');
+                    }
+                } else {
+                    label.textContent = dropzone.dataset.emptyLabel || '- Kein Spieler -';
+                    dropzone.classList.remove('sim-dropzone-filled');
+                    if (clearBtn) {
+                        clearBtn.classList.add('hidden');
+                    }
+                }
+            }
+
+            function syncAllDropzones() {
+                dropzones.forEach(syncDropzone);
+                syncPoolHighlights();
+            }
+
+            function assignPlayerToSelect(select, playerId) {
+                if (!select) {
+                    return;
+                }
+
+                managedSelects.forEach(function (current) {
+                    if (current !== select && current.value === String(playerId)) {
+                        current.value = '';
+                        syncDropzone(document.querySelector('[data-drop-select="' + current.id + '"]'));
+                    }
+                });
+
+                select.value = String(playerId);
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            playerCards.forEach(function (card) {
+                card.addEventListener('dragstart', function (event) {
+                    event.dataTransfer.setData('text/plain', String(card.dataset.playerId));
+                    event.dataTransfer.effectAllowed = 'move';
+                    card.classList.add('sim-player-card-dragging');
+                });
+
+                card.addEventListener('dragend', function () {
+                    card.classList.remove('sim-player-card-dragging');
+                });
+            });
+
+            dropzones.forEach(function (dropzone) {
+                const select = document.getElementById(dropzone.dataset.dropSelect);
+                const clearBtn = dropzone.querySelector('[data-drop-clear]');
+
+                dropzone.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    dropzone.classList.add('sim-dropzone-over');
+                });
+
+                dropzone.addEventListener('dragleave', function () {
+                    dropzone.classList.remove('sim-dropzone-over');
+                });
+
+                dropzone.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    dropzone.classList.remove('sim-dropzone-over');
+                    const playerId = event.dataTransfer.getData('text/plain');
+                    if (!playerId || !playerMap.has(String(playerId))) {
+                        return;
+                    }
+
+                    assignPlayerToSelect(select, playerId);
+                    syncAllDropzones();
+                });
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', function () {
+                        if (!select) {
+                            return;
+                        }
+
+                        select.value = '';
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncAllDropzones();
+                    });
+                }
+            });
+
+            managedSelects.forEach(function (select) {
+                select.addEventListener('change', syncAllDropzones);
+            });
+
+            syncAllDropzones();
+        })();
+    </script>
 </x-app-layout>

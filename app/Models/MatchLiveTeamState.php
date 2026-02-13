@@ -33,12 +33,19 @@ class MatchLiveTeamState extends Model
         'last_substitution_minute',
         'tactical_style',
         'phase',
+        'current_ball_carrier_player_id',
+        'last_set_piece_taker_player_id',
+        'last_set_piece_type',
+        'last_set_piece_minute',
     ];
 
     protected function casts(): array
     {
         return [
             'expected_goals' => 'decimal:2',
+            'current_ball_carrier_player_id' => 'integer',
+            'last_set_piece_taker_player_id' => 'integer',
+            'last_set_piece_minute' => 'integer',
         ];
     }
 

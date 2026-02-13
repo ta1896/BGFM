@@ -3,9 +3,136 @@
 @tailwind utilities;
 
 @layer base {
+    :root {
+        --sim-shell-bg: radial-gradient(circle at top left, #1a2a57 0%, #0a1025 35%, #060a18 75%);
+        --sim-card-bg: rgba(15, 23, 42, 0.6);
+        --sim-card-soft-bg: rgba(15, 23, 42, 0.4);
+        --sim-border: rgba(71, 85, 105, 0.55);
+        --sim-border-strong: rgba(100, 116, 139, 0.8);
+        --sim-text: #f1f5f9;
+        --sim-muted: #94a3b8;
+        --sim-input-bg: rgba(2, 6, 23, 0.82);
+        --sim-input-border: rgba(71, 85, 105, 0.9);
+        --sim-accent: #22d3ee;
+        --sim-accent-alt: #6366f1;
+        --sim-accent-soft: rgba(34, 211, 238, 0.16);
+        --sim-accent-text: #082f49;
+        --sim-btn-muted-bg: rgba(15, 23, 42, 0.8);
+        --sim-btn-muted-text: #e2e8f0;
+        --sim-nav-text: #cbd5e1;
+        --sim-pitch-bg: #0a1833;
+        --sim-font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+        --sim-font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+        --sim-body-size: 1rem;
+        --sim-line-height: 1.45;
+        --sim-heading-spacing: -0.01em;
+        --sim-card-radius: 1rem;
+        --sim-card-soft-radius: 0.875rem;
+        --sim-control-radius: 0.75rem;
+        --sim-nav-radius: 0.75rem;
+        --sim-control-pad-y: 0.62rem;
+        --sim-control-pad-x: 0.78rem;
+        --sim-control-font-size: 0.92rem;
+        --sim-btn-pad-y: 0.62rem;
+        --sim-btn-pad-x: 1rem;
+        --sim-btn-font-size: 0.88rem;
+        --sim-nav-pad-y: 0.58rem;
+        --sim-nav-pad-x: 0.72rem;
+        --sim-nav-font-size: 0.9rem;
+        --sim-pill-pad-y: 0.27rem;
+        --sim-pill-pad-x: 0.66rem;
+        --sim-card-shadow: 0 24px 60px -30px rgba(6, 11, 27, 0.8);
+    }
+
+    body[data-layout-theme='compact'] {
+        --sim-shell-bg: radial-gradient(circle at top left, #123e3a 0%, #0b2724 45%, #061513 82%);
+        --sim-card-bg: rgba(8, 29, 25, 0.66);
+        --sim-card-soft-bg: rgba(12, 39, 33, 0.5);
+        --sim-border: rgba(45, 120, 97, 0.58);
+        --sim-border-strong: rgba(52, 211, 153, 0.45);
+        --sim-text: #ecfdf5;
+        --sim-muted: #9fd8c2;
+        --sim-input-bg: rgba(3, 22, 19, 0.86);
+        --sim-input-border: rgba(45, 120, 97, 0.86);
+        --sim-accent: #34d399;
+        --sim-accent-alt: #0ea5a1;
+        --sim-accent-soft: rgba(52, 211, 153, 0.2);
+        --sim-accent-text: #022c22;
+        --sim-btn-muted-bg: rgba(8, 29, 25, 0.86);
+        --sim-btn-muted-text: #d1fae5;
+        --sim-nav-text: #c7f9e6;
+        --sim-pitch-bg: #0a2b2a;
+        --sim-font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+        --sim-font-heading: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+        --sim-body-size: 0.96rem;
+        --sim-line-height: 1.35;
+        --sim-heading-spacing: 0;
+        --sim-card-radius: 0.7rem;
+        --sim-card-soft-radius: 0.62rem;
+        --sim-control-radius: 0.62rem;
+        --sim-nav-radius: 0.62rem;
+        --sim-control-pad-y: 0.5rem;
+        --sim-control-pad-x: 0.68rem;
+        --sim-control-font-size: 0.86rem;
+        --sim-btn-pad-y: 0.5rem;
+        --sim-btn-pad-x: 0.86rem;
+        --sim-btn-font-size: 0.82rem;
+        --sim-nav-pad-y: 0.46rem;
+        --sim-nav-pad-x: 0.62rem;
+        --sim-nav-font-size: 0.84rem;
+        --sim-pill-pad-y: 0.18rem;
+        --sim-pill-pad-x: 0.52rem;
+        --sim-card-shadow: 0 14px 34px -22px rgba(2, 12, 10, 0.78);
+    }
+
+    body[data-layout-theme='classic'] {
+        --sim-shell-bg: radial-gradient(circle at top left, #4a3420 0%, #2a1e2f 48%, #18131d 86%);
+        --sim-card-bg: rgba(49, 34, 23, 0.72);
+        --sim-card-soft-bg: rgba(64, 45, 29, 0.58);
+        --sim-border: rgba(191, 149, 89, 0.52);
+        --sim-border-strong: rgba(245, 158, 11, 0.45);
+        --sim-text: #fef3c7;
+        --sim-muted: #e7cfa0;
+        --sim-input-bg: rgba(41, 28, 19, 0.86);
+        --sim-input-border: rgba(191, 149, 89, 0.7);
+        --sim-accent: #f59e0b;
+        --sim-accent-alt: #d97706;
+        --sim-accent-soft: rgba(245, 158, 11, 0.2);
+        --sim-accent-text: #2f1c04;
+        --sim-btn-muted-bg: rgba(49, 34, 23, 0.88);
+        --sim-btn-muted-text: #ffedd5;
+        --sim-nav-text: #fde3ba;
+        --sim-pitch-bg: #2d2217;
+        --sim-font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+        --sim-font-heading: 'Merriweather', ui-serif, Georgia, serif;
+        --sim-body-size: 1.02rem;
+        --sim-line-height: 1.55;
+        --sim-heading-spacing: 0.012em;
+        --sim-card-radius: 1.2rem;
+        --sim-card-soft-radius: 1rem;
+        --sim-control-radius: 0.58rem;
+        --sim-nav-radius: 0.58rem;
+        --sim-control-pad-y: 0.64rem;
+        --sim-control-pad-x: 0.86rem;
+        --sim-control-font-size: 0.9rem;
+        --sim-btn-pad-y: 0.64rem;
+        --sim-btn-pad-x: 1.08rem;
+        --sim-btn-font-size: 0.88rem;
+        --sim-nav-pad-y: 0.54rem;
+        --sim-nav-pad-x: 0.72rem;
+        --sim-nav-font-size: 0.88rem;
+        --sim-pill-pad-y: 0.24rem;
+        --sim-pill-pad-x: 0.62rem;
+        --sim-card-shadow: 0 26px 56px -30px rgba(38, 20, 5, 0.75);
+    }
+
     body {
-        @apply bg-[#060a18] text-slate-100 antialiased;
-        font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+        @apply bg-[#060a18] antialiased;
+        color: var(--sim-text);
+        font-family: var(--sim-font-body);
+        font-size: var(--sim-body-size);
+        line-height: var(--sim-line-height);
+        transition: background 180ms ease, color 180ms ease;
     }
 
     h1,
@@ -14,7 +141,8 @@
     h4,
     h5,
     h6 {
-        font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+        font-family: var(--sim-font-heading);
+        letter-spacing: var(--sim-heading-spacing);
     }
 }
 
@@ -73,6 +201,26 @@
 
     .sim-pill {
         @apply inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-200;
+    }
+
+    .sim-avatar {
+        @apply rounded-full border border-slate-700/80 bg-slate-900/60 object-cover;
+    }
+
+    .sim-avatar-xs {
+        @apply h-6 w-6;
+    }
+
+    .sim-avatar-sm {
+        @apply h-8 w-8;
+    }
+
+    .sim-avatar-md {
+        @apply h-10 w-10;
+    }
+
+    .sim-avatar-lg {
+        @apply h-14 w-14;
     }
 
     .sim-table th {
@@ -151,8 +299,31 @@
         @apply inline-flex items-center gap-1 rounded-full border border-slate-600/80 bg-slate-900/70 px-2.5 py-1 text-[11px] font-semibold text-slate-200;
     }
 
+    .sim-match-hero {
+        @apply relative overflow-hidden;
+        background-image:
+            radial-gradient(circle at 10% 10%, rgba(34, 211, 238, 0.08), transparent 45%),
+            radial-gradient(circle at 85% 20%, rgba(99, 102, 241, 0.12), transparent 42%);
+    }
+
+    .sim-match-tabbar {
+        @apply flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1;
+    }
+
+    .sim-match-tabbar > * {
+        @apply shrink-0 snap-start;
+    }
+
+    .sim-match-section-header {
+        @apply flex flex-wrap items-center justify-between gap-2;
+    }
+
+    .sim-match-scroll {
+        @apply max-h-[28rem] overflow-y-auto pr-1;
+    }
+
     .sim-ticker-row {
-        @apply flex items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3;
+        @apply grid grid-cols-[auto_1fr_auto] items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-3;
     }
 
     .sim-ticker-dot {
@@ -163,13 +334,138 @@
         @apply text-xs font-semibold text-cyan-200;
     }
 
+    .sim-player-card {
+        @apply cursor-grab transition;
+    }
+
+    .sim-player-card:active {
+        @apply cursor-grabbing;
+    }
+
+    .sim-player-card-active {
+        @apply border-cyan-400/50 bg-cyan-400/10;
+    }
+
+    .sim-player-card-dragging {
+        @apply opacity-60;
+    }
+
+    .sim-card-action {
+        @apply rounded-md border border-slate-600/80 bg-slate-900/70 px-2 py-1 text-[11px] font-semibold text-slate-200 transition hover:border-cyan-400/60 hover:text-cyan-100;
+    }
+
+    .sim-bench-slot {
+        @apply rounded-xl border border-slate-700/60 bg-slate-950/45 p-2 transition;
+    }
+
+    .sim-bench-slot-title {
+        @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400;
+    }
+
+    .sim-slot-player {
+        @apply mt-1 flex items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/80 px-2 py-1;
+    }
+
+    .sim-slot-player-name {
+        @apply truncate text-xs font-semibold text-white;
+    }
+
+    .sim-slot-remove {
+        @apply rounded-md border border-slate-500/70 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-300 transition hover:border-rose-300 hover:text-rose-200;
+    }
+
+    .sim-slot-hint {
+        @apply mt-1 text-[11px] text-slate-500;
+    }
+
+    .sim-slot-drop-hover {
+        @apply border-cyan-400/80 bg-cyan-500/10;
+    }
+
+    .sim-slot-state-primary {
+        @apply border-emerald-400/70 bg-emerald-500/10;
+    }
+
+    .sim-slot-state-secondary {
+        @apply border-amber-400/70 bg-amber-500/10;
+    }
+
+    .sim-slot-state-wrong {
+        @apply border-rose-400/70 bg-rose-500/10;
+    }
+
+    .sim-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .sim-switch-track {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        border-radius: 9999px;
+        border: 1px solid rgba(100, 116, 139, 0.8);
+        background: rgba(15, 23, 42, 0.9);
+        transition: all 140ms ease;
+    }
+
+    .sim-switch-track::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: rgba(148, 163, 184, 0.95);
+        transition: transform 140ms ease, background 140ms ease;
+    }
+
+    .sim-switch > input:checked + .sim-switch-track {
+        border-color: rgba(34, 211, 238, 0.75);
+        background: rgba(8, 145, 178, 0.28);
+    }
+
+    .sim-switch > input:checked + .sim-switch-track::after {
+        transform: translateX(20px);
+        background: rgba(103, 232, 249, 1);
+    }
+
+    .sim-switch-label {
+        @apply text-xs font-semibold uppercase tracking-[0.12em] text-slate-300;
+    }
+
+    .sim-dropzone {
+        @apply flex items-center justify-between gap-2 rounded-lg border border-dashed border-slate-600/80 bg-slate-950/45 px-2 py-1.5;
+        min-height: 2rem;
+    }
+
+    .sim-dropzone-label {
+        @apply truncate text-xs font-semibold text-slate-200;
+    }
+
+    .sim-dropzone-clear {
+        @apply rounded-md border border-slate-500/70 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-300 transition hover:border-rose-300 hover:text-rose-200;
+    }
+
+    .sim-dropzone-over {
+        @apply border-cyan-400 bg-cyan-500/10;
+    }
+
+    .sim-dropzone-filled {
+        @apply border-cyan-500/70 bg-cyan-500/10;
+    }
+
     .sim-table tbody tr {
         @apply border-t border-slate-800/80;
     }
 
     .sim-pitch {
         @apply relative overflow-hidden rounded-2xl border border-slate-700/70 bg-[#0a1833];
-        min-height: 560px;
+        min-height: 420px;
         background-image:
             radial-gradient(circle at 50% 50%, rgba(15, 36, 71, 0.7), rgba(8, 21, 42, 0.95)),
             repeating-linear-gradient(
@@ -182,11 +478,13 @@
     }
 
     .sim-pitch-canvas {
-        @apply relative h-full min-h-[560px] w-full;
+        @apply relative h-full w-full;
+        min-height: 420px;
     }
 
     .sim-pitch-slot {
-        @apply absolute w-44 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-700/80 bg-slate-950/65 p-2;
+        @apply absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-700/80 bg-slate-950/65 p-2;
+        width: min(38vw, 11rem);
     }
 
     .sim-pitch-slot-label {
@@ -195,5 +493,173 @@
 
     .sim-pitch-select {
         @apply sim-select w-full py-1.5 text-xs;
+    }
+
+    @media (min-width: 640px) {
+        .sim-pitch,
+        .sim-pitch-canvas {
+            min-height: 520px;
+        }
+
+        .sim-pitch-slot {
+            width: min(30vw, 11rem);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .sim-pitch,
+        .sim-pitch-canvas {
+            min-height: 560px;
+        }
+
+        .sim-pitch-slot {
+            width: 11rem;
+        }
+    }
+
+    .sim-shell {
+        background: var(--sim-shell-bg) !important;
+        color: var(--sim-text);
+        transition: background 200ms ease, color 200ms ease;
+    }
+
+    .sim-card {
+        border-color: var(--sim-border) !important;
+        background: var(--sim-card-bg) !important;
+        border-radius: var(--sim-card-radius) !important;
+        box-shadow: var(--sim-card-shadow) !important;
+        transition: border-radius 180ms ease, box-shadow 180ms ease;
+    }
+
+    .sim-card-soft {
+        border-color: var(--sim-border) !important;
+        background: var(--sim-card-soft-bg) !important;
+        border-radius: var(--sim-card-soft-radius) !important;
+        transition: border-radius 180ms ease;
+    }
+
+    .sim-label,
+    .sim-section-title {
+        color: var(--sim-muted) !important;
+    }
+
+    .sim-input,
+    .sim-select,
+    .sim-textarea {
+        border-color: var(--sim-input-border) !important;
+        background: var(--sim-input-bg) !important;
+        color: var(--sim-text) !important;
+        border-radius: var(--sim-control-radius) !important;
+        padding: var(--sim-control-pad-y) var(--sim-control-pad-x) !important;
+        font-size: var(--sim-control-font-size) !important;
+        line-height: 1.3 !important;
+        transition: border-radius 180ms ease, padding 180ms ease, font-size 180ms ease;
+    }
+
+    .sim-input::placeholder,
+    .sim-textarea::placeholder {
+        color: color-mix(in srgb, var(--sim-muted) 72%, transparent) !important;
+    }
+
+    .sim-input:focus,
+    .sim-select:focus,
+    .sim-textarea:focus {
+        border-color: var(--sim-accent) !important;
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--sim-accent) 36%, transparent) !important;
+    }
+
+    .sim-btn-primary {
+        border-color: color-mix(in srgb, var(--sim-accent) 45%, transparent) !important;
+        background: linear-gradient(90deg, var(--sim-accent), var(--sim-accent-alt)) !important;
+        color: var(--sim-accent-text) !important;
+        border-radius: var(--sim-control-radius) !important;
+        padding: var(--sim-btn-pad-y) var(--sim-btn-pad-x) !important;
+        font-size: var(--sim-btn-font-size) !important;
+        transition: border-radius 180ms ease, padding 180ms ease, font-size 180ms ease;
+    }
+
+    .sim-btn-muted {
+        border-color: var(--sim-border-strong) !important;
+        background: var(--sim-btn-muted-bg) !important;
+        color: var(--sim-btn-muted-text) !important;
+        border-radius: var(--sim-control-radius) !important;
+        padding: var(--sim-btn-pad-y) var(--sim-btn-pad-x) !important;
+        font-size: var(--sim-btn-font-size) !important;
+        transition: border-radius 180ms ease, padding 180ms ease, font-size 180ms ease;
+    }
+
+    .sim-btn-danger {
+        border-radius: var(--sim-control-radius) !important;
+        padding: var(--sim-btn-pad-y) var(--sim-btn-pad-x) !important;
+        font-size: var(--sim-btn-font-size) !important;
+        transition: border-radius 180ms ease, padding 180ms ease, font-size 180ms ease;
+    }
+
+    .sim-btn-muted:hover {
+        border-color: var(--sim-accent) !important;
+        background: color-mix(in srgb, var(--sim-btn-muted-bg) 72%, var(--sim-accent-soft)) !important;
+    }
+
+    .sim-nav-item {
+        color: var(--sim-nav-text) !important;
+        border-radius: var(--sim-nav-radius) !important;
+        padding: var(--sim-nav-pad-y) var(--sim-nav-pad-x) !important;
+        font-size: var(--sim-nav-font-size) !important;
+        transition: border-radius 180ms ease, padding 180ms ease, font-size 180ms ease;
+    }
+
+    .sim-nav-item:hover {
+        border-color: var(--sim-border-strong) !important;
+        background: color-mix(in srgb, var(--sim-card-soft-bg) 78%, var(--sim-accent-soft)) !important;
+    }
+
+    .sim-nav-item-active {
+        border-color: color-mix(in srgb, var(--sim-accent) 50%, transparent) !important;
+        background: color-mix(in srgb, var(--sim-card-bg) 80%, var(--sim-accent-soft)) !important;
+        color: var(--sim-text) !important;
+    }
+
+    .sim-pill,
+    .sim-tab-active,
+    .sim-dropzone-filled,
+    .sim-player-card-active {
+        border-color: color-mix(in srgb, var(--sim-accent) 52%, transparent) !important;
+        background: color-mix(in srgb, var(--sim-accent-soft) 72%, transparent) !important;
+        color: var(--sim-text) !important;
+    }
+
+    .sim-pill {
+        border-radius: 999px !important;
+        padding: var(--sim-pill-pad-y) var(--sim-pill-pad-x) !important;
+        transition: padding 180ms ease;
+    }
+
+    .sim-tab-active {
+        border-radius: var(--sim-nav-radius) !important;
+    }
+
+    .sim-tab-link-active {
+        border-color: var(--sim-accent) !important;
+    }
+
+    .sim-page-link {
+        color: var(--sim-muted) !important;
+    }
+
+    .sim-page-link:hover {
+        color: var(--sim-accent) !important;
+    }
+
+    .sim-pitch {
+        border-color: var(--sim-border-strong) !important;
+        background: var(--sim-pitch-bg) !important;
+    }
+
+    .sim-pitch-slot {
+        border-color: var(--sim-border) !important;
+    }
+
+    .sim-pitch-slot-label {
+        color: var(--sim-accent) !important;
     }
 }

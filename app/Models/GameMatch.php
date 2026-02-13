@@ -27,6 +27,11 @@ class GameMatch extends Model
         'live_minute',
         'live_paused',
         'live_error_message',
+        'live_processing_token',
+        'live_processing_started_at',
+        'live_processing_last_run_at',
+        'live_processing_attempts',
+        'live_processing_last_error',
         'live_last_tick_at',
         'home_club_id',
         'away_club_id',
@@ -48,6 +53,9 @@ class GameMatch extends Model
             'kickoff_at' => 'datetime',
             'played_at' => 'datetime',
             'live_last_tick_at' => 'datetime',
+            'live_processing_started_at' => 'datetime',
+            'live_processing_last_run_at' => 'datetime',
+            'live_processing_attempts' => 'integer',
             'extra_time' => 'boolean',
             'live_paused' => 'boolean',
         ];
@@ -106,6 +114,21 @@ class GameMatch extends Model
             ->orderBy('minute')
             ->orderBy('second')
             ->orderBy('sequence');
+    }
+
+    public function liveStateTransitions(): HasMany
+    {
+        return $this->hasMany(MatchLiveStateTransition::class, 'match_id')
+            ->orderBy('minute')
+            ->orderBy('second')
+            ->orderBy('id');
+    }
+
+    public function liveMinuteSnapshots(): HasMany
+    {
+        return $this->hasMany(MatchLiveMinuteSnapshot::class, 'match_id')
+            ->orderBy('minute')
+            ->orderBy('id');
     }
 
     public function plannedSubstitutions(): HasMany

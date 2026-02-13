@@ -26,9 +26,13 @@
                         <div class="sim-card-soft p-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
-                                    <p class="text-sm text-slate-300">
-                                        {{ $listing->player->club->name }} | OVR {{ $listing->player->overall }}
+                                    <div class="flex items-center gap-2">
+                                        <img class="sim-avatar sim-avatar-sm" src="{{ $listing->player->photo_url }}" alt="{{ $listing->player->full_name }}">
+                                        <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
+                                    </div>
+                                    <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                                        <img class="sim-avatar sim-avatar-xs" src="{{ $listing->player->club->logo_url }}" alt="{{ $listing->player->club->name }}">
+                                        <span>{{ $listing->player->club->name }} | OVR {{ $listing->player->overall }}</span>
                                     </p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         <span class="sim-pill">Min {{ number_format((float) $listing->min_price, 0, ',', '.') }} EUR</span>
@@ -97,12 +101,15 @@
         @else
             <div class="mt-4 space-y-3">
                 @foreach ($myListings as $listing)
-                    <div class="sim-card-soft p-4">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                                <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
-                                <p class="text-sm text-slate-300">Status: {{ $listing->status }} | Gebote: {{ $listing->bids->count() }}</p>
-                            </div>
+                        <div class="sim-card-soft p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <img class="sim-avatar sim-avatar-sm" src="{{ $listing->player->photo_url }}" alt="{{ $listing->player->full_name }}">
+                                        <p class="font-semibold text-white">{{ $listing->player->full_name }}</p>
+                                    </div>
+                                    <p class="text-sm text-slate-300">Status: {{ $listing->status }} | Gebote: {{ $listing->bids->count() }}</p>
+                                </div>
                             @if ($listing->status === 'open')
                                 <form method="POST" action="{{ route('transfers.listings.close', $listing) }}">
                                     @csrf
@@ -115,7 +122,10 @@
                                 @foreach ($listing->bids as $bid)
                                     <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/70 px-3 py-2 text-sm">
                                         <div>
-                                            <span class="font-semibold text-white">{{ $bid->bidderClub->name }}</span>
+                                            <span class="inline-flex items-center gap-2 font-semibold text-white">
+                                                <img class="sim-avatar sim-avatar-xs" src="{{ $bid->bidderClub->logo_url }}" alt="{{ $bid->bidderClub->name }}">
+                                                {{ $bid->bidderClub->name }}
+                                            </span>
                                             <span class="text-slate-300">bietet {{ number_format((float) $bid->amount, 0, ',', '.') }} EUR</span>
                                         </div>
                                         @if ($bid->status === 'pending')

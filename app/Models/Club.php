@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Club extends Model
 {
@@ -29,7 +30,11 @@ class Club extends Model
         'fanbase',
         'board_confidence',
         'training_level',
+        'season_objective',
+        'captain_player_id',
+        'vice_captain_player_id',
         'budget',
+        'coins',
         'wage_budget',
         'notes',
     ];
@@ -38,6 +43,7 @@ class Club extends Model
     {
         return [
             'budget' => 'decimal:2',
+            'coins' => 'integer',
             'wage_budget' => 'decimal:2',
             'fanbase' => 'integer',
             'board_confidence' => 'integer',
@@ -49,6 +55,16 @@ class Club extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function captain(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'captain_player_id');
+    }
+
+    public function viceCaptain(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'vice_captain_player_id');
     }
 
     public function players(): HasMany
@@ -156,5 +172,18 @@ class Club extends Model
     public function friendlyRequestsAsChallenged(): HasMany
     {
         return $this->hasMany(FriendlyMatchRequest::class, 'challenged_club_id');
+    }
+
+    public function getLogoUrlAttribute(): string
+    {
+        if (!$this->logo_path) {
+            return asset('images/placeholders/club.svg');
+        }
+
+        if (str_starts_with($this->logo_path, 'http://') || str_starts_with($this->logo_path, 'https://')) {
+            return $this->logo_path;
+        }
+
+        return Storage::url($this->logo_path);
     }
 }

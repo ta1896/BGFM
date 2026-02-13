@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class StadiumService
 {
+    public function __construct(private readonly ClubFinanceLedgerService $financeLedger)
+    {
+    }
+
     public function ensureForClub(Club $club): Stadium
     {
         return Stadium::firstOrCreate(
@@ -55,21 +59,12 @@ class StadiumService
                 'status' => 'active',
             ]);
 
-            $club->decrement('budget', $cost);
-
-            DB::table('club_financial_transactions')->insert([
-                'club_id' => $club->id,
+            $this->financeLedger->applyBudgetChange($club, -$cost, [
                 'user_id' => $actor->id,
                 'context_type' => 'stadium',
-                'direction' => 'expense',
-                'amount' => $cost,
-                'balance_after' => $club->fresh()->budget,
                 'reference_type' => 'stadium_projects',
                 'reference_id' => $project->id,
-                'booked_at' => now(),
                 'note' => 'Stadionprojekt: '.strtoupper($type),
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             return $project;

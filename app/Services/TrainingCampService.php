@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\DB;
 
 class TrainingCampService
 {
+    public function __construct(private readonly ClubFinanceLedgerService $financeLedger)
+    {
+    }
+
     public function createCamp(Club $club, User $actor, array $payload): TrainingCamp
     {
         $startsOn = \Carbon\Carbon::parse($payload['starts_on']);
@@ -49,21 +53,12 @@ class TrainingCampService
                 'notes' => $payload['notes'] ?? null,
             ]);
 
-            $club->decrement('budget', $cost);
-
-            DB::table('club_financial_transactions')->insert([
-                'club_id' => $club->id,
+            $this->financeLedger->applyBudgetChange($club, -$cost, [
                 'user_id' => $actor->id,
                 'context_type' => 'training',
-                'direction' => 'expense',
-                'amount' => $cost,
-                'balance_after' => $club->fresh()->budget,
                 'reference_type' => 'training_camps',
                 'reference_id' => $camp->id,
-                'booked_at' => now(),
                 'note' => 'Trainingslager: '.$camp->name,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             return $camp;

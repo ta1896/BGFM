@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Models\MatchLivePlayerState;
 use App\Models\Player;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -122,6 +123,116 @@ class MatchLineupAndFriendliesTest extends TestCase
             'match_id' => null,
             'name' => 'FS 4-4-2',
             'is_template' => 1,
+        ]);
+    }
+
+    public function test_live_match_lineup_update_syncs_live_player_state(): void
+    {
+        $user = User::factory()->create();
+        $cpuUser = User::factory()->create();
+
+        $club = $this->createClub($user, 'Live Planner FC', false);
+        $awayClub = $this->createClub($cpuUser, 'Live Opp FC', true);
+
+        $match = GameMatch::create([
+            'type' => 'friendly',
+            'stage' => 'Friendly',
+            'kickoff_at' => now()->subMinutes(10),
+            'status' => 'live',
+            'home_club_id' => $club->id,
+            'away_club_id' => $awayClub->id,
+            'stadium_club_id' => $club->id,
+            'simulation_seed' => 22222,
+            'live_minute' => 20,
+        ]);
+
+        $players = collect();
+        foreach (range(1, 16) as $i) {
+            $position = $i === 1 ? 'TW' : ($i <= 6 ? 'IV' : ($i <= 12 ? 'ZM' : 'ST'));
+            $players->push($this->createPlayer($club, 'L'.$i, $position, 62 + $i));
+        }
+
+        $oldStarterSlots = [
+            'TW' => $players[0]->id,
+            'LV' => $players[1]->id,
+            'IV-L' => $players[2]->id,
+            'IV-R' => $players[3]->id,
+            'RV' => $players[4]->id,
+            'LM' => $players[6]->id,
+            'ZM-L' => $players[7]->id,
+            'ZM-R' => $players[8]->id,
+            'RM' => $players[9]->id,
+            'ST-L' => $players[13]->id,
+            'ST-R' => $players[14]->id,
+        ];
+
+        foreach ($oldStarterSlots as $slot => $playerId) {
+            MatchLivePlayerState::create([
+                'match_id' => $match->id,
+                'club_id' => $club->id,
+                'player_id' => $playerId,
+                'slot' => $slot,
+                'is_on_pitch' => true,
+                'fit_factor' => 1.00,
+            ]);
+        }
+
+        $oldBenchIds = [$players[5]->id, $players[10]->id, $players[11]->id, $players[12]->id, $players[15]->id];
+        foreach ($oldBenchIds as $index => $playerId) {
+            MatchLivePlayerState::create([
+                'match_id' => $match->id,
+                'club_id' => $club->id,
+                'player_id' => $playerId,
+                'slot' => 'BANK-'.($index + 1),
+                'is_on_pitch' => false,
+                'fit_factor' => 1.00,
+            ]);
+        }
+
+        $newStarterSlots = $oldStarterSlots;
+        $newStarterSlots['LV'] = $players[11]->id;
+
+        $payload = [
+            'club_id' => $club->id,
+            'formation' => '4-4-2',
+            'tactical_style' => 'offensive',
+            'attack_focus' => 'center',
+            'captain_player_id' => $players[7]->id,
+            'starter_slots' => $newStarterSlots,
+            'bench_slots' => [$players[1]->id, $players[5]->id, $players[10]->id, $players[12]->id, $players[15]->id],
+            'action' => 'save_match',
+        ];
+
+        $this->actingAs($user)
+            ->post(route('matches.lineup.update', ['match' => $match->id, 'club' => $club->id]), $payload)
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('lineups', [
+            'club_id' => $club->id,
+            'match_id' => $match->id,
+            'tactical_style' => 'offensive',
+        ]);
+
+        $this->assertDatabaseHas('match_live_player_states', [
+            'match_id' => $match->id,
+            'club_id' => $club->id,
+            'player_id' => $players[11]->id,
+            'slot' => 'LV',
+            'is_on_pitch' => 1,
+        ]);
+
+        $this->assertDatabaseHas('match_live_player_states', [
+            'match_id' => $match->id,
+            'club_id' => $club->id,
+            'player_id' => $players[1]->id,
+            'slot' => 'BANK-1',
+            'is_on_pitch' => 0,
+        ]);
+
+        $this->assertDatabaseHas('match_live_team_states', [
+            'match_id' => $match->id,
+            'club_id' => $club->id,
+            'tactical_style' => 'offensive',
         ]);
     }
 

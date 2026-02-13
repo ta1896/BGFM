@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class SponsorService
 {
+    public function __construct(private readonly ClubFinanceLedgerService $financeLedger)
+    {
+    }
+
     /**
      * @return Collection<int, Sponsor>
      */
@@ -66,21 +70,12 @@ class SponsorService
                 ],
             ]);
 
-            $club->increment('budget', $signingBonus);
-
-            DB::table('club_financial_transactions')->insert([
-                'club_id' => $club->id,
+            $this->financeLedger->applyBudgetChange($club, $signingBonus, [
                 'user_id' => $actor->id,
                 'context_type' => 'sponsor',
-                'direction' => 'income',
-                'amount' => $signingBonus,
-                'balance_after' => $club->fresh()->budget,
                 'reference_type' => 'sponsor_contracts',
                 'reference_id' => $contract->id,
-                'booked_at' => now(),
                 'note' => 'Signing Bonus: '.$sponsor->name,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             if ($club->user_id) {

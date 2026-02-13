@@ -24,6 +24,12 @@
             <p class="text-slate-300">Kein Verein vorhanden.</p>
         </section>
     @else
+        <section class="sim-card p-4">
+            <p class="flex items-center gap-2 text-sm text-slate-300">
+                <img class="sim-avatar sim-avatar-sm" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
+                <span>{{ $activeClub->name }}</span>
+            </p>
+        </section>
         <section class="grid gap-4 xl:grid-cols-3">
             <article class="sim-card p-5">
                 <p class="sim-section-title">Aktiver Sponsor</p>

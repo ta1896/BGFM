@@ -14,6 +14,7 @@ class ClubFinancialTransaction extends Model
         'club_id',
         'user_id',
         'context_type',
+        'asset_type',
         'direction',
         'amount',
         'balance_after',

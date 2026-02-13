@@ -23,60 +23,54 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="space-y-4" id="match-live-root" data-match-id="{{ $match->id }}">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="sim-info-pill">Stadion {{ $match->stadiumClub?->name ?? 'n/a' }}</span>
-                <span class="sim-info-pill">
-                    Zuschauer <span id="live-attendance">{{ $match->attendance ? number_format($match->attendance, 0, ',', '.') : '0' }}</span>
-                </span>
-                <span class="sim-info-pill">Wetter {{ $match->weather ?? 'n/a' }}</span>
-            </div>
-
-            <div class="sim-card p-5">
-                <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="sim-card sim-match-hero p-4 sm:p-5">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
                     <div class="flex items-center gap-3">
-                        @if ($match->homeClub->logo_path)
-                            <img class="h-12 w-12 rounded-full border border-slate-700/80 bg-slate-900/60 object-cover"
-                                 src="{{ Storage::url($match->homeClub->logo_path) }}"
-                                 alt="">
-                        @else
-                            <span class="h-12 w-12 rounded-full border border-slate-700/80 bg-slate-900/60"></span>
-                        @endif
+                        <img class="sim-avatar sim-avatar-lg"
+                             src="{{ $match->homeClub->logo_url }}"
+                             alt="{{ $match->homeClub->name }}">
                         <div>
-                            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Heim</p>
-                            <p class="text-lg font-semibold text-white">{{ $match->homeClub->name }}</p>
+                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Heim</p>
+                            <p class="text-lg font-semibold text-white sm:text-xl">{{ $match->homeClub->name }}</p>
                         </div>
                     </div>
 
                     <div class="text-center">
-                        <div class="text-4xl font-bold text-white" id="live-score">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Matchcenter</p>
+                        <div class="mt-1 text-4xl font-bold leading-none text-white sm:text-5xl" id="live-score">
                             {{ $match->home_score ?? 0 }} : {{ $match->away_score ?? 0 }}
                         </div>
-                        <span class="sim-status-badge" id="live-status">* {{ $statusLabel }}</span>
-                        <p class="mt-2 text-sm text-slate-300">
-                            Minute <span id="live-minute">{{ (int) $match->live_minute }}</span>'
-                        </p>
-                        <p class="mt-1 text-xs text-rose-300" id="live-error">{{ $match->live_error_message }}</p>
+                        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                            <span class="sim-status-badge" id="live-status">* {{ $statusLabel }}</span>
+                            <span class="sim-status-badge">Minute <span id="live-minute">{{ (int) $match->live_minute }}</span>'</span>
+                        </div>
+                        <p class="mt-2 text-xs text-rose-300" id="live-error">{{ $match->live_error_message }}</p>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
-                            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Auswaerts</p>
-                            <p class="text-lg font-semibold text-white">{{ $match->awayClub->name }}</p>
+                    <div class="flex items-center gap-3 lg:justify-end">
+                        <div class="lg:text-right">
+                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Auswaerts</p>
+                            <p class="text-lg font-semibold text-white sm:text-xl">{{ $match->awayClub->name }}</p>
                         </div>
-                        @if ($match->awayClub->logo_path)
-                            <img class="h-12 w-12 rounded-full border border-slate-700/80 bg-slate-900/60 object-cover"
-                                 src="{{ Storage::url($match->awayClub->logo_path) }}"
-                                 alt="">
-                        @else
-                            <span class="h-12 w-12 rounded-full border border-slate-700/80 bg-slate-900/60"></span>
-                        @endif
+                        <img class="sim-avatar sim-avatar-lg"
+                             src="{{ $match->awayClub->logo_url }}"
+                             alt="{{ $match->awayClub->name }}">
                     </div>
+                </div>
+
+                <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <span class="sim-info-pill">Stadion {{ $match->stadiumClub?->name ?? 'n/a' }}</span>
+                    <span class="sim-info-pill">
+                        Zuschauer <span id="live-attendance">{{ $match->attendance ? number_format($match->attendance, 0, ',', '.') : '0' }}</span>
+                    </span>
+                    <span class="sim-info-pill">Wetter {{ $match->weather ?? 'n/a' }}</span>
                 </div>
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('league.matches', ['competition_season' => $match->competition_season_id]) }}" class="sim-btn-muted">Zurueck</a>
+            <div class="sim-card-soft p-3 sm:p-4">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <a href="{{ route('league.matches', ['competition_season' => $match->competition_season_id]) }}" class="sim-btn-muted">Zurueck zur Spieltagsliste</a>
                     @if ($match->status !== 'played')
                         @foreach ($manageableClubIds as $clubId)
                             <a href="{{ route('matches.lineup.edit', ['match' => $match->id, 'club' => $clubId]) }}" class="sim-btn-muted">
@@ -84,13 +78,14 @@
                             </a>
                         @endforeach
                     @endif
-                </div>
+                    </div>
 
-                @if ($canSimulate && $match->status !== 'played')
-                    <p class="text-xs text-slate-300">
-                        Live-Ticker wird automatisch per Cronjob fortgeschrieben.
-                    </p>
-                @endif
+                    @if ($canSimulate && $match->status !== 'played')
+                        <p class="text-xs text-slate-300">
+                            Live-Ticker wird automatisch per Cronjob fortgeschrieben.
+                        </p>
+                    @endif
+                </div>
             </div>
 
             @if ($canSimulate && $match->status !== 'played')
@@ -99,13 +94,13 @@
                         <p class="sim-section-title">Live Eingriff: Taktik</p>
                         <button type="button" class="sim-btn-muted hidden" id="live-resume-btn">Simulation fortsetzen</button>
                     </div>
-                    <div class="mt-3 flex flex-wrap gap-3">
+                    <div class="mt-4 grid gap-3 xl:grid-cols-2">
                         @foreach ($manageableClubIds as $clubId)
-                            <div class="rounded border border-slate-700/80 p-3">
-                                <p class="mb-2 text-sm text-slate-300">
+                            <div class="sim-card-soft p-3 sm:p-4">
+                                <p class="mb-3 text-sm font-semibold text-slate-100">
                                     {{ $clubId === $match->home_club_id ? $match->homeClub->name : $match->awayClub->name }}
                                 </p>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                     @foreach (['balanced' => 'Balanced', 'offensive' => 'Offensiv', 'defensive' => 'Defensiv', 'counter' => 'Konter'] as $style => $label)
                                         <button
                                             type="button"
@@ -117,15 +112,13 @@
                                     @endforeach
                                 </div>
 
-                                <div class="mt-3 grid gap-2 sm:grid-cols-3">
-                                    <select class="sim-input !py-1 text-xs" data-sub-out="{{ $clubId }}"></select>
-                                    <select class="sim-input !py-1 text-xs" data-sub-in="{{ $clubId }}"></select>
-                                    <select class="sim-input !py-1 text-xs" data-sub-slot="{{ $clubId }}"></select>
-                                </div>
-                                <div class="mt-2">
+                                <div class="mt-3 grid gap-2">
+                                    <select class="sim-input !py-2 text-xs sm:text-sm" data-sub-out="{{ $clubId }}"></select>
+                                    <select class="sim-input !py-2 text-xs sm:text-sm" data-sub-in="{{ $clubId }}"></select>
+                                    <select class="sim-input !py-2 text-xs sm:text-sm" data-sub-slot="{{ $clubId }}"></select>
                                     <button
                                         type="button"
-                                        class="sim-btn-primary !px-2 !py-1 text-xs"
+                                        class="sim-btn-primary !px-2 !py-2 text-xs sm:text-sm"
                                         data-live-action="substitute"
                                         data-club-id="{{ $clubId }}"
                                     >
@@ -135,16 +128,16 @@
 
                                 <div class="mt-4 border-t border-slate-700/80 pt-3">
                                     <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Geplanter Wechsel</p>
-                                    <div class="mt-2 grid gap-2 sm:grid-cols-4">
+                                    <div class="mt-2 grid gap-2 sm:grid-cols-2">
                                         <input
                                             type="number"
                                             min="1"
                                             max="120"
                                             value="60"
-                                            class="sim-input !py-1 text-xs"
+                                            class="sim-input !py-2 text-xs sm:text-sm"
                                             data-plan-minute="{{ $clubId }}"
                                         >
-                                        <select class="sim-input !py-1 text-xs" data-plan-condition="{{ $clubId }}">
+                                        <select class="sim-input !py-2 text-xs sm:text-sm" data-plan-condition="{{ $clubId }}">
                                             <option value="any">Immer</option>
                                             <option value="leading">Bei Fuehrung</option>
                                             <option value="drawing">Bei Remis</option>
@@ -152,7 +145,7 @@
                                         </select>
                                         <button
                                             type="button"
-                                            class="sim-btn-primary !px-2 !py-1 text-xs sm:col-span-2"
+                                            class="sim-btn-primary !px-2 !py-2 text-xs sm:col-span-2 sm:text-sm"
                                             data-live-action="plan-substitute"
                                             data-club-id="{{ $clubId }}"
                                         >
@@ -171,25 +164,30 @@
         </div>
     </x-slot>
 
-    <section class="sim-card p-4">
-        <div class="flex flex-wrap gap-2">
-            @foreach (['Fan-Ticker', 'Spielfeld', 'Statistiken', 'Heatmap', 'Aufstellungen', 'Spielwerte'] as $tab)
-                <button type="button" class="sim-tab {{ $loop->first ? 'sim-tab-active' : '' }}">{{ $tab }}</button>
-            @endforeach
+    <section class="sim-card p-3 sm:p-4">
+        <div class="sim-match-tabbar">
+            <a href="#section-events" class="sim-tab sim-tab-active">Fan-Ticker</a>
+            <a href="#section-team-states" class="sim-tab">Live Spielwerte</a>
+            <a href="#section-actions" class="sim-tab">Aktionskette</a>
+            <a href="#section-ratings" class="sim-tab">Spielerbewertungen</a>
         </div>
     </section>
 
-    <section class="sim-card p-5">
-        <div class="flex items-center gap-2">
-            <span class="sim-ticker-dot"></span>
-            <p class="sim-section-title">Fan-Ticker</p>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+    <section id="section-events" class="sim-card p-5">
+        <div class="sim-match-section-header">
+            <div class="flex items-center gap-2">
+                <span class="sim-ticker-dot"></span>
+                <p class="sim-section-title">Fan-Ticker</p>
+            </div>
+            <p class="text-xs text-slate-400">Neueste Events stehen oben.</p>
         </div>
 
-        <div id="live-events-container">
+        <div class="sim-match-scroll mt-4" id="live-events-container">
             @if ($match->events->isEmpty())
-                <p class="mt-4 text-sm text-slate-300" id="live-events-empty">Noch keine Match-Events vorhanden.</p>
+                <p class="text-sm text-slate-300" id="live-events-empty">Noch keine Match-Events vorhanden.</p>
             @else
-                <div class="mt-4 space-y-2" id="live-events-list">
+                <div class="space-y-2" id="live-events-list">
                     @foreach ($match->events->sortByDesc(fn ($event) => ($event->minute * 60) + $event->second) as $event)
                         @php
                             $label = $eventLabels[$event->event_type] ?? strtoupper(str_replace('_', ' ', $event->event_type));
@@ -222,23 +220,29 @@
         </div>
     </section>
 
-    <section class="sim-card p-5">
-        <div class="flex items-center gap-2">
-            <span class="sim-ticker-dot"></span>
-            <p class="sim-section-title">Live Spielwerte</p>
+    <section id="section-team-states" class="sim-card p-5">
+        <div class="sim-match-section-header">
+            <div class="flex items-center gap-2">
+                <span class="sim-ticker-dot"></span>
+                <p class="sim-section-title">Live Spielwerte</p>
+            </div>
+            <p class="text-xs text-slate-400">Ballbesitz, Passen, xG und Defensivwerte.</p>
         </div>
-        <div class="mt-4" id="live-team-states-container">
+        <div class="sim-match-scroll mt-4" id="live-team-states-container">
             <p class="text-sm text-slate-300">Noch keine Team-Livewerte vorhanden.</p>
         </div>
     </section>
 
-    <section class="sim-card p-5">
-        <div class="flex items-center gap-2">
-            <span class="sim-ticker-dot"></span>
-            <p class="sim-section-title">Aktionskette</p>
+    <section id="section-actions" class="sim-card p-5 xl:col-span-2">
+        <div class="sim-match-section-header">
+            <div class="flex items-center gap-2">
+                <span class="sim-ticker-dot"></span>
+                <p class="sim-section-title">Aktionskette</p>
+            </div>
+            <p class="text-xs text-slate-400">Filtere nach Typ, Verein oder Spieler.</p>
         </div>
-        <div class="mt-3 grid gap-2 sm:grid-cols-4">
-            <select id="action-filter-type" class="sim-input !py-1 text-xs">
+        <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <select id="action-filter-type" class="sim-input !py-2 text-xs sm:text-sm">
                 <option value="">Alle Aktionstypen</option>
                 <option value="possession">Ballbesitz</option>
                 <option value="pass">Pass</option>
@@ -253,53 +257,57 @@
                 <option value="tactical_change">Taktikwechsel</option>
                 <option value="penalty_shootout">Elfmeterschiessen</option>
             </select>
-            <select id="action-filter-club" class="sim-input !py-1 text-xs">
+            <select id="action-filter-club" class="sim-input !py-2 text-xs sm:text-sm">
                 <option value="">Alle Vereine</option>
                 <option value="{{ $match->home_club_id }}">{{ $match->homeClub->name }}</option>
                 <option value="{{ $match->away_club_id }}">{{ $match->awayClub->name }}</option>
             </select>
-            <input id="action-filter-query" class="sim-input !py-1 text-xs" type="text" placeholder="Spieler/Ergebnis filtern">
-            <button id="action-filter-reset" type="button" class="sim-btn-muted !px-2 !py-1 text-xs">Filter zuruecksetzen</button>
+            <input id="action-filter-query" class="sim-input !py-2 text-xs sm:text-sm" type="text" placeholder="Spieler/Ergebnis filtern">
+            <button id="action-filter-reset" type="button" class="sim-btn-muted !px-2 !py-2 text-xs sm:text-sm">Filter zuruecksetzen</button>
         </div>
         <p class="mt-2 text-xs text-slate-400" id="actions-count-label">0 / 0 Eintraege</p>
-        <div class="mt-4" id="live-actions-container">
+        <div class="sim-match-scroll mt-4" id="live-actions-container">
             <p class="text-sm text-slate-300">Noch keine Live-Aktionen vorhanden.</p>
         </div>
     </section>
+    </div>
 
-    <section class="sim-card overflow-x-auto">
-        <div class="border-b border-slate-800/80 px-4 py-3">
+    <section id="section-ratings" class="sim-card overflow-hidden">
+        <div class="sim-match-section-header border-b border-slate-800/80 px-4 py-3 sm:px-5">
             <p class="sim-section-title">Spielerbewertungen</p>
+            <p class="text-xs text-slate-400">Sortiert nach Note.</p>
         </div>
         @if ($match->playerStats->isEmpty())
-            <p class="px-4 py-6 text-sm text-slate-300">Keine Spielerstatistiken verfuegbar.</p>
+            <p class="px-4 py-6 text-sm text-slate-300 sm:px-5">Keine Spielerstatistiken verfuegbar.</p>
         @else
-            <table class="sim-table min-w-full">
-                <thead>
-                    <tr>
-                        <th>Verein</th>
-                        <th>Spieler</th>
-                        <th>Pos</th>
-                        <th>Note</th>
-                        <th>Tore</th>
-                        <th>Assists</th>
-                        <th>Min</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($match->playerStats->sortByDesc('rating') as $stat)
+            <div class="overflow-x-auto">
+                <table class="sim-table min-w-[680px]">
+                    <thead>
                         <tr>
-                            <td>{{ $stat->club->short_name ?: $stat->club->name }}</td>
-                            <td>{{ $stat->player->full_name }}</td>
-                            <td>{{ $stat->position_code }}</td>
-                            <td class="font-semibold">{{ number_format((float) $stat->rating, 2, ',', '.') }}</td>
-                            <td>{{ $stat->goals }}</td>
-                            <td>{{ $stat->assists }}</td>
-                            <td>{{ $stat->minutes_played }}</td>
+                            <th>Verein</th>
+                            <th>Spieler</th>
+                            <th>Pos</th>
+                            <th>Note</th>
+                            <th>Tore</th>
+                            <th>Assists</th>
+                            <th>Min</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($match->playerStats->sortByDesc('rating') as $stat)
+                            <tr>
+                                <td>{{ $stat->club->short_name ?: $stat->club->name }}</td>
+                                <td>{{ $stat->player->full_name }}</td>
+                                <td>{{ $stat->position_code }}</td>
+                                <td class="font-semibold">{{ number_format((float) $stat->rating, 2, ',', '.') }}</td>
+                                <td>{{ $stat->goals }}</td>
+                                <td>{{ $stat->assists }}</td>
+                                <td>{{ $stat->minutes_played }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </section>
 

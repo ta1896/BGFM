@@ -6,6 +6,7 @@ use App\Models\TrainingSession;
 use App\Services\TrainingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class TrainingController extends Controller
@@ -15,16 +16,66 @@ class TrainingController extends Controller
         $clubs = $request->user()->clubs()->with('players')->orderBy('name')->get();
         $clubIds = $clubs->pluck('id');
 
+        $selectedClubId = (int) $request->query('club');
+        if ($selectedClubId > 0 && !$clubIds->contains($selectedClubId)) {
+            $selectedClubId = 0;
+        }
+
+        $normalizeDate = static function (?string $value): ?string {
+            if (!$value) {
+                return null;
+            }
+
+            try {
+                return Carbon::createFromFormat('Y-m-d', $value)->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $rangeFilter = (string) $request->query('range', '');
+        if (!in_array($rangeFilter, ['today', 'week'], true)) {
+            $rangeFilter = '';
+        }
+
+        $selectedDate = $normalizeDate($request->query('date') ?? $request->query('day'));
+        $dateFrom = $normalizeDate($request->query('from'));
+        $dateTo = $normalizeDate($request->query('to'));
+
+        if ($rangeFilter === 'today') {
+            $selectedDate = now()->toDateString();
+            $dateFrom = $selectedDate;
+            $dateTo = $selectedDate;
+        } elseif ($rangeFilter === 'week') {
+            $selectedDate = null;
+            $dateFrom = now()->startOfWeek(Carbon::MONDAY)->toDateString();
+            $dateTo = now()->startOfWeek(Carbon::MONDAY)->addDays(6)->toDateString();
+        } elseif ($selectedDate) {
+            $dateFrom = $selectedDate;
+            $dateTo = $selectedDate;
+        }
+
         $sessions = TrainingSession::query()
             ->with(['club', 'players'])
             ->whereIn('club_id', $clubIds)
+            ->when($selectedClubId > 0, fn ($query) => $query->where('club_id', $selectedClubId))
+            ->when($dateFrom, fn ($query) => $query->whereDate('session_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('session_date', '<=', $dateTo))
             ->orderByDesc('session_date')
             ->orderByDesc('id')
             ->paginate(12);
+        $sessions->appends($request->query());
 
         return view('training.index', [
             'clubs' => $clubs,
             'sessions' => $sessions,
+            'filters' => [
+                'club' => $selectedClubId > 0 ? $selectedClubId : null,
+                'range' => $rangeFilter,
+                'date' => $selectedDate,
+                'from' => $dateFrom,
+                'to' => $dateTo,
+            ],
         ]);
     }
 
@@ -76,7 +127,7 @@ class TrainingController extends Controller
 
         $session->players()->sync($pivot);
 
-        return redirect()->route('training.index')->with('status', 'Trainingseinheit wurde erstellt.');
+        return back()->with('status', 'Trainingseinheit wurde erstellt.');
     }
 
     public function apply(Request $request, TrainingSession $session, TrainingService $trainingService): RedirectResponse
@@ -85,7 +136,7 @@ class TrainingController extends Controller
 
         $trainingService->applySession($session);
 
-        return redirect()->route('training.index')->with('status', 'Trainingseffekte wurden angewendet.');
+        return back()->with('status', 'Trainingseffekte wurden angewendet.');
     }
 
     private function effectPreset(string $type, string $intensity): array

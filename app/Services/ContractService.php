@@ -45,6 +45,7 @@ class ContractService
                 'club_id' => $player->club_id,
                 'user_id' => $actor->id,
                 'context_type' => 'salary',
+                'asset_type' => 'budget',
                 'direction' => 'expense',
                 'amount' => max(0, $newSalary),
                 'balance_after' => null,

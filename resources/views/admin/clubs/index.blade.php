@@ -25,7 +25,10 @@
                 @forelse ($clubs as $club)
                     <tr>
                         <td>
-                            <span>{{ $club->name }}</span>
+                            <span class="inline-flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $club->logo_url }}" alt="{{ $club->name }}">
+                                <span>{{ $club->name }}</span>
+                            </span>
                             @if ($club->is_cpu)
                                 <span class="sim-pill ml-2">CPU</span>
                             @endif

@@ -1,12 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <p class="sim-section-title">Spielerprofil</p>
-                <h1 class="mt-1 text-2xl font-bold text-white">{{ $player->full_name }}</h1>
-                <p class="mt-1 text-sm text-slate-300">{{ $player->club->name }} | {{ $player->position }}</p>
+            <div class="flex items-center gap-3">
+                <img class="sim-avatar sim-avatar-lg" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                <div>
+                    <p class="sim-section-title">Spielerprofil</p>
+                    <h1 class="mt-1 text-2xl font-bold text-white">{{ $player->full_name }}</h1>
+                    <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                        <img class="sim-avatar sim-avatar-xs" src="{{ $player->club->logo_url }}" alt="{{ $player->club->name }}">
+                        <span>{{ $player->club->name }} | {{ $player->position }}</span>
+                    </p>
+                </div>
             </div>
-            <a href="{{ route('players.edit', $player) }}" class="sim-btn-muted">Bearbeiten</a>
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.players.edit', $player) }}" class="sim-btn-muted">Im ACP bearbeiten</a>
+            @endif
         </div>
     </x-slot>
 
@@ -56,12 +64,10 @@
         </article>
     </section>
 
-    <form method="POST" action="{{ route('players.destroy', $player) }}" class="sim-card border-rose-400/30 bg-rose-500/10 p-5">
-        @csrf
-        @method('DELETE')
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm text-rose-100/90">Spieler dauerhaft entfernen</p>
-            <button class="sim-btn-danger" type="submit" onclick="return confirm('Spieler wirklich loeschen?')">Spieler loeschen</button>
-        </div>
-    </form>
+    @if (auth()->user()->isAdmin())
+        <section class="sim-card border-rose-400/30 bg-rose-500/10 p-5">
+            <p class="text-sm text-rose-100/90">Spieler loeschen und Stammdaten aendern sind nur im ACP moeglich.</p>
+            <a href="{{ route('admin.players.edit', $player) }}" class="sim-btn-danger mt-4">ACP oeffnen</a>
+        </section>
+    @endif
 </x-app-layout>

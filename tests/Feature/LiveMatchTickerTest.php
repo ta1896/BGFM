@@ -116,6 +116,7 @@ class LiveMatchTickerTest extends TestCase
             '--limit' => 0,
             '--minutes-per-run' => 90,
             '--types' => 'friendly',
+            '--force' => true,
         ]);
 
         $this->assertDatabaseHas('matches', [

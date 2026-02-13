@@ -24,6 +24,12 @@
             <p class="text-slate-300">Kein Verein vorhanden.</p>
         </section>
     @else
+        <section class="sim-card p-4">
+            <p class="flex items-center gap-2 text-sm text-slate-300">
+                <img class="sim-avatar sim-avatar-sm" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
+                <span>{{ $activeClub->name }}</span>
+            </p>
+        </section>
         <section class="sim-card overflow-x-auto">
             <table class="sim-table min-w-full">
                 <thead>
@@ -39,7 +45,12 @@
                 <tbody>
                     @forelse ($players as $player)
                         <tr>
-                            <td>{{ $player->full_name }}</td>
+                            <td>
+                                <span class="inline-flex items-center gap-2">
+                                    <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                                    <span>{{ $player->full_name }}</span>
+                                </span>
+                            </td>
                             <td>{{ $player->position }}</td>
                             <td>{{ $player->overall }}</td>
                             <td>{{ number_format((float) $player->salary, 2, ',', '.') }} EUR</td>

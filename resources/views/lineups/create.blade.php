@@ -9,7 +9,11 @@
     @if ($clubs->isEmpty())
         <div class="sim-card p-8 text-center">
             <p class="text-slate-300">Lege zuerst einen Verein an.</p>
-            <a href="{{ route('clubs.create') }}" class="sim-btn-primary mt-4">Verein erstellen</a>
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.clubs.create') }}" class="sim-btn-primary mt-4">Verein im ACP erstellen</a>
+            @else
+                <a href="{{ route('clubs.free') }}" class="sim-btn-primary mt-4">Freie Vereine anzeigen</a>
+            @endif
         </div>
     @else
         <form method="POST" action="{{ route('lineups.store') }}" class="sim-card p-6">

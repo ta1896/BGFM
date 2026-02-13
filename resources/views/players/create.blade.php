@@ -12,7 +12,7 @@
             <a href="{{ route('clubs.create') }}" class="sim-btn-primary mt-4">Verein erstellen</a>
         </div>
     @else
-        <form method="POST" action="{{ route('players.store') }}" class="sim-card p-6">
+        <form method="POST" action="{{ route('players.store') }}" class="sim-card p-6" enctype="multipart/form-data">
             @include('players._form')
             <div class="mt-6 flex flex-wrap gap-2">
                 <button type="submit" class="sim-btn-primary">Spieler speichern</button>

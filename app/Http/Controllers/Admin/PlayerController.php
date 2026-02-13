@@ -98,6 +98,10 @@ class PlayerController extends Controller
      */
     public function destroy(Player $player): RedirectResponse
     {
+        if ($player->photo_path) {
+            Storage::delete($player->photo_path);
+        }
+
         $player->delete();
 
         return redirect()
@@ -130,11 +134,14 @@ class PlayerController extends Controller
     private function handlePhotoUpload(Request $request, array $validated, ?string $previousPath = null): array
     {
         if (!$request->hasFile('photo')) {
+            unset($validated['photo']);
+
             return $validated;
         }
 
         $path = $request->file('photo')->store('public/player-photos');
         $validated['photo_path'] = $path;
+        unset($validated['photo']);
 
         if ($previousPath) {
             Storage::delete($previousPath);

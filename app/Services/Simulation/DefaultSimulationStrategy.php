@@ -13,7 +13,7 @@ class DefaultSimulationStrategy
 
     public function sequenceCount(): int
     {
-        return random_int(
+        return $this->randomInt(
             $this->int('sequence.min_per_minute', 3),
             $this->int('sequence.max_per_minute', 5)
         );
@@ -23,7 +23,7 @@ class DefaultSimulationStrategy
     {
         $value = $this->float('possession.base_percent', 50.0)
             + (($homeStrength - $awayStrength) / $this->float('possession.strength_divisor', 4.0))
-            + random_int($this->int('possession.noise_min', -5), $this->int('possession.noise_max', 5));
+            + $this->randomInt($this->int('possession.noise_min', -5), $this->int('possession.noise_max', 5));
 
         return (int) max(
             $this->int('possession.min_percent', 22),
@@ -43,7 +43,7 @@ class DefaultSimulationStrategy
 
     public function attackerClubId(int $homeClubId, int $awayClubId, int $homePossessionPercent): int
     {
-        return random_int(1, 100) <= $homePossessionPercent ? $homeClubId : $awayClubId;
+        return $this->randomInt(1, 100) <= $homePossessionPercent ? $homeClubId : $awayClubId;
     }
 
     public function isPassSuccessful(float $passing, float $fitFactor): bool
@@ -90,7 +90,7 @@ class DefaultSimulationStrategy
 
         $value = $this->float('chance.xg_base', 0.10)
             + (($attackerStrength - $defenderStrength) / $this->float('chance.xg_strength_divisor', 400.0))
-            + (random_int($this->int('chance.xg_noise_min', 0), $this->int('chance.xg_noise_max', 12))
+            + ($this->randomInt($this->int('chance.xg_noise_min', 0), $this->int('chance.xg_noise_max', 12))
                 / $this->float('chance.xg_noise_divisor', 100.0));
 
         return $this->clamp(
@@ -238,6 +238,15 @@ class DefaultSimulationStrategy
 
     private function roll(float $probability): bool
     {
-        return (random_int(1, 10000) / 10000) <= $probability;
+        return ($this->randomInt(1, 10000) / 10000) <= $probability;
+    }
+
+    private function randomInt(int $min, int $max): int
+    {
+        if ((bool) $this->config->get('simulation.deterministic.enabled', false)) {
+            return mt_rand($min, $max);
+        }
+
+        return random_int($min, $max);
     }
 }

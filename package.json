@@ -7,6 +7,7 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@rollup/rollup-win32-x64-msvc": "^4.57.1",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/vite": "^4.0.0",
         "alpinejs": "^3.4.2",

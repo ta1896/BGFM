@@ -18,8 +18,9 @@
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                     <p class="font-semibold text-white">{{ $camp->name }}</p>
-                                    <p class="text-sm text-slate-300">
-                                        {{ $camp->club->name }} | {{ ucfirst($camp->focus) }} | {{ ucfirst($camp->intensity) }}
+                                    <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                                        <img class="sim-avatar sim-avatar-xs" src="{{ $camp->club->logo_url }}" alt="{{ $camp->club->name }}">
+                                        <span>{{ $camp->club->name }} | {{ ucfirst($camp->focus) }} | {{ ucfirst($camp->intensity) }}</span>
                                     </p>
                                     <p class="mt-1 text-xs text-slate-400">
                                         {{ $camp->starts_on?->format('d.m.Y') }} - {{ $camp->ends_on?->format('d.m.Y') }}

@@ -31,6 +31,7 @@ class MatchCenterController extends Controller
             'liveActions.club',
             'liveActions.player',
             'liveActions.opponentPlayer',
+            'liveMinuteSnapshots',
             'plannedSubstitutions.playerOut',
             'plannedSubstitutions.playerIn',
         ]);
@@ -172,6 +173,7 @@ class MatchCenterController extends Controller
             'liveActions.club',
             'liveActions.player',
             'liveActions.opponentPlayer',
+            'liveMinuteSnapshots',
             'plannedSubstitutions.playerOut',
             'plannedSubstitutions.playerIn',
         ]);
@@ -350,6 +352,27 @@ class MatchCenterController extends Controller
                     ];
                 })
                 ->values()
+                ->all(),
+            'minute_snapshots' => $match->liveMinuteSnapshots
+                ->sortByDesc('minute')
+                ->take(30)
+                ->values()
+                ->map(function ($snapshot): array {
+                    return [
+                        'minute' => (int) $snapshot->minute,
+                        'home_score' => (int) $snapshot->home_score,
+                        'away_score' => (int) $snapshot->away_score,
+                        'home_phase' => (string) ($snapshot->home_phase ?? ''),
+                        'away_phase' => (string) ($snapshot->away_phase ?? ''),
+                        'home_tactical_style' => (string) ($snapshot->home_tactical_style ?? ''),
+                        'away_tactical_style' => (string) ($snapshot->away_tactical_style ?? ''),
+                        'pending_plans' => (int) $snapshot->pending_plans,
+                        'executed_plans' => (int) $snapshot->executed_plans,
+                        'skipped_plans' => (int) $snapshot->skipped_plans,
+                        'invalid_plans' => (int) $snapshot->invalid_plans,
+                        'payload' => $snapshot->payload,
+                    ];
+                })
                 ->all(),
         ];
     }

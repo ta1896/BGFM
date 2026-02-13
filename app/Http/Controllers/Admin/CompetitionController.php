@@ -83,26 +83,45 @@ class CompetitionController extends Controller
 
     private function validatePayload(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'country_id' => ['nullable', 'integer', 'exists:countries,id'],
             'name' => ['required', 'string', 'max:120'],
             'short_name' => ['nullable', 'string', 'max:16'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'type' => ['required', 'in:league,cup'],
+            'scope' => ['nullable', 'in:national,international'],
             'tier' => ['nullable', 'integer', 'min:1', 'max:10'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        if (($validated['type'] ?? 'league') === 'cup') {
+            $scope = (string) ($validated['scope'] ?? '');
+            if ($scope === '') {
+                $scope = !empty($validated['country_id']) ? 'national' : 'international';
+            }
+
+            $validated['scope'] = $scope;
+            if ($scope === 'international') {
+                $validated['country_id'] = null;
+            }
+        } else {
+            $validated['scope'] = null;
+        }
+
+        return $validated;
     }
 
     private function handleLogoUpload(Request $request, array $validated, ?string $previousPath = null): array
     {
         if (!$request->hasFile('logo')) {
+            unset($validated['logo']);
             $validated['is_active'] = $request->boolean('is_active');
             return $validated;
         }
 
         $path = $request->file('logo')->store('public/competition-logos');
         $validated['logo_path'] = $path;
+        unset($validated['logo']);
         $validated['is_active'] = $request->boolean('is_active');
 
         if ($previousPath) {

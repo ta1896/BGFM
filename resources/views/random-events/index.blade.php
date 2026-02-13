@@ -30,6 +30,12 @@
             <p class="text-sm text-slate-300">Kein Verein verfuegbar.</p>
         </section>
     @else
+        <section class="sim-card p-4">
+            <p class="flex items-center gap-2 text-sm text-slate-300">
+                <img class="sim-avatar sim-avatar-sm" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
+                <span>{{ $activeClub->name }}</span>
+            </p>
+        </section>
         <section class="grid gap-4 xl:grid-cols-3">
             <article class="sim-card p-5 xl:col-span-2">
                 <p class="sim-section-title">Ereignisse ausloesen</p>
@@ -84,7 +90,16 @@
                                     <p class="font-semibold text-white">{{ $occurrence->title }}</p>
                                     <p class="mt-1 text-xs text-slate-400">{{ $occurrence->message }}</p>
                                 </td>
-                                <td>{{ $occurrence->player?->full_name ?? '-' }}</td>
+                                <td>
+                                    @if ($occurrence->player)
+                                        <span class="inline-flex items-center gap-2">
+                                            <img class="sim-avatar sim-avatar-xs" src="{{ $occurrence->player->photo_url }}" alt="{{ $occurrence->player->full_name }}">
+                                            <span>{{ $occurrence->player->full_name }}</span>
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="uppercase">{{ $occurrence->status }}</td>
                                 <td>
                                     {{ number_format((int) data_get($occurrence->effect_payload, 'budget_delta', 0), 0, ',', '.') }} EUR

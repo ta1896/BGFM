@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class MatchSimulationService
 {
     public function __construct(
-        private readonly LeagueTableService $tableService,
+        private readonly StatisticsAggregationService $statisticsAggregationService,
         private readonly PlayerPositionService $positionService
     )
     {
@@ -84,9 +84,11 @@ class MatchSimulationService
             /** @var CompetitionSeason|null $competitionSeason */
             $competitionSeason = CompetitionSeason::find($match->competition_season_id);
             if ($competitionSeason) {
-                $this->tableService->rebuild($competitionSeason);
+                $this->statisticsAggregationService->rebuildLeagueTable($competitionSeason);
             }
         }
+
+        $this->statisticsAggregationService->rebuildPlayerCompetitionStatsForMatch($match->fresh());
 
         return $match->fresh([
             'homeClub',
@@ -182,7 +184,8 @@ class MatchSimulationService
 
             $assist = null;
             if ($squad->count() > 1 && mt_rand(1, 100) <= 72) {
-                $assist = $squad->where('id', '!=', $scorer->id)->random();
+                $assistCandidates = $squad->where('id', '!=', $scorer->id)->values();
+                $assist = $this->randomCollectionItem($assistCandidates);
             }
 
             $events[] = [
@@ -219,7 +222,7 @@ class MatchSimulationService
 
         if (mt_rand(1, 100) <= 8) {
             /** @var Player $player */
-            $player = $squad->random();
+            $player = $this->randomCollectionItem($squad);
             $events[] = [
                 'minute' => mt_rand(35, 90),
                 'second' => mt_rand(0, 59),
@@ -356,6 +359,35 @@ class MatchSimulationService
     {
         $weather = ['clear', 'cloudy', 'rainy', 'windy'];
 
-        return $weather[array_rand($weather)];
+        return $weather[$this->randomArrayKey($weather)];
+    }
+
+    private function randomArrayKey(array $values): int|string
+    {
+        if ($values === []) {
+            return 0;
+        }
+
+        $keys = array_keys($values);
+        $index = mt_rand(0, max(0, count($keys) - 1));
+
+        return $keys[$index];
+    }
+
+    private function randomCollectionItem(Collection $collection): Player
+    {
+        /** @var Player|null $fallback */
+        $fallback = $collection->first();
+        if (!$fallback) {
+            throw new \RuntimeException('Cannot pick random item from empty collection.');
+        }
+
+        $items = $collection->values();
+        $index = mt_rand(0, max(0, $items->count() - 1));
+
+        /** @var Player|null $picked */
+        $picked = $items->get($index);
+
+        return $picked ?? $fallback;
     }
 }

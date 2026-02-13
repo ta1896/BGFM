@@ -28,8 +28,8 @@
         <x-input-error :messages="$errors->get('photo')" class="mt-1" />
         @if (!empty($player?->photo_path))
             <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                <img class="h-12 w-12 rounded-full border border-slate-700/70 bg-slate-900/60 object-cover"
-                     src="{{ Storage::url($player->photo_path) }}"
+                <img class="sim-avatar sim-avatar-md"
+                     src="{{ $player->photo_url }}"
                      alt="Spielerfoto">
                 <span>Aktuelles Foto</span>
             </div>

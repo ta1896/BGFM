@@ -71,14 +71,14 @@ class MatchPlayerStatsService
                     - ($yellow * 0.25)
                     - ($red * 0.9)
                     - ((1 - $fit) * 1.6)
-                    + ((random_int(0, 30) - 15) / 100);
+                    + (($this->randomInt(0, 30) - 15) / 100);
 
-                $shots = $state ? (int) $state->shots : max(0, $goals + random_int(0, 4));
-                $passesCompleted = $state ? (int) $state->pass_completions : random_int(12, 74);
-                $passAttempts = $state ? (int) $state->pass_attempts : ($passesCompleted + random_int(2, 19));
-                $tacklesWon = $state ? (int) $state->tackle_won : random_int(0, 8);
-                $tackleAttempts = $state ? (int) $state->tackle_attempts : ($tacklesWon + random_int(0, 5));
-                $saves = $state ? (int) $state->saves : ($this->isGoalkeeper($player) ? random_int(1, 8) : 0);
+                $shots = $state ? (int) $state->shots : max(0, $goals + $this->randomInt(0, 4));
+                $passesCompleted = $state ? (int) $state->pass_completions : $this->randomInt(12, 74);
+                $passAttempts = $state ? (int) $state->pass_attempts : ($passesCompleted + $this->randomInt(2, 19));
+                $tacklesWon = $state ? (int) $state->tackle_won : $this->randomInt(0, 8);
+                $tackleAttempts = $state ? (int) $state->tackle_attempts : ($tacklesWon + $this->randomInt(0, 5));
+                $saves = $state ? (int) $state->saves : ($this->isGoalkeeper($player) ? $this->randomInt(1, 8) : 0);
 
                 return [
                     'match_id' => $match->id,
@@ -168,5 +168,14 @@ class MatchPlayerStatsService
     private function isGoalkeeper(Player $player): bool
     {
         return $this->positionService->groupFromPosition((string) ($player->position_main ?: $player->position)) === 'GK';
+    }
+
+    private function randomInt(int $min, int $max): int
+    {
+        if ((bool) config('simulation.deterministic.enabled', false)) {
+            return mt_rand($min, $max);
+        }
+
+        return random_int($min, $max);
     }
 }

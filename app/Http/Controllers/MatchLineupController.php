@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Services\FormationPlannerService;
+use App\Services\LiveMatchTickerService;
 use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,17 @@ class MatchLineupController extends Controller
             ->with('players')
             ->first();
 
+        $selectedLineupId = max(0, (int) $request->query('lineup'));
+        $selectedLineup = null;
+        if ($selectedLineupId > 0) {
+            $selectedLineup = $club->lineups()
+                ->whereNull('match_id')
+                ->with('players')
+                ->find($selectedLineupId);
+        }
+
         $sourceLineup = $matchLineup
+            ?? $selectedLineup
             ?? $club->lineups()->whereNull('match_id')->where('is_active', true)->with('players')->first()
             ?? $templates->first();
 
@@ -50,14 +61,15 @@ class MatchLineupController extends Controller
             $draft = $this->draftFromLineup($sourceLineup);
         }
 
-        $formation = $draft['formation'] ?? '4-4-2';
+        $formation = (string) $request->query('formation', $draft['formation'] ?? '4-4-2');
         if (!in_array($formation, $planner->supportedFormations(), true)) {
             $formation = '4-4-2';
         }
 
         $slots = $planner->starterSlots($formation);
+        $maxBenchPlayers = $this->maxBenchPlayers();
         $starters = $this->normalizeStarterDraft($slots, $draft['starter_slots'] ?? []);
-        $bench = $this->normalizeBenchDraft($draft['bench_slots'] ?? []);
+        $bench = $this->normalizeBenchDraft($draft['bench_slots'] ?? [], $maxBenchPlayers);
 
         $metrics = [
             'overall' => 0,
@@ -70,10 +82,21 @@ class MatchLineupController extends Controller
             $metrics = $calculator->calculate($matchLineup);
         }
 
+        $clubMatches = GameMatch::query()
+            ->where(function ($query) use ($club): void {
+                $query->where('home_club_id', $club->id)
+                    ->orWhere('away_club_id', $club->id);
+            })
+            ->whereIn('status', ['scheduled', 'live'])
+            ->with(['homeClub:id,name,short_name', 'awayClub:id,name,short_name'])
+            ->orderBy('kickoff_at')
+            ->get();
+
         return view('leagues.lineup', [
             'match' => $match->loadMissing(['homeClub', 'awayClub']),
             'club' => $club,
             'opponentClub' => $match->home_club_id === $club->id ? $match->awayClub : $match->homeClub,
+            'clubMatches' => $clubMatches,
             'clubPlayers' => $clubPlayers,
             'templates' => $templates,
             'currentLineup' => $matchLineup,
@@ -82,6 +105,7 @@ class MatchLineupController extends Controller
             'slots' => $slots,
             'starterDraft' => $starters,
             'benchDraft' => $bench,
+            'maxBenchPlayers' => $maxBenchPlayers,
             'tacticalStyle' => $draft['tactical_style'] ?? ($sourceLineup?->tactical_style ?? 'balanced'),
             'attackFocus' => $draft['attack_focus'] ?? ($sourceLineup?->attack_focus ?? 'center'),
             'captainPlayerId' => $draft['captain_player_id'] ?? $sourceLineup?->players->firstWhere('pivot.is_captain', true)?->id,
@@ -98,7 +122,8 @@ class MatchLineupController extends Controller
     public function update(
         Request $request,
         GameMatch $match,
-        FormationPlannerService $planner
+        FormationPlannerService $planner,
+        LiveMatchTickerService $liveMatchTickerService
     ): RedirectResponse {
         $match = $this->resolveRouteMatch($request, $match);
         $club = $this->resolveClubForMatch($request, $match);
@@ -123,8 +148,9 @@ class MatchLineupController extends Controller
             ? $validated['formation']
             : '4-4-2';
         $slots = $planner->starterSlots($formation);
+        $maxBenchPlayers = $this->maxBenchPlayers();
 
-        $selection = $this->resolveSelection($club, $slots, $request);
+        $selection = $this->resolveSelection($club, $slots, $request, $maxBenchPlayers);
         $captainId = $this->resolveCaptainId($selection['starterIds'], (int) ($validated['captain_player_id'] ?? 0));
 
         $setPieceIds = $this->resolveSetPieceIds($selection['allIds'], $validated);
@@ -194,6 +220,10 @@ class MatchLineupController extends Controller
             $template->players()->sync($pivot);
         }
 
+        if ($match->status === 'live') {
+            $liveMatchTickerService->syncLiveLineupState($match, $club);
+        }
+
         session()->forget($this->draftKey($request, $match, $club));
 
         return redirect()
@@ -250,7 +280,8 @@ class MatchLineupController extends Controller
             : '4-4-2';
         $selection = $planner->strongestByFormation(
             $club->players()->whereIn('status', ['active', 'transfer_listed'])->get(),
-            $formation
+            $formation,
+            $this->maxBenchPlayers()
         );
 
         $draft = [
@@ -320,7 +351,7 @@ class MatchLineupController extends Controller
      *   allIds: array<int, int>
      * }
      */
-    private function resolveSelection(Club $club, array $slots, Request $request): array
+    private function resolveSelection(Club $club, array $slots, Request $request, int $maxBenchPlayers): array
     {
         $starterInput = collect($request->input('starter_slots', []))
             ->map(fn ($value) => is_numeric($value) ? (int) $value : null)
@@ -341,7 +372,7 @@ class MatchLineupController extends Controller
         $allIds = $starterIds->concat($benchInput)->filter()->values();
 
         abort_if($starterIds->count() > 11, 422, 'Es sind maximal 11 Startplaetze erlaubt.');
-        abort_if($benchInput && count($benchInput) > 5, 422, 'Es sind maximal 5 Bankplaetze erlaubt.');
+        abort_if($benchInput && count($benchInput) > $maxBenchPlayers, 422, 'Es sind maximal '.$maxBenchPlayers.' Bankplaetze erlaubt.');
         abort_if($allIds->count() !== $allIds->unique()->count(), 422, 'Ein Spieler darf nur einmal aufgestellt sein.');
 
         $clubPlayerIds = $club->players()->pluck('id');
@@ -349,7 +380,7 @@ class MatchLineupController extends Controller
 
         return [
             'starters' => $starters,
-            'bench' => array_values(array_slice(array_unique($benchInput), 0, 5)),
+            'bench' => array_values(array_slice(array_unique($benchInput), 0, $maxBenchPlayers)),
             'starterIds' => $starterIds->all(),
             'allIds' => $allIds->all(),
         ];
@@ -512,15 +543,20 @@ class MatchLineupController extends Controller
      * @param mixed $draft
      * @return array<int, int|null>
      */
-    private function normalizeBenchDraft(mixed $draft): array
+    private function normalizeBenchDraft(mixed $draft, int $maxBenchPlayers): array
     {
         $source = is_array($draft) ? $draft : [];
 
         return collect($source)
             ->map(fn ($value) => is_numeric($value) ? (int) $value : null)
-            ->take(5)
+            ->take($maxBenchPlayers)
             ->values()
             ->all();
+    }
+
+    private function maxBenchPlayers(): int
+    {
+        return max(1, min(10, (int) config('simulation.lineup.max_bench_players', 5)));
     }
 
     private function draftKey(Request $request, GameMatch $match, Club $club): string

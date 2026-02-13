@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\Player;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PlayerController extends Controller
@@ -53,6 +54,7 @@ class PlayerController extends Controller
             'club_id' => ['required', 'integer', 'exists:clubs,id'],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
+            'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
@@ -68,6 +70,7 @@ class PlayerController extends Controller
         ]);
 
         $club = $this->ownedClub($request, (int) $validated['club_id']);
+        $validated = $this->handlePhotoUpload($request, $validated);
 
         $club->players()->create($validated);
 
@@ -111,6 +114,7 @@ class PlayerController extends Controller
             'club_id' => ['required', 'integer', 'exists:clubs,id'],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
+            'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
@@ -126,6 +130,7 @@ class PlayerController extends Controller
         ]);
 
         $club = $this->ownedClub($request, (int) $validated['club_id']);
+        $validated = $this->handlePhotoUpload($request, $validated, $player->photo_path);
         $player->update(array_merge($validated, ['club_id' => $club->id]));
 
         return redirect()
@@ -141,6 +146,11 @@ class PlayerController extends Controller
         $this->ensureOwnership($request, $player);
 
         $clubId = $player->club_id;
+
+        if ($player->photo_path) {
+            Storage::delete($player->photo_path);
+        }
+
         $player->delete();
 
         return redirect()
@@ -185,5 +195,24 @@ class PlayerController extends Controller
             'RW' => 'Rechter Fluegel',
             'ST' => 'Stuermer',
         ];
+    }
+
+    private function handlePhotoUpload(Request $request, array $validated, ?string $previousPath = null): array
+    {
+        if (!$request->hasFile('photo')) {
+            unset($validated['photo']);
+
+            return $validated;
+        }
+
+        $path = $request->file('photo')->store('public/player-photos');
+        $validated['photo_path'] = $path;
+        unset($validated['photo']);
+
+        if ($previousPath) {
+            Storage::delete($previousPath);
+        }
+
+        return $validated;
     }
 }

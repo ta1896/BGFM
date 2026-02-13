@@ -26,7 +26,12 @@
                 @forelse ($lineups as $lineup)
                     <tr>
                         <td>{{ $lineup->name }}</td>
-                        <td>{{ $lineup->club->name }}</td>
+                        <td>
+                            <span class="inline-flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $lineup->club->logo_url }}" alt="{{ $lineup->club->name }}">
+                                <span>{{ $lineup->club->name }}</span>
+                            </span>
+                        </td>
                         <td>{{ $lineup->club->user->name }}</td>
                         <td>{{ $lineup->formation }}</td>
                         <td>{{ $lineup->players->count() }}</td>

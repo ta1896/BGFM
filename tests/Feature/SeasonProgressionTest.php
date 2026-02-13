@@ -166,6 +166,46 @@ class SeasonProgressionTest extends TestCase
         ]);
     }
 
+    public function test_season_rollover_resets_yellow_card_accumulation_counters(): void
+    {
+        config()->set('simulation.aftermath.yellow_cards.reset_on_season_rollover', true);
+
+        [$competitionSeason, $managerClub, $cpuClub] = $this->createBasicLeagueWithCpuClub();
+
+        $managerPlayer = $managerClub->players()->firstOrFail();
+        $cpuPlayer = $cpuClub->players()->firstOrFail();
+
+        $managerPlayer->update([
+            'yellow_cards_league_accumulated' => 4,
+            'yellow_cards_cup_national_accumulated' => 2,
+            'yellow_cards_cup_international_accumulated' => 1,
+            'yellow_cards_friendly_accumulated' => 3,
+        ]);
+        $cpuPlayer->update([
+            'yellow_cards_league_accumulated' => 3,
+            'yellow_cards_cup_national_accumulated' => 1,
+            'yellow_cards_cup_international_accumulated' => 2,
+            'yellow_cards_friendly_accumulated' => 4,
+        ]);
+
+        Artisan::call('game:process-matchday', [
+            '--competition-season' => $competitionSeason->id,
+        ]);
+
+        $managerPlayer->refresh();
+        $cpuPlayer->refresh();
+
+        $this->assertSame(0, (int) $managerPlayer->yellow_cards_league_accumulated);
+        $this->assertSame(0, (int) $managerPlayer->yellow_cards_cup_national_accumulated);
+        $this->assertSame(0, (int) $managerPlayer->yellow_cards_cup_international_accumulated);
+        $this->assertSame(0, (int) $managerPlayer->yellow_cards_friendly_accumulated);
+
+        $this->assertSame(0, (int) $cpuPlayer->yellow_cards_league_accumulated);
+        $this->assertSame(0, (int) $cpuPlayer->yellow_cards_cup_national_accumulated);
+        $this->assertSame(0, (int) $cpuPlayer->yellow_cards_cup_international_accumulated);
+        $this->assertSame(0, (int) $cpuPlayer->yellow_cards_friendly_accumulated);
+    }
+
     /**
      * @return array{CompetitionSeason, Club, Club}
      */

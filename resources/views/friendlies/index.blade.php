@@ -27,6 +27,10 @@
         <section class="grid gap-4 xl:grid-cols-3">
             <article class="sim-card p-5 xl:col-span-2">
                 <h2 class="text-lg font-bold text-white">Neues Freundschaftsspiel</h2>
+                <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
+                    <img class="sim-avatar sim-avatar-sm" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
+                    <span>Aktiver Verein: {{ $activeClub->name }}</span>
+                </p>
                 <p class="mt-2 text-sm text-slate-300">
                     CPU-Teams nehmen automatisch an. Manager-Teams erhalten eine Anfrage.
                 </p>
@@ -62,9 +66,13 @@
                 <div class="mt-3 space-y-2">
                     @forelse ($friendlyMatches as $match)
                         <a href="{{ route('matches.show', $match) }}" class="sim-card-soft block px-3 py-2">
-                            <p class="text-sm font-semibold text-white">
-                                {{ $match->homeClub->name }} vs {{ $match->awayClub->name }}
-                            </p>
+                            <div class="flex items-center gap-2 text-sm font-semibold text-white">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->homeClub->logo_url }}" alt="{{ $match->homeClub->name }}">
+                                <span>{{ $match->homeClub->name }}</span>
+                                <span class="text-slate-400">vs</span>
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->awayClub->logo_url }}" alt="{{ $match->awayClub->name }}">
+                                <span>{{ $match->awayClub->name }}</span>
+                            </div>
                             <p class="mt-1 text-xs text-slate-400">{{ $match->kickoff_at?->format('d.m.Y H:i') }} Uhr</p>
                         </a>
                     @empty
@@ -80,7 +88,10 @@
                 <div class="mt-3 space-y-2">
                     @forelse ($outgoingRequests as $request)
                         <div class="sim-card-soft px-3 py-3">
-                            <p class="text-sm font-semibold text-white">{{ $request->challengedClub->name }}</p>
+                            <p class="flex items-center gap-2 text-sm font-semibold text-white">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengedClub->logo_url }}" alt="{{ $request->challengedClub->name }}">
+                                <span>{{ $request->challengedClub->name }}</span>
+                            </p>
                             <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr | {{ strtoupper($request->status) }}</p>
                         </div>
                     @empty
@@ -94,7 +105,10 @@
                 <div class="mt-3 space-y-2">
                     @forelse ($incomingRequests as $request)
                         <div class="sim-card-soft px-3 py-3">
-                            <p class="text-sm font-semibold text-white">{{ $request->challengerClub->name }}</p>
+                            <p class="flex items-center gap-2 text-sm font-semibold text-white">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengerClub->logo_url }}" alt="{{ $request->challengerClub->name }}">
+                                <span>{{ $request->challengerClub->name }}</span>
+                            </p>
                             <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr | {{ strtoupper($request->status) }}</p>
                             @if ($request->status === 'pending')
                                 <div class="mt-3 flex gap-2">

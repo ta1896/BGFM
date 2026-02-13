@@ -25,6 +25,8 @@ class SeasonProgressionService
         private readonly StadiumService $stadiumService,
         private readonly TrainingCampService $trainingCampService,
         private readonly SponsorService $sponsorService,
+        private readonly PlayerAvailabilityService $playerAvailabilityService,
+        private readonly CupQualificationService $cupQualificationService,
         private readonly TeamOfTheDayService $teamOfTheDayService,
         private readonly RandomEventService $randomEventService
     ) {
@@ -231,6 +233,8 @@ class SeasonProgressionService
                 }
             });
 
+        $this->cupQualificationService->syncForLeagueSeason($competitionSeason, $nextSeason, $table);
+
         DB::transaction(function () use ($competitionSeason, $nextSeason): void {
             $competitionSeason->update(['is_finished' => true]);
 
@@ -240,6 +244,9 @@ class SeasonProgressionService
                 ->exists();
 
             if (!$unfinishedCurrentSeasonCompetitions) {
+                if ((bool) config('simulation.aftermath.yellow_cards.reset_on_season_rollover', true)) {
+                    $this->playerAvailabilityService->resetSeasonalBookingCounters();
+                }
                 $competitionSeason->season->update(['is_current' => false]);
                 $nextSeason->update(['is_current' => true]);
             }

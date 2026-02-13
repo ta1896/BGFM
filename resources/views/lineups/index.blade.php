@@ -15,7 +15,11 @@
             @if ($clubs->isNotEmpty())
                 <a href="{{ route('lineups.create') }}" class="sim-btn-primary mt-4">Erstellen</a>
             @else
-                <a href="{{ route('clubs.create') }}" class="sim-btn-primary mt-4">Erst Verein erstellen</a>
+                @if (auth()->user()->isAdmin())
+                    <a href="{{ route('admin.clubs.create') }}" class="sim-btn-primary mt-4">Verein im ACP erstellen</a>
+                @else
+                    <a href="{{ route('clubs.free') }}" class="sim-btn-primary mt-4">Freie Vereine anzeigen</a>
+                @endif
             @endif
         </div>
     @else
@@ -24,7 +28,10 @@
                 <article class="sim-card p-5">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <p class="sim-section-title">{{ $lineup->club->name }}</p>
+                            <p class="sim-section-title flex items-center gap-2">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $lineup->club->logo_url }}" alt="{{ $lineup->club->name }}">
+                                <span>{{ $lineup->club->name }}</span>
+                            </p>
                             <h2 class="mt-1 text-xl font-bold text-white">{{ $lineup->name }}</h2>
                             <p class="mt-1 text-sm text-slate-300">{{ $lineup->formation }} | {{ $lineup->players->count() }} Spieler</p>
                         </div>

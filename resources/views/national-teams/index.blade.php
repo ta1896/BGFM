@@ -83,8 +83,26 @@
                         @forelse ($squad as $callup)
                             <tr>
                                 <td class="uppercase">{{ $callup->role }}</td>
-                                <td class="font-semibold">{{ $callup->player?->full_name ?? '-' }}</td>
-                                <td>{{ $callup->player?->club?->name ?? '-' }}</td>
+                                <td class="font-semibold">
+                                    @if ($callup->player)
+                                        <span class="inline-flex items-center gap-2">
+                                            <img class="sim-avatar sim-avatar-xs" src="{{ $callup->player->photo_url }}" alt="{{ $callup->player->full_name }}">
+                                            {{ $callup->player->full_name }}
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($callup->player?->club)
+                                        <span class="inline-flex items-center gap-2">
+                                            <img class="sim-avatar sim-avatar-xs" src="{{ $callup->player->club->logo_url }}" alt="{{ $callup->player->club->name }}">
+                                            {{ $callup->player->club->name }}
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ $callup->player?->position ?? '-' }}</td>
                                 <td>{{ $callup->player?->overall ?? '-' }}</td>
                                 <td>{{ $callup->player?->morale ?? '-' }}</td>

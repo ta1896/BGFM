@@ -10,6 +10,7 @@ use App\Services\FixtureGeneratorService;
 use App\Services\LeagueTableService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class LeagueController extends Controller
@@ -17,24 +18,92 @@ class LeagueController extends Controller
     public function matches(Request $request): View
     {
         $competitionSeason = $this->resolveCompetitionSeason($request);
+        $isAdmin = $request->user()->isAdmin();
+        $clubFilterOptions = $request->user()->clubs()->orderBy('name')->get(['id', 'name']);
 
-        $matches = GameMatch::query()
-            ->where('competition_season_id', $competitionSeason?->id)
-            ->with(['homeClub', 'awayClub'])
-            ->orderBy('matchday')
-            ->orderBy('kickoff_at')
-            ->get()
-            ->groupBy('matchday');
-
-        $ownedClubIds = $request->user()->isAdmin()
+        $ownedClubIds = $isAdmin
             ? collect()
             : $request->user()->clubs()->pluck('id');
+
+        $selectedClubId = (int) $request->query('club');
+        if (!$isAdmin && $selectedClubId > 0 && !$ownedClubIds->contains($selectedClubId)) {
+            $selectedClubId = 0;
+        }
+
+        $statusFilter = (string) $request->query('status', '');
+        if (!in_array($statusFilter, ['scheduled', 'live', 'played'], true)) {
+            $statusFilter = '';
+        }
+
+        $scopeFilter = (string) $request->query('scope', '');
+        if (!in_array($scopeFilter, ['today', 'week'], true)) {
+            $scopeFilter = '';
+        }
+
+        $normalizeDate = static function (?string $value): ?string {
+            if (!$value) {
+                return null;
+            }
+
+            try {
+                return Carbon::createFromFormat('Y-m-d', $value)->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $dayFilter = $normalizeDate($request->query('day'));
+        $dateFrom = $normalizeDate($request->query('from'));
+        $dateTo = $normalizeDate($request->query('to'));
+
+        if ($scopeFilter === 'today') {
+            $dateFrom = now()->toDateString();
+            $dateTo = $dateFrom;
+        } elseif ($scopeFilter === 'week') {
+            $dateFrom = now()->startOfWeek(Carbon::MONDAY)->toDateString();
+            $dateTo = now()->startOfWeek(Carbon::MONDAY)->addDays(6)->toDateString();
+        }
+
+        if ($dayFilter) {
+            $dateFrom = $dayFilter;
+            $dateTo = $dayFilter;
+        }
+
+        $matches = collect();
+        if ($competitionSeason) {
+            $matches = GameMatch::query()
+                ->where('competition_season_id', $competitionSeason->id)
+                ->when($selectedClubId > 0, function ($query) use ($selectedClubId): void {
+                    $query->where(function ($clubQuery) use ($selectedClubId): void {
+                        $clubQuery->where('home_club_id', $selectedClubId)
+                            ->orWhere('away_club_id', $selectedClubId);
+                    });
+                })
+                ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
+                ->when($dateFrom, fn ($query) => $query->whereDate('kickoff_at', '>=', $dateFrom))
+                ->when($dateTo, fn ($query) => $query->whereDate('kickoff_at', '<=', $dateTo))
+                ->with(['homeClub', 'awayClub'])
+                ->orderBy('matchday')
+                ->orderBy('kickoff_at')
+                ->get()
+                ->groupBy('matchday');
+        }
 
         return view('leagues.matches', [
             'competitionSeasons' => CompetitionSeason::with(['competition', 'season'])->orderByDesc('id')->get(),
             'activeCompetitionSeason' => $competitionSeason,
             'matchesByDay' => $matches,
             'ownedClubIds' => $ownedClubIds,
+            'clubFilterOptions' => $clubFilterOptions,
+            'filters' => [
+                'club' => $selectedClubId > 0 ? $selectedClubId : null,
+                'status' => $statusFilter,
+                'scope' => $scopeFilter,
+                'day' => $dayFilter,
+                'from' => $dateFrom,
+                'to' => $dateTo,
+            ],
+            'hasActiveFilters' => $selectedClubId > 0 || $statusFilter !== '' || $scopeFilter !== '' || $dayFilter !== null || $dateFrom !== null || $dateTo !== null,
         ]);
     }
 

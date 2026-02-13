@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class TransferMarketService
 {
+    public function __construct(private readonly ClubFinanceLedgerService $financeLedger)
+    {
+    }
+
     public function acceptBid(TransferListing $listing, TransferBid $acceptedBid, User $actor): void
     {
         DB::transaction(function () use ($listing, $acceptedBid, $actor): void {
@@ -27,8 +31,20 @@ class TransferMarketService
             abort_if($buyerClub->id === $sellerClub->id, 422);
             abort_if((float) $buyerClub->budget < $amount, 422, 'Kaeufer hat nicht genug Budget.');
 
-            $sellerClub->update(['budget' => (float) $sellerClub->budget + $amount]);
-            $buyerClub->update(['budget' => (float) $buyerClub->budget - $amount]);
+            $this->financeLedger->applyBudgetChange($sellerClub, $amount, [
+                'user_id' => $actor->id,
+                'context_type' => 'transfer',
+                'reference_type' => 'transfer_listings',
+                'reference_id' => $listing->id,
+                'note' => 'Transferverkauf: '.$player->full_name,
+            ]);
+            $this->financeLedger->applyBudgetChange($buyerClub, -$amount, [
+                'user_id' => $actor->id,
+                'context_type' => 'transfer',
+                'reference_type' => 'transfer_listings',
+                'reference_id' => $listing->id,
+                'note' => 'Transfereinkauf: '.$player->full_name,
+            ]);
             $player->update(['club_id' => $buyerClub->id, 'status' => 'active']);
 
             PlayerContract::query()
@@ -57,37 +73,6 @@ class TransferMarketService
             $acceptedBid->update([
                 'status' => 'accepted',
                 'decided_at' => now(),
-            ]);
-
-            DB::table('club_financial_transactions')->insert([
-                [
-                    'club_id' => $sellerClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'transfer',
-                    'direction' => 'income',
-                    'amount' => $amount,
-                    'balance_after' => $sellerClub->budget,
-                    'reference_type' => 'transfer_listings',
-                    'reference_id' => $listing->id,
-                    'booked_at' => now(),
-                    'note' => 'Transferverkauf: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'club_id' => $buyerClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'transfer',
-                    'direction' => 'expense',
-                    'amount' => $amount,
-                    'balance_after' => $buyerClub->budget,
-                    'reference_type' => 'transfer_listings',
-                    'reference_id' => $listing->id,
-                    'booked_at' => now(),
-                    'note' => 'Transfereinkauf: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
             ]);
 
             $this->notify($sellerClub->user_id, $sellerClub->id, 'transfer_sold', 'Transfer abgeschlossen', $player->full_name.' wurde verkauft.');

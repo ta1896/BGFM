@@ -9,11 +9,17 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="sim-shell">
+    @php
+        $uiTheme = (string) session('dashboard.variant', 'modern');
+        if (!in_array($uiTheme, ['modern', 'compact', 'classic'], true)) {
+            $uiTheme = 'modern';
+        }
+    @endphp
+    <body class="sim-shell" data-layout-theme="{{ $uiTheme }}">
         <div class="mx-auto grid min-h-screen max-w-6xl items-center gap-6 px-4 py-8 lg:grid-cols-2 lg:gap-10">
             <section class="sim-card hidden p-8 lg:block">
                 <p class="sim-section-title">Matchday Hub</p>

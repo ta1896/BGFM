@@ -2,13 +2,13 @@
 
 namespace App\Services\Simulation\Observers;
 
-use App\Services\PlayerAvailabilityService;
+use App\Services\MatchAftermathService;
 use App\Services\MatchProcessingStepService;
 
 class ApplyMatchAvailabilityObserver implements MatchFinishedObserver
 {
     public function __construct(
-        private readonly PlayerAvailabilityService $availabilityService,
+        private readonly MatchAftermathService $aftermathService,
         private readonly MatchProcessingStepService $processingStepService
     ) {
     }
@@ -19,6 +19,6 @@ class ApplyMatchAvailabilityObserver implements MatchFinishedObserver
             return;
         }
 
-        $this->availabilityService->applyMatchConsequences($context->match);
+        $this->aftermathService->apply($context->match);
     }
 }

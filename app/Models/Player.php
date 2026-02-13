@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Player extends Model
 {
@@ -45,6 +46,10 @@ class Player extends Model
         'suspension_cup_national_remaining',
         'suspension_cup_international_remaining',
         'suspension_friendly_remaining',
+        'yellow_cards_league_accumulated',
+        'yellow_cards_cup_national_accumulated',
+        'yellow_cards_cup_international_accumulated',
+        'yellow_cards_friendly_accumulated',
     ];
 
     protected function casts(): array
@@ -61,6 +66,10 @@ class Player extends Model
             'suspension_cup_national_remaining' => 'integer',
             'suspension_cup_international_remaining' => 'integer',
             'suspension_friendly_remaining' => 'integer',
+            'yellow_cards_league_accumulated' => 'integer',
+            'yellow_cards_cup_national_accumulated' => 'integer',
+            'yellow_cards_cup_international_accumulated' => 'integer',
+            'yellow_cards_friendly_accumulated' => 'integer',
         ];
     }
 
@@ -138,5 +147,18 @@ class Player extends Model
     public function getFullNameAttribute(): string
     {
         return trim($this->first_name.' '.$this->last_name);
+    }
+
+    public function getPhotoUrlAttribute(): string
+    {
+        if (!$this->photo_path) {
+            return asset('images/placeholders/player.svg');
+        }
+
+        if (str_starts_with($this->photo_path, 'http://') || str_starts_with($this->photo_path, 'https://')) {
+            return $this->photo_path;
+        }
+
+        return Storage::url($this->photo_path);
     }
 }

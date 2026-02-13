@@ -32,6 +32,15 @@
         <x-input-error :messages="$errors->get('type')" class="mt-1" />
     </div>
     <div>
+        <label class="sim-label" for="scope">Wettbewerbsebene</label>
+        <select class="sim-select" id="scope" name="scope">
+            <option value="">Automatisch (nach Land)</option>
+            <option value="national" @selected(old('scope', $competition?->scope ?? '') === 'national')>National</option>
+            <option value="international" @selected(old('scope', $competition?->scope ?? '') === 'international')>International</option>
+        </select>
+        <x-input-error :messages="$errors->get('scope')" class="mt-1" />
+    </div>
+    <div>
         <label class="sim-label" for="tier">Stufe</label>
         <input class="sim-input" id="tier" name="tier" type="number" min="1" max="10" value="{{ old('tier', $competition?->tier ?? '') }}">
         <x-input-error :messages="$errors->get('tier')" class="mt-1" />
@@ -42,8 +51,8 @@
         <x-input-error :messages="$errors->get('logo')" class="mt-1" />
         @if (!empty($competition?->logo_path))
             <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                <img class="h-10 w-10 rounded-full border border-slate-700/70 bg-slate-900/60 object-cover"
-                     src="{{ Storage::url($competition->logo_path) }}"
+                <img class="sim-avatar sim-avatar-md"
+                     src="{{ $competition->logo_url }}"
                      alt="Logo">
                 <span>Aktuelles Logo</span>
             </div>

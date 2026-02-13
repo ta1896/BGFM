@@ -110,6 +110,60 @@ class CompetitionContextServiceTest extends TestCase
         $this->assertSame('friendly', $match->competition_context);
     }
 
+    public function test_explicit_competition_scope_overrides_country_fallback_for_cup_context(): void
+    {
+        [$homeClub, $awayClub] = $this->createClubs();
+        $season = Season::create([
+            'name' => '2027/28',
+            'start_date' => now()->startOfYear()->toDateString(),
+            'end_date' => now()->endOfYear()->toDateString(),
+            'is_current' => false,
+        ]);
+        $country = Country::create([
+            'name' => 'Spanien',
+            'iso_code' => 'ES',
+            'fifa_code' => 'ESP',
+        ]);
+
+        $forcedInternational = Competition::create([
+            'country_id' => $country->id,
+            'name' => 'Forced International Cup',
+            'short_name' => 'FIC',
+            'type' => 'cup',
+            'scope' => 'international',
+            'tier' => 1,
+            'is_active' => true,
+        ]);
+        $forcedNational = Competition::create([
+            'country_id' => null,
+            'name' => 'Forced National Cup',
+            'short_name' => 'FNC',
+            'type' => 'cup',
+            'scope' => 'national',
+            'tier' => 1,
+            'is_active' => true,
+        ]);
+
+        $internationalSeason = $this->createCompetitionSeason($forcedInternational, $season, 'knockout');
+        $nationalSeason = $this->createCompetitionSeason($forcedNational, $season, 'knockout');
+
+        $internationalMatch = $this->createMatch($homeClub, $awayClub, [
+            'competition_season_id' => $internationalSeason->id,
+            'season_id' => $season->id,
+            'type' => 'cup',
+        ]);
+        $nationalMatch = $this->createMatch($homeClub, $awayClub, [
+            'competition_season_id' => $nationalSeason->id,
+            'season_id' => $season->id,
+            'type' => 'cup',
+        ]);
+
+        $service = app(CompetitionContextService::class);
+
+        $this->assertSame('cup_international', $service->forMatch($internationalMatch));
+        $this->assertSame('cup_national', $service->forMatch($nationalMatch));
+    }
+
     /**
      * @return array{0: Club, 1: Club}
      */

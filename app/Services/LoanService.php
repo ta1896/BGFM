@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class LoanService
 {
-    public function __construct(private readonly TransferWindowService $windowService)
-    {
+    public function __construct(
+        private readonly TransferWindowService $windowService,
+        private readonly ClubFinanceLedgerService $financeLedger
+    ) {
     }
 
     public function acceptBid(LoanListing $listing, LoanBid $acceptedBid, User $actor): void
@@ -67,39 +69,20 @@ class LoanService
                 'status' => 'active',
             ]);
 
-            DB::table('club_financial_transactions')->insert([
-                [
-                    'club_id' => $lenderClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'other',
-                    'direction' => 'income',
-                    'amount' => (float) $acceptedBid->weekly_fee,
-                    'balance_after' => null,
-                    'reference_type' => 'loans',
-                    'reference_id' => $loan->id,
-                    'booked_at' => now(),
-                    'note' => 'Leihgebuehr erhalten: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'club_id' => $borrowerClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'other',
-                    'direction' => 'expense',
-                    'amount' => (float) $acceptedBid->weekly_fee,
-                    'balance_after' => null,
-                    'reference_type' => 'loans',
-                    'reference_id' => $loan->id,
-                    'booked_at' => now(),
-                    'note' => 'Leihgebuehr gezahlt: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
+            $this->financeLedger->applyBudgetChange($lenderClub, (float) $acceptedBid->weekly_fee, [
+                'user_id' => $actor->id,
+                'context_type' => 'other',
+                'reference_type' => 'loans',
+                'reference_id' => $loan->id,
+                'note' => 'Leihgebuehr erhalten: '.$player->full_name,
             ]);
-
-            $lenderClub->increment('budget', (float) $acceptedBid->weekly_fee);
-            $borrowerClub->decrement('budget', (float) $acceptedBid->weekly_fee);
+            $this->financeLedger->applyBudgetChange($borrowerClub, -((float) $acceptedBid->weekly_fee), [
+                'user_id' => $actor->id,
+                'context_type' => 'other',
+                'reference_type' => 'loans',
+                'reference_id' => $loan->id,
+                'note' => 'Leihgebuehr gezahlt: '.$player->full_name,
+            ]);
 
             $this->notify(
                 $lenderClub->user_id,
@@ -137,8 +120,20 @@ class LoanService
             $price = (float) $loan->buy_option_price;
             abort_if((float) $buyerClub->budget < $price, 422, 'Nicht genug Budget fuer Kaufoption.');
 
-            $buyerClub->decrement('budget', $price);
-            $sellerClub->increment('budget', $price);
+            $this->financeLedger->applyBudgetChange($buyerClub, -$price, [
+                'user_id' => $actor->id,
+                'context_type' => 'transfer',
+                'reference_type' => 'loans',
+                'reference_id' => $loan->id,
+                'note' => 'Kaufoption gezogen: '.$player->full_name,
+            ]);
+            $this->financeLedger->applyBudgetChange($sellerClub, $price, [
+                'user_id' => $actor->id,
+                'context_type' => 'transfer',
+                'reference_type' => 'loans',
+                'reference_id' => $loan->id,
+                'note' => 'Kaufoption gezogen: '.$player->full_name,
+            ]);
 
             $loan->update([
                 'status' => 'completed',
@@ -174,37 +169,6 @@ class LoanService
                 'expires_on' => $player->contract_expires_on ?: now()->addYears(2)->toDateString(),
                 'release_clause' => (float) $player->market_value * 2,
                 'is_active' => true,
-            ]);
-
-            DB::table('club_financial_transactions')->insert([
-                [
-                    'club_id' => $sellerClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'transfer',
-                    'direction' => 'income',
-                    'amount' => $price,
-                    'balance_after' => (float) $sellerClub->fresh()->budget,
-                    'reference_type' => 'loans',
-                    'reference_id' => $loan->id,
-                    'booked_at' => now(),
-                    'note' => 'Kaufoption gezogen: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'club_id' => $buyerClub->id,
-                    'user_id' => $actor->id,
-                    'context_type' => 'transfer',
-                    'direction' => 'expense',
-                    'amount' => $price,
-                    'balance_after' => (float) $buyerClub->fresh()->budget,
-                    'reference_type' => 'loans',
-                    'reference_id' => $loan->id,
-                    'booked_at' => now(),
-                    'note' => 'Kaufoption gezogen: '.$player->full_name,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
             ]);
 
             $this->notify(

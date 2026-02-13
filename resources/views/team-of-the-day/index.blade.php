@@ -51,9 +51,9 @@
                         <p class="text-sm font-semibold text-white">{{ $team->for_date->format('d.m.Y') }}</p>
                         <p class="mt-1 text-xs text-slate-300">{{ $team->players_count }} Spieler | {{ $team->formation }} | {{ $team->generation_context }}</p>
                         @if ($team->competitionSeason)
-                            <p class="mt-1 text-xs text-slate-400">
-                                {{ $team->competitionSeason->competition->short_name ?? $team->competitionSeason->competition->name }}
-                                ST {{ $team->matchday }}
+                            <p class="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $team->competitionSeason->competition->logo_url }}" alt="{{ $team->competitionSeason->competition->name }}">
+                                <span>{{ $team->competitionSeason->competition->short_name ?? $team->competitionSeason->competition->name }} ST {{ $team->matchday }}</span>
                             </p>
                         @endif
                     </a>
@@ -76,10 +76,13 @@
                             {{ $activeTeam->for_date->format('d.m.Y') }} | {{ $activeTeam->generation_context }}
                         </p>
                         @if ($activeTeam->competitionSeason)
-                            <p class="mt-1 text-xs text-slate-400">
+                            <p class="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $activeTeam->competitionSeason->competition->logo_url }}" alt="{{ $activeTeam->competitionSeason->competition->name }}">
+                                <span>
                                 Kontext:
                                 {{ $activeTeam->competitionSeason->competition->name }}
                                 ({{ $activeTeam->competitionSeason->season->name }}) - Spieltag {{ $activeTeam->matchday }}
+                                </span>
                             </p>
                         @endif
                     </div>
@@ -102,8 +105,26 @@
                             @forelse ($entries as $entry)
                                 <tr>
                                     <td>{{ $entry->position_code }}</td>
-                                    <td class="font-semibold">{{ $entry->player?->full_name ?? '-' }}</td>
-                                    <td>{{ $entry->club?->name ?? '-' }}</td>
+                                    <td class="font-semibold">
+                                        @if ($entry->player)
+                                            <span class="inline-flex items-center gap-2">
+                                                <img class="sim-avatar sim-avatar-xs" src="{{ $entry->player->photo_url }}" alt="{{ $entry->player->full_name }}">
+                                                {{ $entry->player->full_name }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($entry->club)
+                                            <span class="inline-flex items-center gap-2">
+                                                <img class="sim-avatar sim-avatar-xs" src="{{ $entry->club->logo_url }}" alt="{{ $entry->club->name }}">
+                                                {{ $entry->club->name }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>{{ $entry->player?->position ?? '-' }}</td>
                                     <td>{{ $entry->rating ?? '-' }}</td>
                                     <td>
