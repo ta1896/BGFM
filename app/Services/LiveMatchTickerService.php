@@ -3,13 +3,17 @@
 namespace App\Services;
 
 use App\Models\Club;
-use App\Models\CompetitionSeason;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\MatchLiveAction;
 use App\Models\MatchLivePlayerState;
 use App\Models\MatchLiveTeamState;
+use App\Models\MatchPlannedSubstitution;
 use App\Models\Player;
+use App\Services\Simulation\DefaultSimulationStrategy;
+use App\Services\Simulation\MatchSimulationExecutor;
+use App\Services\Simulation\Observers\MatchFinishedContext;
+use App\Services\Simulation\Observers\MatchFinishedObserverPipeline;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -25,22 +29,29 @@ class LiveMatchTickerService
 
     private const MINUTES_BETWEEN_SUBSTITUTIONS = 3;
 
+    private const MAX_PLANNED_SUBSTITUTIONS_PER_CLUB = 5;
+
+    private const MIN_MINUTES_AHEAD_FOR_PLANNED_SUBSTITUTION = 2;
+
     public function __construct(
         private readonly CpuClubDecisionService $cpuDecisionService,
-        private readonly LeagueTableService $tableService,
         private readonly PlayerPositionService $positionService,
-        private readonly FinanceCycleService $financeCycleService,
-        private readonly FormationPlannerService $formationPlannerService
+        private readonly CompetitionContextService $competitionContextService,
+        private readonly FormationPlannerService $formationPlannerService,
+        private readonly PlayerAvailabilityService $availabilityService,
+        private readonly MatchSimulationExecutor $simulationExecutor,
+        private readonly DefaultSimulationStrategy $simulationStrategy,
+        private readonly MatchFinishedObserverPipeline $matchFinishedObserverPipeline
     ) {
     }
 
     public function start(GameMatch $match): GameMatch
     {
-        if ($match->status === 'played') {
+        if ($match->status === 'played' || $match->status === 'live') {
             return $this->loadState($match);
         }
 
-        if ($match->status === 'live') {
+        if ($match->status !== 'scheduled') {
             return $this->loadState($match);
         }
 
@@ -57,19 +68,30 @@ class LiveMatchTickerService
         }
 
         DB::transaction(function () use ($match): void {
-            $match->update([
+            $lockedMatch = GameMatch::query()
+                ->whereKey($match->id)
+                ->lockForUpdate()
+                ->first();
+            if (!$lockedMatch || $lockedMatch->status !== 'scheduled') {
+                return;
+            }
+
+            $lockedMatch->loadMissing(['homeClub', 'awayClub']);
+            $context = $this->competitionContextService->forMatch($lockedMatch);
+            $lockedMatch->update([
                 'status' => 'live',
-                'home_score' => (int) ($match->home_score ?? 0),
-                'away_score' => (int) ($match->away_score ?? 0),
-                'attendance' => $match->attendance ?: $this->attendance($match->homeClub),
-                'weather' => $match->weather ?: $this->weather(),
-                'live_minute' => max(0, (int) $match->live_minute),
+                'competition_context' => $context,
+                'home_score' => (int) ($lockedMatch->home_score ?? 0),
+                'away_score' => (int) ($lockedMatch->away_score ?? 0),
+                'attendance' => $lockedMatch->attendance ?: $this->attendance($lockedMatch->homeClub),
+                'weather' => $lockedMatch->weather ?: $this->weather(),
+                'live_minute' => max(0, (int) $lockedMatch->live_minute),
                 'live_paused' => false,
                 'live_error_message' => null,
                 'live_last_tick_at' => now(),
             ]);
 
-            $this->initializeLiveState($match->fresh(['homeClub', 'awayClub']));
+            $this->initializeLiveState($lockedMatch->fresh(['homeClub', 'awayClub']));
         });
 
         return $this->loadState($match);
@@ -221,7 +243,7 @@ class LiveMatchTickerService
             return $this->loadState($match);
         }
 
-        if (!$this->isPlayerAvailableForLive($playerIn)) {
+        if (!$this->availabilityService->isPlayerAvailableForLiveMatch($playerIn, $match)) {
             return $this->loadState($match);
         }
 
@@ -284,43 +306,159 @@ class LiveMatchTickerService
         return $this->loadState($match);
     }
 
-    public function tick(GameMatch $match, int $minutes = 1): GameMatch
-    {
-        $minutes = max(1, min(120, $minutes));
-
-        if ($match->status === 'scheduled') {
-            $this->start($match);
-            $match = $match->fresh();
-        }
-
+    public function planSubstitution(
+        GameMatch $match,
+        int $clubId,
+        int $playerOutId,
+        int $playerInId,
+        int $plannedMinute,
+        string $scoreCondition = 'any',
+        ?string $targetSlot = null
+    ): GameMatch {
         if ($match->status !== 'live' || $match->live_paused) {
             return $this->loadState($match);
         }
 
-        for ($i = 0; $i < $minutes; $i++) {
-            $match->refresh();
-            if ($match->status !== 'live' || $match->live_paused) {
-                break;
-            }
-
-            $nextMinute = ((int) $match->live_minute) + 1;
-            if ($nextMinute > $this->matchMinuteLimit($match)) {
-                break;
-            }
-
-            $this->simulateMinute($match, $nextMinute);
-            $match->update([
-                'live_minute' => $nextMinute,
-                'live_last_tick_at' => now(),
-            ]);
+        if (!in_array($clubId, [(int) $match->home_club_id, (int) $match->away_club_id], true)) {
+            return $this->loadState($match);
         }
 
-        $match->refresh();
-        if ($match->status === 'live' && $this->canFinish($match)) {
-            $this->finish($match);
+        $allowedConditions = ['any', 'leading', 'drawing', 'trailing'];
+        if (!in_array($scoreCondition, $allowedConditions, true)) {
+            return $this->loadState($match);
         }
+
+        $minute = max(1, $plannedMinute);
+        $currentMinute = (int) $match->live_minute;
+        if ($minute < ($currentMinute + $this->minMinutesAheadForPlannedSubstitution())) {
+            return $this->loadState($match);
+        }
+
+        if ($minute > $this->matchMinuteLimit($match)) {
+            return $this->loadState($match);
+        }
+
+        $teamState = $this->teamStateFor($match, $clubId);
+        $remainingSubs = max(0, self::MAX_SUBSTITUTIONS - (int) $teamState->substitutions_used);
+        if ($remainingSubs < 1) {
+            return $this->loadState($match);
+        }
+
+        $pendingPlansCount = MatchPlannedSubstitution::query()
+            ->where('match_id', $match->id)
+            ->where('club_id', $clubId)
+            ->where('status', 'pending')
+            ->count();
+        if ($pendingPlansCount >= min($remainingSubs, $this->maxPlannedSubstitutionsPerClub())) {
+            return $this->loadState($match);
+        }
+
+        $interval = $this->plannedSubstitutionIntervalMinutes();
+        $hasTimingConflict = MatchPlannedSubstitution::query()
+            ->where('match_id', $match->id)
+            ->where('club_id', $clubId)
+            ->where('status', 'pending')
+            ->whereBetween('planned_minute', [$minute - ($interval - 1), $minute + ($interval - 1)])
+            ->exists();
+        if ($hasTimingConflict) {
+            return $this->loadState($match);
+        }
+
+        /** @var Club|null $club */
+        $club = Club::query()->find($clubId);
+        if (!$club) {
+            return $this->loadState($match);
+        }
+
+        $lineup = $this->ensureMatchLineup($match, $club);
+        $lineup->load('players');
+
+        /** @var Player|null $playerOut */
+        $playerOut = $lineup->players->firstWhere('id', $playerOutId);
+        /** @var Player|null $playerIn */
+        $playerIn = $lineup->players->firstWhere('id', $playerInId);
+        if (!$playerOut || !$playerIn || $playerOut->id === $playerIn->id) {
+            return $this->loadState($match);
+        }
+
+        if (!$this->availabilityService->isPlayerAvailableForLiveMatch($playerIn, $match)) {
+            return $this->loadState($match);
+        }
+
+        $outSlot = strtoupper((string) $playerOut->pivot->pitch_position);
+        if ((bool) $playerOut->pivot->is_bench || str_starts_with($outSlot, 'OUT-')) {
+            return $this->loadState($match);
+        }
+
+        $inSlot = strtoupper((string) $playerIn->pivot->pitch_position);
+        if (!(bool) $playerIn->pivot->is_bench || str_starts_with($inSlot, 'OUT-')) {
+            return $this->loadState($match);
+        }
+
+        $resolvedTargetSlot = strtoupper(trim((string) $targetSlot));
+        if ($resolvedTargetSlot === '' || str_starts_with($resolvedTargetSlot, 'BANK-') || str_starts_with($resolvedTargetSlot, 'OUT-')) {
+            $resolvedTargetSlot = $outSlot;
+        }
+
+        if (!$this->isValidTargetSlotForSubstitution($lineup, $resolvedTargetSlot, $outSlot)) {
+            return $this->loadState($match);
+        }
+
+        if (!$this->canSubstituteGoalkeeper($match, $clubId, $playerOut, $playerIn)) {
+            return $this->loadState($match);
+        }
+
+        MatchPlannedSubstitution::query()->create([
+            'match_id' => $match->id,
+            'club_id' => $clubId,
+            'player_out_id' => $playerOutId,
+            'player_in_id' => $playerInId,
+            'planned_minute' => $minute,
+            'score_condition' => $scoreCondition,
+            'target_slot' => $resolvedTargetSlot,
+            'status' => 'pending',
+        ]);
+
+        $this->recordAction(
+            $match,
+            max($currentMinute, 1),
+            random_int(0, 59),
+            0,
+            $clubId,
+            $playerInId,
+            $playerOutId,
+            'substitution_plan',
+            'scheduled',
+            [
+                'planned_minute' => $minute,
+                'score_condition' => $scoreCondition,
+                'target_slot' => $resolvedTargetSlot,
+            ]
+        );
 
         return $this->loadState($match);
+    }
+
+    public function tick(GameMatch $match, int $minutes = 1): GameMatch
+    {
+        if (!$match->competition_context) {
+            $this->competitionContextService->persistForMatch($match);
+        }
+
+        return $this->simulationExecutor->run(
+            $match,
+            $minutes,
+            fn (GameMatch $match): GameMatch => $this->start($match),
+            fn (GameMatch $match): GameMatch => $this->loadState($match),
+            function (GameMatch $match, int $minute): void {
+                $this->simulateMinute($match, $minute);
+            },
+            fn (GameMatch $match): int => $this->matchMinuteLimit($match),
+            fn (GameMatch $match): bool => $this->canFinish($match),
+            function (GameMatch $match): void {
+                $this->finish($match);
+            },
+        );
     }
 
     private function applySubstitution(
@@ -404,7 +542,12 @@ class LiveMatchTickerService
                     'player_in_id' => $playerIn->id,
                     'player_out_id' => $playerOut->id,
                     'target_slot' => $resolvedTargetSlot,
-                    'fit_factor' => $this->positionService->fitFactor((string) $playerIn->position, $resolvedTargetSlot),
+                    'fit_factor' => $this->positionService->fitFactorWithProfile(
+                        (string) ($playerIn->position_main ?: $playerIn->position),
+                        (string) $playerIn->position_second,
+                        (string) $playerIn->position_third,
+                        $resolvedTargetSlot
+                    ),
                 ],
             ]);
 
@@ -421,7 +564,12 @@ class LiveMatchTickerService
             $playerInState->update([
                 'is_on_pitch' => true,
                 'slot' => $resolvedTargetSlot,
-                'fit_factor' => round($this->positionService->fitFactor((string) $playerIn->position, $resolvedTargetSlot), 2),
+                'fit_factor' => round($this->positionService->fitFactorWithProfile(
+                    (string) ($playerIn->position_main ?: $playerIn->position),
+                    (string) $playerIn->position_second,
+                    (string) $playerIn->position_third,
+                    $resolvedTargetSlot
+                ), 2),
             ]);
 
             if ($targetSlotOccupant) {
@@ -430,7 +578,12 @@ class LiveMatchTickerService
                     $targetState->update([
                         'is_on_pitch' => true,
                         'slot' => $outSlot,
-                        'fit_factor' => round($this->positionService->fitFactor((string) $targetSlotOccupant->position, $outSlot), 2),
+                        'fit_factor' => round($this->positionService->fitFactorWithProfile(
+                            (string) ($targetSlotOccupant->position_main ?: $targetSlotOccupant->position),
+                            (string) $targetSlotOccupant->position_second,
+                            (string) $targetSlotOccupant->position_third,
+                            $outSlot
+                        ), 2),
                     ]);
                 }
             }
@@ -456,45 +609,46 @@ class LiveMatchTickerService
 
     private function finish(GameMatch $match): void
     {
-        $match->loadMissing(['homeClub.players', 'awayClub.players']);
-        $homePlayers = $this->resolveMatchParticipants($match->homeClub, $match);
-        $awayPlayers = $this->resolveMatchParticipants($match->awayClub, $match);
-
-        DB::transaction(function () use ($match, $homePlayers, $awayPlayers): void {
-            $this->decrementAvailabilityCountersForClub((int) $match->home_club_id);
-            $this->decrementAvailabilityCountersForClub((int) $match->away_club_id);
-
-            if ($this->isCup($match) && (int) $match->home_score === (int) $match->away_score) {
-                $this->resolvePenaltyShootout($match);
+        /** @var GameMatch|null $finalizedMatch */
+        $finalizedMatch = DB::transaction(function () use ($match): ?GameMatch {
+            $lockedMatch = GameMatch::query()
+                ->whereKey($match->id)
+                ->lockForUpdate()
+                ->first();
+            if (!$lockedMatch || $lockedMatch->status !== 'live' || $lockedMatch->played_at !== null) {
+                return null;
             }
 
-            $match->update([
+            $this->availabilityService->decrementCountersForMatch((int) $lockedMatch->home_club_id, $lockedMatch);
+            $this->availabilityService->decrementCountersForMatch((int) $lockedMatch->away_club_id, $lockedMatch);
+
+            if ($this->isCup($lockedMatch) && (int) $lockedMatch->home_score === (int) $lockedMatch->away_score) {
+                $this->resolvePenaltyShootout($lockedMatch);
+            }
+
+            $lockedMatch->update([
                 'status' => 'played',
-                'live_minute' => min((int) $match->live_minute, $this->matchMinuteLimit($match)),
+                'live_minute' => min((int) $lockedMatch->live_minute, $this->matchMinuteLimit($lockedMatch)),
                 'live_paused' => false,
                 'live_error_message' => null,
                 'played_at' => now(),
             ]);
 
-            $match->playerStats()->delete();
-            $this->createPlayerStats($match, $homePlayers, $awayPlayers);
-            $this->applyAvailabilityConsequences($match);
+            return $lockedMatch->fresh();
         });
-
-        if ($match->competition_season_id) {
-            $competitionSeason = CompetitionSeason::query()->find($match->competition_season_id);
-            if ($competitionSeason) {
-                if ((string) $match->type === 'league') {
-                    $this->tableService->rebuild($competitionSeason);
-                }
-
-                if ($this->isCup($match)) {
-                    $this->progressCupRoundIfNeeded($competitionSeason, $match);
-                }
-            }
+        if (!$finalizedMatch) {
+            return;
         }
 
-        $this->financeCycleService->settleMatch($match->fresh());
+        $finalizedMatch->loadMissing(['homeClub.players', 'awayClub.players']);
+        $homePlayers = $this->resolveMatchParticipants($finalizedMatch->homeClub, $finalizedMatch);
+        $awayPlayers = $this->resolveMatchParticipants($finalizedMatch->awayClub, $finalizedMatch);
+
+        $this->matchFinishedObserverPipeline->process(new MatchFinishedContext(
+            $finalizedMatch->fresh(),
+            $homePlayers,
+            $awayPlayers
+        ));
     }
 
     private function simulateMinute(GameMatch $match, int $minute): void
@@ -514,6 +668,8 @@ class LiveMatchTickerService
             ->where('is_injured', false)
             ->increment('minutes_played');
 
+        $this->executePlannedSubstitutions($match, $minute);
+
         $homeStates = $this->activePlayerStates($match, (int) $match->home_club_id);
         $awayStates = $this->activePlayerStates($match, (int) $match->away_club_id);
         if ($homeStates->isEmpty() || $awayStates->isEmpty()) {
@@ -525,17 +681,19 @@ class LiveMatchTickerService
         $homeStrength = $this->teamStrengthFromStates($homeStates, true, (string) $homeStyle);
         $awayStrength = $this->teamStrengthFromStates($awayStates, false, (string) $awayStyle);
 
-        $homePossession = max(22, min(78, 50 + (($homeStrength - $awayStrength) / 4) + random_int(-5, 5)));
-        $homeSeconds = max(15, min(45, (int) round(($homePossession / 100) * 60)));
+        $homePossession = $this->simulationStrategy->homePossessionPercent($homeStrength, $awayStrength);
+        $homeSeconds = $this->simulationStrategy->homePossessionSeconds($homePossession);
 
         $this->incrementTeamState($match, (int) $match->home_club_id, ['possession_seconds' => $homeSeconds], ['phase' => $this->phaseFromMinute($minute)]);
         $this->incrementTeamState($match, (int) $match->away_club_id, ['possession_seconds' => (60 - $homeSeconds)], ['phase' => $this->phaseFromMinute($minute)]);
 
-        $sequences = random_int(3, 5);
+        $sequences = $this->simulationStrategy->sequenceCount();
         for ($sequence = 1; $sequence <= $sequences; $sequence++) {
-            $attackerClubId = random_int(1, 100) <= $homePossession
-                ? (int) $match->home_club_id
-                : (int) $match->away_club_id;
+            $attackerClubId = $this->simulationStrategy->attackerClubId(
+                (int) $match->home_club_id,
+                (int) $match->away_club_id,
+                $homePossession
+            );
             $defenderClubId = $attackerClubId === (int) $match->home_club_id
                 ? (int) $match->away_club_id
                 : (int) $match->home_club_id;
@@ -545,6 +703,123 @@ class LiveMatchTickerService
 
         $this->simulateRandomInjury($match, $minute, (int) $match->home_club_id);
         $this->simulateRandomInjury($match, $minute, (int) $match->away_club_id);
+    }
+
+    private function executePlannedSubstitutions(GameMatch $match, int $minute): void
+    {
+        $plans = MatchPlannedSubstitution::query()
+            ->where('match_id', $match->id)
+            ->where('status', 'pending')
+            ->where('planned_minute', '<=', $minute)
+            ->orderBy('planned_minute')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($plans as $plan) {
+            $clubId = (int) $plan->club_id;
+            if (!$this->isScoreConditionSatisfied($match, $clubId, (string) $plan->score_condition)) {
+                $plan->update([
+                    'status' => 'skipped',
+                    'executed_minute' => $minute,
+                    'metadata' => array_merge((array) $plan->metadata, [
+                        'reason' => 'condition_not_met',
+                    ]),
+                ]);
+                continue;
+            }
+
+            $beforeSubs = (int) $this->teamStateFor($match, $clubId)->substitutions_used;
+            $previousMinute = (int) $match->live_minute;
+            $match->setAttribute('live_minute', $minute);
+
+            $this->makeSubstitution(
+                $match,
+                $clubId,
+                (int) $plan->player_out_id,
+                (int) $plan->player_in_id,
+                (string) ($plan->target_slot ?? '')
+            );
+
+            $match->setAttribute('live_minute', $previousMinute);
+
+            $afterSubs = (int) $this->teamStateFor($match, $clubId)->fresh()->substitutions_used;
+            if ($afterSubs > $beforeSubs) {
+                $plan->update([
+                    'status' => 'executed',
+                    'executed_minute' => $minute,
+                    'metadata' => array_merge((array) $plan->metadata, [
+                        'result' => 'executed',
+                    ]),
+                ]);
+
+                $this->recordAction(
+                    $match,
+                    $minute,
+                    random_int(0, 59),
+                    0,
+                    $clubId,
+                    $plan->player_in_id ? (int) $plan->player_in_id : null,
+                    $plan->player_out_id ? (int) $plan->player_out_id : null,
+                    'substitution_plan',
+                    'executed',
+                    [
+                        'plan_id' => (int) $plan->id,
+                        'planned_minute' => (int) $plan->planned_minute,
+                    ]
+                );
+            } else {
+                $plan->update([
+                    'status' => 'invalid',
+                    'executed_minute' => $minute,
+                    'metadata' => array_merge((array) $plan->metadata, [
+                        'reason' => 'substitution_rejected',
+                    ]),
+                ]);
+            }
+        }
+    }
+
+    private function isScoreConditionSatisfied(GameMatch $match, int $clubId, string $condition): bool
+    {
+        if ($condition === 'any') {
+            return true;
+        }
+
+        $goalDiff = (int) $match->home_score - (int) $match->away_score;
+        if ($clubId === (int) $match->away_club_id) {
+            $goalDiff *= -1;
+        }
+
+        return match ($condition) {
+            'leading' => $goalDiff > 0,
+            'drawing' => $goalDiff === 0,
+            'trailing' => $goalDiff < 0,
+            default => true,
+        };
+    }
+
+    private function maxPlannedSubstitutionsPerClub(): int
+    {
+        return max(1, (int) config(
+            'simulation.live_changes.planned_substitutions.max_per_club',
+            self::MAX_PLANNED_SUBSTITUTIONS_PER_CLUB
+        ));
+    }
+
+    private function minMinutesAheadForPlannedSubstitution(): int
+    {
+        return max(1, (int) config(
+            'simulation.live_changes.planned_substitutions.min_minutes_ahead',
+            self::MIN_MINUTES_AHEAD_FOR_PLANNED_SUBSTITUTION
+        ));
+    }
+
+    private function plannedSubstitutionIntervalMinutes(): int
+    {
+        return max(1, (int) config(
+            'simulation.live_changes.planned_substitutions.min_interval_minutes',
+            self::MINUTES_BETWEEN_SUBSTITUTIONS
+        ));
     }
 
     private function simulateActionSequence(
@@ -571,8 +846,10 @@ class LiveMatchTickerService
         $this->incrementPlayerState($ballCarrier, ['ball_contacts' => 1, 'pass_attempts' => 1]);
         $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, null, 'possession', 'start', null);
 
-        $passProbability = max(0.56, min(0.93, 0.70 + ((((float) $ballCarrier->player->passing * (float) $ballCarrier->fit_factor) - 60) / 180)));
-        if (!$this->roll($passProbability)) {
+        if (!$this->simulationStrategy->isPassSuccessful(
+            (float) $ballCarrier->player->passing,
+            (float) $ballCarrier->fit_factor
+        )) {
             $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, null, 'pass', 'failed', null);
 
             return;
@@ -582,7 +859,7 @@ class LiveMatchTickerService
         $this->incrementPlayerState($ballCarrier, ['pass_completions' => 1]);
         $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, null, 'pass', 'complete', null);
 
-        if ($this->roll(0.45)) {
+        if ($this->simulationStrategy->shouldAttemptTackle()) {
             $tackler = $this->weightedStatePick(
                 $defenders,
                 fn (MatchLivePlayerState $state): int => max(5, (int) round((($state->player->defending + $state->player->physical) / 2) * (float) $state->fit_factor))
@@ -591,13 +868,15 @@ class LiveMatchTickerService
             $this->incrementTeamState($match, $defenderClubId, ['tackle_attempts' => 1]);
             $this->incrementPlayerState($tackler, ['tackle_attempts' => 1]);
 
-            $tackleWinProbability = max(0.25, min(0.82, 0.50 + (((float) $tackler->player->defending - (float) $ballCarrier->player->pace) / 260)));
-            if ($this->roll($tackleWinProbability)) {
+            if ($this->simulationStrategy->isTackleWon(
+                (float) $tackler->player->defending,
+                (float) $ballCarrier->player->pace
+            )) {
                 $this->incrementTeamState($match, $defenderClubId, ['tackle_won' => 1]);
                 $this->incrementPlayerState($tackler, ['tackle_won' => 1]);
                 $this->recordAction($match, $minute, random_int(0, 59), $sequence, $defenderClubId, (int) $tackler->player_id, (int) $ballCarrier->player_id, 'tackle', 'won', null);
 
-                if ($this->roll(0.18)) {
+                if ($this->simulationStrategy->shouldCommitFoulAfterTackleWin()) {
                     $this->handleFoulAndSetPiece($match, $minute, $sequence, $defenderClubId, $attackerClubId, $tackler, $ballCarrier);
                 }
 
@@ -609,7 +888,12 @@ class LiveMatchTickerService
 
         $this->incrementTeamState($match, $attackerClubId, ['dangerous_attacks' => 1, 'shots' => 1]);
 
-        $xg = max(0.03, min(0.48, 0.10 + (((($attackerClubId === (int) $match->home_club_id) ? $homeStrength : $awayStrength) - ((($attackerClubId === (int) $match->home_club_id) ? $awayStrength : $homeStrength))) / 400) + (random_int(0, 12) / 100)));
+        $xg = $this->simulationStrategy->chanceXg(
+            $attackerClubId,
+            (int) $match->home_club_id,
+            $homeStrength,
+            $awayStrength
+        );
         $this->incrementTeamState($match, $attackerClubId, [], [
             'expected_goals' => (float) $this->teamStateFor($match, $attackerClubId)->expected_goals + $xg,
         ]);
@@ -621,20 +905,22 @@ class LiveMatchTickerService
             'player_id' => $ballCarrier->player_id,
             'event_type' => 'chance',
             'metadata' => [
-                'quality' => $xg >= 0.24 || random_int(1, 100) <= 38 ? 'big' : 'normal',
+                'quality' => $this->simulationStrategy->chanceQuality($xg),
                 'xg_bucket' => round($xg, 2),
                 'sequence' => $sequence,
             ],
         ]);
 
         $this->incrementPlayerState($ballCarrier, ['shots' => 1]);
-        if ($this->roll(0.12)) {
+        if ($this->simulationStrategy->shouldWinCornerAfterShot()) {
             $this->incrementTeamState($match, $attackerClubId, ['corners_won' => 1]);
             $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, null, 'set_piece', 'corner', null);
         }
 
-        $onTargetProbability = max(0.22, min(0.78, 0.34 + ((((float) $ballCarrier->player->shooting * (float) $ballCarrier->fit_factor) - 58) / 220)));
-        if (!$this->roll($onTargetProbability)) {
+        if (!$this->simulationStrategy->isShotOnTarget(
+            (float) $ballCarrier->player->shooting,
+            (float) $ballCarrier->fit_factor
+        )) {
             $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, null, 'shot', 'off_target', ['xg' => round($xg, 2)]);
 
             return;
@@ -644,9 +930,13 @@ class LiveMatchTickerService
         $this->incrementPlayerState($ballCarrier, ['shots_on_target' => 1]);
 
         $goalkeeper = $this->goalkeeperState($defenders) ?? $defenders->random();
-        $saveProbability = max(0.18, min(0.86, 0.55 + ((((float) $goalkeeper->player->overall * (float) $goalkeeper->fit_factor) - ((float) $ballCarrier->player->shooting * (float) $ballCarrier->fit_factor)) / 300) - ($xg / 2.5)));
-
-        if ($this->roll($saveProbability)) {
+        if ($this->simulationStrategy->isSave(
+            (float) $goalkeeper->player->overall,
+            (float) $goalkeeper->fit_factor,
+            (float) $ballCarrier->player->shooting,
+            (float) $ballCarrier->fit_factor,
+            $xg
+        )) {
             $match->events()->create([
                 'minute' => $minute,
                 'second' => random_int(0, 59),
@@ -667,7 +957,7 @@ class LiveMatchTickerService
         }
 
         $assistState = null;
-        if ($attackers->count() > 1 && random_int(1, 100) <= 68) {
+        if ($attackers->count() > 1 && $this->simulationStrategy->shouldCreateAssist()) {
             $assistCandidates = $attackers->where('player_id', '!=', $ballCarrier->player_id)->values();
             if ($assistCandidates->isNotEmpty()) {
                 $assistState = $assistCandidates->random();
@@ -715,8 +1005,8 @@ class LiveMatchTickerService
         $this->incrementPlayerState($victim, ['fouls_suffered' => 1]);
         $this->recordAction($match, $minute, random_int(0, 59), $sequence, $defenderClubId, (int) $foulingPlayer->player_id, (int) $victim->player_id, 'foul', 'committed', null);
 
-        $isRed = $this->roll(0.04);
-        $isYellow = !$isRed && $this->roll(0.30);
+        $isRed = $this->simulationStrategy->isRedCardFromFoul();
+        $isYellow = $this->simulationStrategy->isYellowCardFromFoul($isRed);
         if ($isYellow) {
             $match->events()->create([
                 'minute' => $minute,
@@ -749,7 +1039,7 @@ class LiveMatchTickerService
             $this->markPlayerUnavailableInLineup($match, $defenderClubId, (int) $foulingPlayer->player_id, $minute);
         }
 
-        if ($this->roll(0.14)) {
+        if ($this->simulationStrategy->isPenaltyAwardedFromFoul()) {
             $this->recordAction($match, $minute, random_int(0, 59), $sequence, $attackerClubId, (int) $victim->player_id, (int) $foulingPlayer->player_id, 'set_piece', 'penalty_awarded', null);
             $this->simulatePenaltyAttemptInPlay($match, $minute, $sequence, $attackerClubId, $defenderClubId, $victim);
         } else {
@@ -782,8 +1072,10 @@ class LiveMatchTickerService
         ]);
         $this->incrementPlayerState($taker, ['shots' => 1, 'shots_on_target' => 1]);
 
-        $scoreProbability = max(0.55, min(0.94, 0.75 + (((float) $taker->player->shooting - (float) $goalkeeper->player->overall) / 300)));
-        if ($this->roll($scoreProbability)) {
+        if ($this->simulationStrategy->isPenaltyScoredInPlay(
+            (float) $taker->player->shooting,
+            (float) $goalkeeper->player->overall
+        )) {
             $match->events()->create([
                 'minute' => $minute,
                 'second' => random_int(0, 59),
@@ -811,7 +1103,7 @@ class LiveMatchTickerService
             'event_type' => 'penalty_missed',
             'metadata' => ['sequence' => $sequence],
         ]);
-        if ($this->roll(0.68)) {
+        if ($this->simulationStrategy->shouldCreatePenaltySaveEventInPlay()) {
             $match->events()->create([
                 'minute' => $minute,
                 'second' => random_int(0, 59),
@@ -828,7 +1120,7 @@ class LiveMatchTickerService
 
     private function simulateRandomInjury(GameMatch $match, int $minute, int $clubId): void
     {
-        if (!$this->roll(0.012)) {
+        if (!$this->simulationStrategy->shouldRandomInjuryOccur()) {
             return;
         }
 
@@ -894,7 +1186,7 @@ class LiveMatchTickerService
         }
 
         if ($homeKicks === $awayKicks) {
-            if ($this->roll(0.5)) {
+            if ($this->simulationStrategy->shouldHomeWinShootoutCoinflip()) {
                 $homeKicks++;
             } else {
                 $awayKicks++;
@@ -924,8 +1216,10 @@ class LiveMatchTickerService
         );
         $goalkeeper = $this->goalkeeperState($defenders) ?? $defenders->random();
 
-        $scoreProbability = max(0.55, min(0.94, 0.76 + (((float) $taker->player->shooting - (float) $goalkeeper->player->overall) / 300)));
-        $isGoal = $this->roll($scoreProbability);
+        $isGoal = $this->simulationStrategy->isPenaltyScoredInShootout(
+            (float) $taker->player->shooting,
+            (float) $goalkeeper->player->overall
+        );
 
         $match->events()->create([
             'minute' => 120,
@@ -947,7 +1241,7 @@ class LiveMatchTickerService
         }
 
         $this->recordAction($match, 120, min(59, 20 + $kickNumber), $kickNumber, $attackerClubId, (int) $taker->player_id, (int) $goalkeeper->player_id, 'penalty', 'missed', ['shootout' => true]);
-        if ($this->roll(0.66)) {
+        if ($this->simulationStrategy->shouldCreatePenaltySaveEventInShootout()) {
             $match->events()->create([
                 'minute' => 120,
                 'second' => min(59, 20 + $kickNumber),
@@ -963,90 +1257,6 @@ class LiveMatchTickerService
         }
 
         return false;
-    }
-
-    private function progressCupRoundIfNeeded(CompetitionSeason $competitionSeason, GameMatch $match): void
-    {
-        if (!$this->isCup($match) || !$match->competition_season_id) {
-            return;
-        }
-
-        $round = (int) ($match->round_number ?? 1);
-        $currentRoundMatches = GameMatch::query()
-            ->where('competition_season_id', $competitionSeason->id)
-            ->where('type', 'cup')
-            ->where('round_number', $round)
-            ->orderBy('id')
-            ->get();
-
-        if ($currentRoundMatches->isEmpty() || $currentRoundMatches->contains(fn (GameMatch $m): bool => $m->status !== 'played')) {
-            return;
-        }
-
-        $nextRound = $round + 1;
-        $nextRoundExists = GameMatch::query()
-            ->where('competition_season_id', $competitionSeason->id)
-            ->where('type', 'cup')
-            ->where('round_number', $nextRound)
-            ->exists();
-        if ($nextRoundExists) {
-            return;
-        }
-
-        $winnerClubIds = $currentRoundMatches
-            ->map(function (GameMatch $m): ?int {
-                if ((int) $m->home_score > (int) $m->away_score) {
-                    return (int) $m->home_club_id;
-                }
-                if ((int) $m->away_score > (int) $m->home_score) {
-                    return (int) $m->away_club_id;
-                }
-                if ($m->penalties_home !== null && $m->penalties_away !== null) {
-                    return (int) ($m->penalties_home > $m->penalties_away ? $m->home_club_id : $m->away_club_id);
-                }
-
-                return null;
-            })
-            ->filter()
-            ->values();
-
-        if ($winnerClubIds->count() <= 1) {
-            return;
-        }
-
-        if ($winnerClubIds->count() % 2 !== 0) {
-            $winnerClubIds = $winnerClubIds->slice(0, $winnerClubIds->count() - 1)->values();
-        }
-
-        if ($winnerClubIds->count() < 2) {
-            return;
-        }
-
-        $kickoffAt = $currentRoundMatches->max('kickoff_at')
-            ? $currentRoundMatches->max('kickoff_at')->copy()->addDays(7)
-            : now()->addDays(7);
-
-        foreach ($winnerClubIds->chunk(2) as $pair) {
-            if ($pair->count() < 2) {
-                continue;
-            }
-
-            GameMatch::query()->create([
-                'competition_season_id' => $competitionSeason->id,
-                'season_id' => $competitionSeason->season_id,
-                'type' => 'cup',
-                'stage' => 'Cup Runde '.$nextRound,
-                'round_number' => $nextRound,
-                'kickoff_at' => $kickoffAt,
-                'status' => 'scheduled',
-                'home_club_id' => (int) $pair->get(0),
-                'away_club_id' => (int) $pair->get(1),
-                'stadium_club_id' => (int) $pair->get(0),
-                'simulation_seed' => random_int(10000, 99999),
-            ]);
-
-            $kickoffAt = $kickoffAt->copy()->addMinutes(30);
-        }
     }
 
     private function canFinish(GameMatch $match): bool
@@ -1075,7 +1285,7 @@ class LiveMatchTickerService
 
     private function isCup(GameMatch $match): bool
     {
-        return (string) $match->type === 'cup';
+        return $this->competitionContextService->isCup($match);
     }
 
     private function phaseFromMinute(int $minute): string
@@ -1141,7 +1351,12 @@ class LiveMatchTickerService
                     'is_on_pitch' => !(bool) $player->pivot->is_bench && !str_starts_with($slot, 'OUT-'),
                     'is_sent_off' => false,
                     'is_injured' => false,
-                    'fit_factor' => round($this->positionService->fitFactor((string) $player->position, $slot), 2),
+                    'fit_factor' => round($this->positionService->fitFactorWithProfile(
+                        (string) ($player->position_main ?: $player->position),
+                        (string) $player->position_second,
+                        (string) $player->position_third,
+                        $slot
+                    ), 2),
                     'minutes_played' => 0,
                     'ball_contacts' => 0,
                     'pass_attempts' => 0,
@@ -1203,7 +1418,9 @@ class LiveMatchTickerService
     {
         /** @var MatchLivePlayerState|null $goalkeeper */
         $goalkeeper = $states->first(function (MatchLivePlayerState $state): bool {
-            return $this->positionService->groupFromPosition((string) $state->player?->position) === 'GK';
+            return $this->positionService->groupFromPosition(
+                (string) ($state->player?->position_main ?: $state->player?->position)
+            ) === 'GK';
         });
 
         return $goalkeeper;
@@ -1340,87 +1557,6 @@ class LiveMatchTickerService
         ]);
     }
 
-    private function applyAvailabilityConsequences(GameMatch $match): void
-    {
-        $states = MatchLivePlayerState::query()->where('match_id', $match->id)->get();
-        if ($states->isEmpty()) {
-            return;
-        }
-
-        $players = Player::query()->whereIn('id', $states->pluck('player_id')->all())->get()->keyBy('id');
-        foreach ($states as $state) {
-            /** @var Player|null $player */
-            $player = $players->get((int) $state->player_id);
-            if (!$player) {
-                continue;
-            }
-
-            $changed = false;
-            if ((bool) $state->is_injured) {
-                $player->injury_matches_remaining = max((int) $player->injury_matches_remaining, random_int(1, 4));
-                $player->status = 'injured';
-                $changed = true;
-            }
-
-            if ((int) $state->red_cards > 0) {
-                $player->suspension_matches_remaining = max((int) $player->suspension_matches_remaining, random_int(1, 3));
-                if ((int) $player->injury_matches_remaining < 1) {
-                    $player->status = 'suspended';
-                }
-                $changed = true;
-            }
-
-            if ($changed) {
-                $player->save();
-            }
-        }
-    }
-
-    private function decrementAvailabilityCountersForClub(int $clubId): void
-    {
-        $players = Player::query()
-            ->where('club_id', $clubId)
-            ->where(function ($query): void {
-                $query->where('injury_matches_remaining', '>', 0)
-                    ->orWhere('suspension_matches_remaining', '>', 0)
-                    ->orWhereIn('status', ['injured', 'suspended']);
-            })
-            ->get();
-
-        foreach ($players as $player) {
-            $injuryRemaining = max(0, (int) $player->injury_matches_remaining - 1);
-            $suspensionRemaining = max(0, (int) $player->suspension_matches_remaining - 1);
-
-            $nextStatus = $player->status;
-            if ($injuryRemaining > 0) {
-                $nextStatus = 'injured';
-            } elseif ($suspensionRemaining > 0) {
-                $nextStatus = 'suspended';
-            } elseif (in_array($player->status, ['injured', 'suspended'], true)) {
-                $nextStatus = 'active';
-            }
-
-            $player->update([
-                'injury_matches_remaining' => $injuryRemaining,
-                'suspension_matches_remaining' => $suspensionRemaining,
-                'status' => $nextStatus,
-            ]);
-        }
-    }
-
-    private function isPlayerAvailableForLive(Player $player): bool
-    {
-        if (!in_array((string) $player->status, ['active', 'transfer_listed'], true)) {
-            return false;
-        }
-
-        if ((int) $player->injury_matches_remaining > 0) {
-            return false;
-        }
-
-        return (int) $player->suspension_matches_remaining < 1;
-    }
-
     private function isValidTargetSlotForSubstitution(Lineup $lineup, string $targetSlot, string $fallbackOutSlot): bool
     {
         $validSlots = $lineup->players
@@ -1438,12 +1574,16 @@ class LiveMatchTickerService
 
     private function canSubstituteGoalkeeper(GameMatch $match, int $clubId, Player $playerOut, Player $playerIn): bool
     {
-        $outIsGoalkeeper = $this->positionService->groupFromPosition((string) $playerOut->position) === 'GK';
+        $outIsGoalkeeper = $this->positionService->groupFromPosition(
+            (string) ($playerOut->position_main ?: $playerOut->position)
+        ) === 'GK';
         if (!$outIsGoalkeeper) {
             return true;
         }
 
-        $inIsGoalkeeper = $this->positionService->groupFromPosition((string) $playerIn->position) === 'GK';
+        $inIsGoalkeeper = $this->positionService->groupFromPosition(
+            (string) ($playerIn->position_main ?: $playerIn->position)
+        ) === 'GK';
         if ($inIsGoalkeeper) {
             return true;
         }
@@ -1454,15 +1594,12 @@ class LiveMatchTickerService
                     return false;
                 }
 
-                return $this->positionService->groupFromPosition((string) $state->player?->position) === 'GK';
+                return $this->positionService->groupFromPosition(
+                    (string) ($state->player?->position_main ?: $state->player?->position)
+                ) === 'GK';
             });
 
         return $remainingGoalkeepers->isNotEmpty();
-    }
-
-    private function roll(float $probability): bool
-    {
-        return (random_int(1, 10000) / 10000) <= $probability;
     }
 
     private function lineupStyle(Club $club, GameMatch $match): string
@@ -1601,7 +1738,7 @@ class LiveMatchTickerService
         }
 
         $availablePlayers = $club->players()
-            ->whereIn('status', ['active', 'transfer_listed'])
+            ->whereIn('status', ['active', 'transfer_listed', 'suspended'])
             ->orderByDesc('overall')
             ->get();
         $selection = $this->formationPlannerService->strongestByFormation($availablePlayers, '4-4-2');
@@ -1653,154 +1790,6 @@ class LiveMatchTickerService
         return $lineup->load('players');
     }
 
-    private function createPlayerStats(GameMatch $match, Collection $homePlayers, Collection $awayPlayers): void
-    {
-        $goalEvents = $match->events()->whereIn('event_type', ['goal', 'penalty_scored'])->get();
-        $yellowEvents = $match->events()->where('event_type', 'yellow_card')->get();
-        $redEvents = $match->events()->where('event_type', 'red_card')->get();
-        $homeSubstitutions = $this->substitutionMinutes($match, (int) $match->home_club_id);
-        $awaySubstitutions = $this->substitutionMinutes($match, (int) $match->away_club_id);
-        $stateByPlayerId = MatchLivePlayerState::query()
-            ->where('match_id', $match->id)
-            ->get()
-            ->keyBy('player_id');
-
-        $build = function (
-            Collection $players,
-            int $clubId,
-            array $substitutions
-        ) use ($match, $goalEvents, $yellowEvents, $redEvents, $stateByPlayerId): array {
-            return $players->values()->map(function (Player $player) use (
-                $match,
-                $clubId,
-                $goalEvents,
-                $yellowEvents,
-                $redEvents,
-                $substitutions,
-                $stateByPlayerId
-            ) {
-                /** @var MatchLivePlayerState|null $state */
-                $state = $stateByPlayerId->get($player->id);
-                $goals = $state ? (int) $state->goals : $goalEvents->where('player_id', $player->id)->count();
-                $assists = $state ? (int) $state->assists : $goalEvents->where('assister_player_id', $player->id)->count();
-                $yellow = $state ? (int) $state->yellow_cards : $yellowEvents->where('player_id', $player->id)->count();
-                $red = $state ? (int) $state->red_cards : $redEvents->where('player_id', $player->id)->count();
-                $fit = $state ? (float) $state->fit_factor : $this->playerFit($player);
-
-                $role = 'bench';
-                if (isset($substitutions['out'][$player->id])) {
-                    $role = 'sub_off';
-                } elseif (isset($substitutions['in'][$player->id])) {
-                    $role = 'sub_on';
-                } else {
-                    $slot = strtoupper((string) ($state?->slot ?: ($player->pivot?->pitch_position ?? '')));
-                    if (!(bool) ($player->pivot?->is_bench ?? false) && !str_starts_with($slot, 'OUT-')) {
-                        $role = 'starter';
-                    }
-                }
-
-                $minutesPlayed = $state ? max(0, min((int) $match->live_minute, (int) $state->minutes_played)) : (int) $match->live_minute;
-                $baseRating = 5.8
-                    + (($player->overall * $fit) / 50)
-                    + ($goals * 0.7)
-                    + ($assists * 0.4)
-                    - ($yellow * 0.25)
-                    - ($red * 0.9)
-                    - ((1 - $fit) * 1.6)
-                    + ((random_int(0, 30) - 15) / 100);
-
-                $shots = $state ? (int) $state->shots : max(0, $goals + random_int(0, 4));
-                $passesCompleted = $state ? (int) $state->pass_completions : random_int(12, 74);
-                $passAttempts = $state ? (int) $state->pass_attempts : ($passesCompleted + random_int(2, 19));
-                $tacklesWon = $state ? (int) $state->tackle_won : random_int(0, 8);
-                $tackleAttempts = $state ? (int) $state->tackle_attempts : ($tacklesWon + random_int(0, 5));
-                $saves = $state ? (int) $state->saves : ($this->isGoalkeeper($player) ? random_int(1, 8) : 0);
-
-                return [
-                    'match_id' => $match->id,
-                    'club_id' => $clubId,
-                    'player_id' => $player->id,
-                    'lineup_role' => $role,
-                    'position_code' => $this->positionCodeForStat($player, $state?->slot),
-                    'rating' => max(3.5, min(10.0, round($baseRating, 2))),
-                    'minutes_played' => $minutesPlayed,
-                    'goals' => $goals,
-                    'assists' => $assists,
-                    'yellow_cards' => $yellow,
-                    'red_cards' => $red,
-                    'shots' => $shots,
-                    'passes_completed' => $passesCompleted,
-                    'passes_failed' => max(0, $passAttempts - $passesCompleted),
-                    'tackles_won' => $tacklesWon,
-                    'tackles_lost' => max(0, $tackleAttempts - $tacklesWon),
-                    'saves' => $this->isGoalkeeper($player) ? $saves : 0,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            })->all();
-        };
-
-        DB::table('match_player_stats')->insert(array_merge(
-            $build($homePlayers, (int) $match->home_club_id, $homeSubstitutions),
-            $build($awayPlayers, (int) $match->away_club_id, $awaySubstitutions)
-        ));
-    }
-
-    private function substitutionMinutes(GameMatch $match, int $clubId): array
-    {
-        $in = [];
-        $out = [];
-        $subEvents = $match->events()
-            ->where('event_type', 'substitution')
-            ->where('club_id', $clubId)
-            ->get();
-
-        foreach ($subEvents as $event) {
-            $playerInId = (int) ($event->metadata['player_in_id'] ?? 0);
-            $playerOutId = (int) ($event->metadata['player_out_id'] ?? 0);
-            if ($playerInId > 0 && !isset($in[$playerInId])) {
-                $in[$playerInId] = (int) $event->minute;
-            }
-            if ($playerOutId > 0 && !isset($out[$playerOutId])) {
-                $out[$playerOutId] = (int) $event->minute;
-            }
-        }
-
-        return ['in' => $in, 'out' => $out];
-    }
-
-    private function positionCodeForStat(Player $player, ?string $slot = null): string
-    {
-        $resolvedSlot = strtoupper(trim((string) ($slot ?: ($player->pivot?->pitch_position ?? ''))));
-        if ($resolvedSlot !== '') {
-            if (str_starts_with($resolvedSlot, 'BANK-')) {
-                return 'SUB';
-            }
-            if (str_starts_with($resolvedSlot, 'OUT-')) {
-                $position = strtoupper((string) $player->position);
-
-                return strlen($position) <= 4 ? $position : substr($position, 0, 4);
-            }
-            if (strlen($resolvedSlot) <= 4) {
-                return $resolvedSlot;
-            }
-        }
-
-        $position = strtoupper((string) $player->position);
-
-        return strlen($position) <= 4 ? $position : substr($position, 0, 4);
-    }
-
-    private function playerFit(Player $player): float
-    {
-        return $this->positionService->fitFactor((string) $player->position, $player->pivot?->pitch_position);
-    }
-
-    private function isGoalkeeper(Player $player): bool
-    {
-        return $this->positionService->groupFromPosition($player->position) === 'GK';
-    }
-
     private function attendance(Club $homeClub): int
     {
         $homeClub->loadMissing('stadium');
@@ -1835,6 +1824,8 @@ class LiveMatchTickerService
             'liveActions.club',
             'liveActions.player',
             'liveActions.opponentPlayer',
+            'plannedSubstitutions.playerOut',
+            'plannedSubstitutions.playerIn',
         ]);
     }
 }

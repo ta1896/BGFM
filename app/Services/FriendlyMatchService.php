@@ -137,6 +137,7 @@ class FriendlyMatchService
             'competition_season_id' => null,
             'season_id' => null,
             'type' => 'friendly',
+            'competition_context' => CompetitionContextService::FRIENDLY,
             'stage' => 'Friendly',
             'round_number' => null,
             'matchday' => null,

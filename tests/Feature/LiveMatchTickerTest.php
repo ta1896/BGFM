@@ -126,6 +126,75 @@ class LiveMatchTickerTest extends TestCase
         $this->assertGreaterThan(0, Lineup::where('match_id', $match->id)->count());
     }
 
+    public function test_user_can_plan_live_substitution_via_matchcenter_endpoint(): void
+    {
+        $user = User::factory()->create();
+        $opponent = User::factory()->create();
+
+        $homeClub = $this->createClub($user, 'Plan Home');
+        $awayClub = $this->createClub($opponent, 'Plan Away');
+        $this->createSquad($homeClub, 'PH');
+        $this->createSquad($awayClub, 'PA');
+
+        $match = GameMatch::create([
+            'type' => 'friendly',
+            'stage' => 'Friendly',
+            'kickoff_at' => now()->subHour(),
+            'status' => 'scheduled',
+            'home_club_id' => $homeClub->id,
+            'away_club_id' => $awayClub->id,
+            'stadium_club_id' => $homeClub->id,
+            'simulation_seed' => 92222,
+        ]);
+
+        Artisan::call('game:simulate-matches', [
+            '--limit' => 0,
+            '--minutes-per-run' => 5,
+            '--types' => 'friendly',
+        ]);
+
+        $state = $this->actingAs($user)
+            ->getJson(route('matches.live.state', $match))
+            ->assertOk()
+            ->json();
+
+        $homeLineup = $state['lineups'][(string) $homeClub->id] ?? null;
+        $this->assertNotNull($homeLineup);
+
+        $starterOut = collect($homeLineup['starters'] ?? [])->first(fn (array $p): bool => strtoupper((string) $p['position']) !== 'TW');
+        $benchIn = collect($homeLineup['bench'] ?? [])->first(fn (array $p): bool => strtoupper((string) $p['position']) !== 'TW');
+        $this->assertNotNull($starterOut);
+        $this->assertNotNull($benchIn);
+
+        $plannedMinute = (int) ($state['live_minute'] ?? 0) + 2;
+
+        $response = $this->actingAs($user)
+            ->postJson(route('matches.live.substitute.plan', $match), [
+                'club_id' => $homeClub->id,
+                'player_out_id' => $starterOut['id'],
+                'player_in_id' => $benchIn['id'],
+                'planned_minute' => $plannedMinute,
+                'score_condition' => 'any',
+                'target_slot' => $starterOut['slot'],
+            ])
+            ->assertOk()
+            ->assertJsonStructure([
+                'id',
+                'planned_substitutions',
+            ]);
+
+        $this->assertNotEmpty($response->json('planned_substitutions'));
+        $this->assertDatabaseHas('match_planned_substitutions', [
+            'match_id' => $match->id,
+            'club_id' => $homeClub->id,
+            'player_out_id' => $starterOut['id'],
+            'player_in_id' => $benchIn['id'],
+            'planned_minute' => $plannedMinute,
+            'score_condition' => 'any',
+            'status' => 'pending',
+        ]);
+    }
+
     private function createClub(User $user, string $name): Club
     {
         return Club::create([

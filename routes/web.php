@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/matches/{match}/live/resume', [MatchCenterController::class, 'liveResume'])->name('matches.live.resume');
     Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
     Route::post('/matches/{match}/live/substitute', [MatchCenterController::class, 'liveSubstitute'])->name('matches.live.substitute');
+    Route::post('/matches/{match}/live/substitute/plan', [MatchCenterController::class, 'livePlanSubstitute'])->name('matches.live.substitute.plan');
     Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
     Route::get('/matches/{match}/lineup', [MatchLineupController::class, 'edit'])->name('matches.lineup.edit');
     Route::post('/matches/{match}/lineup', [MatchLineupController::class, 'update'])->name('matches.lineup.update');

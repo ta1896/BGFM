@@ -19,6 +19,9 @@ class Player extends Model
         'last_name',
         'photo_path',
         'position',
+        'position_main',
+        'position_second',
+        'position_third',
         'preferred_foot',
         'age',
         'overall',
@@ -38,6 +41,10 @@ class Player extends Model
         'last_training_at',
         'injury_matches_remaining',
         'suspension_matches_remaining',
+        'suspension_league_remaining',
+        'suspension_cup_national_remaining',
+        'suspension_cup_international_remaining',
+        'suspension_friendly_remaining',
     ];
 
     protected function casts(): array
@@ -50,6 +57,10 @@ class Player extends Model
             'last_training_at' => 'datetime',
             'injury_matches_remaining' => 'integer',
             'suspension_matches_remaining' => 'integer',
+            'suspension_league_remaining' => 'integer',
+            'suspension_cup_national_remaining' => 'integer',
+            'suspension_cup_international_remaining' => 'integer',
+            'suspension_friendly_remaining' => 'integer',
         ];
     }
 
@@ -112,6 +123,16 @@ class Player extends Model
     public function liveStates(): HasMany
     {
         return $this->hasMany(MatchLivePlayerState::class);
+    }
+
+    public function seasonCompetitionStatistics(): HasMany
+    {
+        return $this->hasMany(PlayerSeasonCompetitionStatistic::class);
+    }
+
+    public function careerCompetitionStatistics(): HasMany
+    {
+        return $this->hasMany(PlayerCareerCompetitionStatistic::class);
     }
 
     public function getFullNameAttribute(): string

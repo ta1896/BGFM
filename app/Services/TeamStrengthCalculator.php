@@ -20,8 +20,13 @@ class TeamStrengthCalculator
 
                 return [
                     'player' => $player,
-                    'group' => $this->positionService->slotGroup($slot, $player->position),
-                    'fit' => $this->positionService->fitFactor($player->position, $slot),
+                    'group' => $this->positionService->slotGroup($slot, (string) ($player->position_main ?: $player->position)),
+                    'fit' => $this->positionService->fitFactorWithProfile(
+                        (string) ($player->position_main ?: $player->position),
+                        (string) $player->position_second,
+                        (string) $player->position_third,
+                        $slot
+                    ),
                 ];
             })
             ->values();

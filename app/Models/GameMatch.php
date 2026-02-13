@@ -18,6 +18,7 @@ class GameMatch extends Model
         'competition_season_id',
         'season_id',
         'type',
+        'competition_context',
         'stage',
         'round_number',
         'matchday',
@@ -105,6 +106,19 @@ class GameMatch extends Model
             ->orderBy('minute')
             ->orderBy('second')
             ->orderBy('sequence');
+    }
+
+    public function plannedSubstitutions(): HasMany
+    {
+        return $this->hasMany(MatchPlannedSubstitution::class, 'match_id')
+            ->orderBy('planned_minute')
+            ->orderBy('id');
+    }
+
+    public function processingSteps(): HasMany
+    {
+        return $this->hasMany(MatchProcessingStep::class, 'match_id')
+            ->orderBy('id');
     }
 
     public function financialSettlement(): HasOne

@@ -87,33 +87,51 @@ class PlayerPositionService
      */
     public function fitFactor(string $playerPosition, ?string $slot): float
     {
-        $player = $this->groupFromPosition($playerPosition) ?? strtoupper($playerPosition);
-        $assigned = $this->slotGroup($slot, $player);
+        return $this->fitFactorWithProfile($playerPosition, null, null, $slot);
+    }
 
-        if (!$assigned || $assigned === $player) {
-            return 1.0;
+    /**
+     * Returns a multiplier using main/second/third position profile.
+     */
+    public function fitFactorWithProfile(
+        ?string $positionMain,
+        ?string $positionSecond,
+        ?string $positionThird,
+        ?string $slot
+    ): float {
+        $mainGroup = $this->groupFromPosition($positionMain);
+        $secondGroup = $this->groupFromPosition($positionSecond);
+        $thirdGroup = $this->groupFromPosition($positionThird);
+        $fallback = $mainGroup ?? $secondGroup ?? $thirdGroup;
+        $assigned = $this->slotGroup($slot, $fallback);
+
+        if (!$assigned) {
+            return $this->fitValue('main', 1.0);
         }
 
-        if ($player === 'GK' || $assigned === 'GK') {
-            return 0.55;
+        if ($mainGroup && $assigned === $mainGroup) {
+            return $this->fitValue('main', 1.0);
         }
 
-        return match ($assigned) {
-            'DEF' => match ($player) {
-                'MID' => 0.84,
-                'FWD' => 0.72,
-                default => 0.8,
-            },
-            'MID' => match ($player) {
-                'DEF', 'FWD' => 0.88,
-                default => 0.82,
-            },
-            'FWD' => match ($player) {
-                'MID' => 0.86,
-                'DEF' => 0.72,
-                default => 0.8,
-            },
-            default => 0.8,
-        };
+        if ($secondGroup && $assigned === $secondGroup) {
+            return $this->fitValue('second', 0.92);
+        }
+
+        if ($thirdGroup && $assigned === $thirdGroup) {
+            return $this->fitValue('third', 0.84);
+        }
+
+        if (($mainGroup === 'GK') || $assigned === 'GK') {
+            return $this->fitValue('foreign_gk', 0.55);
+        }
+
+        return $this->fitValue('foreign', 0.76);
+    }
+
+    private function fitValue(string $key, float $default): float
+    {
+        $value = (float) config('simulation.position_fit.'.$key, $default);
+
+        return max(0.0, min(1.0, $value));
     }
 }

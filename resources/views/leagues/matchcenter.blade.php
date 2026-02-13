@@ -51,7 +51,7 @@
                         <div class="text-4xl font-bold text-white" id="live-score">
                             {{ $match->home_score ?? 0 }} : {{ $match->away_score ?? 0 }}
                         </div>
-                        <span class="sim-status-badge" id="live-status">● {{ $statusLabel }}</span>
+                        <span class="sim-status-badge" id="live-status">* {{ $statusLabel }}</span>
                         <p class="mt-2 text-sm text-slate-300">
                             Minute <span id="live-minute">{{ (int) $match->live_minute }}</span>'
                         </p>
@@ -131,6 +131,37 @@
                                     >
                                         Wechsel ausfuehren
                                     </button>
+                                </div>
+
+                                <div class="mt-4 border-t border-slate-700/80 pt-3">
+                                    <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Geplanter Wechsel</p>
+                                    <div class="mt-2 grid gap-2 sm:grid-cols-4">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="120"
+                                            value="60"
+                                            class="sim-input !py-1 text-xs"
+                                            data-plan-minute="{{ $clubId }}"
+                                        >
+                                        <select class="sim-input !py-1 text-xs" data-plan-condition="{{ $clubId }}">
+                                            <option value="any">Immer</option>
+                                            <option value="leading">Bei Fuehrung</option>
+                                            <option value="drawing">Bei Remis</option>
+                                            <option value="trailing">Bei Rueckstand</option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            class="sim-btn-primary !px-2 !py-1 text-xs sm:col-span-2"
+                                            data-live-action="plan-substitute"
+                                            data-club-id="{{ $clubId }}"
+                                        >
+                                            Wechsel planen
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 rounded border border-slate-800/80 bg-slate-900/40 p-2 text-xs text-slate-300" data-planned-list="{{ $clubId }}">
+                                        Keine geplanten Wechsel.
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -294,6 +325,7 @@
                 resume: "{{ route('matches.live.resume', $match) }}",
                 style: "{{ route('matches.live.style', $match) }}",
                 substitute: "{{ route('matches.live.substitute', $match) }}",
+                planSubstitute: "{{ route('matches.live.substitute.plan', $match) }}",
             };
 
             const scoreEl = document.getElementById('live-score');
@@ -484,19 +516,88 @@
                 actionsContainer.innerHTML = `<div class="space-y-2">${rows}</div>`;
             };
 
+            const renderPlannedSubstitutions = (plans) => {
+                const conditionLabels = {
+                    any: 'immer',
+                    leading: 'fuehrung',
+                    drawing: 'remis',
+                    trailing: 'rueckstand',
+                };
+                const statusLabels = {
+                    pending: 'geplant',
+                    executed: 'ausgefuehrt',
+                    skipped: 'uebersprungen',
+                    invalid: 'ungueltig',
+                };
+
+                const grouped = (plans || []).reduce((carry, plan) => {
+                    const key = String(plan.club_id ?? '');
+                    if (!carry[key]) {
+                        carry[key] = [];
+                    }
+                    carry[key].push(plan);
+
+                    return carry;
+                }, {});
+
+                document.querySelectorAll('[data-planned-list]').forEach((container) => {
+                    const clubId = String(container.getAttribute('data-planned-list') || '');
+                    const clubPlans = grouped[clubId] || [];
+
+                    if (clubPlans.length === 0) {
+                        container.innerHTML = 'Keine geplanten Wechsel.';
+                        return;
+                    }
+
+                    const rows = clubPlans.map((plan) => {
+                        const outName = plan.player_out_name || `#${plan.player_out_id ?? '-'}`;
+                        const inName = plan.player_in_name || `#${plan.player_in_id ?? '-'}`;
+                        const condition = conditionLabels[String(plan.score_condition || 'any')] || 'immer';
+                        const status = statusLabels[String(plan.status || 'pending')] || String(plan.status || 'pending');
+                        const executedMinute = plan.executed_minute !== null ? ` @ ${plan.executed_minute}'` : '';
+                        const reason = plan.metadata?.reason ? ` (${plan.metadata.reason})` : '';
+
+                        return `<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/60 py-1 last:border-b-0">
+                            <span>${plan.planned_minute}' <span class="text-slate-400">(${condition})</span></span>
+                            <span class="text-slate-200">${outName} -> ${inName}</span>
+                            <span class="text-cyan-300">${status}${executedMinute}${reason}</span>
+                        </div>`;
+                    }).join('');
+
+                    container.innerHTML = rows;
+                });
+            };
+
+            const syncPlanMinuteInputs = (state) => {
+                const liveMinute = Number(state?.live_minute ?? 0);
+                const minMinute = Math.min(120, Math.max(1, liveMinute + 2));
+                const suggestedMinute = Math.min(120, Math.max(minMinute, liveMinute + 5));
+
+                document.querySelectorAll('[data-plan-minute]').forEach((input) => {
+                    input.min = String(minMinute);
+                    input.max = '120';
+                    const value = Number(input.value || 0);
+                    if (!value || value < minMinute) {
+                        input.value = String(suggestedMinute);
+                    }
+                });
+            };
+
             const renderState = (state) => {
                 if (!state) {
                     return;
                 }
 
                 scoreEl.textContent = `${state.home_score ?? 0} : ${state.away_score ?? 0}`;
-                statusEl.textContent = `● ${state.status_label}`;
+                statusEl.textContent = `* ${state.status_label}`;
                 minuteEl.textContent = String(state.live_minute ?? 0);
                 errorEl.textContent = state.live_error_message || '';
                 renderEvents(state.events || []);
                 renderLineupControls(state.lineups || {});
                 renderTeamStates(state.team_states || {});
                 renderActions(state.actions || []);
+                renderPlannedSubstitutions(state.planned_substitutions || []);
+                syncPlanMinuteInputs(state);
 
                 if (resumeBtn) {
                     const showResume = canSimulate && state.status === 'live' && state.live_paused && !!state.live_error_message;
@@ -563,6 +664,36 @@
                         club_id: Number(clubId),
                         player_out_id: playerOutId,
                         player_in_id: playerInId,
+                        target_slot: targetSlot,
+                    }));
+                });
+            });
+
+            document.querySelectorAll('[data-live-action="plan-substitute"]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const clubId = button.dataset.clubId;
+                    const outSelect = document.querySelector(`[data-sub-out="${clubId}"]`);
+                    const inSelect = document.querySelector(`[data-sub-in="${clubId}"]`);
+                    const slotSelect = document.querySelector(`[data-sub-slot="${clubId}"]`);
+                    const minuteInput = document.querySelector(`[data-plan-minute="${clubId}"]`);
+                    const conditionSelect = document.querySelector(`[data-plan-condition="${clubId}"]`);
+
+                    const playerOutId = Number(outSelect?.value || 0);
+                    const playerInId = Number(inSelect?.value || 0);
+                    const targetSlot = String(slotSelect?.value || '');
+                    const plannedMinute = Number(minuteInput?.value || 0);
+                    const scoreCondition = String(conditionSelect?.value || 'any');
+
+                    if (!playerOutId || !playerInId || !plannedMinute) {
+                        return;
+                    }
+
+                    renderState(await sendPost(routes.planSubstitute, {
+                        club_id: Number(clubId),
+                        player_out_id: playerOutId,
+                        player_in_id: playerInId,
+                        planned_minute: plannedMinute,
+                        score_condition: scoreCondition,
                         target_slot: targetSlot,
                     }));
                 });

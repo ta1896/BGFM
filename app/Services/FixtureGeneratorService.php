@@ -61,6 +61,7 @@ class FixtureGeneratorService
                 'competition_season_id' => $competitionSeason->id,
                 'season_id' => $competitionSeason->season_id,
                 'type' => 'league',
+                'competition_context' => CompetitionContextService::LEAGUE,
                 'stage' => 'Regular Season',
                 'round_number' => $matchday,
                 'matchday' => $matchday,

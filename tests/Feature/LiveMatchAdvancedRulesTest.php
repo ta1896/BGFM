@@ -7,6 +7,7 @@ use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\MatchLivePlayerState;
 use App\Models\MatchLiveTeamState;
+use App\Models\MatchPlannedSubstitution;
 use App\Models\Player;
 use App\Models\User;
 use App\Services\LiveMatchTickerService;
@@ -228,6 +229,144 @@ class LiveMatchAdvancedRulesTest extends TestCase
             ->where('event_type', 'substitution')
             ->count();
         $this->assertSame($beforeSubs, $afterUnavailableTry);
+    }
+
+    public function test_planned_substitution_is_executed_when_due_and_condition_matches(): void
+    {
+        [$homeClub, $awayClub] = $this->createMatchClubs();
+        $match = $this->createMatch($homeClub, $awayClub, 'friendly');
+        $service = app(LiveMatchTickerService::class);
+
+        config()->set('simulation.sequence.min_per_minute', 0);
+        config()->set('simulation.sequence.max_per_minute', 0);
+        config()->set('simulation.probabilities.random_injury_per_minute', 0.0);
+
+        $service->tick($match, 5);
+        $match->refresh();
+
+        /** @var Lineup $lineup */
+        $lineup = Lineup::query()
+            ->with('players')
+            ->where('match_id', $match->id)
+            ->where('club_id', $homeClub->id)
+            ->firstOrFail();
+
+        /** @var Player $starterOut */
+        $starterOut = $lineup->players
+            ->first(fn (Player $player): bool => !(bool) $player->pivot->is_bench && strtoupper((string) $player->position) !== 'TW');
+        /** @var Player $benchIn */
+        $benchIn = $lineup->players
+            ->first(fn (Player $player): bool => (bool) $player->pivot->is_bench && strtoupper((string) $player->position) !== 'TW');
+
+        $this->assertNotNull($starterOut);
+        $this->assertNotNull($benchIn);
+
+        $plannedMinute = (int) $match->live_minute + 2;
+        $service->planSubstitution(
+            $match->fresh(),
+            (int) $homeClub->id,
+            (int) $starterOut->id,
+            (int) $benchIn->id,
+            $plannedMinute,
+            'any',
+            (string) $starterOut->pivot->pitch_position
+        );
+
+        /** @var MatchPlannedSubstitution $plan */
+        $plan = MatchPlannedSubstitution::query()
+            ->where('match_id', $match->id)
+            ->where('club_id', $homeClub->id)
+            ->where('player_out_id', $starterOut->id)
+            ->where('player_in_id', $benchIn->id)
+            ->where('planned_minute', $plannedMinute)
+            ->firstOrFail();
+
+        $this->assertSame('pending', $plan->status);
+
+        $service->tick($match->fresh(), 2);
+
+        $plan->refresh();
+        $this->assertSame('executed', $plan->status);
+        $this->assertSame($plannedMinute, (int) $plan->executed_minute);
+
+        $this->assertDatabaseHas('match_events', [
+            'match_id' => $match->id,
+            'club_id' => $homeClub->id,
+            'event_type' => 'substitution',
+        ]);
+    }
+
+    public function test_planned_substitution_is_skipped_when_score_condition_is_not_met(): void
+    {
+        [$homeClub, $awayClub] = $this->createMatchClubs();
+        $match = $this->createMatch($homeClub, $awayClub, 'friendly');
+        $service = app(LiveMatchTickerService::class);
+
+        config()->set('simulation.sequence.min_per_minute', 0);
+        config()->set('simulation.sequence.max_per_minute', 0);
+        config()->set('simulation.probabilities.random_injury_per_minute', 0.0);
+
+        $service->tick($match, 5);
+        $match->refresh();
+        $match->update([
+            'home_score' => 0,
+            'away_score' => 2,
+        ]);
+
+        /** @var Lineup $lineup */
+        $lineup = Lineup::query()
+            ->with('players')
+            ->where('match_id', $match->id)
+            ->where('club_id', $homeClub->id)
+            ->firstOrFail();
+
+        /** @var Player $starterOut */
+        $starterOut = $lineup->players
+            ->first(fn (Player $player): bool => !(bool) $player->pivot->is_bench && strtoupper((string) $player->position) !== 'TW');
+        /** @var Player $benchIn */
+        $benchIn = $lineup->players
+            ->first(fn (Player $player): bool => (bool) $player->pivot->is_bench && strtoupper((string) $player->position) !== 'TW');
+
+        $this->assertNotNull($starterOut);
+        $this->assertNotNull($benchIn);
+
+        $plannedMinute = (int) $match->live_minute + 2;
+        $service->planSubstitution(
+            $match->fresh(),
+            (int) $homeClub->id,
+            (int) $starterOut->id,
+            (int) $benchIn->id,
+            $plannedMinute,
+            'leading',
+            (string) $starterOut->pivot->pitch_position
+        );
+
+        /** @var MatchPlannedSubstitution $plan */
+        $plan = MatchPlannedSubstitution::query()
+            ->where('match_id', $match->id)
+            ->where('club_id', $homeClub->id)
+            ->where('player_out_id', $starterOut->id)
+            ->where('player_in_id', $benchIn->id)
+            ->where('planned_minute', $plannedMinute)
+            ->firstOrFail();
+
+        $beforeSubs = DB::table('match_events')
+            ->where('match_id', $match->id)
+            ->where('event_type', 'substitution')
+            ->count();
+
+        $service->tick($match->fresh(), 2);
+
+        $plan->refresh();
+        $this->assertSame('skipped', $plan->status);
+        $this->assertSame($plannedMinute, (int) $plan->executed_minute);
+        $this->assertSame('condition_not_met', (string) ($plan->metadata['reason'] ?? ''));
+
+        $afterSubs = DB::table('match_events')
+            ->where('match_id', $match->id)
+            ->where('event_type', 'substitution')
+            ->count();
+        $this->assertSame($beforeSubs, $afterSubs);
     }
 
     /**

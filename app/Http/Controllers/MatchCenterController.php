@@ -31,6 +31,8 @@ class MatchCenterController extends Controller
             'liveActions.club',
             'liveActions.player',
             'liveActions.opponentPlayer',
+            'plannedSubstitutions.playerOut',
+            'plannedSubstitutions.playerIn',
         ]);
 
         return view('leagues.matchcenter', [
@@ -122,6 +124,37 @@ class MatchCenterController extends Controller
         return response()->json($this->statePayload($request, $state));
     }
 
+    public function livePlanSubstitute(
+        Request $request,
+        GameMatch $match,
+        LiveMatchTickerService $tickerService
+    ): JsonResponse {
+        $manageableClubIds = $this->manageableClubIds($request, $match);
+        $validated = $request->validate([
+            'club_id' => ['required', 'integer'],
+            'player_out_id' => ['required', 'integer'],
+            'player_in_id' => ['required', 'integer'],
+            'planned_minute' => ['required', 'integer', 'min:1', 'max:120'],
+            'score_condition' => ['nullable', 'string', 'in:any,leading,drawing,trailing'],
+            'target_slot' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $clubId = (int) $validated['club_id'];
+        abort_unless(in_array($clubId, $manageableClubIds, true), 403);
+
+        $state = $tickerService->planSubstitution(
+            $match,
+            $clubId,
+            (int) $validated['player_out_id'],
+            (int) $validated['player_in_id'],
+            (int) $validated['planned_minute'],
+            (string) ($validated['score_condition'] ?? 'any'),
+            (string) ($validated['target_slot'] ?? '')
+        );
+
+        return response()->json($this->statePayload($request, $state));
+    }
+
     public function liveState(Request $request, GameMatch $match): JsonResponse
     {
         $this->ensureReadable($request, $match);
@@ -139,6 +172,8 @@ class MatchCenterController extends Controller
             'liveActions.club',
             'liveActions.player',
             'liveActions.opponentPlayer',
+            'plannedSubstitutions.playerOut',
+            'plannedSubstitutions.playerIn',
         ]);
 
         return response()->json($this->statePayload($request, $match));
@@ -297,6 +332,25 @@ class MatchCenterController extends Controller
                     ];
                 })
                 ->all(),
+            'planned_substitutions' => $match->plannedSubstitutions
+                ->map(function ($plan): array {
+                    return [
+                        'id' => (int) $plan->id,
+                        'club_id' => (int) $plan->club_id,
+                        'player_out_id' => $plan->player_out_id !== null ? (int) $plan->player_out_id : null,
+                        'player_out_name' => $plan->playerOut?->full_name,
+                        'player_in_id' => $plan->player_in_id !== null ? (int) $plan->player_in_id : null,
+                        'player_in_name' => $plan->playerIn?->full_name,
+                        'planned_minute' => (int) $plan->planned_minute,
+                        'score_condition' => (string) $plan->score_condition,
+                        'target_slot' => (string) ($plan->target_slot ?? ''),
+                        'status' => (string) $plan->status,
+                        'executed_minute' => $plan->executed_minute !== null ? (int) $plan->executed_minute : null,
+                        'metadata' => $plan->metadata,
+                    ];
+                })
+                ->values()
+                ->all(),
         ];
     }
 
@@ -320,12 +374,17 @@ class MatchCenterController extends Controller
             $players = $lineup->players->map(function ($player) use ($positionService): array {
                 $slot = (string) ($player->pivot->pitch_position ?? '');
                 $isRemoved = str_starts_with(strtoupper($slot), 'OUT-');
-                $fitFactor = $positionService->fitFactor((string) $player->position, $slot);
+                $fitFactor = $positionService->fitFactorWithProfile(
+                    (string) ($player->position_main ?: $player->position),
+                    (string) $player->position_second,
+                    (string) $player->position_third,
+                    $slot
+                );
 
                 return [
                     'id' => (int) $player->id,
                     'name' => $player->full_name,
-                    'position' => (string) $player->position,
+                    'position' => (string) ($player->position_main ?: $player->position),
                     'slot' => $slot,
                     'sort_order' => (int) $player->pivot->sort_order,
                     'is_bench' => (bool) $player->pivot->is_bench,
