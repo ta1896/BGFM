@@ -104,270 +104,411 @@
         @csrf
         @method('PUT')
 
-        <section class="sim-card p-5">
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div>
-                    <label class="sim-label" for="name">Name</label>
-                    <input id="name" name="name" type="text" class="sim-input" value="{{ old('name', $lineup->name) }}" required>
-                    <x-input-error :messages="$errors->get('name')" class="mt-1" />
-                </div>
-                <div>
-                    <label class="sim-label" for="formation">Formation</label>
-                    <select id="formation" name="formation" class="sim-select">
-                        @foreach ($formations as $formationOption)
-                            <option value="{{ $formationOption }}" @selected(old('formation', $formation) === $formationOption)>{{ $formationOption }}</option>
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('formation')" class="mt-1" />
-                </div>
-                <div>
-                    <label class="sim-label" for="tactical_style">Spielstil</label>
-                    <select id="tactical_style" name="tactical_style" class="sim-select">
-                        @foreach (['balanced' => 'Ausgewogen', 'offensive' => 'Offensiv', 'defensive' => 'Defensiv', 'counter' => 'Konter'] as $value => $label)
-                            <option value="{{ $value }}" @selected(old('tactical_style', $tacticalStyle) === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="sim-label" for="attack_focus">Fokus</label>
-                    <select id="attack_focus" name="attack_focus" class="sim-select">
-                        @foreach (['left' => 'Linke Seite', 'center' => 'Zentrum', 'right' => 'Rechte Seite'] as $value => $label)
-                            <option value="{{ $value }}" @selected(old('attack_focus', $attackFocus) === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="mt-3">
-                <label class="sim-label" for="notes">Notizen</label>
-                <textarea id="notes" name="notes" class="sim-textarea">{{ old('notes', $lineup->notes) }}</textarea>
-            </div>
-            <div class="mt-3 rounded-xl border border-slate-700/70 bg-slate-950/45 px-3 py-2">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <p class="text-sm font-semibold text-white">Aktive Standardaufstellung</p>
-                        <p class="text-xs text-slate-400">Wird fuer kommende Spiele als Standard geladen.</p>
-                    </div>
-                    <label class="sim-switch">
-                        <input
-                            type="checkbox"
-                            name="is_active"
-                            value="1"
-                            class="sr-only"
-                            @checked(old('is_active', $lineup->is_active))
-                        >
-                        <span class="sim-switch-track" aria-hidden="true"></span>
-                        <span class="sim-switch-label">Aktiv</span>
-                    </label>
-                </div>
-            </div>
-        </section>
-
-        <section class="grid gap-4 xl:grid-cols-[2fr_1fr]">
-            <article class="sim-card p-5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="sim-pill">Gesamtstaerke: {{ $metrics['overall'] }}</span>
-                        <span class="sim-pill">Angriff: {{ $metrics['attack'] }}</span>
-                        <span class="sim-pill">Mittelfeld: {{ $metrics['midfield'] }}</span>
-                        <span class="sim-pill">Verteidigung: {{ $metrics['defense'] }}</span>
-                    </div>
-                    <button type="submit" name="action" value="auto_pick" class="sim-btn-muted">Staerkste Elf waehlen</button>
-                </div>
-
-                <x-input-error :messages="$errors->get('starter_slots')" class="mt-3" />
-
-                <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                        <label class="sim-label">Elfmeter-Schuetze</label>
-                        <select name="penalty_taker_player_id" class="sim-select">
-                            <option value="">Kein Spieler</option>
-                            @foreach ($clubPlayers as $player)
-                                <option value="{{ $player->id }}" @selected((int) old('penalty_taker_player_id', $setPieces['penalty_taker_player_id']) === $player->id)>
-                                    {{ $player->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="sim-label">Freistoss-Schuetze</label>
-                        <select name="free_kick_taker_player_id" class="sim-select">
-                            <option value="">Kein Spieler</option>
-                            @foreach ($clubPlayers as $player)
-                                <option value="{{ $player->id }}" @selected((int) old('free_kick_taker_player_id', $setPieces['free_kick_taker_player_id']) === $player->id)>
-                                    {{ $player->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="sim-label">Ecke links</label>
-                        <select name="corner_left_taker_player_id" class="sim-select">
-                            <option value="">Kein Spieler</option>
-                            @foreach ($clubPlayers as $player)
-                                <option value="{{ $player->id }}" @selected((int) old('corner_left_taker_player_id', $setPieces['corner_left_taker_player_id']) === $player->id)>
-                                    {{ $player->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="sim-label">Ecke rechts</label>
-                        <select name="corner_right_taker_player_id" class="sim-select">
-                            <option value="">Kein Spieler</option>
-                            @foreach ($clubPlayers as $player)
-                                <option value="{{ $player->id }}" @selected((int) old('corner_right_taker_player_id', $setPieces['corner_right_taker_player_id']) === $player->id)>
-                                    {{ $player->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mt-4 max-w-sm">
-                    <label class="sim-label">Kapitaen</label>
-                    <select name="captain_player_id" class="sim-select">
-                        <option value="">Automatisch</option>
-                        @foreach ($clubPlayers as $player)
-                            <option value="{{ $player->id }}" @selected((int) old('captain_player_id', $captainPlayerId) === $player->id)>
-                                {{ $player->full_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mt-6">
-                    <p class="sim-section-title mb-2">Auswechselbank (max. {{ $maxBenchPlayers }})</p>
-                    <div class="grid gap-2 sm:grid-cols-5">
-                        @for ($i = 0; $i < $maxBenchPlayers; $i++)
-                            @php
-                                $benchSelectId = 'bench_slot_'.$i;
-                            @endphp
-                            <div
-                                class="sim-bench-slot"
-                                data-slot-container
-                                data-select-id="{{ $benchSelectId }}"
-                                data-slot-group="BENCH"
-                                data-slot-role="BANK"
-                            >
-                                <div class="sim-bench-slot-title">Slot {{ $i + 1 }}</div>
-                                <div class="sim-slot-player hidden" data-slot-player>
-                                    <span class="sim-slot-player-name" data-slot-player-name>-</span>
-                                    <button type="button" class="sim-slot-remove hidden" data-slot-remove title="Spieler entfernen">x</button>
-                                </div>
-                                <div class="sim-slot-hint" data-slot-hint>Spieler hierher ziehen</div>
-                                <select
-                                    id="{{ $benchSelectId }}"
-                                    name="bench_slots[]"
-                                    class="sim-select hidden"
-                                    data-dnd-select
-                                    data-bench-select
-                                >
-                                    <option value="">Slot {{ $i + 1 }}</option>
-                                    @foreach ($clubPlayers as $player)
-                                        <option value="{{ $player->id }}" @selected((int) ($effectiveBenchDraft[$i] ?? 0) === $player->id)>
-                                            {{ $player->full_name }}
-                                        </option>
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- COLUMN 1: TACTICS & SETTINGS (Left Sidebar) -->
+            <aside class="lg:w-80 flex-shrink-0 space-y-4">
+                <section class="sim-card p-5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-cyan-500/10 blur-xl group-hover:bg-cyan-500/20 transition duration-700"></div>
+                    <div class="relative z-10">
+                        <p class="sim-section-title mb-3">Grundeinstellungen</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="sim-label" for="name">Name der Aufstellung</label>
+                                <input id="name" name="name" type="text" class="sim-input" value="{{ old('name', $lineup->name) }}" required>
+                                <x-input-error :messages="$errors->get('name')" class="mt-1" />
+                            </div>
+                            <div>
+                                <label class="sim-label" for="formation">Formation</label>
+                                <select id="formation" name="formation" class="sim-select">
+                                    @foreach ($formations as $formationOption)
+                                        <option value="{{ $formationOption }}" @selected(old('formation', $formation) === $formationOption)>{{ $formationOption }}</option>
                                     @endforeach
                                 </select>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-
-                <div class="mt-6 sim-pitch">
-                    <div class="sim-pitch-canvas">
-                        @foreach ($slots as $slot)
-                            @php
-                                $slotSelectId = 'starter_slot_'.\Illuminate\Support\Str::slug($slot['slot'], '_');
-                            @endphp
-                            <div
-                                class="sim-pitch-slot"
-                                data-slot-container
-                                data-select-id="{{ $slotSelectId }}"
-                                data-slot-group="{{ $slot['group'] }}"
-                                data-slot-role="{{ $slot['label'] }}"
-                                style="left: {{ $slot['x'] }}%; top: {{ $slot['y'] }}%;"
-                            >
-                                <span class="sim-pitch-slot-label">{{ $slot['label'] }}</span>
-                                <div class="sim-slot-player hidden" data-slot-player>
-                                    <span class="sim-slot-player-name" data-slot-player-name>-</span>
-                                    <button type="button" class="sim-slot-remove hidden" data-slot-remove title="Spieler entfernen">x</button>
-                                </div>
-                                <div class="sim-slot-hint" data-slot-hint>Spieler hierhin ziehen</div>
-                                <select
-                                    id="{{ $slotSelectId }}"
-                                    name="starter_slots[{{ $slot['slot'] }}]"
-                                    class="sim-pitch-select hidden"
-                                    data-dnd-select
-                                    data-starter-select
-                                >
-                                    <option value="">- Kein Spieler -</option>
-                                    @foreach ($clubPlayers as $player)
-                                        <option value="{{ $player->id }}" @selected((int) ($effectiveStarterDraft[$slot['slot']] ?? 0) === $player->id)>
-                                            {{ $player->full_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="mt-6 flex flex-wrap gap-2">
-                    <button type="submit" name="action" value="save" class="sim-btn-primary">Aufstellung speichern</button>
-                    <a href="{{ route('lineups.show', $lineup) }}" class="sim-btn-muted">Abbrechen</a>
-                </div>
-            </article>
-
-            <aside class="sim-card p-5">
-                <p class="sim-section-title">Spieler-Pool</p>
-                <div class="mt-3 space-y-4">
-                    @foreach ($groupLabels as $code => $label)
-                        <div>
-                            <h3 class="text-sm font-semibold text-white">{{ $label }}</h3>
-                            <div class="mt-2 space-y-2">
-                                @forelse ($playersByPosition->get($code, collect()) as $player)
-                                    @php
-                                        $position = $player->position_main ?? $player->position;
-                                        $isSelected = in_array($player->id, $selectedPlayerIds, true);
-                                    @endphp
-                                    <div
-                                        class="sim-card-soft sim-player-card px-3 py-2"
-                                        draggable="true"
-                                        data-player-id="{{ $player->id }}"
-                                        data-player-name="{{ $player->full_name }}"
-                                        data-position-main="{{ $player->position_main ?? $player->position }}"
-                                        data-position-second="{{ $player->position_second ?? '' }}"
-                                        data-position-third="{{ $player->position_third ?? '' }}"
-                                    >
-                                        <div class="flex items-center justify-between gap-2">
-                                            <div class="flex items-center gap-2">
-                                                <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
-                                                <p class="text-sm font-semibold text-white">{{ $player->full_name }}</p>
-                                            </div>
-                                            <span class="sim-pill">OVR {{ $player->overall }}</span>
-                                        </div>
-                                        <p class="mt-1 text-xs text-slate-400">
-                                            <span class="sim-pill !px-2 !py-0.5 text-[10px]">{{ $positionLabels[$position] ?? $position }}</span>
-                                            <span class="ml-1">{{ $player->age }} J.</span>
-                                            <span class="ml-1">| {{ number_format((float) $player->market_value, 0, ',', '.') }} EUR</span>
-                                            <span class="ml-1 {{ $isSelected ? '' : 'hidden' }}" data-player-picked>| Aufgestellt</span>
-                                        </p>
-                                        <div class="mt-2 flex flex-wrap gap-1.5">
-                                            <button type="button" class="sim-card-action" data-add-pitch>+ Feld</button>
-                                            <button type="button" class="sim-card-action" data-add-bench>Bank</button>
-                                            <button type="button" class="sim-card-action hidden" data-remove-player>Entfernen</button>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <p class="text-xs text-slate-500">Keine Spieler</p>
-                                @endforelse
+                                <x-input-error :messages="$errors->get('formation')" class="mt-1" />
                             </div>
                         </div>
-                    @endforeach
-                </div>
+                    </div>
+                </section>
+
+                <section class="sim-card p-5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-indigo-500/10 blur-xl group-hover:bg-indigo-500/20 transition duration-700"></div>
+                    <div class="relative z-10">
+                        <p class="sim-section-title mb-3">Taktik</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="sim-label" for="mentality">Mentalitaet</label>
+                                <select id="mentality" name="mentality" class="sim-select">
+                                    <option value="defensive" @selected(old('mentality', $mentality) === 'defensive')>Defensiv</option>
+                                    <option value="counter" @selected(old('mentality', $mentality) === 'counter')>Konter</option>
+                                    <option value="normal" @selected(old('mentality', $mentality) === 'normal')>Normal</option>
+                                    <option value="offensive" @selected(old('mentality', $mentality) === 'offensive')>Offensiv</option>
+                                    <option value="all_out" @selected(old('mentality', $mentality) === 'all_out')>Brechstange</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sim-label" for="aggression">Aggressivitaet</label>
+                                <select id="aggression" name="aggression" class="sim-select">
+                                    <option value="cautious" @selected(old('aggression', $aggression) === 'cautious')>Vorsichtig</option>
+                                    <option value="normal" @selected(old('aggression', $aggression) === 'normal')>Normal</option>
+                                    <option value="aggressive" @selected(old('aggression', $aggression) === 'aggressive')>Aggressiv</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sim-label" for="line_height">Abwehrlinie</label>
+                                <select id="line_height" name="line_height" class="sim-select">
+                                    <option value="deep" @selected(old('line_height', $line_height) === 'deep')>Tief</option>
+                                    <option value="normal" @selected(old('line_height', $line_height) === 'normal')>Normal</option>
+                                    <option value="high" @selected(old('line_height', $line_height) === 'high')>Hoch</option>
+                                    <option value="very_high" @selected(old('line_height', $line_height) === 'very_high')>Sehr Hoch</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sim-label" for="attack_focus">Angriffsfokus</label>
+                                <select id="attack_focus" name="attack_focus" class="sim-select">
+                                    <option value="center" @selected(old('attack_focus', $attackFocus) === 'center')>Zentrum</option>
+                                    <option value="left" @selected(old('attack_focus', $attackFocus) === 'left')>Linke Flanke</option>
+                                    <option value="right" @selected(old('attack_focus', $attackFocus) === 'right')>Rechte Flanke</option>
+                                    <option value="both_wings" @selected(old('attack_focus', $attackFocus) === 'both_wings')>Beide Flanken</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-3 pt-2">
+                                <label class="flex items-center gap-3 cursor-pointer group/check">
+                                    <div class="relative flex items-center">
+                                        <input type="checkbox" name="offside_trap" value="1" @checked(old('offside_trap', $offside_trap)) class="peer h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 transition-all">
+                                    </div>
+                                    <span class="text-sm font-medium text-slate-400 group-hover/check:text-slate-300 transition-colors">Abseitsfalle</span>
+                                </label>
+                                <label class="flex items-center gap-3 cursor-pointer group/check">
+                                    <div class="relative flex items-center">
+                                        <input type="checkbox" name="time_wasting" value="1" @checked(old('time_wasting', $time_wasting)) class="peer h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0 transition-all">
+                                    </div>
+                                    <span class="text-sm font-medium text-slate-400 group-hover/check:text-slate-300 transition-colors">Zeitspiel</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sim-card p-5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-fuchsia-500/5 blur-xl group-hover:bg-fuchsia-500/10 transition duration-700"></div>
+                    <div class="relative z-10">
+                        <p class="sim-section-title mb-3">Status & Vorlagen</p>
+                        <div class="space-y-4">
+                            <label class="sim-switch flex justify-between items-center px-1">
+                                <span class="text-sm font-medium text-slate-300">Aktiv setzen</span>
+                                <div class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="is_active" value="1" class="sr-only" @checked(old('is_active', $lineup->is_active))>
+                                    <span class="sim-switch-track" aria-hidden="true"></span>
+                                </div>
+                            </label>
+
+                            <div class="pt-4 border-t border-slate-700/50">
+                                <label class="sim-label" for="template_name">Als neue Vorlage speichern</label>
+                                <div class="mt-2 flex gap-2">
+                                    <input id="template_name" name="template_name" type="text" placeholder="Vorlagen-Name..." class="sim-input px-3 py-2 text-xs flex-1">
+                                    <button type="submit" name="save_as_template" value="1" class="sim-btn-muted px-3 py-2 text-xs font-bold uppercase tracking-wider">Save</button>
+                                </div>
+                            </div>
+
+                            @if($templates->isNotEmpty())
+                            <div class="pt-2">
+                                <label class="sim-label text-[10px]">Vorlage laden</label>
+                                <select onchange="if(this.value) window.location.search = '?template_id=' + this.value" class="sim-select px-3 py-2 text-xs mt-1">
+                                    <option value="">- Vorlage waehlen -</option>
+                                    @foreach($templates as $tpl)
+                                        <option value="{{ $tpl->id }}">{{ $tpl->name }} ({{ $tpl->formation }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </section>
             </aside>
-        </section>
+
+            <main class="flex-1 space-y-6">
+                <article class="sim-card p-5 relative overflow-hidden">
+                    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500/50 to-indigo-500/50"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-800/10 to-transparent pointer-events-none"></div>
+                    
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="sim-pill bg-slate-900/60 border-slate-700/50">Gesamt: <span class="text-white ml-1 font-bold">{{ $metrics['overall'] }}</span></span>
+                            <span class="sim-pill bg-slate-900/60 border-slate-700/50 text-cyan-400">A: <span class="text-slate-300 ml-1 font-bold">{{ $metrics['attack'] }}</span></span>
+                            <span class="sim-pill bg-slate-900/60 border-slate-700/50 text-indigo-400">M: <span class="text-slate-300 ml-1 font-bold">{{ $metrics['midfield'] }}</span></span>
+                            <span class="sim-pill bg-slate-900/60 border-slate-700/50 text-fuchsia-400">V: <span class="text-slate-300 ml-1 font-bold">{{ $metrics['defense'] }}</span></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="submit" name="action" value="auto_pick" class="sim-btn-muted px-4 py-2 text-xs font-bold uppercase tracking-widest hover:border-cyan-500/40">
+                                Auto-Fill
+                            </button>
+                            <button type="submit" name="action" value="save" class="sim-btn-primary px-8 py-2 text-xs uppercase tracking-widest shadow-lg shadow-cyan-500/20">
+                                Speichern
+                            </button>
+                        </div>
+                    </div>
+
+                    <x-input-error :messages="$errors->get('starter_slots')" class="mt-3" />
+
+                    <!-- THE PITCH -->
+                    <div class="sim-pitch relative overflow-hidden rounded-2xl shadow-2xl bg-slate-950 border border-slate-800/40">
+                        <div class="sim-pitch-canvas relative w-full h-full">
+                            @foreach ($slots as $slot)
+                                @php
+                                    $slotSelectId = 'starter_slot_'.\Illuminate\Support\Str::slug($slot['slot'], '_');
+                                    $assignedPlayerId = $starterDraft[$slot['slot']] ?? null;
+                                    $assignedPlayer = $assignedPlayerId ? $clubPlayers->firstWhere('id', $assignedPlayerId) : null;
+                                @endphp
+                                <div
+                                    class="sim-pitch-slot !absolute group/slot cursor-pointer"
+                                    data-slot-container
+                                    data-select-id="{{ $slotSelectId }}"
+                                    data-slot-group="{{ $slot['group'] }}"
+                                    data-slot-role="{{ $slot['label'] }}"
+                                    style="left: {{ $slot['x'] }}%; top: {{ $slot['y'] }}%; transform: translate(-50%, -50%);"
+                                >
+                                    <span class="sim-pitch-slot-label opacity-40 group-hover/slot:opacity-100 transition-opacity">{{ $slot['label'] }}</span>
+                                    
+                                    <div class="sim-slot-ring">
+                                        <div class="sim-slot-player {{ $assignedPlayer ? '' : 'hidden' }} flex flex-col items-center" data-slot-player>
+                                            <div class="sim-slot-jersey {{ $assignedPlayer && $assignedPlayer->pivot?->is_captain ? 'border-amber-400/80 shadow-[0_0_15px_-3px_rgba(251,191,36,0.4)]' : 'border-slate-500/50' }}">
+                                                <span class="jersey-num font-black text-xs">{{ $assignedPlayer ? ($assignedPlayer->shirt_number ?? '??') : '' }}</span>
+                                                @if($assignedPlayer && $assignedPlayer->pivot?->is_captain)
+                                                    <div class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[8px] font-black text-black ring-2 ring-slate-900 shadow-sm" title="Captain">C</div>
+                                                @endif
+                                                <button type="button" class="sim-slot-remove absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500/80 text-[10px] text-white transition-transform hover:scale-110 opacity-0 group-hover/slot:opacity-100" data-slot-remove>×</button>
+                                            </div>
+                                            <div class="sim-slot-info">
+                                                <span class="truncate block text-[9px] uppercase tracking-tighter">{{ $assignedPlayer ? $assignedPlayer->last_name : '' }}</span>
+                                                @if($assignedPlayer)
+                                                <div class="flex items-center justify-center gap-1 mt-0.5 opacity-80">
+                                                    <span class="text-[8px] font-bold text-cyan-400">{{ $assignedPlayer->overall }}</span>
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <!-- Empty Slot Placeholder -->
+                                        <div class="sim-slot-empty {{ $assignedPlayer ? 'hidden' : 'flex' }} flex-col items-center justify-center transition-all duration-300" data-slot-empty>
+                                             <div class="h-10 w-10 rounded-full border-2 border-dashed border-slate-700/50 bg-slate-900/20 group-hover/slot:border-cyan-500/30 group-hover/slot:bg-cyan-500/5 transition-colors duration-300 flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-slate-700 group-hover/slot:text-cyan-500/30 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <select id="{{ $slotSelectId }}" name="starter_slots[{{ $slot['slot'] }}]" class="hidden" data-dnd-select data-starter-select>
+                                        <option value="">- Leer -</option>
+                                        @foreach ($clubPlayers as $p)
+                                            <option value="{{ $p->id }}" @selected($assignedPlayerId === $p->id)>{{ $p->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- THE BENCH -->
+                    <div class="mt-8">
+                        <p class="sim-section-title mb-4 italic text-slate-500">Auswechselbank (max. {{ $maxBenchPlayers }})</p>
+                        <div class="grid gap-3 grid-cols-2 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-5 2xl:grid-cols-5">
+                            @for ($i = 0; $i < $maxBenchPlayers; $i++)
+                                @php
+                                    $benchSelectId = 'bench_slot_'.$i;
+                                    $benchPlayerId = $benchDraft[$i] ?? null;
+                                    $benchPlayer = $benchPlayerId ? $clubPlayers->firstWhere('id', $benchPlayerId) : null;
+                                @endphp
+                                <div
+                                    class="sim-bench-slot relative group/bench flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-slate-700/40 bg-slate-900/20 min-h-[90px] transition-all duration-300 hover:border-cyan-500/30 hover:bg-cyan-500/5"
+                                    data-slot-container
+                                    data-select-id="{{ $benchSelectId }}"
+                                    data-slot-group="BENCH"
+                                    data-slot-role="BANK"
+                                >
+                                    <div class="sim-slot-player {{ $benchPlayer ? '' : 'hidden' }} flex flex-col items-center w-full" data-slot-player>
+                                        <div class="w-8 h-8 rounded-full border border-slate-600 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300 mb-1 relative">
+                                            {{ $benchPlayer ? ($benchPlayer->shirt_number ?? '??') : '' }}
+                                            <button type="button" class="sim-slot-remove absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500/90 text-[10px] text-white opacity-0 group-hover/bench:opacity-100" data-slot-remove>×</button>
+                                        </div>
+                                        <span class="sim-slot-player-name truncate text-[9px] font-bold uppercase text-slate-400 w-full text-center" data-slot-player-name>
+                                            {{ $benchPlayer ? $benchPlayer->last_name : '-' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="sim-slot-hint {{ $benchPlayer ? 'hidden' : 'flex' }} flex-col items-center opacity-20 group-hover/bench:opacity-40 transition-opacity" data-slot-hint>
+                                        <span class="text-[10px] font-black">{{ $i + 1 }}</span>
+                                    </div>
+
+                                    <select id="{{ $benchSelectId }}" name="bench_slots[]" class="hidden" data-dnd-select data-bench-select>
+                                        <option value="">Slot {{ $i + 1 }}</option>
+                                        @foreach ($clubPlayers as $p)
+                                            <option value="{{ $p->id }}" @selected($benchPlayerId === $p->id)>{{ $p->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
+
+                    <!-- ROLES & PIECES AREA -->
+                    <div class="mt-8 grid gap-6 sm:grid-cols-2">
+                        <section class="sim-card-soft p-5 bg-slate-900/40 border-slate-800 relative overflow-hidden group">
+                             <div class="absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-cyan-500/5 blur-lg group-hover:bg-cyan-500/10 transition"></div>
+                             <p class="sim-label text-cyan-500/70 border-b border-slate-800 pb-2 mb-4 font-bold flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                Verantwortlichkeiten
+                             </p>
+                             <div class="space-y-4">
+                                <div class="flex items-center justify-between gap-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-tighter">Kapitaen</label>
+                                    <select name="captain_player_id" class="sim-select py-1.5 px-3 text-xs w-48 bg-slate-950/80 border-slate-700/50">
+                                        <option value="">- Auto -</option>
+                                        @foreach ($clubPlayers as $player)
+                                            <option value="{{ $player->id }}" @selected((int) old('captain_player_id', $captainPlayerId) === $player->id)>
+                                                {{ $player->full_name }} ({{ $player->overall }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between gap-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-tighter">Elfmeter</label>
+                                    <select name="penalty_taker_player_id" class="sim-select py-1.5 px-3 text-xs w-48 bg-slate-950/80 border-slate-700/50">
+                                        <option value="">- Waehlen -</option>
+                                        @foreach ($clubPlayers as $player)
+                                            <option value="{{ $player->id }}" @selected((int) old('penalty_taker_player_id', $setPieces['penalty_taker_player_id']) === $player->id)>
+                                                {{ $player->full_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                             </div>
+                        </section>
+
+                        <section class="sim-card-soft p-5 bg-slate-900/40 border-slate-800 relative overflow-hidden group">
+                            <div class="absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-indigo-500/5 blur-lg group-hover:bg-indigo-500/10 transition"></div>
+                            <p class="sim-label text-indigo-400/70 border-b border-slate-800 pb-2 mb-4 font-bold flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L4 5V11C4 16.1 7.4 20.9 12 22C16.6 20.9 20 16.1 20 11V5L12 2Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                Standards
+                            </p>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between gap-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-tighter">FS Nah / Fern</label>
+                                    <div class="flex gap-2 w-48">
+                                        <select name="free_kick_near_player_id" class="sim-select py-1.5 !px-1.5 text-xs flex-1 bg-slate-950/80 border-slate-700/50" title="Freistoss Nah">
+                                            <option value="">N</option>
+                                            @foreach ($clubPlayers as $p)<option value="{{ $p->id }}" @selected((int)old('free_kick_near_player_id', $setPieces['free_kick_near_player_id'] ?? 0) === $p->id)>{{ $p->last_name }}</option>@endforeach
+                                        </select>
+                                        <select name="free_kick_far_player_id" class="sim-select py-1.5 !px-1.5 text-xs flex-1 bg-slate-950/80 border-slate-700/50" title="Freistoss Fern">
+                                            <option value="">F</option>
+                                            @foreach ($clubPlayers as $p)<option value="{{ $p->id }}" @selected((int)old('free_kick_far_player_id', $setPieces['free_kick_far_player_id'] ?? 0) === $p->id)>{{ $p->last_name }}</option>@endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between gap-4">
+                                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-tighter">Ecke L / R</label>
+                                    <div class="flex gap-2 w-48">
+                                        <select name="corner_left_taker_player_id" class="sim-select py-1.5 !px-1.5 text-xs flex-1 bg-slate-950/80 border-slate-700/50" title="Ecke Links">
+                                            <option value="">L</option>
+                                            @foreach ($clubPlayers as $p)<option value="{{ $p->id }}" @selected((int)old('corner_left_taker_player_id', $setPieces['corner_left_taker_player_id'] ?? 0) === $p->id)>{{ $p->last_name }}</option>@endforeach
+                                        </select>
+                                        <select name="corner_right_taker_player_id" class="sim-select py-1.5 !px-1.5 text-xs flex-1 bg-slate-950/80 border-slate-700/50" title="Ecke Rechts">
+                                            <option value="">R</option>
+                                            @foreach ($clubPlayers as $p)<option value="{{ $p->id }}" @selected((int)old('corner_right_taker_player_id', $setPieces['corner_right_taker_player_id'] ?? 0) === $p->id)>{{ $p->last_name }}</option>@endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="mt-10 flex justify-end gap-4 border-t border-slate-800/80 pt-6">
+                        <a href="{{ route('lineups.show', $lineup) }}" class="sim-btn-muted px-10 py-3 uppercase tracking-tighter text-xs font-black">Abbrechen</a>
+                        <button type="submit" name="action" value="save" class="sim-btn-primary px-14 py-3 uppercase tracking-tighter text-xs font-black shadow-xl shadow-cyan-500/20">Speichern</button>
+                    </div>
+                </article>
+            </main>
+
+            <!-- COLUMN 3: PLAYER POOL (Right Sidebar) -->
+            <aside class="lg:w-80 flex-shrink-0">
+                <section class="sim-card p-5 h-full flex flex-col relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-cyan-500/5 blur-2xl group-hover:bg-cyan-500/10 transition duration-1000"></div>
+                    
+                    <div class="relative z-10 flex flex-col h-full">
+                        <p class="sim-section-title mb-4">Spieler-Pool</p>
+                        
+                        <div class="mb-5">
+                            <div class="relative group/search">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/search:text-cyan-500/60 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </span>
+                                <input type="text" placeholder="Spieler suchen..." x-model="searchTerm" class="sim-input pl-9 py-2 text-xs" @input="filterPlayers()">
+                            </div>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar" style="max-height: calc(100vh - 300px);">
+                            @foreach ($groupLabels as $code => $label)
+                                <div class="player-group" data-group="{{ $code }}">
+                                    <h3 class="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 sticky top-0 bg-slate-900/40 backdrop-blur-sm py-1 z-10 border-b border-white/5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-500/40"></span>
+                                        {{ $label }}
+                                    </h3>
+                                    <div class="grid gap-2">
+                                        @forelse ($playersByPosition->get($code, collect()) as $player)
+                                            @php
+                                                $position = $player->position_main ?? $player->position;
+                                                $isSelected = in_array($player->id, $selectedPlayerIds, true);
+                                            @endphp
+                                            <div
+                                                class="sim-card-soft sim-player-card group/p p-2.5 cursor-grab active:cursor-grabbing transition-all border-slate-700/30 hover:border-cyan-500/30 {{ $isSelected ? 'opacity-50 ring-1 ring-cyan-500/20' : '' }}"
+                                                draggable="true"
+                                                data-player-id="{{ $player->id }}"
+                                                data-player-name="{{ $player->full_name }}"
+                                                data-player-last-name="{{ $player->last_name }}"
+                                                data-player-number="{{ $player->shirt_number ?? '??' }}"
+                                                data-player-overall="{{ $player->overall }}"
+                                                data-position-main="{{ $player->position_main ?? $player->position }}"
+                                                data-position-second="{{ $player->position_second ?? '' }}"
+                                                data-position-third="{{ $player->position_third ?? '' }}"
+                                                x-show="searchTerm === '' || '{{ strtolower($player->full_name) }}'.includes(searchTerm.toLowerCase())"
+                                            >
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <div class="flex items-center gap-2.5 min-w-0">
+                                                        <div class="w-7 h-7 rounded border border-slate-700 bg-slate-800/50 flex items-center justify-center shrink-0">
+                                                            <span class="text-[10px] font-black text-cyan-400">{{ $player->overall }}</span>
+                                                        </div>
+                                                        <div class="truncate">
+                                                            <p class="text-[11px] font-bold text-slate-200 truncate group-hover/p:text-white transition-colors">{{ $player->last_name }}</p>
+                                                            <div class="flex items-center gap-1.5">
+                                                                <span class="text-[9px] font-black uppercase text-slate-500">{{ $position }}</span>
+                                                                <span class="text-[9px] text-slate-600">#{{ $player->shirt_number ?? '??' }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="flex flex-col gap-1 items-end">
+                                                        <div class="flex gap-1 opacity-0 group-hover/p:opacity-100 transition-opacity">
+                                                            <button type="button" class="h-5 w-5 flex items-center justify-center rounded bg-slate-800 hover:bg-cyan-500/20 hover:text-cyan-400 text-slate-400 border border-slate-700 transition-all font-bold" data-add-pitch title="Auf Feld setzen">+</button>
+                                                            <button type="button" class="h-5 w-5 flex items-center justify-center rounded bg-slate-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-slate-400 border border-slate-700 transition-all font-bold" data-add-bench title="Auf Bank setzen">B</button>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 {{ $isSelected ? '' : 'hidden' }}" data-player-picked-wrapper>
+                                                            <span class="text-[8px] font-black uppercase tracking-widest text-cyan-500/60" data-player-picked>Nominiert</span>
+                                                            <button type="button" class="text-rose-500 hover:text-rose-400 transition-colors" data-remove-player title="Entfernen">
+                                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="text-[10px] text-slate-600 italic">Keine Spieler in dieser Gruppe</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
     </form>
 
     <p class="mt-4 text-xs text-slate-400">
@@ -463,7 +604,10 @@
                 }
 
                 const slotPlayer = container.querySelector('[data-slot-player]');
-                const slotPlayerName = container.querySelector('[data-slot-player-name]');
+                const slotEmpty = container.querySelector('[data-slot-empty]');
+                const slotName = container.querySelector('.sim-slot-info span');
+                const slotOverall = container.querySelector('.sim-slot-info .text-cyan-400');
+                const slotNum = container.querySelector('.jersey-num');
                 const slotHint = container.querySelector('[data-slot-hint]');
                 const slotRemove = container.querySelector('[data-slot-remove]');
                 const selectedValue = String(select.value || '');
@@ -471,35 +615,24 @@
                 container.classList.remove('sim-slot-state-primary', 'sim-slot-state-secondary', 'sim-slot-state-wrong');
 
                 if (!selectedValue) {
-                    if (slotPlayer) {
-                        slotPlayer.classList.add('hidden');
-                    }
-                    if (slotHint) {
-                        slotHint.classList.remove('hidden');
-                    }
-                    if (slotRemove) {
-                        slotRemove.classList.add('hidden');
-                    }
-
+                    if (slotPlayer) slotPlayer.classList.add('hidden');
+                    if (slotEmpty) slotEmpty.classList.remove('hidden');
+                    if (slotHint) slotHint.classList.remove('hidden');
+                    if (slotRemove) slotRemove.classList.add('hidden');
                     return;
                 }
 
-                const option = select.options[select.selectedIndex];
                 const playerCard = findPlayerCard(selectedValue);
-                if (slotPlayerName) {
-                    slotPlayerName.textContent = option ? option.text : 'Spieler gesetzt';
-                }
-                if (slotPlayer) {
-                    slotPlayer.classList.remove('hidden');
-                }
-                if (slotHint) {
-                    slotHint.classList.add('hidden');
-                }
-                if (slotRemove) {
-                    slotRemove.classList.remove('hidden');
-                }
+                if (slotPlayer) slotPlayer.classList.remove('hidden');
+                if (slotEmpty) slotEmpty.classList.add('hidden');
+                if (slotHint) slotHint.classList.add('hidden');
+                if (slotRemove) slotRemove.classList.remove('hidden');
 
                 if (playerCard) {
+                    if (slotName) slotName.textContent = playerCard.dataset.playerLastName || playerCard.dataset.playerName;
+                    if (slotNum) slotNum.textContent = playerCard.dataset.playerNumber || '??';
+                    if (slotOverall) slotOverall.textContent = playerCard.dataset.playerOverall || '??';
+
                     const fit = fitsSlot(container, playerCard);
                     if (fit) {
                         container.classList.add('sim-slot-state-' + fit);
@@ -517,9 +650,13 @@
                     const removeBtn = card.querySelector('[data-remove-player]');
 
                     const assigned = !!selectedIn;
-                    card.classList.toggle('sim-player-card-active', assigned);
-                    if (pickedMarker) {
-                        pickedMarker.classList.toggle('hidden', !assigned);
+                    card.classList.toggle('opacity-50', assigned);
+                    card.classList.toggle('ring-1', assigned);
+                    card.classList.toggle('ring-cyan-500/20', assigned);
+                    
+                    const wrapper = card.querySelector('[data-player-picked-wrapper]');
+                    if (wrapper) {
+                        wrapper.classList.toggle('hidden', !assigned);
                     }
                     if (addPitchBtn) {
                         addPitchBtn.classList.toggle('hidden', assigned);

@@ -1,88 +1,76 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Dashboard</p>
-                <h1 class="mt-1 text-3xl font-bold leading-tight text-white sm:text-4xl">
-                    Hallo,
-                    <span class="bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-rose-300 bg-clip-text text-transparent">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="relative z-10">
+                <p class="sim-section-title mb-2">Command Center</p>
+                <h1 class="text-4xl font-bold leading-tight text-white sm:text-5xl">
+                    Welcome back, <br>
+                    <span class="bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent">
                         {{ auth()->user()->name }}
                     </span>
                 </h1>
-                <p class="mt-1 text-sm text-slate-300">Uebersicht ueber Verein, Spiele, Training und aktuelle Hinweise.</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-3">
                 @if ($activeClub)
-                    <a href="{{ route('league.matches', array_filter(['club' => $activeClub->id, 'scope' => 'today', 'competition_season' => $selectedCompetitionSeasonId])) }}" class="sim-btn-muted">Spiele heute ({{ $todayMatchesCount }})</a>
-                    <a href="{{ route('players.index', ['club' => $activeClub->id]) }}" class="sim-btn-muted">Kader</a>
-                    <a href="{{ route('training.index', ['club' => $activeClub->id, 'range' => 'week']) }}" class="sim-btn-muted">Training</a>
+                    <div class="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-900/60 p-1.5 backdrop-blur-sm">
+                         <a href="{{ route('league.matches', array_filter(['club' => $activeClub->id, 'scope' => 'today', 'competition_season' => $selectedCompetitionSeasonId])) }}" 
+                           class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                            <span>Today's Games</span>
+                            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-xs text-white">{{ $todayMatchesCount }}</span>
+                        </a>
+                        <div class="h-4 w-px bg-slate-700"></div>
+                        <a href="{{ route('players.index', ['club' => $activeClub->id]) }}" 
+                           class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                            Squad
+                        </a>
+                        <a href="{{ route('training.index', ['club' => $activeClub->id, 'range' => 'week']) }}" 
+                           class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                            Training
+                        </a>
+                    </div>
                 @else
-                    <a href="{{ route('clubs.free') }}" class="sim-btn-primary">Freie Vereine</a>
-                @endif
-
-                <form method="GET" action="{{ route('dashboard') }}" class="ml-1 flex items-center gap-2">
-                    @if ($activeClub)
-                        <input type="hidden" name="club" value="{{ $activeClub->id }}">
-                    @endif
-                    <label for="variant" class="sim-label mb-0 hidden sm:block">Layout</label>
-                    <select id="variant" name="variant" class="sim-select w-40" onchange="this.form.submit()">
-                        @foreach ($dashboardVariants as $variantKey => $variantLabel)
-                            <option value="{{ $variantKey }}" @selected($dashboardVariant === $variantKey)>
-                                {{ $variantLabel }}
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
-
-                @if ($clubs->isNotEmpty())
-                    <form method="GET" action="{{ route('dashboard') }}" class="ml-1 flex items-center gap-2">
-                        @if (!empty($dashboardVariant))
-                            <input type="hidden" name="variant" value="{{ $dashboardVariant }}">
-                        @endif
-                        <label for="club" class="sim-label mb-0 hidden sm:block">Verein</label>
-                        <select id="club" name="club" class="sim-select w-52" onchange="this.form.submit()">
-                            @foreach ($clubs as $club)
-                                <option value="{{ $club->id }}" @selected($activeClub && $activeClub->id === $club->id)>
-                                    {{ $club->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </form>
+                    <a href="{{ route('clubs.free') }}" class="sim-btn-primary shadow-lg shadow-cyan-500/20">
+                        <span class="mr-2">Find a Club</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
                 @endif
             </div>
         </div>
     </x-slot>
 
     @if (!$activeClub)
-        @if (auth()->user()->isAdmin())
-            <section class="sim-card p-8 text-center">
-                <h2 class="text-2xl font-bold text-white">Noch kein eigener Verein verknuepft</h2>
-                <p class="mt-2 text-slate-300">Als Administrator steuerst du Datenverwaltung und Simulation im ACP.</p>
-                <a href="{{ route('admin.dashboard') }}" class="sim-btn-primary mt-6">Zum ACP</a>
-            </section>
-        @else
-            <section class="grid gap-4 lg:grid-cols-2">
-                <article class="sim-card p-6">
-                    <p class="sim-section-title">Managerstart</p>
-                    <h2 class="mt-2 text-2xl font-bold text-white">Du hast noch keinen Verein</h2>
-                    <p class="mt-3 text-sm text-slate-300">
-                        Solange dir kein Verein zugewiesen ist, siehst du nur dieses Start-Dashboard und den Punkt "Freie Vereine".
-                    </p>
-                    <a href="{{ route('clubs.free') }}" class="sim-btn-primary mt-5">Freie Vereine ansehen</a>
-                </article>
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+            @if (auth()->user()->isAdmin())
+                <section class="sim-card p-8 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/20 transition duration-700"></div>
+                    <div class="relative z-10">
+                        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-lg">
+                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white mb-2">Admin Control Panel</h2>
+                        <p class="text-slate-400 mb-6 max-w-md">Manage the game universe, simulations, and user data from the centralized control panel.</p>
+                        <a href="{{ route('admin.dashboard') }}" class="sim-btn-primary">
+                            Access ACP
+                        </a>
+                    </div>
+                </section>
+            @endif
 
-                <article class="sim-card p-6">
-                    <p class="sim-section-title">Was danach frei wird</p>
-                    <ul class="mt-3 space-y-2 text-sm text-slate-300">
-                        <li>- Matchcenter und Spieltage</li>
-                        <li>- Aufstellungen, Transfers, Leihen</li>
-                        <li>- Sponsoren, Training, Stadion, Finanzen</li>
-                    </ul>
-                </article>
+            <section class="sim-card p-8 group relative overflow-hidden">
+                 <div class="absolute -right-10 -bottom-10 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl group-hover:bg-indigo-500/20 transition duration-700"></div>
+                 <div class="relative z-10">
+                    <p class="sim-section-title text-indigo-400">Career Mode</p>
+                    <h2 class="text-2xl font-bold text-white mb-3">Begin Your Journey</h2>
+                    <p class="text-slate-400 mb-6">Select a club from the available free agents list and start building your legacy.</p>
+                    <a href="{{ route('clubs.free') }}" class="sim-btn-primary bg-indigo-600">
+                        View Available Clubs
+                    </a>
+                </div>
             </section>
-        @endif
+        </div>
     @else
+        <!-- Active Club Dashboard -->
         @php
             $fanMood = max(0, min(100, (int) $activeClub->fan_mood));
             $isActiveClubHome = $nextMatch && (int) $nextMatch->home_club_id === (int) $activeClub->id;
@@ -90,254 +78,259 @@
             $awayReady = $nextMatch ? (!$isActiveClubHome ? $activeClubReadyForNextMatch : $opponentReadyForNextMatch) : false;
         @endphp
 
-        @if ($dashboardVariant === 'compact')
-            @include('dashboard.partials.variant-compact')
-        @elseif ($dashboardVariant === 'classic')
-            @include('dashboard.partials.variant-classic')
-        @else
-
-        <section class="sim-card p-4 sm:p-5">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Planung</p>
-                    <h2 class="mt-1 text-2xl font-bold text-white">Woche im Ueberblick</h2>
-                </div>
-                <p class="text-xs text-slate-400">Zwischen auf Mobile - 7 Tage kompakt</p>
+        <!-- Weekly Timeline -->
+        <section class="mt-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="sim-section-title mb-0">Weekly Overview</h3>
+                 <div class="flex gap-2">
+                     <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Match
+                     </span>
+                     <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Training
+                     </span>
+                 </div>
             </div>
-
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 @foreach ($weekDays as $day)
                     @php
-                        $dayUrl = $day['match_count'] > 0
-                            ? route('league.matches', array_filter([
-                                'competition_season' => $selectedCompetitionSeasonId,
-                                'club' => $activeClub->id,
-                                'day' => $day['iso_date'],
-                            ]))
-                            : route('training.index', [
-                                'club' => $activeClub->id,
-                                'date' => $day['iso_date'],
-                            ]);
+                        $isToday = $day['is_today'];
+                        $hasMatch = $day['match_count'] > 0;
+                        $hasTraining = $day['training_count'] > 0;
+                        
+                        $dayUrl = $hasMatch
+                            ? route('league.matches', array_filter(['competition_season' => $selectedCompetitionSeasonId, 'club' => $activeClub->id, 'day' => $day['iso_date']]))
+                            : route('training.index', ['club' => $activeClub->id, 'date' => $day['iso_date']]);
+                            
+                        $borderColor = $isToday ? 'border-cyan-500/50' : ($hasMatch ? 'border-indigo-500/30' : 'border-slate-700/50');
+                        $bgColor = $isToday ? 'bg-cyan-500/5' : ($hasMatch ? 'bg-indigo-500/5' : 'bg-slate-800/20');
                     @endphp
-                    <a href="{{ $dayUrl }}" class="rounded-2xl border p-3 transition hover:border-cyan-300/60 hover:bg-cyan-500/10 {{ $day['is_today'] ? 'border-fuchsia-400/55 bg-fuchsia-500/15' : 'border-slate-700/70 bg-slate-900/45' }}">
-                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{{ $day['label'] }}</p>
-                        <p class="mt-1 text-xl font-bold text-white">{{ $day['date'] }}</p>
-                        <p class="mt-3 text-xs text-slate-300">
-                            {{ $day['training_count'] > 0 ? $day['training_count'].'x Training' : 'Kein Training' }}
-                        </p>
-                        <p class="mt-1 text-xs text-slate-300">
-                            {{ $day['match_count'] > 0 ? $day['match_count'].'x Spiel(e)' : 'Keine Spiele' }}
-                        </p>
+                    <a href="{{ $dayUrl }}" class="group relative flex flex-col justify-between rounded-xl border {{ $borderColor }} {{ $bgColor }} p-3 transition hover:border-cyan-400/50 hover:bg-slate-800/60 hover:shadow-lg hover:shadow-cyan-900/10 hover:-translate-y-0.5">
+                        @if ($isToday)
+                            <div class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></div>
+                        @endif
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest {{ $isToday ? 'text-cyan-400' : 'text-slate-500' }}">{{ $day['label'] }}</p>
+                            <p class="mt-1 text-lg font-bold text-white">{{ $day['date'] }}</p>
+                        </div>
+                        
+                        <div class="mt-4 flex flex-col gap-1.5">
+                            @if ($hasMatch)
+                                <div class="flex items-center gap-2 rounded bg-slate-900/50 px-2 py-1">
+                                    <div class="h-1.5 w-1.5 rounded-full bg-cyan-400"></div>
+                                    <span class="text-[10px] font-bold uppercase text-slate-300">{{ $day['match_count'] }} Game{{ $day['match_count'] > 1 ? 's' : '' }}</span>
+                                </div>
+                            @endif
+                             @if ($hasTraining)
+                                <div class="flex items-center gap-2 rounded bg-slate-900/50 px-2 py-1">
+                                    <div class="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
+                                    <span class="text-[10px] font-bold uppercase text-slate-300">{{ $day['training_count'] }} Session{{ $day['training_count'] > 1 ? 's' : '' }}</span>
+                                </div>
+                            @endif
+                            @if (!$hasMatch && !$hasTraining)
+                                <span class="text-[10px] font-medium text-slate-600 px-1">Rest Day</span>
+                            @endif
+                        </div>
                     </a>
                 @endforeach
             </div>
         </section>
 
-        <section class="sim-card overflow-hidden p-4 sm:p-5 lg:p-6">
-            <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
-                <div class="space-y-4">
-                    <div class="grid gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,0.95fr)]">
-                        <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.56))] p-4">
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Verein</p>
-                            <div class="mt-3 flex items-center gap-3">
-                                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-700/70 bg-slate-900/75">
-                                    <img
-                                        class="h-10 w-10 object-contain"
-                                        src="{{ $activeClub->logo_url }}"
-                                        alt="{{ $activeClub->name }}"
-                                        width="40"
-                                        height="40"
-                                    >
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h2 class="truncate text-2xl font-bold text-white">{{ $activeClub->name }}</h2>
-                                        @if ($clubRank)
-                                            <span class="inline-flex rounded-full border border-fuchsia-400/35 bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-200">Rang #{{ $clubRank }}</span>
-                                        @endif
-                                    </div>
-                                    <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                                        <span class="sim-pill">{{ $activeClub->league }}</span>
-                                        <span class="sim-pill">Punkte: {{ $clubPoints ?? '-' }}</span>
-                                    </div>
-                                </div>
+        <!-- Dynamic Grid Layout -->
+        <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem] xl:grid-cols-[1fr_22rem]">
+            
+            <div class="space-y-6">
+                <!-- Club & Form Card -->
+                <div class="sim-card p-6 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-800/20 to-transparent pointer-events-none"></div>
+                    <div class="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+                         <div class="flex items-center gap-5">
+                            <div class="relative h-20 w-20 shrink-0 rounded-2xl border border-slate-600 bg-slate-900 p-2 shadow-xl shadow-black/40">
+                                <img class="h-full w-full object-contain" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
                             </div>
-                        </article>
-
-                        <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.5))] p-4">
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Form (letzte Spiele)</p>
-                            @if ($recentForm !== [])
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    @foreach ($recentForm as $result)
-                                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold {{ $result === 'W' ? 'bg-emerald-500/20 text-emerald-200' : ($result === 'L' ? 'bg-rose-500/20 text-rose-200' : 'bg-amber-500/20 text-amber-200') }}">
-                                            {{ $result }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @else
-                                <p class="mt-6 text-sm text-slate-400">Noch keine Ligaspiele.</p>
-                            @endif
-                        </article>
-                    </div>
-
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.5))] p-4">
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Finanzen</p>
-                            <p class="mt-2 text-4xl font-bold text-emerald-200">{{ number_format((float) $activeClub->budget, 2, ',', '.') }} EUR</p>
-                            <p class="mt-2 text-sm font-semibold text-amber-200">{{ number_format((int) ($activeClub->coins ?? 0), 0, ',', '.') }} Coins</p>
-                            <p class="mt-1 text-xs text-slate-400">Vereinsbudget (Transfers, Gehaelter, Ausbau)</p>
-                            <a href="{{ route('finances.index', ['club' => $activeClub->id]) }}" class="sim-btn-muted mt-4">Uebersicht oeffnen</a>
-                        </article>
-
-                        <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.5))] p-4">
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Vorstand</p>
-                            <p class="mt-2 text-4xl font-bold text-slate-100">{{ (int) $activeClub->board_confidence }}</p>
-                            <p class="mt-1 text-xs text-slate-400">Vertrauen des Vorstands in dein Management (0-100).</p>
-                            <a href="{{ route('notifications.index') }}" class="sim-btn-muted mt-4">Hinweise</a>
-                        </article>
-                    </div>
-
-                    <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.5))] p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Fanbeliebtheit</p>
-                            <span class="inline-flex rounded-full border border-emerald-400/35 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
-                                {{ $fanMood >= 65 ? 'Beliebt' : ($fanMood >= 45 ? 'Stabil' : 'Kritisch') }}
-                            </span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <p class="text-4xl font-bold text-slate-100">{{ $fanMood }}</p>
-                            <p class="text-sm text-slate-400">/100</p>
-                        </div>
-                        <p class="mt-1 text-xs text-slate-400">Beeinflusst Zuschauerinteresse, Stimmung im Umfeld und Sponsorpotenzial.</p>
-                        <div class="mt-3 h-2 rounded-full bg-slate-700/70">
-                            <div class="h-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400" style="width: {{ $fanMood }}%"></div>
-                        </div>
-                    </article>
-
-                    <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(120deg,rgba(15,23,42,0.94),rgba(30,41,59,0.5))] p-4">
-                        <div class="flex items-start justify-between gap-3">
                             <div>
-                                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Naechstes Spiel</p>
-                                @if ($nextMatch)
-                                    <p class="mt-1 text-xl font-bold text-white">{{ $nextMatch->kickoff_at?->format('d.m.Y - H:i') }} Uhr</p>
-                                    <p class="mt-1 text-xs text-slate-400">{{ $nextMatchTypeLabel }}</p>
-                                @else
-                                    <p class="mt-1 text-sm text-slate-300">Kein Spiel geplant.</p>
-                                @endif
+                                <h2 class="text-3xl font-bold text-white tracking-tight">{{ $activeClub->name }}</h2>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                     <span class="inline-flex items-center rounded-md border border-slate-600/50 bg-slate-800/50 px-2 py-1 text-xs font-semibold text-slate-300">
+                                        {{ $activeClub->league }}
+                                     </span>
+                                     @if ($clubRank)
+                                        <span class="inline-flex items-center rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-xs font-semibold text-fuchsia-300 shadow-[0_0_10px_-3px_rgba(232,121,249,0.3)]">
+                                            Rank #{{ $clubRank }}
+                                        </span>
+                                     @endif
+                                      <span class="inline-flex items-center rounded-md border border-slate-600/50 bg-slate-800/50 px-2 py-1 text-xs font-semibold text-slate-300">
+                                        {{ $clubPoints ?? '-' }} Pts
+                                     </span>
+                                </div>
                             </div>
-                            <a href="{{ $nextMatch ? route('matches.show', $nextMatch) : route('league.matches') }}" class="sim-btn-muted">
-                                {{ $nextMatch ? 'Tippen fuer Match-Center' : 'Zum Spielplan' }}
-                            </a>
                         </div>
 
-                        @if ($nextMatch)
-                            <div class="mt-4 rounded-2xl border border-slate-700/70 bg-slate-950/50 p-4">
-                                <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-                                    <div class="flex min-w-0 items-center gap-2">
-                                        <img class="sim-avatar sim-avatar-md h-10 w-10 shrink-0 object-contain" src="{{ $nextMatch->homeClub->logo_url }}" alt="{{ $nextMatch->homeClub->name }}" width="40" height="40">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-base font-bold text-white">{{ $nextMatch->homeClub->name }}</p>
-                                            <p class="text-xs text-slate-400">Heim</p>
-                                        </div>
-                                    </div>
-                                    <span class="inline-flex rounded-full border border-fuchsia-400/35 bg-fuchsia-500/15 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-200">VS</span>
-                                    <div class="flex min-w-0 items-center justify-end gap-2">
-                                        <div class="min-w-0 text-right">
-                                            <p class="truncate text-base font-bold text-white">{{ $nextMatch->awayClub->name }}</p>
-                                            <p class="text-xs text-slate-400">Gast</p>
-                                        </div>
-                                        <img class="sim-avatar sim-avatar-md h-10 w-10 shrink-0 object-contain" src="{{ $nextMatch->awayClub->logo_url }}" alt="{{ $nextMatch->awayClub->name }}" width="40" height="40">
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 flex flex-wrap gap-2 text-xs">
-                                    <span class="inline-flex items-center rounded-full border px-2 py-1 font-semibold {{ $homeReady ? 'border-emerald-400/35 bg-emerald-500/15 text-emerald-200' : 'border-rose-400/35 bg-rose-500/15 text-rose-200' }}">
-                                        {{ $homeReady ? 'Heim aufgestellt' : 'Heim fehlt' }}
+                        <div class="flex flex-col gap-2 min-w-[140px]">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Recent Form</p>
+                            <div class="flex gap-1.5">
+                                @forelse ($recentForm as $result)
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold shadow-sm backdrop-blur-sm
+                                        {{ $result === 'W' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 
+                                           ($result === 'L' ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 
+                                            'border-slate-500/30 bg-slate-500/10 text-slate-400') }}">
+                                        {{ $result }}
                                     </span>
-                                    <span class="inline-flex items-center rounded-full border px-2 py-1 font-semibold {{ $awayReady ? 'border-emerald-400/35 bg-emerald-500/15 text-emerald-200' : 'border-rose-400/35 bg-rose-500/15 text-rose-200' }}">
-                                        {{ $awayReady ? 'Gast aufgestellt' : 'Gast fehlt' }}
-                                    </span>
-                                </div>
+                                @empty
+                                    <span class="text-sm text-slate-500 italic">No games yet</span>
+                                @endforelse
                             </div>
-                        @endif
-                    </article>
+                        </div>
+                    </div>
                 </div>
 
-                <article class="sim-card-soft border-slate-700/60 bg-[linear-gradient(140deg,rgba(30,41,59,0.62),rgba(73,23,76,0.32))] p-4 sm:p-5">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Assistent</p>
-                            <h2 class="mt-1 text-2xl font-bold text-white">Manager-Assistent</h2>
+                <div class="grid gap-6 md:grid-cols-2">
+                    <!-- Next Match Card -->
+                    <div class="sim-card flex flex-col h-full">
+                        <div class="px-6 py-4 border-b border-slate-700/50 flex justify-between items-center">
+                            <h3 class="sim-section-title mb-0">Next Match</h3>
+                            @if ($nextMatch)
+                            <span class="text-xs font-medium text-cyan-400">{{ $nextMatch->kickoff_at?->format('d.m. H:i') }}</span>
+                            @endif
                         </div>
-                        <p class="text-xs text-slate-400">Diese Woche</p>
-                    </div>
+                        
+                        <div class="p-6 flex-1 flex flex-col justify-center">
+                            @if ($nextMatch)
+                                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                                     <div class="text-center group">
+                                         <div class="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-cyan-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(34,211,238,0.3)]">
+                                            <img class="h-full w-full object-contain" src="{{ $nextMatch->homeClub->logo_url }}" alt="{{ $nextMatch->homeClub->name }}">
+                                         </div>
+                                         <p class="truncate text-sm font-bold text-white">{{ $nextMatch->homeClub->name }}</p>
+                                         <p class="text-[10px] uppercase font-bold text-slate-500">Home</p>
+                                     </div>
 
-                    <div class="mt-4 rounded-2xl border border-slate-600/60 bg-slate-900/45 p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Training (diese Woche)</p>
-                                <p class="mt-1 text-sm text-slate-200">
-                                    {{ $trainingPlanComplete ? 'Trainingsplan ist gesetzt.' : 'Dein Trainingsplan ist noch nicht vollstaendig.' }}
-                                </p>
-                            </div>
-                            <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold {{ $trainingPlanComplete ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200' : 'border-fuchsia-400/40 bg-fuchsia-500/15 text-fuchsia-200' }}">
-                                {{ $trainingPlanComplete ? 'Bereit' : 'Ausstehend' }}
-                            </span>
-                        </div>
+                                     <div class="text-center">
+                                         <span class="text-2xl font-black text-slate-700">VS</span>
+                                     </div>
 
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-xl border border-slate-700/70 bg-slate-950/45 p-3">
-                                <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Gruppe A</p>
-                                <p class="mt-1 text-lg font-bold text-white">{{ $trainingGroupACount > 0 ? $trainingGroupACount.' Einheiten' : 'Plan fehlt' }}</p>
-                                <p class="mt-1 text-xs text-slate-400">Fitness & Technik</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-700/70 bg-slate-950/45 p-3">
-                                <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Gruppe B</p>
-                                <p class="mt-1 text-lg font-bold text-white">{{ $trainingGroupBCount > 0 ? $trainingGroupBCount.' Einheiten' : 'Plan fehlt' }}</p>
-                                <p class="mt-1 text-xs text-slate-400">Taktik, Recovery & Friendly</p>
-                            </div>
-                        </div>
+                                     <div class="text-center group">
+                                         <div class="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-rose-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(244,63,94,0.3)]">
+                                            <img class="h-full w-full object-contain" src="{{ $nextMatch->awayClub->logo_url }}" alt="{{ $nextMatch->awayClub->name }}">
+                                         </div>
+                                         <p class="truncate text-sm font-bold text-white">{{ $nextMatch->awayClub->name }}</p>
+                                         <p class="text-[10px] uppercase font-bold text-slate-500">Away</p>
+                                     </div>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-center gap-3">
+                                    <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide border {{ $homeReady ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $homeReady ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
+                                        Home Lineup
+                                    </span>
+                                     <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide border {{ $awayReady ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $awayReady ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
+                                        Away Lineup
+                                    </span>
+                                </div>
 
-                            <a href="{{ route('training.index', ['club' => $activeClub->id, 'range' => 'week']) }}" class="sim-btn-muted mt-4">Training planen</a>
-                    </div>
-
-                    <div class="mt-4 rounded-2xl border border-slate-700/70 bg-slate-900/35 p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Inbox</p>
-                            <span class="text-xs text-slate-300">{{ $unreadNotificationsCount }} ungelesen</span>
-                        </div>
-                        @if ($notifications->isEmpty())
-                            <p class="mt-2 text-sm text-slate-300">Keine aktuellen Hinweise.</p>
-                        @else
-                            <div class="mt-3 space-y-2">
-                                @foreach ($notifications->take(3) as $notification)
-                                    <div class="rounded-lg border border-slate-700/70 bg-slate-950/45 px-3 py-2">
-                                        <p class="text-sm font-semibold text-white">{{ $notification->title }}</p>
-                                        <p class="mt-0.5 text-xs text-slate-400">{{ $notification->created_at->format('d.m.Y H:i') }}</p>
+                                <div class="mt-6">
+                                     <a href="{{ route('matches.show', $nextMatch) }}" class="sim-btn-primary w-full shadow-lg shadow-cyan-500/20">
+                                        Go to Match Center
+                                    </a>
+                                </div>
+                            @else
+                                <div class="text-center py-8">
+                                    <div class="mx-auto h-12 w-12 rounded-full bg-slate-800/50 flex items-center justify-center mb-3">
+                                        <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                     </div>
-                                @endforeach
-                            </div>
-                        @endif
-                        <a href="{{ route('notifications.index') }}" class="sim-page-link mt-3">Alle Benachrichtigungen</a>
-                    </div>
-
-                    @if (!empty($assistantTasks))
-                        <div class="mt-4 rounded-2xl border border-slate-700/70 bg-slate-900/35 p-4">
-                            <p class="text-xs uppercase tracking-[0.14em] text-slate-400">Empfohlene Schritte</p>
-                            <div class="mt-3 space-y-2">
-                                @foreach ($assistantTasks as $task)
-                                    <div class="rounded-lg border px-3 py-2 {{ $task['kind'] === 'warning' ? 'border-fuchsia-400/35 bg-fuchsia-500/10' : 'border-cyan-400/30 bg-cyan-500/10' }}">
-                                        <p class="text-sm font-semibold text-white">{{ $task['label'] }}</p>
-                                        <p class="mt-0.5 text-xs text-slate-300">{{ $task['description'] }}</p>
-                                        <a href="{{ $task['url'] }}" class="sim-page-link mt-2">{{ $task['cta'] }}</a>
-                                    </div>
-                                @endforeach
-                            </div>
+                                    <p class="text-slate-400">No upcoming matches scheduled.</p>
+                                    <a href="{{ route('league.matches') }}" class="mt-4 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View Schedule &rarr;</a>
+                                </div>
+                            @endif
                         </div>
-                    @endif
-                </article>
+                    </div>
+                
+                    <!-- Finance & Board -->
+                    <div class="grid gap-6 rows-2">
+                         <div class="sim-card p-6 bg-gradient-to-br from-slate-900 to-slate-900 border-none relative overflow-hidden">
+                            <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+                            <h3 class="sim-section-title text-slate-500">Finances</h3>
+                            <div class="mt-2 text-3xl font-bold text-white tracking-tight leading-none">
+                                {{ number_format((float) $activeClub->budget, 0, ',', '.') }}<span class="text-lg text-slate-500 ml-1">€</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"></span>
+                                Available Budget
+                            </p>
+                         </div>
+
+                         <div class="sim-card p-6 relative overflow-hidden">
+                            <h3 class="sim-section-title text-slate-500">Board Confidence</h3>
+                            <div class="mt-2 flex items-end gap-3">
+                                <span class="text-4xl font-bold text-white leading-none">{{ (int) $activeClub->board_confidence }}</span>
+                                <span class="text-sm font-semibold text-slate-400 mb-1.5">/ 100</span>
+                            </div>
+                            <div class="mt-3 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500" style="width: {{ $activeClub->board_confidence }}%"></div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
             </div>
-        </section>
-        @endif
+
+            <!-- Right Sidebar Area -->
+            <div class="space-y-6">
+                <!-- Notifications -->
+                 <div class="sim-card p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="sim-section-title mb-0">Inbox</h3>
+                        @if($unreadNotificationsCount > 0)
+                        <span class="inline-flex items-center justify-center rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-300 ring-1 ring-inset ring-rose-500/30">
+                            {{ $unreadNotificationsCount }} New
+                        </span>
+                        @endif
+                    </div>
+
+                    <div class="space-y-3">
+                        @forelse ($notifications->take(3) as $notification)
+                            <div class="group relative rounded-lg border border-slate-700/40 bg-slate-900/30 p-3 hover:border-slate-600/60 hover:bg-slate-800/40 transition">
+                                <p class="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors line-clamp-2 pr-4">
+                                    {{ $notification->title }}
+                                </p>
+                                <p class="mt-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                                    {{ $notification->created_at->diffForHumans(null, true, true) }}
+                                </p>
+                                @if(!$notification->read_at)
+                                <div class="absolute top-3 right-3 h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]"></div>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="text-center py-6 text-sm text-slate-500">
+                                No new notifications.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <a href="{{ route('notifications.index') }}" class="sim-btn-muted w-full mt-4 text-xs uppercase tracking-wide">
+                        View All Messages
+                    </a>
+                </div>
+
+                <!-- Assistant / Tasks -->
+                 @if (!empty($assistantTasks))
+                <div class="sim-card p-5 border-l-4 border-l-fuchsia-500">
+                    <h3 class="sim-section-title text-fuchsia-400 mb-4">Assistant Suggestions</h3>
+                    <div class="space-y-3">
+                         @foreach ($assistantTasks as $task)
+                            <div class="relative rounded-lg bg-slate-900/40 p-3 hover:bg-slate-800/40 transition">
+                                <p class="text-sm font-semibold text-white">{{ $task['label'] }}</p>
+                                <p class="mt-1 text-xs text-slate-400 leading-relaxed">{{ $task['description'] }}</p>
+                                <a href="{{ $task['url'] }}" class="mt-2.5 inline-flex text-[11px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300">
+                                    {{ $task['cta'] }} &rarr;
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
     @endif
 </x-app-layout>

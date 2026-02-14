@@ -2,71 +2,87 @@
     $user = auth()->user();
     $isAdmin = $user?->isAdmin() ?? false;
     $hasManagedClub = $isAdmin || $user?->clubs()->exists();
-    $uiTheme = (string) session('dashboard.variant', 'modern');
-    if (!in_array($uiTheme, ['modern', 'compact', 'classic'], true)) {
-        $uiTheme = 'modern';
-    }
+    
+    // Grouped Menu Structure with IDs for state management if needed
+    $menuGroups = [];
 
     if ($hasManagedClub) {
-        $primaryMenuItems = [
-            ['route' => 'dashboard', 'label' => 'Dashboard', 'active' => 'dashboard'],
-            ['route' => 'league.matches', 'label' => 'Spiele', 'active' => 'league.matches'],
-            ['route' => 'lineups.index', 'label' => 'Aufstellung', 'active' => 'lineups.*'],
-            ['route' => 'players.index', 'label' => 'Spieler', 'active' => 'players.*'],
-            ['route' => 'finances.index', 'label' => 'Finanzen', 'active' => 'finances.*'],
+        $menuGroups['bg_buro'] = [
+            'label' => 'Büro',
+            'items' => [
+                ['route' => 'dashboard', 'label' => 'Dashboard', 'active' => 'dashboard', 'icon' => 'home'],
+                ['route' => 'notifications.index', 'label' => 'Postfach', 'active' => 'notifications.*', 'icon' => 'inbox'],
+                ['route' => 'finances.index', 'label' => 'Finanzen', 'active' => 'finances.*', 'icon' => 'banknotes'],
+                ['route' => 'sponsors.index', 'label' => 'Sponsoren', 'active' => 'sponsors.*', 'icon' => 'briefcase'],
+                ['route' => 'stadium.index', 'label' => 'Stadion', 'active' => 'stadium.*', 'icon' => 'building-office'],
+            ]
         ];
 
-        $secondaryMenuItems = [
-            ['route' => 'clubs.index', 'label' => 'Vereine', 'active' => 'clubs.*'],
-            ['route' => 'friendlies.index', 'label' => 'Freundschaft', 'active' => 'friendlies.*'],
-            ['route' => 'league.table', 'label' => 'Tabelle', 'active' => 'league.table'],
-            ['route' => 'transfers.index', 'label' => 'Transfermarkt', 'active' => 'transfers.*'],
-            ['route' => 'loans.index', 'label' => 'Leihen', 'active' => 'loans.*'],
-            ['route' => 'contracts.index', 'label' => 'Vertraege', 'active' => 'contracts.*'],
-            ['route' => 'sponsors.index', 'label' => 'Sponsoren', 'active' => 'sponsors.*'],
-            ['route' => 'stadium.index', 'label' => 'Stadion', 'active' => 'stadium.*'],
-            ['route' => 'training-camps.index', 'label' => 'Trainingslager', 'active' => 'training-camps.*'],
-            ['route' => 'training.index', 'label' => 'Training', 'active' => 'training.*'],
-            ['route' => 'national-teams.index', 'label' => 'Nationalteams', 'active' => 'national-teams.*'],
-            ['route' => 'team-of-the-day.index', 'label' => 'Team of the Day', 'active' => 'team-of-the-day.*'],
-            ['route' => 'random-events.index', 'label' => 'Random Events', 'active' => 'random-events.*'],
-            ['route' => 'notifications.index', 'label' => 'Benachrichtigungen', 'active' => 'notifications.*'],
-            ['route' => 'profile.edit', 'label' => 'Profil', 'active' => 'profile.*'],
+        $menuGroups['bg_team'] = [
+            'label' => 'Team',
+            'items' => [
+                ['route' => 'lineups.index', 'label' => 'Aufstellung', 'active' => 'lineups.*', 'icon' => 'user-group'],
+                ['route' => 'players.index', 'label' => 'Kader', 'active' => 'players.*', 'icon' => 'users'],
+                ['route' => 'training.index', 'label' => 'Training', 'active' => 'training.*', 'icon' => 'academic-cap'],
+                ['route' => 'training-camps.index', 'label' => 'Trainingslager', 'active' => 'training-camps.*', 'icon' => 'tent'],
+            ]
         ];
 
-        $headerActions = [
-            ['route' => 'league.matches', 'label' => 'Spielplan', 'active' => 'league.matches', 'primary' => true],
-            ['route' => 'lineups.index', 'label' => 'Aufstellung', 'active' => 'lineups.*', 'primary' => false],
-            ['route' => 'notifications.index', 'label' => 'Inbox', 'active' => 'notifications.*', 'primary' => false],
+        $menuGroups['bg_wettbewerb'] = [
+            'label' => 'Wettbewerb',
+            'items' => [
+                ['route' => 'league.matches', 'label' => 'Spiele', 'active' => 'league.matches', 'icon' => 'calendar'],
+                ['route' => 'league.table', 'label' => 'Tabelle', 'active' => 'league.table', 'icon' => 'trophy'],
+                ['route' => 'friendlies.index', 'label' => 'Freundschaft', 'active' => 'friendlies.*', 'icon' => 'hand-raised'],
+                ['route' => 'team-of-the-day.index', 'label' => 'Team der Woche', 'active' => 'team-of-the-day.*', 'icon' => 'star'],
+                ['route' => 'national-teams.index', 'label' => 'Nationalteams', 'active' => 'national-teams.*', 'icon' => 'globe-alt'],
+            ]
+        ];
+
+         $menuGroups['bg_markt'] = [
+            'label' => 'Markt',
+            'items' => [
+                ['route' => 'transfers.index', 'label' => 'Transfermarkt', 'active' => 'transfers.*', 'icon' => 'arrows-right-left'],
+                ['route' => 'loans.index', 'label' => 'Leihmarkt', 'active' => 'loans.*', 'icon' => 'arrow-path'],
+                ['route' => 'contracts.index', 'label' => 'Verträge', 'active' => 'contracts.*', 'icon' => 'document-text'],
+                ['route' => 'clubs.index', 'label' => 'Vereins-Suche', 'active' => 'clubs.*', 'icon' => 'magnifying-glass'],
+            ]
         ];
     } else {
-        $primaryMenuItems = [
-            ['route' => 'dashboard', 'label' => 'Dashboard', 'active' => 'dashboard'],
-            ['route' => 'clubs.free', 'label' => 'Freie Vereine', 'active' => 'clubs.free'],
-        ];
-
-        $secondaryMenuItems = [
-            ['route' => 'profile.edit', 'label' => 'Profil', 'active' => 'profile.*'],
-        ];
-
-        $headerActions = [
-            ['route' => 'clubs.free', 'label' => 'Freie Vereine', 'active' => 'clubs.free', 'primary' => true],
+        $menuGroups['bg_start'] = [
+            'label' => 'Start',
+            'items' => [
+                ['route' => 'dashboard', 'label' => 'Dashboard', 'active' => 'dashboard', 'icon' => 'home'],
+                ['route' => 'clubs.free', 'label' => 'Verein wählen', 'active' => 'clubs.free', 'icon' => 'search'],
+                ['route' => 'profile.edit', 'label' => 'Profil', 'active' => 'profile.*', 'icon' => 'user'],
+            ]
         ];
     }
 
     if ($isAdmin) {
-        $primaryMenuItems[] = ['route' => 'admin.dashboard', 'label' => 'ACP', 'active' => 'admin.*'];
-        $headerActions[] = ['route' => 'admin.dashboard', 'label' => 'ACP', 'active' => 'admin.*', 'primary' => false];
+        $menuGroups['bg_admin'] = [
+            'label' => 'Administration',
+            'items' => [
+                ['route' => 'admin.dashboard', 'label' => 'ACP', 'active' => 'admin.*', 'icon' => 'cog'],
+            ]
+        ];
     }
 
-    $menuItems = array_merge($primaryMenuItems, $secondaryMenuItems);
-    $secondaryActive = collect($secondaryMenuItems)->contains(
-        fn (array $item): bool => request()->routeIs($item['active'])
-    );
-    $activeMenu = collect($menuItems)->first(
+    // Flatten for active check and mobile menu
+    $allMenuItems = collect($menuGroups)->pluck('items')->flatten(1);
+
+    $activeMenu = $allMenuItems->first(
         fn (array $item): bool => request()->routeIs($item['active'])
     );
     $activeMenuLabel = $activeMenu['label'] ?? 'Dashboard';
+
+    $headerActions = [];
+     if ($hasManagedClub) {
+        $headerActions = [
+            ['route' => 'league.matches', 'label' => 'Spielplan', 'active' => 'league.matches', 'primary' => true],
+            ['route' => 'lineups.index', 'label' => 'Aufstellung', 'active' => 'lineups.*', 'primary' => false],
+        ];
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -74,143 +90,122 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-
         <title>{{ config('app.name', 'OpenWS Laravell') }}</title>
-
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="sim-shell" data-layout-theme="{{ $uiTheme }}">
+    <body class="sim-shell font-sans text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
         <div class="min-h-screen lg:flex">
-            <aside class="hidden w-72 border-r border-slate-800/80 bg-slate-950/75 p-5 lg:flex lg:flex-col">
-                <a href="{{ route('dashboard') }}" class="sim-card-soft flex items-center justify-between p-4">
-                    <div>
-                        <p class="text-lg font-bold leading-tight">OpenWS Laravell</p>
-                        <p class="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">Manager Console</p>
-                    </div>
-                    <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500"></div>
-                </a>
+            <!-- Glassmorphism Sidebar -->
+            <aside class="hidden w-72 flex-col border-r border-slate-700/50 bg-slate-900/60 backdrop-blur-xl lg:flex fixed inset-y-0 left-0 z-50">
+                <!-- Branding -->
+                <div class="flex h-20 items-center px-6">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-600 shadow-lg shadow-cyan-500/20 transition group-hover:scale-105 group-hover:shadow-cyan-500/40">
+                            <span class="text-lg font-bold text-white">OW</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white leading-tight tracking-tight">OpenWS</p>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-400 transition-colors">Laravell</p>
+                        </div>
+                    </a>
+                </div>
 
-                <nav class="mt-6">
-                    <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hauptmenue</p>
-                    <div class="space-y-1.5">
-                        @foreach ($primaryMenuItems as $item)
-                            <a
-                                href="{{ route($item['route']) }}"
-                                class="sim-nav-item {{ request()->routeIs($item['active']) ? 'sim-nav-item-active' : '' }}"
-                            >
-                                <span>{{ $item['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
+                <!-- Navigation -->
+                <nav class="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-700 space-y-2">
+                    @foreach($menuGroups as $groupKey => $group)
+                        @php
+                            $isActiveGroup = collect($group['items'])->contains(fn($item) => request()->routeIs($item['active']));
+                        @endphp
+                        <div x-data="{ open: {{ $isActiveGroup ? 'true' : 'false' }} }" class="mb-2">
+                            <button @click="open = !open" class="flex w-full items-center justify-between px-2 py-2 text-slate-400 hover:text-white transition group/btn rounded-md hover:bg-slate-800/50">
+                                <span class="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-cyan-400 transition-colors">{{ $group['label'] }}</span>
+                                <svg class="h-4 w-4 transition-transform duration-200" 
+                                     :class="open ? 'rotate-180 text-cyan-400' : 'text-slate-600'" 
+                                     fill="none" 
+                                     viewBox="0 0 24 24" 
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="space-y-1 mt-1 pl-2 border-l border-slate-700/50 ml-2">
+                                @foreach ($group['items'] as $item)
+                                <a href="{{ route($item['route']) }}" 
+                                   class="sim-nav-item {{ request()->routeIs($item['active']) ? 'sim-nav-item-active' : '' }}">
+                                   <span class="flex items-center gap-3">
+                                       @if(request()->routeIs($item['active']))
+                                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
+                                       @else
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-slate-500 transition-colors"></span>
+                                       @endif
+                                       {{ $item['label'] }}
+                                   </span>
+                                </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
                 </nav>
 
-                @if ($secondaryMenuItems !== [])
-                    <details class="mt-4" @if ($secondaryActive) open @endif>
-                        <summary class="sim-nav-item cursor-pointer list-none">
-                            <span>Mehr Bereiche</span>
-                            <span class="text-xs text-slate-500">+</span>
-                        </summary>
-                        <div class="mt-2 space-y-1.5 pl-2">
-                            @foreach ($secondaryMenuItems as $item)
-                                <a
-                                    href="{{ route($item['route']) }}"
-                                    class="sim-nav-item {{ request()->routeIs($item['active']) ? 'sim-nav-item-active' : '' }}"
-                                >
-                                    <span>{{ $item['label'] }}</span>
-                                </a>
-                            @endforeach
+                <!-- User Profile Footer -->
+                <div class="border-t border-slate-700/50 bg-slate-900/40 p-4">
+                    <div class="flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-800/50">
+                        <div class="h-9 w-9 overflow-hidden rounded-full border border-slate-600 bg-slate-800">
+                             <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=0f172a&color=cbd5e1" alt="{{ $user->name }}">
                         </div>
-                    </details>
-                @endif
-
-                <div class="mt-auto space-y-3">
-                    <div class="sim-card-soft p-4">
-                        <p class="text-xs uppercase tracking-[0.15em] text-slate-400">Angemeldet als</p>
-                        <p class="mt-2 text-sm font-semibold text-white">{{ auth()->user()->name }}</p>
-                        <p class="mt-1 text-xs text-slate-400">{{ $isAdmin ? 'Administrator' : 'Manager' }}</p>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-white">{{ $user->name }}</p>
+                            <p class="truncate text-xs text-slate-400">{{ $isAdmin ? 'Administrator' : 'Manager' }}</p>
+                        </div>
+                        
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-slate-400 hover:text-rose-400 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </button>
+                        </form>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="sim-btn-muted w-full" type="submit">Logout</button>
-                    </form>
                 </div>
             </aside>
 
-            <div class="flex min-h-screen flex-1 flex-col">
-                <header class="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
-                    <div class="px-4 py-4 sm:px-6 lg:px-8">
-                        <div class="flex items-center justify-between gap-4">
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Navigation</p>
-                                <p class="text-xl font-bold text-white sm:text-2xl">{{ $activeMenuLabel }}</p>
-                            </div>
-                            <div class="hidden items-center gap-2 sm:flex">
-                                @foreach (array_slice($headerActions, 0, 3) as $action)
-                                    <a
-                                        href="{{ route($action['route']) }}"
-                                        class="{{ $action['primary'] ? 'sim-btn-primary' : 'sim-btn-muted' }} {{ request()->routeIs($action['active']) ? '!border-cyan-400/50 !text-cyan-100' : '' }}"
-                                    >
-                                        {{ $action['label'] }}
-                                    </a>
-                                @endforeach
-                            </div>
+            <!-- Main Content Area -->
+            <div class="flex min-h-screen flex-1 flex-col lg:pl-72 transition-all">
+                <!-- Top Header -->
+                <header class="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md">
+                    <div class="px-6 py-4 flex items-center justify-between">
+                         <div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80">Current View</p>
+                            <h1 class="text-xl font-bold text-white tracking-tight">{{ $activeMenuLabel }}</h1>
                         </div>
 
-                        <div class="mt-4 grid gap-2 lg:hidden">
-                            <label for="mobile-nav" class="sim-label mb-0">Schnellnavigation</label>
-                            <select
-                                id="mobile-nav"
-                                class="sim-select"
-                                onchange="if (this.value) { window.location.href = this.value; }"
-                            >
-                                @foreach ($menuItems as $item)
-                                    <option value="{{ route($item['route']) }}" @selected(request()->routeIs($item['active']))>
-                                        {{ $item['label'] }}
-                                    </option>
+                        <div class="flex items-center gap-4">
+                            <!-- Mobile Menu Trigger would go here -->
+                            <div class="flex items-center gap-3">
+                                @foreach($headerActions as $action)
+                                <a href="{{ route($action['route']) }}" class="{{ $action['primary'] ? 'sim-btn-primary py-2 px-4 shadow-sm' : 'sim-btn-muted py-2 px-4' }}">
+                                    {{ $action['label'] }}
+                                </a>
                                 @endforeach
-                            </select>
-
-                            <div class="mt-1 flex gap-2 overflow-x-auto pb-1">
-                                @foreach (array_slice($headerActions, 0, 2) as $action)
-                                    <a
-                                        href="{{ route($action['route']) }}"
-                                        class="sim-btn-muted shrink-0 {{ request()->routeIs($action['active']) ? '!border-cyan-400/50 !text-cyan-100' : '' }}"
-                                    >
-                                        {{ $action['label'] }}
-                                    </a>
-                                @endforeach
-                                <form method="POST" action="{{ route('logout') }}" class="shrink-0">
-                                    @csrf
-                                    <button class="sim-btn-muted" type="submit">Logout</button>
-                                </form>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-                    <div class="mx-auto max-w-7xl space-y-6">
-                        @if (session('status'))
-                            <div class="sim-card border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-                                {{ session('status') }}
-                            </div>
-                        @endif
-                        @if ($errors->any())
-                            <div class="sim-card border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-                                {{ $errors->first() }}
-                            </div>
-                        @endif
-
-                        @isset($header)
-                            <div>{{ $header }}</div>
-                        @endisset
-
-                        {{ $slot }}
-                    </div>
+                <main class="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+                     @if (session('status'))
+                        <div class="mb-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-lg shadow-emerald-500/5">
+                            {{ session('status') }}
+                        </div>
+                    @endif
+                    
+                    {{ $slot }}
                 </main>
             </div>
         </div>

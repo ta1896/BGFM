@@ -16,10 +16,15 @@ class Lineup extends Model
         'match_id',
         'name',
         'formation',
-        'tactical_style',
+        'mentality',
+        'aggression',
+        'line_height',
+        'offside_trap',
+        'time_wasting',
         'attack_focus',
         'penalty_taker_player_id',
-        'free_kick_taker_player_id',
+        'free_kick_near_player_id',
+        'free_kick_far_player_id',
         'corner_left_taker_player_id',
         'corner_right_taker_player_id',
         'is_active',
@@ -40,24 +45,24 @@ class Lineup extends Model
         return $this->belongsTo(Club::class);
     }
 
-    public function match(): BelongsTo
+    public function match (): BelongsTo
     {
-        return $this->belongsTo(GameMatch::class, 'match_id');
+        return $this->belongsTo(GameMatch::class , 'match_id');
     }
 
     public function players(): BelongsToMany
     {
         return $this->belongsToMany(Player::class)
             ->withPivot([
-                'pitch_position',
-                'sort_order',
-                'x_coord',
-                'y_coord',
-                'is_captain',
-                'is_set_piece_taker',
-                'is_bench',
-                'bench_order',
-            ])
+            'pitch_position',
+            'sort_order',
+            'x_coord',
+            'y_coord',
+            'is_captain',
+            'is_set_piece_taker',
+            'is_bench',
+            'bench_order',
+        ])
             ->withTimestamps()
             ->orderByPivot('is_bench')
             ->orderByPivot('sort_order');
@@ -65,21 +70,21 @@ class Lineup extends Model
 
     public function penaltyTaker(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'penalty_taker_player_id');
+        return $this->belongsTo(Player::class , 'penalty_taker_player_id');
     }
 
     public function freeKickTaker(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'free_kick_taker_player_id');
+        return $this->belongsTo(Player::class , 'free_kick_taker_player_id');
     }
 
     public function cornerLeftTaker(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'corner_left_taker_player_id');
+        return $this->belongsTo(Player::class , 'corner_left_taker_player_id');
     }
 
     public function cornerRightTaker(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'corner_right_taker_player_id');
+        return $this->belongsTo(Player::class , 'corner_right_taker_player_id');
     }
 }

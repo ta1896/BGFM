@@ -34,8 +34,11 @@ class MatchSimulationService
 
         $match->loadMissing(['homeClub.players', 'awayClub.players']);
 
-        $homePlayers = $this->resolveMatchSquad($match->homeClub, $match);
-        $awayPlayers = $this->resolveMatchSquad($match->awayClub, $match);
+        $homeLineup = $this->resolveLineup($match->homeClub, $match);
+        $awayLineup = $this->resolveLineup($match->awayClub, $match);
+
+        $homePlayers = $this->extractPlayers($homeLineup, $match->homeClub);
+        $awayPlayers = $this->extractPlayers($awayLineup, $match->awayClub);
 
         if ($homePlayers->isEmpty() || $awayPlayers->isEmpty()) {
             return $match;
@@ -44,18 +47,23 @@ class MatchSimulationService
         $seed = $match->simulation_seed ?: random_int(10000, 99999);
         mt_srand($seed);
 
-        $homeStrength = $this->teamStrength($homePlayers, true);
-        $awayStrength = $this->teamStrength($awayPlayers, false);
+        $homeStrength = $this->teamStrength($homePlayers, true, $homeLineup);
+        $awayStrength = $this->teamStrength($awayPlayers, false, $awayLineup);
 
         $homeGoals = $this->rollGoals($homeStrength, $awayStrength);
         $awayGoals = $this->rollGoals($awayStrength, $homeStrength);
 
-        $events = array_merge(
+        $homeEvents = array_merge(
             $this->buildGoalEvents($match, $match->home_club_id, $homeGoals, $homePlayers),
-            $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers),
-            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers),
-            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers)
+            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers, $homeLineup)
         );
+
+        $awayEvents = array_merge(
+            $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers),
+            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers, $awayLineup)
+        );
+
+        $events = array_merge($homeEvents, $awayEvents);
 
         usort($events, static fn (array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
 
@@ -100,46 +108,7 @@ class MatchSimulationService
         ]);
     }
 
-    private function resolveMatchSquad(Club $club, GameMatch $match): Collection
-    {
-        /** @var Lineup|null $lineup */
-        $lineup = $club->lineups()
-            ->with('players')
-            ->where('match_id', $match->id)
-            ->first();
-
-        if (!$lineup) {
-            $lineup = $club->lineups()
-                ->with('players')
-                ->where('is_active', true)
-                ->first();
-        }
-
-        if ($lineup && $lineup->players->isNotEmpty()) {
-            $starters = $lineup->players
-                ->filter(fn (Player $player) => !$player->pivot->is_bench)
-                ->take(11)
-                ->values();
-
-            if ($starters->count() < 11) {
-                $fallback = $lineup->players
-                    ->whereNotIn('id', $starters->pluck('id'))
-                    ->take(11 - $starters->count());
-                $starters = $starters->concat($fallback)->values();
-            }
-
-            if ($starters->isNotEmpty()) {
-                return $starters->take(11)->values();
-            }
-        }
-
-        return $club->players()
-            ->orderByDesc('overall')
-            ->limit(11)
-            ->get();
-    }
-
-    private function teamStrength(Collection $players, bool $isHome): float
+    private function teamStrength(Collection $players, bool $isHome, ?Lineup $lineup = null): float
     {
         $overall = (float) $players->avg('overall');
         $attack = (float) $players->avg('shooting');
@@ -149,12 +118,48 @@ class MatchSimulationService
 
         $score = ($overall * 0.4) + ($attack * 0.2) + ($buildUp * 0.15) + ($defense * 0.15) + ($condition * 0.1);
 
+        // Apply tactical modifiers
+        if ($lineup) {
+            $mods = $this->tacticalManager->getTacticalModifiers($lineup);
+            $score *= (($mods['attack'] + $mods['defense'] + $mods['possession']) / 3);
+        }
+
         if ($isHome) {
             $score += 3.5;
         }
 
         return $score;
     }
+
+    private function resolveLineup(Club $club, GameMatch $match): ?Lineup
+    {
+        return $club->lineups()
+            ->with(['players'])
+            ->where('match_id', $match->id)
+            ->first() 
+            ?? $club->lineups()
+                ->with(['players'])
+                ->where('is_active', true)
+                ->first();
+    }
+
+    private function extractPlayers(?Lineup $lineup, Club $club): Collection
+    {
+        if (!$lineup || $lineup->players->isEmpty()) {
+            return $club->players()->orderByDesc('overall')->limit(11)->get();
+        }
+
+        $starters = $lineup->players->filter(fn ($p) => !$p->pivot->is_bench)->take(11)->values();
+        if ($starters->count() < 11) {
+            $ids = $starters->pluck('id');
+            $fallback = $club->players()->whereNotIn('id', $ids)->orderByDesc('overall')->limit(11 - $starters->count())->get();
+            $starters = $starters->concat($fallback);
+        }
+
+        return $starters->take(11)->values();
+    }
+
+    private function resolveMatchSquad(Club $club, GameMatch $match): Collection
 
     private function rollGoals(float $attackStrength, float $defenseStrength): int
     {
