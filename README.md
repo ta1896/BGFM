@@ -2,7 +2,10 @@
 
 # ⚽ BGFM — Browser Game Football Manager
 
-**Eine vollständige Fußball-Manager-Simulation mit Laravel, Docker & MySQL**
+**Eine vollständige Fußball-Manager-Simulation mit Ultra-Premium Dark-UI, Laravel 12 & Docker**
+
+> [!IMPORTANT]
+> **Neu: Match Center 2.0 & Borderless Design** — Die gesamte Benutzeroberfläche wurde radikal modernisiert für einen absolut grenzenlosen "Clean Look".
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)](https://php.net)
@@ -36,11 +39,11 @@
 <td width="50%">
 
 ### 🏟️ Kernmodule
-- **Vereine** — CRUD, Budget, Reputation, Fan-Stimmung
-- **Spieler** — Kaderdaten, Leistungswerte, Potenzial
-- **Aufstellungen** — Formationen, Taktik, max. 11 Starter + Bank
-- **Liga-Engine** — Spielplan, Spieltage, Tabelle
-- **Matchcenter** — Live-Simulation, Events, Bewertungen
+- **Vereine** — Profile mit Multi-Tab Ansicht, Budget, Reputation, Historie
+- **Spieler** — Detail-Profile, Karrierehistorie, dynamisches Potenzial
+- **Kader-Management** — Responsive Kaderliste, Bank-Slots, Positions-Rating
+- **Premium UI** — Glassmorphismus, borderless Design, SVG Pitch-Visualisierung
+- **Match Center 2.0** — Globaler Spielplan, Live-Ticker, radikal cleane Optik
 
 </td>
 <td width="50%">
@@ -148,13 +151,14 @@ open http://localhost
 
 | Route | Beschreibung |
 |:------|:------------|
-| `/dashboard` | Übersicht |
-| `/clubs` | Vereinsverwaltung |
-| `/players` | Spielerverwaltung |
-| `/lineups` | Aufstellungen |
-| `/matches` | Spielübersicht |
-| `/matches/{id}` | Matchcenter |
-| `/table` | Ligatabelle |
+| `/dashboard` | Zentrale Management-Übersicht |
+| `/clubs/{id}` | Klub-Profil (News, Kader, Statistiken) |
+| `/players/{id}` | Spieler-Profil (Attribute, Karriere, Status) |
+| `/players` | Kader-Übersicht (Gelistet nach Positionen) |
+| `/lineups` | Taktik-Editor & Spielfeld-Visualisierung |
+| `/matches` | Globales Match-Center (Liga, Pokal, Testspiele) |
+| `/matches/{id}` | Live-Matchcenter & Simulation |
+| `/table` | Dynamische Ligatabelle (Historie verfügbar) |
 
 </details>
 
