@@ -266,7 +266,7 @@
                                 {{ $match->home_score }} : {{ $match->away_score }}
                             </div>
                             <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                        {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
+                                            {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
                                 id="live-status">
                                 @if($match->status !== 'played')
                                     <span class="sim-live-dot"></span>
@@ -708,13 +708,13 @@
                         if (a.action_type === 'substitution') { icon = '🔄'; color = 'bg-indigo-600 border-none'; }
 
                         el.innerHTML = `
-                                                                                                                                                                    <div class="w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                                                                                                                                                       ${icon}
-                                                                                                                                                                    </div>
-                                                                                                                                                                    <div class="absolute bottom-full mb-1 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-20">
-                                                                                                                                                                        ${a.minute}' ${a.player_name || ''}
-                                                                                                                                                                    </div>
-                                                                                                                                                            `;
+                                                                                                                                                                        <div class="w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                                                                                                                                                           ${icon}
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <div class="absolute bottom-full mb-1 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-20">
+                                                                                                                                                                            ${a.minute}' ${a.player_name || ''}
+                                                                                                                                                                        </div>
+                                                                                                                                                                `;
                         timelineContainer.appendChild(el);
                     });
                 };
@@ -748,6 +748,14 @@
                         else if (a.action_type === 'yellow_card') specialType = 'yellow';
                         else if (a.action_type === 'red_card') specialType = 'red';
                         else if (a.action_type === 'substitution') specialType = 'sub';
+                        else if (a.action_type === 'chance') specialType = 'chance';
+                        else if (a.action_type === 'foul') specialType = 'foul';
+                        else if (a.action_type === 'corner') specialType = 'corner';
+                        else if (a.action_type === 'save') specialType = 'save';
+                        else if (a.action_type === 'shot') specialType = 'shot';
+                        else if (a.action_type === 'injury') specialType = 'injury';
+                        else if (a.action_type === 'free_kick') specialType = 'free_kick';
+                        else if (a.action_type === 'offside') specialType = 'offside';
 
                         // Narrative Text
                         // Fallback if narrative is empty (it shouldn't be for these types)
@@ -795,14 +803,15 @@
                             }
                         }
 
-                        // --- SPECIAL DESIGN FOR GOALS / CARDS ---
-                        if (specialType === 'goal' || specialType === 'red' || specialType === 'yellow') {
-                            let headerClass = 'bg-slate-900 border-b border-slate-950';
+                        // --- SPECIAL DESIGN FOR ALL KEY EVENTS ---
+                        if (specialType) {
+                            let headerClass = 'bg-slate-900 border-b border-slate-800/30';
                             let icon = '';
                             let title = `${minutes}. Minute`;
                             let titleClass = 'text-white';
                             let playerFaceHtml = '';
-                            let cardBorder = 'border-slate-950';
+                            let cardBorder = 'border-slate-800/30';
+                            let accentColor = 'slate';
 
                             if (specialType === 'goal') {
                                 headerClass = 'bg-gradient-to-r from-sky-950/40 to-slate-900 border-b border-sky-500/10';
@@ -810,94 +819,153 @@
                                 icon = '⚽';
                                 title = `TOOOOR in der ${minutes}. Minute`;
                                 titleClass = 'text-sky-400';
-                                if (a.player_name) {
-                                    playerFaceHtml = `
-                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-sky-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                                    <span class="text-[10px] font-bold text-sky-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                                                </div>
-                                                                                                                            `;
-                                }
+                                accentColor = 'sky';
                             } else if (specialType === 'yellow') {
                                 headerClass = 'bg-gradient-to-r from-yellow-950/40 to-slate-900 border-b border-yellow-500/10';
                                 cardBorder = 'border-yellow-900/30';
                                 icon = '🟨';
                                 title = `Gelbe Karte (${minutes}. Min)`;
                                 titleClass = 'text-yellow-400';
-                                if (a.player_name) {
-                                    playerFaceHtml = `
-                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-yellow-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                                    <span class="text-[10px] font-bold text-yellow-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                                                </div>
-                                                                                                                            `;
-                                }
+                                accentColor = 'yellow';
                             } else if (specialType === 'red') {
                                 headerClass = 'bg-gradient-to-r from-red-950/40 to-slate-900 border-b border-red-500/10';
                                 cardBorder = 'border-red-900/30';
                                 icon = '🟥';
                                 title = `PLATZVERWEIS (${minutes}. Min)`;
                                 titleClass = 'text-red-400';
-                                if (a.player_name) {
-                                    playerFaceHtml = `
-                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-red-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                                    <span class="text-[10px] font-bold text-red-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                                                </div>
-                                                                                                                            `;
-                                }
+                                accentColor = 'red';
+                            } else if (specialType === 'chance') {
+                                headerClass = 'bg-gradient-to-r from-emerald-950/40 to-slate-900 border-b border-emerald-500/10';
+                                cardBorder = 'border-emerald-900/30';
+                                icon = '🎯';
+                                title = `GROßCHANCE (${minutes}. Min)`;
+                                titleClass = 'text-emerald-400';
+                                accentColor = 'emerald';
+                            } else if (specialType === 'sub') {
+                                headerClass = 'bg-gradient-to-r from-violet-950/40 to-slate-900 border-b border-violet-500/10';
+                                cardBorder = 'border-violet-900/30';
+                                icon = '🔄';
+                                title = `WECHSEL (${minutes}. Min)`;
+                                titleClass = 'text-violet-400';
+                                accentColor = 'violet';
+                            } else if (specialType === 'foul') {
+                                headerClass = 'bg-gradient-to-r from-orange-950/40 to-slate-900 border-b border-orange-500/10';
+                                cardBorder = 'border-orange-900/30';
+                                icon = '⚡';
+                                title = `FOUL (${minutes}. Min)`;
+                                titleClass = 'text-orange-400';
+                                accentColor = 'orange';
+                            } else if (specialType === 'corner') {
+                                headerClass = 'bg-gradient-to-r from-teal-950/40 to-slate-900 border-b border-teal-500/10';
+                                cardBorder = 'border-teal-900/30';
+                                icon = '🚩';
+                                title = `ECKBALL (${minutes}. Min)`;
+                                titleClass = 'text-teal-400';
+                                accentColor = 'teal';
+                            } else if (specialType === 'save') {
+                                headerClass = 'bg-gradient-to-r from-green-950/40 to-slate-900 border-b border-green-500/10';
+                                cardBorder = 'border-green-900/30';
+                                icon = '🧤';
+                                title = `PARADE (${minutes}. Min)`;
+                                titleClass = 'text-green-400';
+                                accentColor = 'green';
+                            } else if (specialType === 'shot') {
+                                headerClass = 'bg-gradient-to-r from-slate-800/40 to-slate-900 border-b border-slate-500/10';
+                                cardBorder = 'border-slate-700/30';
+                                icon = '💥';
+                                title = `SCHUSS (${minutes}. Min)`;
+                                titleClass = 'text-slate-300';
+                                accentColor = 'slate';
+                            } else if (specialType === 'injury') {
+                                headerClass = 'bg-gradient-to-r from-rose-950/40 to-slate-900 border-b border-rose-500/10';
+                                cardBorder = 'border-rose-900/30';
+                                icon = '�';
+                                title = `VERLETZUNG (${minutes}. Min)`;
+                                titleClass = 'text-rose-400';
+                                accentColor = 'rose';
+                            } else if (specialType === 'free_kick') {
+                                headerClass = 'bg-gradient-to-r from-amber-950/40 to-slate-900 border-b border-amber-500/10';
+                                cardBorder = 'border-amber-900/30';
+                                icon = '🎯';
+                                title = `FREISTOSS (${minutes}. Min)`;
+                                titleClass = 'text-amber-400';
+                                accentColor = 'amber';
+                            } else if (specialType === 'offside') {
+                                headerClass = 'bg-gradient-to-r from-indigo-950/40 to-slate-900 border-b border-indigo-500/10';
+                                cardBorder = 'border-indigo-900/30';
+                                icon = '🚫';
+                                title = `ABSEITS (${minutes}. Min)`;
+                                titleClass = 'text-indigo-400';
+                                accentColor = 'indigo';
+                            }
+
+                            if (a.player_name) {
+                                const colorMap = {
+                                    sky: '#38bdf8', yellow: '#facc15', red: '#f87171', emerald: '#34d399',
+                                    violet: '#a78bfa', orange: '#fb923c', teal: '#2dd4bf', green: '#4ade80',
+                                    slate: '#94a3b8', rose: '#fb7185', amber: '#fbbf24', indigo: '#818cf8'
+                                };
+                                const hexColor = colorMap[accentColor] || '#94a3b8';
+                                playerFaceHtml = `
+                                    <div class="w-8 h-8 rounded-full bg-slate-950 flex items-center justify-center overflow-hidden shrink-0" style="border: 1px solid ${hexColor}20">
+                                        <span class="text-[10px] font-bold font-mono" style="color: ${hexColor}">${a.player_name.charAt(0)}</span>
+                                    </div>
+                                `;
                             }
 
                             return `
-                                                                                                                    <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-4 w-full animate-fade-in-up">
-                                                                                                                        <div class="relative shrink-0">
-                                                                                                                            <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-1 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950">
-                                                                                                                            ${specialType === 'goal' ? '<div class="absolute -top-1 -right-1 text-[8px]">⚽</div>' : ''}
-                                                                                                                        </div>
-                                                                                                                        <div class="flex flex-col w-full max-w-lg">
-                                                                                                                            <div class="rounded-lg overflow-hidden w-full bg-slate-900 relative border ${cardBorder}">
-                                                                                                                                <!-- Header -->
-                                                                                                                                <div class="${headerClass} px-3 py-1 text-[10px] font-bold flex justify-between items-center">
-                                                                                                                                    <span class="flex items-center gap-1.5 uppercase tracking-widest ${titleClass}">${icon} ${title}</span>
-                                                                                                                                    ${a.player_name ? `<span class="opacity-30 text-[9px] uppercase tracking-tighter bg-black/30 px-1 py-0.5 rounded text-white font-mono">#${a.player_id % 99}</span>` : ''}
-                                                                                                                                </div>
-                                                                                                                                <!-- Content -->
-                                                                                                                                <div class="p-2.5 flex gap-2.5 items-center bg-slate-900/40 relative">
-                                                                                                                                    ${playerFaceHtml}
-                                                                                                                                    <div class="flex-1 min-w-0">
-                                                                                                                                        ${a.player_name ? `<div class="font-bold text-sm leading-tight text-slate-100 truncate">${a.player_name}</div>` : ''}
-                                                                                                                                        <div class="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">${a.outcome === 'scored' ? 'TOOOOR!' : String(a.action_type).replace(/_/g, ' ').toUpperCase()}</div>
+                                                                                                                        <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-4 w-full animate-fade-in-up">
+                                                                                                                            <div class="relative shrink-0">
+                                                                                                                                <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-1 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950">
+                                                                                                                                ${specialType === 'goal' ? '<div class="absolute -top-1 -right-1 text-[8px]">⚽</div>' : ''}
+                                                                                                                            </div>
+                                                                                                                            <div class="flex flex-col w-full max-w-lg">
+                                                                                                                                <div class="rounded-lg overflow-hidden w-full bg-slate-900 relative border ${cardBorder}">
+                                                                                                                                    <!-- Header -->
+                                                                                                                                    <div class="${headerClass} px-3 py-1 text-[10px] font-bold flex justify-between items-center">
+                                                                                                                                        <span class="flex items-center gap-1.5 uppercase tracking-widest ${titleClass}">${icon} ${title}</span>
+                                                                                                                                        ${a.player_name ? `<span class="opacity-30 text-[9px] uppercase tracking-tighter bg-black/30 px-1 py-0.5 rounded text-white font-mono">#${a.player_id % 99}</span>` : ''}
                                                                                                                                     </div>
+                                                                                                                                    <!-- Content -->
+                                                                                                                                    <div class="p-2.5 flex gap-2.5 items-center bg-slate-900/40 relative">
+                                                                                                                                        ${playerFaceHtml}
+                                                                                                                                        <div class="flex-1 min-w-0">
+                                                                                                                                            ${a.player_name ? `<div class="font-bold text-sm leading-tight text-slate-100 truncate">${a.player_name}</div>` : ''}
+                                                                                                                                            <div class="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">${a.outcome === 'scored' ? 'TOOOOR!' : String(a.action_type).replace(/_/g, ' ').toUpperCase()}</div>
+                                                                                                                                        </div>
 
-                                                                                                                                     <!-- Narrative Text -->
-                                                                                                                                    <div class="text-xs text-slate-500 font-medium leading-relaxed pl-3 border-l border-slate-950 ml-2 italic">
-                                                                                                                                        "${text}"
+                                                                                                                                         <!-- Narrative Text -->
+                                                                                                                                        <div class="text-xs text-slate-500 font-medium leading-relaxed pl-3 border-l border-slate-950 ml-2 italic">
+                                                                                                                                            "${text}"
+                                                                                                                                        </div>
                                                                                                                                     </div>
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    `;
+                        }
+
+                        // --- STANDARD CHAT BUBBLE (Deep Dark Mode) ---
+                        return `
+                                                                                                                    <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-2 w-full group">
+                                                                                                                        <!-- Team Logo -->
+                                                                                                                        <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-0.5 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950 opacity-30 group-hover:opacity-100 transition-opacity">
+
+                                                                                                                        <!-- Bubble -->
+                                                                                                                        <div class="flex flex-col max-w-lg ${isHome ? 'items-start' : 'items-end'}">
+                                                                                                                            <div class="bg-slate-950/40 text-slate-500 px-3 py-1.5 rounded  relative text-xs leading-relaxed border border-slate-950 group-hover:border-slate-950 transition-colors">
+                                                                                                                                <!-- Minute Badge -->
+                                                                                                                                <div class="text-[8px] font-bold text-slate-700 mb-0.5 flex items-center gap-1 uppercase tracking-widest">
+                                                                                                                                    ${minutes}. MIN
+                                                                                                                                </div>
+
+                                                                                                                                <div class="font-medium">
+                                                                                                                                    ${text}
                                                                                                                                 </div>
                                                                                                                             </div>
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                 `;
-                        }
-
-                        // --- STANDARD CHAT BUBBLE (Deep Dark Mode) ---
-                        return `
-                                                                                                                <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-2 w-full group">
-                                                                                                                    <!-- Team Logo -->
-                                                                                                                    <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-0.5 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950 opacity-30 group-hover:opacity-100 transition-opacity">
-
-                                                                                                                    <!-- Bubble -->
-                                                                                                                    <div class="flex flex-col max-w-lg ${isHome ? 'items-start' : 'items-end'}">
-                                                                                                                        <div class="bg-slate-950/40 text-slate-500 px-3 py-1.5 rounded  relative text-xs leading-relaxed border border-slate-950 group-hover:border-slate-950 transition-colors">
-                                                                                                                            <!-- Minute Badge -->
-                                                                                                                            <div class="text-[8px] font-bold text-slate-700 mb-0.5 flex items-center gap-1 uppercase tracking-widest">
-                                                                                                                                ${minutes}. MIN
-                                                                                                                            </div>
-
-                                                                                                                            <div class="font-medium">
-                                                                                                                                ${text}
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            `;
                     }).join('');
 
                     if (html) {
@@ -913,18 +981,18 @@
                     const away = teamStates[String(awayClubId)] || {};
 
                     const statRow = (label, hVal, aVal, suffix = '') => `
-                                                                                                                    <div class="bg-slate-800 p-3 rounded border border-slate-950" >
-                                                                                                                                                                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${label}</div>
-                                                                                                                                                                    <div class="flex justify-between items-end font-mono">
-                                                                                                                                                                        <span class="text-lg font-bold ${hVal > aVal ? 'text-green-400' : 'text-slate-300'}">${hVal}${suffix}</span>
-                                                                                                                                                                        <span class="text-lg font-bold ${aVal > hVal ? 'text-green-400' : 'text-slate-300'}">${aVal}${suffix}</span>
+                                                                                                                        <div class="bg-slate-800 p-3 rounded border border-slate-950" >
+                                                                                                                                                                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${label}</div>
+                                                                                                                                                                        <div class="flex justify-between items-end font-mono">
+                                                                                                                                                                            <span class="text-lg font-bold ${hVal > aVal ? 'text-green-400' : 'text-slate-300'}">${hVal}${suffix}</span>
+                                                                                                                                                                            <span class="text-lg font-bold ${aVal > hVal ? 'text-green-400' : 'text-slate-300'}">${aVal}${suffix}</span>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
+                                                                                                                                                                             <div class="bg-cyan-500 h-full" style="width: ${(hVal / ((hVal + aVal) || 1)) * 100}%"></div>
+                                                                                                                                                                             <div class="bg-indigo-500 h-full flex-1"></div>
+                                                                                                                                                                        </div>
                                                                                                                                                                     </div>
-                                                                                                                                                                    <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
-                                                                                                                                                                         <div class="bg-cyan-500 h-full" style="width: ${(hVal / ((hVal + aVal) || 1)) * 100}%"></div>
-                                                                                                                                                                         <div class="bg-indigo-500 h-full flex-1"></div>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                            `;
+                                                                                                                `;
 
                     statsGrid.innerHTML = [
                         statRow('Ballbesitz', Math.round((Number(home.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), Math.round((Number(away.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), '%'),
@@ -965,13 +1033,13 @@
                             }
                             const color = isHome ? 'bg-cyan-600' : 'bg-indigo-600';
                             html += `<div class="absolute w-10 h-10 ${color} border-2 border-slate-700 rounded-full flex flex-col items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group"
-                                                                                                        style = "left: ${x}%; top: ${y}%;">
-                                                                                                                                                                        <span class="text-white font-bold text-xs">${String(p.name).substring(0, 1)}</span>
-                                                                                                                                                                        <div class="absolute bottom-full mb-1 flex flex-col items-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                                                                                                                                                            <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
-                                                                                                                                                                            <div class="text-[9px] text-yellow-300 font-mono">${p.slot}</div>
-                                                                                                                                                                        </div>
-                                                                                                                                                                    </div>`;
+                                                                                                            style = "left: ${x}%; top: ${y}%;">
+                                                                                                                                                                            <span class="text-white font-bold text-xs">${String(p.name).substring(0, 1)}</span>
+                                                                                                                                                                            <div class="absolute bottom-full mb-1 flex flex-col items-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                                                                                                                                                                <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
+                                                                                                                                                                                <div class="text-[9px] text-yellow-300 font-mono">${p.slot}</div>
+                                                                                                                                                                            </div>
+                                                                                                                                                                        </div>`;
                         });
                     });
                     visualLineupsOverlay.innerHTML = html;
@@ -1029,9 +1097,9 @@
                     html += `</div>`;
 
                     container.innerHTML = `
-                                                                                                            <div class="mb-4 text-center text-xs text-slate-400 uppercase tracking-widest">Live Ballaktionen Heatmap</div>
-                                                                                                                ${html}
-                                                                                                        `;
+                                                                                                                <div class="mb-4 text-center text-xs text-slate-400 uppercase tracking-widest">Live Ballaktionen Heatmap</div>
+                                                                                                                    ${html}
+                                                                                                            `;
                 };
 
                 const renderMomentum = (actions) => {
@@ -1084,15 +1152,15 @@
                     const sorted = withRatings.sort((a, b) => b.rating - a.rating);
 
                     let html = `<table class="w-full text-sm text-left text-slate-300">
-                                                                                                                                                                <thead class="text-xs text-slate-400 uppercase bg-slate-700/50">
-                                                                                                                                                                    <tr>
-                                                                                                                                                                        <th class="px-4 py-2">Spieler</th>
-                                                                                                                                                                        <th class="px-4 py-2 text-center">Note</th>
-                                                                                                                                                                        <th class="px-4 py-2 text-center">Tore</th>
-                                                                                                                                                                        <th class="px-4 py-2 text-center">Assists</th>
-                                                                                                                                                                    </tr>
-                                                                                                                                                                </thead>
-                                                                                                                                                                <tbody class="divide-y divide-slate-700">`;
+                                                                                                                                                                    <thead class="text-xs text-slate-400 uppercase bg-slate-700/50">
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <th class="px-4 py-2">Spieler</th>
+                                                                                                                                                                            <th class="px-4 py-2 text-center">Note</th>
+                                                                                                                                                                            <th class="px-4 py-2 text-center">Tore</th>
+                                                                                                                                                                            <th class="px-4 py-2 text-center">Assists</th>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                    </thead>
+                                                                                                                                                                    <tbody class="divide-y divide-slate-700">`;
 
                     sorted.forEach(s => {
                         let ratingColor = 'text-slate-300';
@@ -1101,13 +1169,13 @@
                         else if (s.rating < 5) ratingColor = 'text-red-400';
 
                         html += `<tr class="bg-slate-800 border-b border-slate-950 hover:bg-slate-700/50">
-                                                                                                                                                                    <td class="px-4 py-2 font-medium text-slate-200">
-                                                                                                                                                                        ${s.player_name} <span class="text-xs text-slate-500">(${Number(s.club_id) === homeClubId ? 'Heim' : 'Gast'})</span>
-                                                                                                                                                                    </td>
-                                                                                                                                                                    <td class="px-4 py-2 text-center ${ratingColor}">${s.rating.toFixed(1)}</td>
-                                                                                                                                                                    <td class="px-4 py-2 text-center text-slate-400">${s.goals || '-'}</td>
-                                                                                                                                                                    <td class="px-4 py-2 text-center text-slate-400">${s.assists || '-'}</td>
-                                                                                                                                                                </tr>`;
+                                                                                                                                                                        <td class="px-4 py-2 font-medium text-slate-200">
+                                                                                                                                                                            ${s.player_name} <span class="text-xs text-slate-500">(${Number(s.club_id) === homeClubId ? 'Heim' : 'Gast'})</span>
+                                                                                                                                                                        </td>
+                                                                                                                                                                        <td class="px-4 py-2 text-center ${ratingColor}">${s.rating.toFixed(1)}</td>
+                                                                                                                                                                        <td class="px-4 py-2 text-center text-slate-400">${s.goals || '-'}</td>
+                                                                                                                                                                        <td class="px-4 py-2 text-center text-slate-400">${s.assists || '-'}</td>
+                                                                                                                                                                    </tr>`;
                     });
                     html += `</tbody></table> `;
                     container.innerHTML = html;
