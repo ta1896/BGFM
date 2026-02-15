@@ -23,14 +23,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-slate-100 leading-tight">
+            <h2 class="sim-heading">
                 {{ __('Match Center') }}
             </h2>
         </div>
     </x-slot>
 
     <!-- Main Container -->
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-6 space-y-6" id="match-live-root">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-6 space-y-0" id="match-live-root">
 
         @if($match->status === 'scheduled')
             {{-- PRE-MATCH VIEW --}}
@@ -119,7 +119,7 @@
                                 KI-Prognose</button>
                         </div>
 
-                        <div class="bg-slate-900/60 rounded-xl border border-slate-800 p-6 max-w-4xl mx-auto">
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-950 p-6 max-w-4xl mx-auto">
                             <h4 class="text-center text-lg font-semibold text-slate-300 mb-6">⚔️ Teamvergleich</h4>
 
                             <div class="flex items-center justify-between mb-8 px-12">
@@ -141,7 +141,7 @@
                             <div class="space-y-4">
                                 <!-- Compare Row: Market Value -->
                                 <div
-                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-800">
+                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-950">
                                     <div class="text-right font-mono text-cyan-400">
                                         {{ number_format($comparison['home']['market_value'] / 1000000, 1, ',', '.') }} M €
                                     </div>
@@ -155,7 +155,7 @@
                                 </div>
                                 <!-- Compare Row: Strength -->
                                 <div
-                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-800">
+                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-950">
                                     <div class="text-right font-mono text-slate-200">
                                         {{ number_format($comparison['home']['strength'], 1) }}
                                     </div>
@@ -169,7 +169,7 @@
                                 </div>
                                 <!-- Compare Row: Age -->
                                 <div
-                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-800">
+                                    class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center py-3 border-b border-slate-950">
                                     <div class="text-right font-mono text-slate-200">
                                         {{ number_format($comparison['home']['avg_age'], 1) }} J.
                                     </div>
@@ -219,7 +219,7 @@
             {{-- LIVE / FINISHED VIEW --}}
 
             <!-- Live Header -->
-            <div class="bg-slate-800 rounded-lg overflow-hidden mb-6">
+            <div class="bg-slate-800/90 rounded-t-lg overflow-hidden backdrop-blur-sm">
                 <!-- Top Info Bar -->
                 <div
                     class="bg-slate-900/80 px-4 py-2 flex flex-wrap justify-between items-center text-xs text-slate-400 border-b border-slate-950">
@@ -242,33 +242,42 @@
                 </div>
 
                 <!-- Scoreboard -->
-                <div class="p-6 bg-gradient-to-b from-slate-800 to-slate-900 relative">
-                    <div class="flex items-center justify-between max-w-4xl mx-auto">
+                <div class="py-8 px-6 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 relative">
+                    {{-- Subtle gradient accent behind score --}}
+                    <div class="absolute inset-0 pointer-events-none"
+                        style="background: radial-gradient(ellipse at center 40%, rgba(6,182,212,0.06) 0%, transparent 60%)">
+                    </div>
+                    <div class="flex items-center justify-between max-w-4xl mx-auto relative z-10">
                         <!-- Home -->
-                        <div class="flex items-center gap-4 w-1/3">
+                        <div class="flex items-center gap-5 w-1/3">
                             <img src="{{ $match->homeClub->logo_url }}"
-                                class="w-16 h-16 object-contain filter drop-shadow-lg">
+                                class="w-20 h-20 object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
                             <div class="text-left">
-                                <span class="block text-xs text-slate-400 uppercase tracking-widest">Heim</span>
                                 <span
-                                    class="block text-xl font-bold text-slate-100 leading-tight">{{ $match->homeClub->name }}</span>
+                                    class="block text-[10px] text-cyan-500/60 uppercase tracking-[0.2em] font-bold">Heim</span>
+                                <span
+                                    class="block text-2xl font-bold text-white leading-tight tracking-tight">{{ $match->homeClub->name }}</span>
                             </div>
                         </div>
 
                         <!-- Score -->
                         <div class="text-center w-1/3">
-                            <div class="text-5xl font-black text-slate-100 tracking-tighter" id="live-score">
+                            <div class="text-7xl font-black text-white tracking-tighter sim-score-glow" id="live-score">
                                 {{ $match->home_score }} : {{ $match->away_score }}
                             </div>
-                            <div class="mt-2 inline-block px-3 py-0.5 bg-slate-700 rounded text-xs font-semibold text-slate-300 uppercase tracking-wider"
+                            <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                                        {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
                                 id="live-status">
+                                @if($match->status !== 'played')
+                                    <span class="sim-live-dot"></span>
+                                @endif
                                 {{ $match->status === 'played' ? 'Beendet' : 'Live ' . $match->live_minute . "'" }}
                             </div>
                             @if($match->status === 'live' && $canSimulate && $match->live_paused)
-                                <div class="mt-2">
+                                <div class="mt-3">
                                     <button id="live-resume-btn"
-                                        class="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded animate-pulse">
-                                        Fortsetzen
+                                        class="text-xs bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-lg font-bold animate-pulse shadow-lg shadow-green-500/25">
+                                        ▶ Fortsetzen
                                     </button>
                                 </div>
                             @endif
@@ -276,78 +285,71 @@
                         </div>
 
                         <!-- Away -->
-                        <div class="flex items-center gap-4 w-1/3 justify-end">
+                        <div class="flex items-center gap-5 w-1/3 justify-end">
                             <div class="text-right">
-                                <span class="block text-xs text-slate-400 uppercase tracking-widest">Auswärts</span>
                                 <span
-                                    class="block text-xl font-bold text-slate-100 leading-tight">{{ $match->awayClub->name }}</span>
+                                    class="block text-[10px] text-indigo-400/60 uppercase tracking-[0.2em] font-bold">Auswärts</span>
+                                <span
+                                    class="block text-2xl font-bold text-white leading-tight tracking-tight">{{ $match->awayClub->name }}</span>
                             </div>
                             <img src="{{ $match->awayClub->logo_url }}"
-                                class="w-16 h-16 object-contain filter drop-shadow-lg">
+                                class="w-20 h-20 object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
                         </div>
                     </div>
                 </div>
 
                 <!-- Strength Bar -->
-                <div class="bg-slate-900 px-6 py-4 border-t border-slate-950">
-                    <div class="flex justify-between text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">
-                        <span>Heim 904</span>
-                        <span>Teamstärken • Live</span>
-                        <span>809 Auswärts</span>
+                <div class="bg-slate-900/80 px-6 py-3 border-t border-slate-800/50">
+                    <div
+                        class="flex justify-between text-[10px] text-slate-500 mb-1.5 uppercase tracking-[0.15em] font-bold">
+                        <span class="text-cyan-400/70">Heim 904</span>
+                        <span class="text-slate-600">Teamstärken</span>
+                        <span class="text-indigo-400/70">809 Auswärts</span>
                     </div>
-                    <div class="h-2 bg-slate-700 rounded-full overflow-hidden flex relative">
-                        <!-- Simplified visual strength bar (50/50 split for now, dynamic later) -->
-                        <div class="w-1/2 bg-slate-600 h-full"></div>
-                        <div class="w-1/2 bg-slate-700 h-full"></div>
-                        <!-- Marker -->
+                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+                        <div class="bg-gradient-to-r from-cyan-500 to-cyan-400 h-full transition-all duration-1000"
+                            style="width: 52.8%"></div>
                         <div
-                            class="absolute top-0 bottom-0 w-8 bg-green-500 left-1/2 -ml-4 rounded shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                            class="bg-gradient-to-r from-indigo-500 to-indigo-400 h-full flex-1 transition-all duration-1000">
                         </div>
                     </div>
-                    <div class="text-center text-[10px] text-slate-500 mt-1">Heimteam mit Vorteil</div>
                 </div>
 
                 <!-- Timeline -->
-                <div class="px-6 py-8 bg-slate-800 border-t border-slate-950">
-                    <div class="flex justify-between text-xs text-slate-400 mb-1">
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                            Heim</span>
-                        <span class="uppercase tracking-widest font-semibold">Spielverlauf</span>
-                        <span class="flex items-center gap-1">Auswärts <span
-                                class="w-2 h-2 rounded-full bg-indigo-500"></span></span>
+                <div class="px-6 py-4 bg-slate-800/50 border-t border-slate-800/50">
+                    <div class="flex justify-between text-[10px] text-slate-500 mb-2">
+                        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            <span class="uppercase tracking-[0.15em] font-bold text-cyan-500/50">Heim</span></span>
+                        <span class="uppercase tracking-[0.15em] font-bold text-slate-600">Spielverlauf</span>
+                        <span class="flex items-center gap-1.5"><span
+                                class="uppercase tracking-[0.15em] font-bold text-indigo-400/50">Auswärts</span> <span
+                                class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span></span>
                     </div>
-                    <div
-                        class="relative h-12 mt-4 bg-slate-700/30 rounded-full border border-slate-950 flex items-center px-4">
-                        <div class="w-full h-px bg-slate-600"></div>
+                    <div class="sim-timeline-bar">
+                        <div class="w-full h-px bg-slate-700/60"></div>
                         <!-- Timeline Events (injected by JS) -->
                         <div id="timeline-events-container" class="absolute inset-0"></div>
                     </div>
-                    <div class="flex justify-between text-[10px] text-slate-500 mt-1 px-4 font-mono">
+                    <div class="flex justify-between text-[9px] text-slate-600 mt-1.5 px-4 font-mono">
                         <span>0'</span><span>15'</span><span>30'</span><span>45'</span><span>60'</span><span>75'</span><span>90'</span>
                     </div>
                 </div>
 
                 <!-- Tab Navigation & Actions -->
-                <div class="bg-slate-900 px-6 py-3 flex items-center justify-between border-t border-slate-950">
-                    <div class="flex gap-1" id="match-tabs">
-                        <button onclick="switchTab('ticker')"
-                            class="px-4 py-1.5 rounded text-sm font-medium bg-slate-700 text-slate-100  tab-btn"
-                            data-tab="ticker">Fan-Ticker</button>
-                        <button onclick="switchTab('pitch')"
-                            class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition tab-btn"
-                            data-tab="pitch">Spielfeld</button>
-                        <button onclick="switchTab('stats')"
-                            class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition tab-btn"
-                            data-tab="stats">Statistiken</button>
-                        <button onclick="switchTab('heatmap')"
-                            class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition tab-btn"
-                            data-tab="heatmap">Heatmap</button>
-                        <button onclick="switchTab('lineups')"
-                            class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition tab-btn"
-                            data-tab="lineups">Aufstellungen</button>
-                        <button onclick="switchTab('ratings')"
-                            class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition tab-btn"
-                            data-tab="ratings">Spielerwerte</button>
+                <div class="bg-slate-900/60 px-6 py-3 flex items-center justify-between border-t border-slate-800/50">
+                    <div class="flex gap-1 bg-slate-900/40 p-1 rounded-xl" id="match-tabs">
+                        <button onclick="switchTab('ticker')" class="sim-tab sim-tab-active tab-btn" data-tab="ticker">📡
+                            Fan-Ticker</button>
+                        <button onclick="switchTab('pitch')" class="sim-tab sim-tab-inactive tab-btn" data-tab="pitch">⚽
+                            Spielfeld</button>
+                        <button onclick="switchTab('stats')" class="sim-tab sim-tab-inactive tab-btn" data-tab="stats">📊
+                            Statistiken</button>
+                        <button onclick="switchTab('heatmap')" class="sim-tab sim-tab-inactive tab-btn"
+                            data-tab="heatmap">🔥 Heatmap</button>
+                        <button onclick="switchTab('lineups')" class="sim-tab sim-tab-inactive tab-btn"
+                            data-tab="lineups">👥 Aufstellungen</button>
+                        <button onclick="switchTab('ratings')" class="sim-tab sim-tab-inactive tab-btn" data-tab="ratings">⭐
+                            Spielerwerte</button>
                     </div>
 
                     <div class="flex gap-2">
@@ -398,7 +400,7 @@
             </div>
 
             <!-- Tab Content Area -->
-            <div class="bg-slate-800 rounded-lg overflow-hidden min-h-[500px] p-6">
+            <div class="bg-slate-800/60 rounded-b-lg overflow-hidden min-h-[500px] p-6 backdrop-blur-sm">
 
                 <!-- 1. FAN TICKER TAB -->
                 <div id="tab-content-ticker" class="tab-content">
@@ -482,16 +484,23 @@
         // Simple Tab Switcher
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-content-' + tabId).classList.remove('hidden');
+            const targetTab = document.getElementById('tab-content-' + tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                // Re-trigger fade animation
+                targetTab.style.animation = 'none';
+                targetTab.offsetHeight;
+                targetTab.style.animation = '';
+            }
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-700', 'text-slate-100', '');
-                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+                btn.classList.remove('sim-tab-active');
+                btn.classList.add('sim-tab-inactive');
             });
             const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
             if (activeBtn) {
-                activeBtn.classList.add('bg-slate-700', 'text-slate-100', '');
-                activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+                activeBtn.classList.add('sim-tab-active');
+                activeBtn.classList.remove('sim-tab-inactive');
             }
         }
     </script>
@@ -699,13 +708,13 @@
                         if (a.action_type === 'substitution') { icon = '🔄'; color = 'bg-indigo-600 border-none'; }
 
                         el.innerHTML = `
-                                                                                                                                                <div class="w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                                                                                                                                   ${icon}
-                                                                                                                                                </div>
-                                                                                                                                                <div class="absolute bottom-full mb-1 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-20">
-                                                                                                                                                    ${a.minute}' ${a.player_name || ''}
-                                                                                                                                                </div>
-                                                                                                                                            `;
+                                                                                                                                                                    <div class="w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                                                                                                                                                       ${icon}
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <div class="absolute bottom-full mb-1 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-20">
+                                                                                                                                                                        ${a.minute}' ${a.player_name || ''}
+                                                                                                                                                                    </div>
+                                                                                                                                                            `;
                         timelineContainer.appendChild(el);
                     });
                 };
@@ -803,10 +812,10 @@
                                 titleClass = 'text-sky-400';
                                 if (a.player_name) {
                                     playerFaceHtml = `
-                                                                                                            <div class="w-8 h-8 rounded-full bg-slate-950 border border-sky-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                <span class="text-[10px] font-bold text-sky-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                            </div>
-                                                                                                        `;
+                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-sky-500/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                                                                                                    <span class="text-[10px] font-bold text-sky-400 font-mono">${a.player_name.charAt(0)}</span>
+                                                                                                                                </div>
+                                                                                                                            `;
                                 }
                             } else if (specialType === 'yellow') {
                                 headerClass = 'bg-gradient-to-r from-yellow-950/40 to-slate-900 border-b border-yellow-500/10';
@@ -816,10 +825,10 @@
                                 titleClass = 'text-yellow-400';
                                 if (a.player_name) {
                                     playerFaceHtml = `
-                                                                                                            <div class="w-8 h-8 rounded-full bg-slate-950 border border-yellow-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                <span class="text-[10px] font-bold text-yellow-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                            </div>
-                                                                                                        `;
+                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-yellow-500/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                                                                                                    <span class="text-[10px] font-bold text-yellow-400 font-mono">${a.player_name.charAt(0)}</span>
+                                                                                                                                </div>
+                                                                                                                            `;
                                 }
                             } else if (specialType === 'red') {
                                 headerClass = 'bg-gradient-to-r from-red-950/40 to-slate-900 border-b border-red-500/10';
@@ -829,66 +838,66 @@
                                 titleClass = 'text-red-400';
                                 if (a.player_name) {
                                     playerFaceHtml = `
-                                                                                                            <div class="w-8 h-8 rounded-full bg-slate-950 border border-red-500/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                                                                                <span class="text-[10px] font-bold text-red-400 font-mono">${a.player_name.charAt(0)}</span>
-                                                                                                            </div>
-                                                                                                        `;
+                                                                                                                                <div class="w-8 h-8 rounded-full bg-slate-950 border border-red-500/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                                                                                                    <span class="text-[10px] font-bold text-red-400 font-mono">${a.player_name.charAt(0)}</span>
+                                                                                                                                </div>
+                                                                                                                            `;
                                 }
                             }
 
                             return `
-                                                                                                <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-4 w-full animate-fade-in-up">
-                                                                                                    <div class="relative shrink-0">
-                                                                                                        <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-1 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950">
-                                                                                                        ${specialType === 'goal' ? '<div class="absolute -top-1 -right-1 text-[8px]">⚽</div>' : ''}
-                                                                                                    </div>
-                                                                                                    <div class="flex flex-col w-full max-w-lg">
-                                                                                                        <div class="rounded-lg overflow-hidden w-full bg-slate-900 relative border ${cardBorder}">
-                                                                                                            <!-- Header -->
-                                                                                                            <div class="${headerClass} px-3 py-1 text-[10px] font-bold flex justify-between items-center">
-                                                                                                                <span class="flex items-center gap-1.5 uppercase tracking-widest ${titleClass}">${icon} ${title}</span>
-                                                                                                                ${a.player_name ? `<span class="opacity-30 text-[9px] uppercase tracking-tighter bg-black/30 px-1 py-0.5 rounded text-white font-mono">#${a.player_id % 99}</span>` : ''}
-                                                                                                            </div>
-                                                                                                            <!-- Content -->
-                                                                                                            <div class="p-2.5 flex gap-2.5 items-center bg-slate-900/40 relative">
-                                                                                                                ${playerFaceHtml}
-                                                                                                                <div class="flex-1 min-w-0">
-                                                                                                                    ${a.player_name ? `<div class="font-bold text-sm leading-tight text-slate-100 truncate">${a.player_name}</div>` : ''}
-                                                                                                                    <div class="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">${a.outcome === 'scored' ? 'TOOOOR!' : String(a.action_type).replace(/_/g, ' ').toUpperCase()}</div>
-                                                                                                                </div>
+                                                                                                                    <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-4 w-full animate-fade-in-up">
+                                                                                                                        <div class="relative shrink-0">
+                                                                                                                            <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-1 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950">
+                                                                                                                            ${specialType === 'goal' ? '<div class="absolute -top-1 -right-1 text-[8px]">⚽</div>' : ''}
+                                                                                                                        </div>
+                                                                                                                        <div class="flex flex-col w-full max-w-lg">
+                                                                                                                            <div class="rounded-lg overflow-hidden w-full bg-slate-900 relative border ${cardBorder}">
+                                                                                                                                <!-- Header -->
+                                                                                                                                <div class="${headerClass} px-3 py-1 text-[10px] font-bold flex justify-between items-center">
+                                                                                                                                    <span class="flex items-center gap-1.5 uppercase tracking-widest ${titleClass}">${icon} ${title}</span>
+                                                                                                                                    ${a.player_name ? `<span class="opacity-30 text-[9px] uppercase tracking-tighter bg-black/30 px-1 py-0.5 rounded text-white font-mono">#${a.player_id % 99}</span>` : ''}
+                                                                                                                                </div>
+                                                                                                                                <!-- Content -->
+                                                                                                                                <div class="p-2.5 flex gap-2.5 items-center bg-slate-900/40 relative">
+                                                                                                                                    ${playerFaceHtml}
+                                                                                                                                    <div class="flex-1 min-w-0">
+                                                                                                                                        ${a.player_name ? `<div class="font-bold text-sm leading-tight text-slate-100 truncate">${a.player_name}</div>` : ''}
+                                                                                                                                        <div class="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">${a.outcome === 'scored' ? 'TOOOOR!' : String(a.action_type).replace(/_/g, ' ').toUpperCase()}</div>
+                                                                                                                                    </div>
 
-                                                                                                                 <!-- Narrative Text -->
-                                                                                                                <div class="text-xs text-slate-500 font-medium leading-relaxed pl-3 border-l border-slate-950 ml-2 italic">
-                                                                                                                    "${text}"
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            `;
+                                                                                                                                     <!-- Narrative Text -->
+                                                                                                                                    <div class="text-xs text-slate-500 font-medium leading-relaxed pl-3 border-l border-slate-950 ml-2 italic">
+                                                                                                                                        "${text}"
+                                                                                                                                    </div>
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                `;
                         }
 
                         // --- STANDARD CHAT BUBBLE (Deep Dark Mode) ---
                         return `
-                                                                                            <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-2 w-full group">
-                                                                                                <!-- Team Logo -->
-                                                                                                <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-0.5 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950 opacity-30 group-hover:opacity-100 transition-opacity">
+                                                                                                                <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-2 w-full group">
+                                                                                                                    <!-- Team Logo -->
+                                                                                                                    <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-0.5 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950 opacity-30 group-hover:opacity-100 transition-opacity">
 
-                                                                                                <!-- Bubble -->
-                                                                                                <div class="flex flex-col max-w-lg ${isHome ? 'items-start' : 'items-end'}">
-                                                                                                    <div class="bg-slate-950/40 text-slate-500 px-3 py-1.5 rounded  relative text-xs leading-relaxed border border-slate-950 group-hover:border-slate-950 transition-colors">
-                                                                                                        <!-- Minute Badge -->
-                                                                                                        <div class="text-[8px] font-bold text-slate-700 mb-0.5 flex items-center gap-1 uppercase tracking-widest">
-                                                                                                            ${minutes}. MIN
-                                                                                                        </div>
+                                                                                                                    <!-- Bubble -->
+                                                                                                                    <div class="flex flex-col max-w-lg ${isHome ? 'items-start' : 'items-end'}">
+                                                                                                                        <div class="bg-slate-950/40 text-slate-500 px-3 py-1.5 rounded  relative text-xs leading-relaxed border border-slate-950 group-hover:border-slate-950 transition-colors">
+                                                                                                                            <!-- Minute Badge -->
+                                                                                                                            <div class="text-[8px] font-bold text-slate-700 mb-0.5 flex items-center gap-1 uppercase tracking-widest">
+                                                                                                                                ${minutes}. MIN
+                                                                                                                            </div>
 
-                                                                                                        <div class="font-medium">
-                                                                                                            ${text}
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        `;
+                                                                                                                            <div class="font-medium">
+                                                                                                                                ${text}
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            `;
                     }).join('');
 
                     if (html) {
@@ -904,18 +913,18 @@
                     const away = teamStates[String(awayClubId)] || {};
 
                     const statRow = (label, hVal, aVal, suffix = '') => `
-                                                                                                <div class="bg-slate-800 p-3 rounded border border-slate-950" >
-                                                                                                                                                <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${label}</div>
-                                                                                                                                                <div class="flex justify-between items-end font-mono">
-                                                                                                                                                    <span class="text-lg font-bold ${hVal > aVal ? 'text-green-400' : 'text-slate-300'}">${hVal}${suffix}</span>
-                                                                                                                                                    <span class="text-lg font-bold ${aVal > hVal ? 'text-green-400' : 'text-slate-300'}">${aVal}${suffix}</span>
-                                                                                                                                                </div>
-                                                                                                                                                <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
-                                                                                                                                                     <div class="bg-cyan-500 h-full" style="width: ${(hVal / ((hVal + aVal) || 1)) * 100}%"></div>
-                                                                                                                                                     <div class="bg-indigo-500 h-full flex-1"></div>
-                                                                                                                                                </div>
-                                                                                                                                            </div >
-                                                                                        `;
+                                                                                                                    <div class="bg-slate-800 p-3 rounded border border-slate-950" >
+                                                                                                                                                                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${label}</div>
+                                                                                                                                                                    <div class="flex justify-between items-end font-mono">
+                                                                                                                                                                        <span class="text-lg font-bold ${hVal > aVal ? 'text-green-400' : 'text-slate-300'}">${hVal}${suffix}</span>
+                                                                                                                                                                        <span class="text-lg font-bold ${aVal > hVal ? 'text-green-400' : 'text-slate-300'}">${aVal}${suffix}</span>
+                                                                                                                                                                    </div>
+                                                                                                                                                                    <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
+                                                                                                                                                                         <div class="bg-cyan-500 h-full" style="width: ${(hVal / ((hVal + aVal) || 1)) * 100}%"></div>
+                                                                                                                                                                         <div class="bg-indigo-500 h-full flex-1"></div>
+                                                                                                                                                                    </div>
+                                                                                                                                                                </div>
+                                                                                                            `;
 
                     statsGrid.innerHTML = [
                         statRow('Ballbesitz', Math.round((Number(home.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), Math.round((Number(away.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), '%'),
@@ -955,14 +964,14 @@
                                 y = 100 - y;
                             }
                             const color = isHome ? 'bg-cyan-600' : 'bg-indigo-600';
-                            html += `<div class="absolute w-10 h-10 ${color} border-2 border-white rounded-full flex flex-col items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group"
-                                                                                    style = "left: ${x}%; top: ${y}%;">
-                                                                                                                                                    <span class="text-white font-bold text-xs">${String(p.name).substring(0, 1)}</span>
-                                                                                                                                                    <div class="absolute bottom-full mb-1 flex flex-col items-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                                                                                                                                        <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
-                                                                                                                                                        <div class="text-[9px] text-yellow-300 font-mono">${p.slot}</div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>`;
+                            html += `<div class="absolute w-10 h-10 ${color} border-2 border-slate-700 rounded-full flex flex-col items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group"
+                                                                                                        style = "left: ${x}%; top: ${y}%;">
+                                                                                                                                                                        <span class="text-white font-bold text-xs">${String(p.name).substring(0, 1)}</span>
+                                                                                                                                                                        <div class="absolute bottom-full mb-1 flex flex-col items-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                                                                                                                                                            <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
+                                                                                                                                                                            <div class="text-[9px] text-yellow-300 font-mono">${p.slot}</div>
+                                                                                                                                                                        </div>
+                                                                                                                                                                    </div>`;
                         });
                     });
                     visualLineupsOverlay.innerHTML = html;
@@ -1020,9 +1029,9 @@
                     html += `</div>`;
 
                     container.innerHTML = `
-                                                                                        <div class="mb-4 text-center text-xs text-slate-400 uppercase tracking-widest">Live Ballaktionen Heatmap</div>
-                                                                                            ${html}
-                                                                                    `;
+                                                                                                            <div class="mb-4 text-center text-xs text-slate-400 uppercase tracking-widest">Live Ballaktionen Heatmap</div>
+                                                                                                                ${html}
+                                                                                                        `;
                 };
 
                 const renderMomentum = (actions) => {
@@ -1075,15 +1084,15 @@
                     const sorted = withRatings.sort((a, b) => b.rating - a.rating);
 
                     let html = `<table class="w-full text-sm text-left text-slate-300">
-                                                                                                                                            <thead class="text-xs text-slate-400 uppercase bg-slate-700/50">
-                                                                                                                                                <tr>
-                                                                                                                                                    <th class="px-4 py-2">Spieler</th>
-                                                                                                                                                    <th class="px-4 py-2 text-center">Note</th>
-                                                                                                                                                    <th class="px-4 py-2 text-center">Tore</th>
-                                                                                                                                                    <th class="px-4 py-2 text-center">Assists</th>
-                                                                                                                                                </tr>
-                                                                                                                                            </thead>
-                                                                                                                                            <tbody class="divide-y divide-slate-700">`;
+                                                                                                                                                                <thead class="text-xs text-slate-400 uppercase bg-slate-700/50">
+                                                                                                                                                                    <tr>
+                                                                                                                                                                        <th class="px-4 py-2">Spieler</th>
+                                                                                                                                                                        <th class="px-4 py-2 text-center">Note</th>
+                                                                                                                                                                        <th class="px-4 py-2 text-center">Tore</th>
+                                                                                                                                                                        <th class="px-4 py-2 text-center">Assists</th>
+                                                                                                                                                                    </tr>
+                                                                                                                                                                </thead>
+                                                                                                                                                                <tbody class="divide-y divide-slate-700">`;
 
                     sorted.forEach(s => {
                         let ratingColor = 'text-slate-300';
@@ -1092,15 +1101,15 @@
                         else if (s.rating < 5) ratingColor = 'text-red-400';
 
                         html += `<tr class="bg-slate-800 border-b border-slate-950 hover:bg-slate-700/50">
-                                                                                                                                                <td class="px-4 py-2 font-medium text-slate-200">
-                                                                                                                                                    ${s.player_name} <span class="text-xs text-slate-500">(${Number(s.club_id) === homeClubId ? 'Heim' : 'Gast'})</span>
-                                                                                                                                                </td>
-                                                                                                                                                <td class="px-4 py-2 text-center ${ratingColor}">${s.rating.toFixed(1)}</td>
-                                                                                                                                                <td class="px-4 py-2 text-center text-slate-400">${s.goals || '-'}</td>
-                                                                                                                                                <td class="px-4 py-2 text-center text-slate-400">${s.assists || '-'}</td>
-                                                                                                                                            </tr>`;
+                                                                                                                                                                    <td class="px-4 py-2 font-medium text-slate-200">
+                                                                                                                                                                        ${s.player_name} <span class="text-xs text-slate-500">(${Number(s.club_id) === homeClubId ? 'Heim' : 'Gast'})</span>
+                                                                                                                                                                    </td>
+                                                                                                                                                                    <td class="px-4 py-2 text-center ${ratingColor}">${s.rating.toFixed(1)}</td>
+                                                                                                                                                                    <td class="px-4 py-2 text-center text-slate-400">${s.goals || '-'}</td>
+                                                                                                                                                                    <td class="px-4 py-2 text-center text-slate-400">${s.assists || '-'}</td>
+                                                                                                                                                                </tr>`;
                     });
-                    html += `</tbody></table > `;
+                    html += `</tbody></table> `;
                     container.innerHTML = html;
                 };
 
@@ -1118,10 +1127,10 @@
                     selIn.innerHTML = '';
 
                     l.starters.forEach(p => {
-                        selOut.innerHTML += `< option value = "${p.id}" > ${p.name} (${p.position})</option > `;
+                        selOut.innerHTML += `<option value = "${p.id}" > ${p.name} (${p.position})</option> `;
                     });
                     l.bench.forEach(p => {
-                        selIn.innerHTML += `< option value = "${p.id}" > ${p.name} (${p.position})</option > `;
+                        selIn.innerHTML += `<option value = "${p.id}" > ${p.name} (${p.position})</option> `;
                     });
 
                     document.getElementById('modal-substitution').classList.remove('hidden');
@@ -1133,7 +1142,7 @@
                     grid.innerHTML = '';
 
                     ['balanced', 'offensive', 'defensive', 'counter'].forEach(style => {
-                        grid.innerHTML += `< button onclick = "submitTactic('${style}')" class="p-2 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 text-sm uppercase font-semibold transition" > ${style}</button > `;
+                        grid.innerHTML += `<button onclick = "submitTactic('${style}')" class="p-2 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 text-sm uppercase font-semibold transition" > ${style}</button> `;
                     });
 
                     document.getElementById('modal-tactics').classList.remove('hidden');

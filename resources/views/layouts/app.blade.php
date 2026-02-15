@@ -113,30 +113,30 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="sim-shell font-sans text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
-        <div class="min-h-screen lg:flex">
-            <!-- Glassmorphism Sidebar -->
-            <aside class="hidden w-72 flex-col border-r border-slate-950 bg-slate-900/60 backdrop-blur-xl lg:flex fixed inset-y-0 left-0 z-50">
+        <div id="app-layout" class="min-h-screen lg:flex">
+            <!-- Sidebar -->
+            <aside class="hidden w-72 flex-col border-r border-slate-800/30 bg-slate-900/70 backdrop-blur-xl lg:flex fixed inset-y-0 left-0 z-50 sim-sidebar">
                 <!-- Branding -->
-                <div class="flex h-20 items-center px-6">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-600 shadow-lg shadow-cyan-500/20 transition group-hover:scale-105 group-hover:shadow-cyan-500/40">
-                            <span class="text-lg font-bold text-white">OW</span>
+                <div class="flex h-16 shrink-0 items-center px-5 border-b border-slate-800/30">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group rounded-lg py-1 pr-2 -m-1 transition-colors hover:bg-slate-800/50">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600 shadow-md shadow-cyan-500/20 transition group-hover:shadow-cyan-500/30">
+                            <span class="text-sm font-bold text-white">OW</span>
                         </div>
-                        <div>
-                            <p class="font-bold text-white leading-tight tracking-tight">OpenWS</p>
+                        <div class="min-w-0">
+                            <p class="font-bold text-white leading-tight tracking-tight truncate">OpenWS</p>
                             <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-400 transition-colors">Laravell</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Navigation -->
-                <nav class="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-700 space-y-2">
+                <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 sim-nav">
                     @foreach($menuGroups as $groupKey => $group)
                         @php
                             $isActiveGroup = collect($group['items'])->contains(fn($item) => request()->routeIs($item['active']));
                         @endphp
                         <div x-data="{ open: {{ $isActiveGroup ? 'true' : 'false' }} }" class="mb-2">
-                            <button @click="open = !open" class="flex w-full items-center justify-between px-2 py-2 text-slate-400 hover:text-white transition group/btn rounded-md hover:bg-slate-800/50">
+                            <button @click="open = !open" class="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:ring-inset">
                                 <span class="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-cyan-400 transition-colors">{{ $group['label'] }}</span>
                                 <svg class="h-4 w-4 transition-transform duration-200" 
                                      :class="open ? 'rotate-180 text-cyan-400' : 'text-slate-600'" 
@@ -153,7 +153,7 @@
                                  x-transition:leave="transition ease-in duration-150"
                                  x-transition:leave-start="opacity-100 translate-y-0"
                                  x-transition:leave-end="opacity-0 -translate-y-2"
-                                 class="space-y-1 mt-1 pl-2 border-l border-slate-950 ml-2">
+                                 class="space-y-0.5 mt-1 pl-3 ml-2 border-l-2 border-slate-800/30">
                                 @foreach ($group['items'] as $item)
                                 <a href="{{ route($item['route']) }}" 
                                    class="sim-nav-item {{ request()->routeIs($item['active']) ? 'sim-nav-item-active' : '' }}">
@@ -173,12 +173,12 @@
                 </nav>
 
                 <!-- User Profile Footer -->
-                <div class="border-t border-slate-950 bg-slate-900/40 p-4">
+                <div class="shrink-0 border-t border-slate-800/30 bg-slate-900/50 p-4">
                     
                     @if($hasManagedClub && $globalUserClubs->count() > 1)
                         <div x-data="{ open: false }" class="relative mb-3">
                             <button @click="open = !open" @click.away="open = false" 
-                                class="flex w-full items-center gap-3 rounded-lg bg-slate-800 p-2 text-left hover:bg-slate-700 transition border border-slate-950">
+                                class="flex w-full items-center gap-3 rounded-lg bg-slate-800/60 p-2 text-left hover:bg-slate-700/60 transition border border-slate-700/30">
                                 @if($currentActiveClub)
                                     <div class="h-8 w-8 rounded-full overflow-hidden bg-slate-900 border border-slate-600">
                                         <img src="{{ $currentActiveClub->logo_url }}" class="h-full w-full object-contain">
@@ -253,34 +253,33 @@
             <div class="flex min-h-screen flex-1 flex-col lg:pl-72 transition-all">
                 <!-- Top Header -->
                 @if (isset($header))
-                    <header class="sticky top-0 z-40 border-b border-slate-950 bg-slate-900/80 backdrop-blur-md">
-                        <div class="px-6 py-4">
+                    <header class="sticky top-0 z-40 border-b border-slate-800/30 bg-slate-900/80 backdrop-blur-md">
+                        <div class="px-6 py-4 min-h-[4.5rem] flex items-center">
                             {{ $header }}
                         </div>
+                        <div class="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
                     </header>
                 @else
-                    <header class="sticky top-0 z-40 border-b border-slate-950 bg-slate-900/80 backdrop-blur-md">
-                        <div class="px-6 py-4 flex items-center justify-between">
-                             <div class="flex items-center gap-4">
-                                <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80">Current View</p>
-                                    <h1 class="text-xl font-bold text-white tracking-tight">{{ $activeMenuLabel }}</h1>
-                                </div>
-                                
-                            <div class="flex items-center gap-4">
+                    <header class="sticky top-0 z-40 border-b border-slate-800/30 bg-slate-900/80 backdrop-blur-md">
+                        <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80">Aktuelle Ansicht</p>
+                                <h1 class="text-xl font-bold text-white tracking-tight">{{ $activeMenuLabel }}</h1>
+                            </div>
+                            @if($hasManagedClub && count($headerActions) > 0)
                                 <div class="flex items-center gap-3">
                                     @foreach($headerActions as $action)
-                                    <a href="{{ route($action['route']) }}" class="{{ $action['primary'] ? 'sim-btn-primary py-2 px-4 shadow-sm' : 'sim-btn-muted py-2 px-4' }}">
-                                        {{ $action['label'] }}
-                                    </a>
+                                        <a href="{{ route($action['route'], $action['params'] ?? []) }}" class="{{ $action['primary'] ? 'sim-btn-primary py-2 px-4 shadow-sm' : 'sim-btn-muted py-2 px-4' }}">
+                                            {{ $action['label'] }}
+                                        </a>
                                     @endforeach
                                 </div>
-                            </div>
+                            @endif
                         </div>
                     </header>
                 @endif
 
-                <main class="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+                <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full transition-colors">
                      @if (session('status'))
                         <div class="mb-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-lg shadow-emerald-500/5">
                             {{ session('status') }}

@@ -67,7 +67,7 @@
                                             class="w-12 h-12 rounded-xl bg-slate-800 p-2 border border-slate-700 flex items-center justify-center relative">
                                             <img src="{{ $match->homeClub->logo_url }}" class="w-full h-full object-contain">
                                             @if($isHome)
-                                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-slate-900"
+                                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-slate-800"
                                             title="Dein Team"></div> @endif
                                         </div>
                                         <span
@@ -81,7 +81,7 @@
                                             class="w-12 h-12 rounded-xl bg-slate-800 p-2 border border-slate-700 flex items-center justify-center relative">
                                             <img src="{{ $match->awayClub->logo_url }}" class="w-full h-full object-contain">
                                             @if(!$isHome)
-                                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-slate-900"
+                                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-slate-800"
                                             title="Dein Team"></div> @endif
                                         </div>
                                         <span

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
             <div>
                 <p class="sim-section-title">Konfiguration</p>
                 <h1
@@ -15,7 +15,7 @@
         <div x-data="{ activeTab: 'general' }" class="sim-card flex flex-col lg:flex-row min-h-[600px] overflow-hidden">
             <!-- Sidebar Navigation -->
             <div
-                class="flex-3 lg:w-1/3 bg-slate-900/50 border-b lg:border-b-0 lg:border-r border-slate-700/50 p-6 flex flex-col gap-2">
+                class="lg:flex-[3] bg-slate-900/50 border-b lg:border-b-0 lg:border-r border-slate-700/50 p-6 flex flex-col gap-2">
                 <button @click="activeTab = 'general'"
                     :class="{ 'bg-cyan-500/10 text-cyan-400 border-cyan-500/50': activeTab === 'general', 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent': activeTab !== 'general' }"
                     class="w-full text-left px-4 py-3 rounded-lg border transition-all duration-200 font-medium flex items-center gap-3">

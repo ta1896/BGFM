@@ -1,3 +1,4 @@
+/* App Shell: Theme, Base-Reset, Layout-Borders, Components */
 @import "tailwindcss";
 
 @theme {
@@ -9,52 +10,153 @@
     :root {
         --sim-shell-bg: #060a18;
         --sim-shell-bg-image: radial-gradient(circle at top left, #1e293b 0%, #0f172a 35%, #020617 100%);
+        --sim-border-dark: rgba(30, 41, 59, 0.25);
         --sim-card-bg: rgba(15, 23, 42, 0.75);
         --sim-card-border: rgba(51, 65, 85, 0.6);
         --sim-text-main: #f8fafc;
         --sim-text-muted: #94a3b8;
         --sim-accent-primary: #06b6d4;
-        /* Cyan 500 */
         --sim-accent-secondary: #6366f1;
-        /* Indigo 500 */
         --sim-accent-glow: rgba(6, 182, 212, 0.4);
         --sim-radius-lg: 1rem;
         --sim-radius-md: 0.75rem;
+        --sim-radius-nav: 0.5rem;
+        --sim-transition: 150ms ease;
+    }
+
+    html {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background-color: var(--sim-shell-bg);
+        background-image: var(--sim-shell-bg-image);
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background-color: transparent;
+        box-sizing: border-box;
+    }
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: inherit;
+        border-color: var(--sim-border-dark);
+    }
+
+    /* Global dark scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(51, 65, 85, 0.4);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(71, 85, 105, 0.6);
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(51, 65, 85, 0.4) transparent;
     }
 }
 
 @layer components {
+
+    /* Layout: Alle Trennlinien dunkel, keine weißen Ränder (Sidebar, Header, Footer) */
+    #app-layout aside,
+    #app-layout header,
+    #app-layout [class*="border-slate-950"],
+    #app-layout .border-t.border-slate-950,
+    #app-layout .border-b.border-slate-950,
+    #app-layout .border-r.border-slate-950,
+    #app-layout .border-l.border-slate-950 {
+        border-color: var(--sim-border-dark);
+    }
+
+    .sim-border-dark {
+        border-color: var(--sim-border-dark);
+    }
+
     .sim-shell {
         @apply min-h-screen text-slate-100 antialiased;
         background: var(--sim-shell-bg-image);
         background-color: var(--sim-shell-bg);
     }
 
+    /* Sidebar: Scrollbar + Abstände */
+    .sim-sidebar {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(51 65 85) transparent;
+    }
+
+    .sim-sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sim-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .sim-sidebar::-webkit-scrollbar-thumb {
+        background: rgb(51 65 85);
+        border-radius: 3px;
+    }
+
+    .sim-nav .sim-nav-item {
+        border-radius: var(--sim-radius-nav);
+    }
+
     /* Glassmorphism Utilities */
     .sim-glass {
-        @apply backdrop-blur-md bg-slate-900/60 border border-slate-950;
+        @apply backdrop-blur-md bg-slate-900/60;
+        border: 1px solid var(--sim-border-dark);
     }
 
     .sim-glass-strong {
-        @apply backdrop-blur-xl bg-slate-900/80 border border-slate-950;
+        @apply backdrop-blur-xl bg-slate-900/80;
+        border: 1px solid var(--sim-border-dark);
     }
 
     /* Cards */
     .sim-card {
-        @apply sim-glass rounded-2xl transition-all duration-300;
+        @apply backdrop-blur-md bg-slate-900/60 rounded-2xl transition-all duration-300;
+        border: 1px solid var(--sim-border-dark);
     }
 
     .sim-card:hover {
-        @apply border-slate-600/40;
+        @apply border-slate-600/30;
+        box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(148, 163, 184, 0.04);
     }
 
     .sim-card-soft {
-        @apply rounded-xl border border-slate-950 bg-slate-800/20 transition-colors;
+        @apply rounded-xl bg-slate-800/20 transition-colors;
+        border: 1px solid rgba(30, 41, 59, 0.3);
     }
 
-    /* Text */
+    /* Text & Headings */
     .sim-section-title {
         @apply text-xs font-bold uppercase tracking-[0.15em] text-cyan-500/80 mb-3;
+    }
+
+    .sim-heading {
+        @apply text-xl font-bold text-white tracking-tight;
+    }
+
+    .sim-heading-muted {
+        @apply text-sm font-medium text-slate-400;
     }
 
     .sim-label {
@@ -65,25 +167,25 @@
     .sim-input,
     .sim-select,
     .sim-textarea {
-        @apply w-full rounded-xl border border-slate-800/40 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-700 focus:border-cyan-500/40 focus:bg-slate-950/80 focus:outline-none focus:ring-4 focus:ring-cyan-500/5 transition-all;
+        @apply w-full rounded-xl border border-slate-800/40 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-700 transition-all duration-200 focus:border-cyan-500/40 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus-visible:ring-2 focus-visible:ring-cyan-500/20;
     }
 
     /* Buttons */
     .sim-btn-primary {
-        @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition-all hover:brightness-110 hover:shadow-cyan-500/40 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+        @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:brightness-110 hover:shadow-cyan-500/40 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
     }
 
     .sim-btn-muted {
-        @apply inline-flex items-center justify-center rounded-lg border border-slate-700/60 bg-slate-800/40 px-5 py-2.5 text-sm font-semibold text-slate-300 transition-all hover:bg-slate-800 hover:text-white hover:border-slate-600 active:bg-slate-700;
+        @apply inline-flex items-center justify-center rounded-lg border border-slate-700/60 bg-slate-800/40 px-5 py-2.5 text-sm font-semibold text-slate-300 transition-all duration-200 hover:bg-slate-800 hover:text-white hover:border-slate-600 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
     }
 
     .sim-btn-danger {
-        @apply inline-flex items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-sm font-semibold text-rose-400 transition-all hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/50;
+        @apply inline-flex items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-sm font-semibold text-rose-400 transition-all duration-200 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
     }
 
     /* Navigation */
     .sim-nav-item {
-        @apply flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-slate-400 transition-all hover:bg-slate-800/50 hover:text-slate-100;
+        @apply flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800/60 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:ring-inset;
     }
 
     .sim-nav-item-active {
@@ -118,21 +220,27 @@
 
     /* Tables */
     .sim-table th {
-        @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800;
+        @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 border-b;
+        border-bottom-color: var(--sim-border-dark);
     }
 
     .sim-table td {
-        @apply px-4 py-3 text-sm text-slate-300 border-b border-slate-800/50;
+        @apply px-4 py-3 text-sm text-slate-300 border-b;
+        border-bottom-color: var(--sim-border-dark);
     }
 
     .sim-table tr:hover td {
         @apply bg-slate-800/30;
     }
 
+    .sim-table tbody tr:nth-child(even) td {
+        background-color: rgba(15, 23, 42, 0.2);
+    }
+
     /* Pitch & Lineup Editor Styles */
     .sim-pitch {
         @apply relative overflow-hidden rounded-xl shadow-2xl;
-        border: 2px solid rgba(255, 255, 255, 0.18);
+        border: 2px solid var(--sim-border-dark);
         background:
             /* Subtle vignette for depth */
             radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.3) 100%),
@@ -285,5 +393,76 @@
 
     .animate-flash {
         animation: flash 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Match Center – Scoreboard */
+    .sim-score-glow {
+        text-shadow: 0 0 40px rgba(6, 182, 212, 0.3), 0 0 80px rgba(99, 102, 241, 0.15);
+    }
+
+    .sim-live-dot {
+        @apply w-2 h-2 rounded-full bg-green-400;
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+        animation: flash 1.5s ease-in-out infinite;
+    }
+
+    /* Match Center – Tabs */
+    .sim-tab {
+        @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer;
+    }
+
+    .sim-tab-active {
+        @apply bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 text-cyan-300;
+        box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.3);
+    }
+
+    .sim-tab-inactive {
+        @apply text-slate-500 hover:text-slate-200 hover:bg-slate-800/60;
+    }
+
+    /* Match Center – Ticker fade-in */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.4s ease-out both;
+    }
+
+    /* Match Center – Tab content transition */
+    .tab-content {
+        animation: fadeInUp 0.25s ease-out;
+    }
+
+    /* Match Center – Timeline */
+    .sim-timeline-bar {
+        @apply relative h-10 rounded-full overflow-hidden flex items-center px-4;
+        background: linear-gradient(90deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(99, 102, 241, 0.08) 100%);
+        border: 1px solid rgba(51, 65, 85, 0.3);
+    }
+
+    /* Match Center – Goal card glow animation */
+    @keyframes goalGlow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
+        }
+
+        50% {
+            box-shadow: 0 0 20px 4px rgba(6, 182, 212, 0.15);
+        }
+    }
+
+    .sim-goal-card {
+        animation: goalGlow 3s ease-in-out infinite;
     }
 }
