@@ -1,195 +1,335 @@
-# OpenWS Laravell (Laravel + Docker + MySQL)
+<div align="center">
 
-Basis-Architektur fuer eine Fussball-Simulation mit responsivem Dashboard im dunklen UI-Stil.
+# ⚽ BGFM — Browser Game Football Manager
 
-## Enthaltene Grundmodule
+**Eine vollständige Fußball-Manager-Simulation mit Laravel, Docker & MySQL**
 
-- Login / Register (Laravel Breeze)
-- Vereine (CRUD)
-- Spieler (CRUD)
-- Aufstellung (CRUD + aktive Aufstellung + max. 11 Spieler)
-- Basis-Berechnung (Teamstaerke-Service mit Angriff/Mittelfeld/Verteidigung/Chemie)
-- Rollenmodell (`admin` / normaler User) mit ACP
-- Liga-Engine: Spielplan, Spieltage, Tabelle
-- Matchcenter: Simulation, Match-Events, Spielerbewertungen
-- Transfermarkt: Listings, Gebote, Annahme/Abschluss
-- Leihmarkt: Leihlistings, Leihgebote, Leihabschluss, automatische Leih-Rueckkehr
-- Kaufoption bei Leihen: Option ziehen oder ablehnen
-- Vertragsmanagement: Verlaengerungen mit neuen Vertragskonditionen
-- Transferfenster-Regeln (Sommer/Winter, per ENV steuerbar)
-- Sponsoren: Angebote, Vertragsabschluss, Bonus + laufende Zahlungen
-- Stadion & Stadionumfeld: Kapazitaet, Infrastrukturprojekte, Upgrade-Fortschritt
-- Trainingslager: Planung, Kosten, automatische Effekte im Spieltagsprozess
-- Training: Sessions planen und Effekte anwenden
-- Benachrichtigungen + Finanzbuchungen
-- Automatischer Spieltag-Runner + Saisonabschluss (Auf-/Abstieg zwischen Ligen)
-- CPU-Teams mit automatischer Aufstellung/Taktik vor Simulation
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)](https://php.net)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-## Tech Stack
+</div>
 
-- Laravel 12
-- PHP 8.5 Runtime via Laravel Sail
-- MySQL 8.4
-- Blade + Tailwind + Vite
-- Docker Compose (`compose.yaml`)
+---
 
-## Architektur (Kurz)
+## 📋 Inhaltsverzeichnis
 
-- `app/Models/Club.php`: Verein, Budget, Reputation, Fan-Stimmung
-- `app/Models/Player.php`: Kaderdaten + Leistungswerte
-- `app/Models/Lineup.php`: Formation + aktive Aufstellung
-- `app/Services/TeamStrengthCalculator.php`: Basis-Berechnung fuer Teamwerte
-- `app/Services/SeasonProgressionService.php`: Spieltag-Lauf, Saisonabschluss, Auf-/Abstieg
-- `app/Services/CpuClubDecisionService.php`: CPU-Aufstellungen und Taktik
-- `app/Services/FinanceCycleService.php`: Matchday-Finanzabrechnung (Einnahmen/Ausgaben)
-- `app/Services/SponsorService.php`: Sponsorangebote und Vertragslogik
-- `app/Services/StadiumService.php`: Stadion-Initialisierung und Projekt-Upgrades
-- `app/Services/TrainingCampService.php`: Trainingslager-Planung und Effektverarbeitung
-- `app/Http/Controllers/*Controller.php`: Dashboard + CRUD fuer Module
-- `resources/views/*`: Startseite, Auth, Dashboard, Modul-Views (responsive)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Schnellstart](#-schnellstart)
+- [Demo-Zugänge](#-demo-zugänge)
+- [Routen-Übersicht](#-routen-übersicht)
+- [CLI-Befehle](#-cli-befehle)
+- [Architektur](#-architektur)
+- [Datenmodell](#-datenmodell)
+- [Konfiguration](#-konfiguration)
+- [Datenbankzugriff](#-datenbankzugriff)
 
-## Datenmodell
+---
 
-- `users` 1:n `clubs`
-- `clubs` 1:n `players`
-- `clubs` 1:n `lineups`
-- `lineups` n:m `players` via `lineup_player`
+## ✨ Features
 
-## Optimierte DB-Struktur (an Open WebSoccer angelehnt)
+<table>
+<tr>
+<td width="50%">
 
-Zusatztabellen fuer skalierbare Simulation:
+### 🏟️ Kernmodule
+- **Vereine** — CRUD, Budget, Reputation, Fan-Stimmung
+- **Spieler** — Kaderdaten, Leistungswerte, Potenzial
+- **Aufstellungen** — Formationen, Taktik, max. 11 Starter + Bank
+- **Liga-Engine** — Spielplan, Spieltage, Tabelle
+- **Matchcenter** — Live-Simulation, Events, Bewertungen
 
-- `countries`, `competitions`, `seasons`, `competition_seasons`
-- `season_club_registrations`, `season_club_statistics`
-- `matches`, `match_events`, `match_player_stats`
-- `player_contracts`
-- `transfer_listings`, `transfer_bids`
-- `club_financial_transactions`
-- `sponsors`, `sponsor_contracts`
-- `stadiums`, `stadium_projects`
-- `training_camps`
-- `match_financial_settlements`
-- `training_sessions`, `training_session_player`
-- `game_notifications`
+</td>
+<td width="50%">
 
-Erweiterte Bestandstabellen:
+### 💰 Wirtschaft & Transfers
+- **Transfermarkt** — Listings, Gebote, Verhandlung
+- **Leihmarkt** — Leihen mit optionaler Kaufoption
+- **Verträge** — Verlängerungen mit Konditionen
+- **Sponsoren** — Angebote, Verträge, Boni
+- **Finanzbuchungen** — Einnahmen & Ausgaben
 
-- `clubs`: `league_id`, `slug`, `fanbase`, `board_confidence`, `training_level`
-- `players`: `preferred_foot`, `potential`, `status`, `contract_expires_on`, `last_training_at`
-- `lineups`: `match_id`, `is_template`, `tactical_style`
-- `lineup_player`: `is_captain`, `is_set_piece_taker`
+</td>
+</tr>
+<tr>
+<td>
 
-## Starten mit Docker
+### 🏋️ Training & Infrastruktur
+- **Training** — Sessions planen & Effekte anwenden
+- **Trainingslager** — Planung, Kosten, Auto-Effekte
+- **Stadion** — Kapazität, Infrastrukturprojekte, Upgrades
+- **Stadionumfeld** — Erweiterungen & Fortschritt
 
-1. Container starten:
+</td>
+<td>
+
+### ⚙️ System & Automatisierung
+- **Rollenmodell** — Admin / User mit ACP
+- **CPU-Teams** — Automatische Aufstellung & Taktik
+- **Spieltag-Runner** — Automatisierte Simulation
+- **Saisonabschluss** — Auf-/Abstieg zwischen Ligen
+- **Transferfenster** — Steuerbar per ENV
+- **Benachrichtigungen** — In-Game Alerts
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🛠 Tech Stack
+
+| Komponente | Technologie |
+|:-----------|:------------|
+| **Backend** | Laravel 12 · PHP 8.5 |
+| **Datenbank** | MySQL 8.4 |
+| **Frontend** | Blade · Tailwind CSS · Vite |
+| **Auth** | Laravel Breeze |
+| **Infrastruktur** | Docker Compose · Laravel Sail |
+
+---
+
+## 🚀 Schnellstart
+
+### Voraussetzungen
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) installiert
+- [Node.js](https://nodejs.org/) (für Frontend-Build)
+
+### Installation
 
 ```bash
+# 1. Repository klonen
+git clone https://github.com/ta1896/BGFM.git
+cd BGFM
+
+# 2. Container starten
 ./vendor/bin/sail up -d
-```
 
-2. Migrationen + Seed-Daten ausfuehren:
-
-```bash
+# 3. Datenbank einrichten (Migrationen + Seed-Daten)
 ./vendor/bin/sail artisan migrate:fresh --seed
+
+# 4. Frontend bauen
+npm install && npm run build
+
+# 5. App öffnen
+open http://localhost
 ```
 
-3. Frontend-Build:
+---
+
+## 🔑 Demo-Zugänge
+
+| Rolle | E-Mail | Passwort |
+|:------|:-------|:---------|
+| 👤 User | `test@example.com` | `password` |
+| 🛡️ Admin | `admin@example.com` | `password` |
+
+---
+
+## 🗺 Routen-Übersicht
+
+<details>
+<summary><strong>Öffentlich & Auth</strong></summary>
+
+| Route | Beschreibung |
+|:------|:------------|
+| `/` | Startseite |
+| `/login` | Anmelden |
+| `/register` | Registrieren |
+
+</details>
+
+<details>
+<summary><strong>Hauptmodule</strong></summary>
+
+| Route | Beschreibung |
+|:------|:------------|
+| `/dashboard` | Übersicht |
+| `/clubs` | Vereinsverwaltung |
+| `/players` | Spielerverwaltung |
+| `/lineups` | Aufstellungen |
+| `/matches` | Spielübersicht |
+| `/matches/{id}` | Matchcenter |
+| `/table` | Ligatabelle |
+
+</details>
+
+<details>
+<summary><strong>Wirtschaft & Transfers</strong></summary>
+
+| Route | Beschreibung |
+|:------|:------------|
+| `/transfers` | Transfermarkt |
+| `/loans` | Leihmarkt |
+| `/contracts` | Vertragsmanagement |
+| `/sponsors` | Sponsoren |
+| `/finances` | Finanzbuchungen |
+
+</details>
+
+<details>
+<summary><strong>Training & Infrastruktur</strong></summary>
+
+| Route | Beschreibung |
+|:------|:------------|
+| `/training` | Trainingsplanung |
+| `/training-camps` | Trainingslager |
+| `/stadium` | Stadionverwaltung |
+| `/notifications` | Benachrichtigungen |
+
+</details>
+
+<details>
+<summary><strong>Administration</strong></summary>
+
+| Route | Beschreibung |
+|:------|:------------|
+| `/acp` | Admin Control Panel |
+
+</details>
+
+---
+
+## 💻 CLI-Befehle
+
+### Spieltag simulieren
 
 ```bash
-npm install
-npm run build
+# Alle fälligen Spiele
+sail artisan game:process-matchday
+
+# Bestimmte Liga-Saison
+sail artisan game:process-matchday --competition-season=1
 ```
 
-4. App oeffnen:
-
-- http://localhost
-
-## Demo-Login (Seed)
-
-- E-Mail: `test@example.com`
-- Passwort: `password`
-
-### Admin-Login (Seed)
-
-- E-Mail: `admin@example.com`
-- Passwort: `password`
-
-## Wichtige Routen
-
-- `/` Startseite
-- `/login`, `/register`
-- `/dashboard`
-- `/clubs`
-- `/players`
-- `/lineups`
-- `/matches`, `/matches/{id}` (Matchcenter)
-- `/table`
-- `/transfers`
-- `/loans`
-- `/contracts`
-- `/training`
-- `/sponsors`
-- `/stadium`
-- `/training-camps`
-- `/notifications`
-- `/finances`
-- `/acp` (nur Admin)
-
-### Automatischer Spieltag (CLI)
+### Statistik-Rebuild
 
 ```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:process-matchday
+# Komplett (Liga + Spieler)
+sail artisan game:rebuild-statistics --all
+
+# Gezielt mit Integritäts-Audit
+sail artisan game:rebuild-statistics --competition-season=1 --audit
 ```
 
-Optional fuer eine konkrete Liga-Saison:
+### Backfill Spieler/Vereine
 
 ```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:process-matchday --competition-season=1
+# Dry-Run (keine Änderungen)
+sail artisan game:backfill-player-club-model --dry-run
+
+# Mit Persistenz
+sail artisan game:backfill-player-club-model --chunk=500
 ```
 
-### Backfill Spieler/Verein (CLI)
+---
 
-Dry-Run mit Audit (ohne Datenaenderung):
+## 🏗 Architektur
+
+```
+app/
+├── Http/Controllers/     # Dashboard + CRUD-Controller
+├── Models/
+│   ├── Club.php           # Verein: Budget, Reputation, Fan-Stimmung
+│   ├── Player.php         # Kaderdaten + Leistungswerte
+│   └── Lineup.php         # Formation + aktive Aufstellung
+├── Services/
+│   ├── TeamStrengthCalculator.php    # Teamstärke (ATK/MID/DEF/Chemie)
+│   ├── SeasonProgressionService.php  # Spieltag-Lauf, Auf-/Abstieg
+│   ├── CpuClubDecisionService.php    # CPU-Aufstellung & Taktik
+│   ├── FinanceCycleService.php       # Matchday-Finanzen
+│   ├── SponsorService.php            # Sponsorangebote & Verträge
+│   ├── StadiumService.php            # Stadion-Upgrades
+│   └── TrainingCampService.php       # Trainingslager-Effekte
+└── ...
+resources/views/          # Blade Templates (responsive Dark UI)
+```
+
+---
+
+## 📊 Datenmodell
+
+```mermaid
+erDiagram
+    users ||--o{ clubs : "besitzt"
+    clubs ||--o{ players : "hat"
+    clubs ||--o{ lineups : "hat"
+    lineups }o--o{ players : "lineup_player"
+    clubs ||--o{ matches : "spielt"
+    matches ||--o{ match_events : "erzeugt"
+    matches ||--o{ match_player_stats : "bewertet"
+    clubs ||--o{ transfer_listings : "listet"
+    clubs ||--o{ sponsor_contracts : "hat"
+    clubs ||--|| stadiums : "besitzt"
+    stadiums ||--o{ stadium_projects : "hat"
+    competitions ||--o{ competition_seasons : "hat"
+    competition_seasons ||--o{ matches : "enthält"
+```
+
+### Zusätzliche Tabellen
+
+<details>
+<summary>Vollständige Tabellenliste</summary>
+
+**Kern:** `countries` · `competitions` · `seasons` · `competition_seasons`
+
+**Registrierung:** `season_club_registrations` · `season_club_statistics`
+
+**Spiele:** `matches` · `match_events` · `match_player_stats` · `match_financial_settlements`
+
+**Transfers:** `player_contracts` · `transfer_listings` · `transfer_bids`
+
+**Finanzen:** `club_financial_transactions` · `sponsors` · `sponsor_contracts`
+
+**Infrastruktur:** `stadiums` · `stadium_projects` · `training_camps`
+
+**Training:** `training_sessions` · `training_session_player`
+
+**System:** `game_notifications` · `simulation_settings`
+
+</details>
+
+---
+
+## ⚙️ Konfiguration
+
+### Transferfenster
+
+```env
+# In .env aktivieren/deaktivieren
+TRANSFER_WINDOW_ENFORCED=true
+```
+
+Fensterdefinitionen: `config/transfer.php`
+
+### Simulation
+
+Alle Simulationsparameter (Position-Fit, Scheduler, Bankspieler etc.) können über das **Admin Control Panel** unter `/acp/simulation/settings` konfiguriert werden.
+
+---
+
+## 🗄 Datenbankzugriff
+
+| Parameter | Wert |
+|:----------|:-----|
+| Host | `127.0.0.1` |
+| Port | `3306` |
+| Datenbank | `laravel` |
+| User | `sail` |
+| Passwort | `password` |
 
 ```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:backfill-player-club-model --dry-run
+sail mysql
 ```
 
-Ausfuehrung mit Persistenz:
+---
 
-```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:backfill-player-club-model --chunk=500
-```
+<div align="center">
 
-### Statistik-Rebuild / Audit (CLI)
+**Made with ❤️ and Laravel**
 
-Kompletter Rebuild (League + Player):
-
-```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:rebuild-statistics --all
-```
-
-Gezielt eine CompetitionSeason + Integritaets-Audit:
-
-```bash
-docker compose -f compose.yaml exec -T laravel.test php artisan game:rebuild-statistics --competition-season=1 --audit
-```
-
-## Transferfenster steuern
-
-- ENV: `TRANSFER_WINDOW_ENFORCED=true|false`
-- Fensterdefinition: `config/transfer.php`
-
-## MySQL Zugriff
-
-- Host (lokal): `127.0.0.1`
-- Port: `3306`
-- Datenbank: `laravel`
-- User: `sail`
-- Passwort: `password`
-
-Beispiel via CLI:
-
-```bash
-docker compose -f compose.yaml exec mysql mysql -usail -ppassword laravel
-```
+</div>
