@@ -47,21 +47,26 @@
                         <tr>
                             <td>
                                 <span class="inline-flex items-center gap-2">
-                                    <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}" alt="{{ $player->full_name }}">
+                                    <img class="sim-avatar sim-avatar-xs" src="{{ $player->photo_url }}"
+                                        alt="{{ $player->full_name }}">
                                     <span>{{ $player->full_name }}</span>
                                 </span>
                             </td>
-                            <td>{{ $player->position }}</td>
+                            <td>{{ $player->display_position }}</td>
                             <td>{{ $player->overall }}</td>
                             <td>{{ number_format((float) $player->salary, 2, ',', '.') }} EUR</td>
                             <td>{{ $player->contract_expires_on?->format('d.m.Y') ?: '-' }}</td>
                             <td>
-                                <form method="POST" action="{{ route('contracts.renew', $player) }}" class="grid gap-2 sm:grid-cols-3">
+                                <form method="POST" action="{{ route('contracts.renew', $player) }}"
+                                    class="grid gap-2 sm:grid-cols-3">
                                     @csrf
-                                    <input class="sim-input sm:col-span-1" type="number" step="0.01" min="0" name="salary" value="{{ (float) $player->salary }}" required>
-                                    <input class="sim-input sm:col-span-1" type="number" min="1" max="84" name="months" value="24" required>
+                                    <input class="sim-input sm:col-span-1" type="number" step="0.01" min="0" name="salary"
+                                        value="{{ (float) $player->salary }}" required>
+                                    <input class="sim-input sm:col-span-1" type="number" min="1" max="84" name="months"
+                                        value="24" required>
                                     <button class="sim-btn-primary sm:col-span-1" type="submit">Verlaengern</button>
-                                    <input class="sim-input sm:col-span-3" type="number" step="0.01" min="0" name="release_clause" placeholder="Ausstiegsklausel (optional)">
+                                    <input class="sim-input sm:col-span-3" type="number" step="0.01" min="0"
+                                        name="release_clause" placeholder="Ausstiegsklausel (optional)">
                                 </form>
                             </td>
                         </tr>

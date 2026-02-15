@@ -58,9 +58,9 @@ class TrainingController extends Controller
         $sessions = TrainingSession::query()
             ->with(['club', 'players'])
             ->whereIn('club_id', $clubIds)
-            ->when($selectedClubId > 0, fn ($query) => $query->where('club_id', $selectedClubId))
-            ->when($dateFrom, fn ($query) => $query->whereDate('session_date', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('session_date', '<=', $dateTo))
+            ->when($selectedClubId > 0, fn($query) => $query->where('club_id', $selectedClubId))
+            ->when($dateFrom, fn($query) => $query->whereDate('session_date', '>=', $dateFrom))
+            ->when($dateTo, fn($query) => $query->whereDate('session_date', '<=', $dateTo))
             ->orderByDesc('session_date')
             ->orderByDesc('id')
             ->paginate(12);
@@ -76,6 +76,10 @@ class TrainingController extends Controller
                 'from' => $dateFrom,
                 'to' => $dateTo,
             ],
+            'prefillClubId' => $selectedClubId > 0
+                ? $selectedClubId
+                : ($clubs->first()?->id ?? 0),
+            'prefillDate' => now()->toDateString(),
         ]);
     }
 
@@ -95,7 +99,7 @@ class TrainingController extends Controller
         $club = $request->user()->clubs()->with('players')->whereKey((int) $validated['club_id'])->first();
         abort_unless($club, 403);
 
-        $playerIds = collect($validated['player_ids'])->map(static fn ($id) => (int) $id)->unique()->values();
+        $playerIds = collect($validated['player_ids'])->map(static fn($id) => (int) $id)->unique()->values();
         $clubPlayerIds = $club->players->pluck('id');
         abort_if($playerIds->diff($clubPlayerIds)->isNotEmpty(), 403);
 

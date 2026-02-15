@@ -146,7 +146,7 @@ class Player extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name.' '.$this->last_name);
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
     public function getPhotoUrlAttribute(): string
@@ -160,5 +160,39 @@ class Player extends Model
         }
 
         return Storage::url($this->photo_path);
+    }
+
+    public static function mapPosition(?string $position): ?string
+    {
+        if (!$position) {
+            return null;
+        }
+
+        $map = [
+            'GK' => 'TW',
+            'LB' => 'LV',
+            'CB' => 'IV',
+            'RB' => 'RV',
+            'LWB' => 'LV',
+            'RWB' => 'RV',
+            'CDM' => 'DM',
+            'CM' => 'ZM',
+            'CAM' => 'OM',
+            'LM' => 'LM',
+            'RM' => 'RM',
+            'LW' => 'LF',
+            'RW' => 'RF',
+            'ST' => 'MS',
+            'CF' => 'HS',
+            'LS' => 'MS',
+            'RS' => 'MS',
+        ];
+
+        return $map[$position] ?? $position;
+    }
+
+    public function getDisplayPositionAttribute(): string
+    {
+        return self::mapPosition($this->position) ?? (string) $this->position;
     }
 }

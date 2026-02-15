@@ -60,9 +60,7 @@
                             <div class="sim-card p-5 group hover:border-cyan-500/30 transition-all duration-300">
                                 <div class="flex flex-wrap items-start justify-between gap-4">
                                     <div class="flex items-start gap-4">
-                                         <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
-                                            <img src="{{ $session->club->logo_url }}" alt="{{ $session->club->name }}" class="w-8 h-8 object-contain">
-                                        </div>
+                                         <img src="{{ $session->club->logo_url }}" alt="{{ $session->club->name }}" class="sim-avatar sim-avatar-lg shrink-0">
                                         <div>
                                             <div class="flex items-center gap-2 mb-1">
                                                 <h3 class="font-bold text-white text-lg">{{ ucfirst($session->type) }}</h3>
@@ -215,7 +213,7 @@
                                         <optgroup label="{{ $club->name }}" data-club-group="{{ $club->id }}">
                                             @foreach ($club->players as $player)
                                                 <option value="{{ $player->id }}" data-club-id="{{ $club->id }}">
-                                                    {{ $player->full_name }} ({{ $player->position }})
+                                                    {{ $player->full_name }} ({{ $player->display_position }})
                                                 </option>
                                             @endforeach
                                         </optgroup>

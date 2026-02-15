@@ -55,6 +55,9 @@ class PlayerPositionService
             'ST' => 'FWD',
             'LW' => 'FWD',
             'RW' => 'FWD',
+            'LF' => 'FWD',
+            'RF' => 'FWD',
+            'HS' => 'FWD',
             'DEF' => 'DEF',
             'MID' => 'MID',
             'FWD' => 'FWD',
@@ -130,7 +133,7 @@ class PlayerPositionService
 
     private function fitValue(string $key, float $default): float
     {
-        $value = (float) config('simulation.position_fit.'.$key, $default);
+        $value = (float) config('simulation.position_fit.' . $key, $default);
 
         return max(0.0, min(1.0, $value));
     }

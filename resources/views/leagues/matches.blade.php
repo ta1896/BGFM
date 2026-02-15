@@ -133,9 +133,7 @@
                                         <div class="flex items-center justify-between gap-4">
                                             <!-- Home Team -->
                                             <div class="flex flex-col items-center gap-2 flex-1 text-center">
-                                                <div class="w-12 h-12 rounded-xl bg-slate-800 p-2 border border-slate-700 flex items-center justify-center shrink-0">
-                                                    <img src="{{ $match->homeClub->logo_url }}" alt="{{ $match->homeClub->name }}" class="max-w-full max-h-full">
-                                                </div>
+                                                <img src="{{ $match->homeClub->logo_url }}" alt="{{ $match->homeClub->name }}" class="sim-avatar sim-avatar-lg shrink-0">
                                                 <span class="text-sm font-bold text-white leading-tight">{{ $match->homeClub->name }}</span>
                                             </div>
 
@@ -152,9 +150,7 @@
 
                                             <!-- Away Team -->
                                             <div class="flex flex-col items-center gap-2 flex-1 text-center">
-                                                <div class="w-12 h-12 rounded-xl bg-slate-800 p-2 border border-slate-700 flex items-center justify-center shrink-0">
-                                                    <img src="{{ $match->awayClub->logo_url }}" alt="{{ $match->awayClub->name }}" class="max-w-full max-h-full">
-                                                </div>
+                                                <img src="{{ $match->awayClub->logo_url }}" alt="{{ $match->awayClub->name }}" class="sim-avatar sim-avatar-lg shrink-0">
                                                 <span class="text-sm font-bold text-white leading-tight">{{ $match->awayClub->name }}</span>
                                             </div>
                                         </div>

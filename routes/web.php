@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('has.club.or.admin')->group(
         function () {
             Route::resource('clubs', ClubController::class)->only(['index', 'show']);
-            Route::resource('players', PlayerController::class)->only(['index', 'show']);
+            Route::resource('players', PlayerController::class)->only(['index', 'show', 'update']);
             Route::resource('lineups', LineupsController::class);
             Route::post('/lineups/{lineup}/activate', [LineupsController::class, 'activate'])->name('lineups.activate');
             Route::get('/matches', [LeagueController::class, 'matches'])->name('league.matches');

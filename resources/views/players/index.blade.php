@@ -54,7 +54,7 @@
                                 <td class="px-6 py-3">
                                     <div class="flex items-center gap-4">
                                         <div class="relative">
-                                            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                            <div class="sim-avatar sim-avatar-md flex items-center justify-center overflow-hidden shrink-0 border-none">
                                                 @if($player->photo_url)
                                                     <img src="{{ $player->photo_url }}" alt="{{ $player->full_name }}" class="w-full h-full object-cover">
                                                 @else
@@ -72,9 +72,7 @@
                                 <td class="px-6 py-3">
                                     @if($player->club)
                                     <div class="flex items-center gap-2 text-sm text-slate-300">
-                                        <div class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center p-0.5">
-                                            <img src="{{ $player->club->logo_url }}" alt="{{ $player->club->name }}" class="max-w-full max-h-full">
-                                        </div>
+                                        <img src="{{ $player->club->logo_url }}" alt="{{ $player->club->name }}" class="sim-avatar sim-avatar-xs shrink-0">
                                         <span>{{ $player->club->name }}</span>
                                     </div>
                                     @else
@@ -83,7 +81,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-center">
                                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 min-w-[2.5rem]">
-                                        {{ $player->position }}
+                                        {{ $player->display_position }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-center">

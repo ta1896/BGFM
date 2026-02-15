@@ -19,7 +19,7 @@ class PlayerController extends Controller
         $clubId = (int) $request->query('club');
 
         $playerQuery = Player::query()
-            ->whereHas('club', fn ($query) => $query->where('user_id', $request->user()->id))
+            ->whereHas('club', fn($query) => $query->where('user_id', $request->user()->id))
             ->with('club')
             ->orderByDesc('overall');
 
@@ -55,7 +55,7 @@ class PlayerController extends Controller
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
             'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-            'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
+            'position' => ['required', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
             'pace' => ['required', 'integer', 'min:1', 'max:99'],
@@ -84,9 +84,39 @@ class PlayerController extends Controller
      */
     public function show(Request $request, Player $player): View
     {
-        $this->ensureOwnership($request, $player);
+        // Removed ensureOwnership to allow public viewing
 
-        return view('players.show', ['player' => $player->load('club')]);
+        $player->load([
+            'club.stadium',
+            'club.user',
+            'seasonCompetitionStatistics.season',
+        ]);
+
+        $currentSeasonStats = $player->seasonCompetitionStatistics
+            ->filter(fn($stat) => $stat->season_id === ($player->club->season_id ?? 0));
+
+        // Use season stats for career history, sorted by season desc
+        $careerStats = $player->seasonCompetitionStatistics
+            ->sortByDesc(fn($stat) => $stat->season->start_date ?? '');
+
+        // Fetch recent matches
+        $recentMatches = \App\Models\MatchPlayerStat::query()
+            ->where('player_id', $player->id)
+            ->with(['match.homeClub', 'match.awayClub', 'match.competitionSeason.competition'])
+            ->whereHas('match', fn($query) => $query->where('status', 'played'))
+            ->orderByDesc(
+                \App\Models\GameMatch::select('kickoff_at')
+                    ->whereColumn('matches.id', 'match_player_stats.match_id')
+            )
+            ->take(10)
+            ->get();
+
+        return view('players.show', [
+            'player' => $player,
+            'currentSeasonStats' => $currentSeasonStats,
+            'careerStats' => $careerStats,
+            'recentMatches' => $recentMatches,
+        ]);
     }
 
     /**
@@ -110,28 +140,94 @@ class PlayerController extends Controller
     {
         $this->ensureOwnership($request, $player);
 
-        $validated = $request->validate([
-            'club_id' => ['required', 'integer', 'exists:clubs,id'],
-            'first_name' => ['required', 'string', 'max:80'],
-            'last_name' => ['required', 'string', 'max:80'],
-            'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-            'position' => ['required', 'in:TW,LV,IV,RV,LWB,RWB,LM,ZM,RM,DM,OM,LAM,ZOM,RAM,LS,MS,RS,LW,RW,ST'],
-            'age' => ['required', 'integer', 'min:15', 'max:45'],
-            'overall' => ['required', 'integer', 'min:1', 'max:99'],
-            'pace' => ['required', 'integer', 'min:1', 'max:99'],
-            'shooting' => ['required', 'integer', 'min:1', 'max:99'],
-            'passing' => ['required', 'integer', 'min:1', 'max:99'],
-            'defending' => ['required', 'integer', 'min:1', 'max:99'],
-            'physical' => ['required', 'integer', 'min:1', 'max:99'],
-            'stamina' => ['required', 'integer', 'min:1', 'max:100'],
-            'morale' => ['required', 'integer', 'min:1', 'max:100'],
-            'market_value' => ['required', 'numeric', 'min:0'],
-            'salary' => ['required', 'numeric', 'min:0'],
-        ]);
+        // Validation relaxed for "Customize" tab usage, but keeping strict for full edit if needed.
+        // We check if it's a full update or just a customize update based on presence of fields.
 
-        $club = $this->ownedClub($request, (int) $validated['club_id']);
-        $validated = $this->handlePhotoUpload($request, $validated, $player->photo_path);
-        $player->update(array_merge($validated, ['club_id' => $club->id]));
+        $rules = [
+            'market_value' => ['nullable', 'numeric', 'min:0'],
+            'position' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+            'position_second' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+            'position_third' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+            'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'photo_url' => ['nullable', 'url', 'max:255'],
+        ];
+
+        // If it's a standard update (from ACP or edit form), we might expect other fields.
+        // But for now, we merge valid data.
+
+        $validated = $request->validate($rules);
+
+        // Handle Photo
+        // Priority: Upload > URL > Existing
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('public/player-photos');
+            $validated['photo_path'] = $path;
+            if ($player->photo_path) {
+                Storage::delete($player->photo_path);
+            }
+        } elseif (!empty($validated['photo_url'])) {
+            // If URL is provided and no file uploaded
+            $validated['photo_path'] = $validated['photo_url'];
+            // If previous was a file, strictly speaking we should delete it if we overwrite with URL, 
+            // but maybe we keep it? Let's delete to be clean if it was a storage path.
+            if ($player->photo_path && !str_starts_with($player->photo_path, 'http')) {
+                Storage::delete($player->photo_path);
+            }
+        }
+
+        // Filter nulls to avoid overwriting with null if partial update
+        $dataToUpdate = array_filter($validated, fn($value) => !is_null($value));
+
+        // Handle position mapping if coming from customize form
+        if (isset($validated['position']))
+            $dataToUpdate['position'] = $validated['position'];
+        if (isset($validated['position_second']))
+            $dataToUpdate['position_second'] = $validated['position_second'];
+        if (isset($validated['position_third']))
+            $dataToUpdate['position_third'] = $validated['position_third'];
+
+
+        // Special case: standard update fields might need to be preserved if missing? 
+        // The original update required EVERYTHING. 
+        // If we want to support the "Customize" form AND the "Edit" form, we need to be careful.
+        // The "Edit" form sends all fields. The "Customize" form sends specific fields.
+
+        // If 'first_name' is missing, it's likely a partial update from "Customize".
+        if (!$request->has('first_name')) {
+            $player->update($dataToUpdate);
+        } else {
+            // Full update logic (legacy/ACP)
+            $fullRules = [
+                'club_id' => ['required', 'integer', 'exists:clubs,id'],
+                'first_name' => ['required', 'string', 'max:80'],
+                'last_name' => ['required', 'string', 'max:80'],
+                'position' => ['required', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+                'age' => ['required', 'integer', 'min:15', 'max:45'],
+                'overall' => ['required', 'integer', 'min:1', 'max:99'],
+                'pace' => ['required', 'integer', 'min:1', 'max:99'],
+                'shooting' => ['required', 'integer', 'min:1', 'max:99'],
+                'passing' => ['required', 'integer', 'min:1', 'max:99'],
+                'defending' => ['required', 'integer', 'min:1', 'max:99'],
+                'physical' => ['required', 'integer', 'min:1', 'max:99'],
+                'stamina' => ['required', 'integer', 'min:1', 'max:100'],
+                'morale' => ['required', 'integer', 'min:1', 'max:100'],
+                'market_value' => ['required', 'numeric', 'min:0'],
+                'salary' => ['required', 'numeric', 'min:0'],
+                'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            ];
+            $fullValidated = $request->validate($fullRules);
+
+            // Handle photo for full update
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('public/player-photos');
+                $fullValidated['photo_path'] = $path;
+                if ($player->photo_path)
+                    Storage::delete($player->photo_path);
+            }
+
+            $club = $this->ownedClub($request, (int) $fullValidated['club_id']);
+            $player->update(array_merge($fullValidated, ['club_id' => $club->id]));
+        }
 
         return redirect()
             ->route('players.show', $player)
@@ -175,25 +271,18 @@ class PlayerController extends Controller
     {
         return [
             'TW' => 'Torwart',
-            'LV' => 'Linksverteidiger',
             'IV' => 'Innenverteidiger',
+            'LV' => 'Linksverteidiger',
             'RV' => 'Rechtsverteidiger',
-            'LWB' => 'Linker Wingback',
-            'RWB' => 'Rechter Wingback',
-            'LM' => 'Linkes Mittelfeld',
             'ZM' => 'Zentrales Mittelfeld',
-            'RM' => 'Rechtes Mittelfeld',
             'DM' => 'Defensives Mittelfeld',
             'OM' => 'Offensives Mittelfeld',
-            'LAM' => 'Linker Offensiver',
-            'ZOM' => 'Zentrales Offensives Mittelfeld',
-            'RAM' => 'Rechter Offensiver',
-            'LS' => 'Linker Stuermer',
+            'LM' => 'Linkes Mittelfeld',
+            'RM' => 'Rechtes Mittelfeld',
+            'LF' => 'Linker Fluegel',
             'MS' => 'Mittelstuermer',
-            'RS' => 'Rechter Stuermer',
-            'LW' => 'Linker Fluegel',
-            'RW' => 'Rechter Fluegel',
-            'ST' => 'Stuermer',
+            'HS' => 'Haengende Spitze',
+            'RF' => 'Rechter Fluegel',
         ];
     }
 

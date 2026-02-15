@@ -242,4 +242,29 @@
     .sim-player-card-active {
         @apply opacity-50 bg-slate-900/20 border-slate-800/50 grayscale-[0.5];
     }
+
+    /* Avatars */
+    .sim-avatar {
+        @apply inline-block h-8 w-8 rounded-full object-cover ring-2 ring-slate-800 bg-slate-800;
+    }
+
+    .sim-avatar-xs {
+        @apply h-6 w-6 ring-1 text-xs;
+    }
+
+    .sim-avatar-sm {
+        @apply h-8 w-8 ring-1 text-xs;
+    }
+
+    .sim-avatar-md {
+        @apply h-10 w-10 md:h-12 md:w-12 text-sm;
+    }
+
+    .sim-avatar-lg {
+        @apply h-10 w-10 md:h-12 md:w-12 ring-2 bg-slate-900 ring-slate-700/50 p-1 shadow-lg;
+    }
+
+    .sim-avatar-xl {
+        @apply h-14 w-14 md:h-16 md:w-16 ring-4 bg-slate-900 ring-slate-700/50 p-2 shadow-lg;
+    }
 }

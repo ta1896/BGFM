@@ -146,7 +146,7 @@
                     <div class="absolute inset-0 bg-gradient-to-br from-slate-800/20 to-transparent pointer-events-none"></div>
                     <div class="relative z-10 flex flex-col md:flex-row gap-6 md:items-center justify-between">
                          <div class="flex items-center gap-5">
-                            <div class="relative h-20 w-20 shrink-0 rounded-2xl border border-slate-600 bg-slate-900 p-2 shadow-xl shadow-black/40">
+                            <div class="relative h-16 w-16 md:h-20 md:w-20 shrink-0 rounded-2xl border border-slate-600 bg-slate-900 p-2 shadow-xl shadow-black/40">
                                 <img class="h-full w-full object-contain" src="{{ $activeClub->logo_url }}" alt="{{ $activeClub->name }}">
                             </div>
                             <div>
@@ -199,7 +199,7 @@
                             @if ($nextMatch)
                                 <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
                                      <div class="text-center group">
-                                         <div class="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-cyan-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(34,211,238,0.3)]">
+                                         <div class="mx-auto mb-2 h-12 w-12 md:h-14 md:w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-cyan-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(34,211,238,0.3)]">
                                             <img class="h-full w-full object-contain" src="{{ $nextMatch->homeClub->logo_url }}" alt="{{ $nextMatch->homeClub->name }}">
                                          </div>
                                          <p class="truncate text-sm font-bold text-white">{{ $nextMatch->homeClub->name }}</p>
@@ -211,7 +211,7 @@
                                      </div>
 
                                      <div class="text-center group">
-                                         <div class="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-rose-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(244,63,94,0.3)]">
+                                         <div class="mx-auto mb-2 h-12 w-12 md:h-14 md:w-14 rounded-full border border-slate-700 bg-slate-900 p-2 transition group-hover:border-rose-500/50 group-hover:shadow-[0_0_15px_-4px_rgba(244,63,94,0.3)]">
                                             <img class="h-full w-full object-contain" src="{{ $nextMatch->awayClub->logo_url }}" alt="{{ $nextMatch->awayClub->name }}">
                                          </div>
                                          <p class="truncate text-sm font-bold text-white">{{ $nextMatch->awayClub->name }}</p>

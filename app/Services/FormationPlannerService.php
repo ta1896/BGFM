@@ -17,16 +17,36 @@ class FormationPlannerService
     public function supportedFormations(): array
     {
         return [
-            '4-4-2', '4-4-2 (Holding)', 
-            '4-3-3', '4-3-3 (Attack)', '4-3-3 (Defend)', '4-3-3 (Holding)', '4-3-3 (False 9)',
-            '4-2-3-1 (Wide)', '4-2-3-1 (Narrow)',
-            '4-1-2-1-2 (Wide)', '4-1-2-1-2 (Narrow)',
-            '4-3-2-1', '4-3-1-2', '4-2-2-2',
-            '4-4-1-1 (Midfield)', '4-4-1-1 (Attack)',
-            '4-5-1 (Flat)', '4-5-1 (Attack)',
+            '4-4-2',
+            '4-4-2 (Holding)',
+            '4-3-3',
+            '4-3-3 (Attack)',
+            '4-3-3 (Defend)',
+            '4-3-3 (Holding)',
+            '4-3-3 (False 9)',
+            '4-2-3-1 (Wide)',
+            '4-2-3-1 (Narrow)',
+            '4-1-2-1-2 (Wide)',
+            '4-1-2-1-2 (Narrow)',
+            '4-3-2-1',
+            '4-3-1-2',
+            '4-2-2-2',
+            '4-4-1-1 (Midfield)',
+            '4-4-1-1 (Attack)',
+            '4-5-1 (Flat)',
+            '4-5-1 (Attack)',
             '4-1-4-1',
-            '3-4-1-2', '3-4-2-1', '3-4-3 (Flat)', '3-4-3 (Diamond)', '3-1-4-2', '3-5-2', '3-5-1-1',
-            '5-2-1-2', '5-2-2-1', '5-3-2', '5-4-1 (Flat)'
+            '3-4-1-2',
+            '3-4-2-1',
+            '3-4-3 (Flat)',
+            '3-4-3 (Diamond)',
+            '3-1-4-2',
+            '3-5-2',
+            '3-5-1-1',
+            '5-2-1-2',
+            '5-2-2-1',
+            '5-3-2',
+            '5-4-1 (Flat)'
         ];
     }
 
@@ -46,8 +66,8 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 32],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 32],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 32],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 32],
             ],
             '4-4-2 (Holding)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -59,8 +79,8 @@ class FormationPlannerService
                 ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 58],
                 ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 45],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 45],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '4-3-3' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -71,9 +91,9 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 34],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
             ],
             '4-3-3 (Attack)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -84,9 +104,9 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 58],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 58],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 44],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 34],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
             ],
             '4-3-3 (Defend)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -97,9 +117,9 @@ class FormationPlannerService
                 ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 35, 'y' => 60],
                 ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 65, 'y' => 60],
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 50],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 34],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
             ],
             '4-3-3 (Holding)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -110,9 +130,9 @@ class FormationPlannerService
                 ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 50],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 50],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 34],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
             ],
             '4-3-3 (False 9)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -123,9 +143,9 @@ class FormationPlannerService
                 ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 50],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 50],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 34],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
                 ['slot' => 'MS', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 36],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 34],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
             ],
             '4-2-3-1 (Wide)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -138,7 +158,7 @@ class FormationPlannerService
                 ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 45],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 45],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
             ],
             '4-2-3-1 (Narrow)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -151,7 +171,7 @@ class FormationPlannerService
                 ['slot' => 'LAM', 'label' => 'LAM', 'group' => 'MID', 'x' => 35, 'y' => 44],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
                 ['slot' => 'RAM', 'label' => 'RAM', 'group' => 'MID', 'x' => 65, 'y' => 44],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
             ],
             '4-1-2-1-2 (Wide)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -163,8 +183,8 @@ class FormationPlannerService
                 ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 48],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 48],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '4-1-2-1-2 (Narrow)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -176,8 +196,8 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '4-2-2-2' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -189,8 +209,8 @@ class FormationPlannerService
                 ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 60],
                 ['slot' => 'ZOM-L', 'label' => 'ZOM', 'group' => 'MID', 'x' => 35, 'y' => 44],
                 ['slot' => 'ZOM-R', 'label' => 'ZOM', 'group' => 'MID', 'x' => 65, 'y' => 44],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '4-3-2-1' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -202,7 +222,7 @@ class FormationPlannerService
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
                 ['slot' => 'LS', 'label' => 'LS', 'group' => 'FWD', 'x' => 35, 'y' => 38],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
                 ['slot' => 'RS', 'label' => 'RS', 'group' => 'FWD', 'x' => 65, 'y' => 38],
             ],
             '4-3-1-2' => [
@@ -215,8 +235,8 @@ class FormationPlannerService
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '4-4-1-1 (Midfield)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -229,7 +249,7 @@ class FormationPlannerService
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
                 ['slot' => 'MS', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 38],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 24],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 24],
             ],
             '4-1-4-1' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -242,7 +262,7 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 48],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 48],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 48],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
             ],
             '3-5-2' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -254,8 +274,8 @@ class FormationPlannerService
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
                 ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 65, 'y' => 58],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 88, 'y' => 52],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '3-4-3 (Flat)' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -266,9 +286,9 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
                 ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 32],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 32],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 32],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 32],
             ],
             '5-2-1-2' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -280,8 +300,8 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 54],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 54],
                 ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 44],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 28],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
             ],
             '5-3-2' => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -293,8 +313,8 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'ST-L', 'label' => 'ST', 'group' => 'FWD', 'x' => 43, 'y' => 30],
-                ['slot' => 'ST-R', 'label' => 'ST', 'group' => 'FWD', 'x' => 57, 'y' => 30],
+                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 30],
+                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 30],
             ],
             default => [
                 ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
@@ -305,9 +325,9 @@ class FormationPlannerService
                 ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 52],
                 ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 48],
                 ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 52],
-                ['slot' => 'LW', 'label' => 'LW', 'group' => 'FWD', 'x' => 22, 'y' => 30],
-                ['slot' => 'ST', 'label' => 'ST', 'group' => 'FWD', 'x' => 50, 'y' => 24],
-                ['slot' => 'RW', 'label' => 'RW', 'group' => 'FWD', 'x' => 78, 'y' => 30],
+                ['slot' => 'LW', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 30],
+                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 24],
+                ['slot' => 'RW', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 30],
             ],
         };
     }
@@ -321,7 +341,7 @@ class FormationPlannerService
         $benchLimit = max(1, min(10, $maxBenchPlayers));
         $slots = $this->starterSlots($formation);
         $available = $players
-            ->sortByDesc(fn (Player $player) => ($player->overall * 2) + $player->stamina + $player->morale)
+            ->sortByDesc(fn(Player $player) => ($player->overall * 2) + $player->stamina + $player->morale)
             ->values();
 
         $usedIds = [];
@@ -337,7 +357,7 @@ class FormationPlannerService
             });
 
             if (!$pick) {
-                $pick = $available->first(fn (Player $player): bool => !in_array($player->id, $usedIds, true));
+                $pick = $available->first(fn(Player $player): bool => !in_array($player->id, $usedIds, true));
             }
 
             if ($pick) {

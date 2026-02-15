@@ -178,25 +178,33 @@
             <!-- Main Content Area -->
             <div class="flex min-h-screen flex-1 flex-col lg:pl-72 transition-all">
                 <!-- Top Header -->
-                <header class="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md">
-                    <div class="px-6 py-4 flex items-center justify-between">
-                         <div>
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80">Current View</p>
-                            <h1 class="text-xl font-bold text-white tracking-tight">{{ $activeMenuLabel }}</h1>
+                @if (isset($header))
+                    <header class="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md">
+                        <div class="px-6 py-4">
+                            {{ $header }}
                         </div>
+                    </header>
+                @else
+                    <header class="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md">
+                        <div class="px-6 py-4 flex items-center justify-between">
+                             <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80">Current View</p>
+                                <h1 class="text-xl font-bold text-white tracking-tight">{{ $activeMenuLabel }}</h1>
+                            </div>
 
-                        <div class="flex items-center gap-4">
-                            <!-- Mobile Menu Trigger would go here -->
-                            <div class="flex items-center gap-3">
-                                @foreach($headerActions as $action)
-                                <a href="{{ route($action['route']) }}" class="{{ $action['primary'] ? 'sim-btn-primary py-2 px-4 shadow-sm' : 'sim-btn-muted py-2 px-4' }}">
-                                    {{ $action['label'] }}
-                                </a>
-                                @endforeach
+                            <div class="flex items-center gap-4">
+                                <!-- Mobile Menu Trigger would go here -->
+                                <div class="flex items-center gap-3">
+                                    @foreach($headerActions as $action)
+                                    <a href="{{ route($action['route']) }}" class="{{ $action['primary'] ? 'sim-btn-primary py-2 px-4 shadow-sm' : 'sim-btn-muted py-2 px-4' }}">
+                                        {{ $action['label'] }}
+                                    </a>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </header>
+                    </header>
+                @endif
 
                 <main class="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
                      @if (session('status'))

@@ -49,7 +49,7 @@ class ClubController extends Controller
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'country' => ['required', 'string', 'max:80'],
             'league' => ['required', 'string', 'max:120'],
-            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:'.date('Y')],
+            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:' . date('Y')],
             'budget' => ['required', 'numeric', 'min:0'],
             'coins' => ['nullable', 'integer', 'min:0'],
             'wage_budget' => ['required', 'numeric', 'min:0'],
@@ -106,11 +106,10 @@ class ClubController extends Controller
      */
     public function show(Request $request, Club $club, StatisticsAggregationService $statisticsAggregationService): View
     {
-        $this->ensureOwnership($request, $club);
+        // Removed ensureOwnership to allow scouting other clubs
 
         $club->load([
-            'players' => fn ($query) => $query->orderByDesc('overall')->limit(12),
-            'lineups' => fn ($query) => $query->latest()->limit(5),
+            'players' => fn($query) => $query->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")->orderByDesc('overall'),
             'user',
             'stadium',
             'captain',
@@ -123,22 +122,49 @@ class ClubController extends Controller
             ? $seasons->firstWhere('id', $seasonId)
             : $seasons->first();
 
+        // --- Statistics for Overview Tab ---
         $overallStats = $statisticsAggregationService->clubSummaryForClub($club, null);
         $seasonStats = $statisticsAggregationService->clubSummaryForClub($club, $activeSeason?->id);
         $overallStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, null);
         $seasonStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, $activeSeason?->id);
         $seasonHistory = $statisticsAggregationService->clubSeasonHistoryForClub($club, 5);
 
-        $latestMatches = GameMatch::query()
-            ->where('status', 'played')
+        // --- Data for Squad Tab ---
+        $players = $club->players;
+        $squadStats = [
+            'count' => $players->count(),
+            'avg_age' => $players->isNotEmpty() ? round($players->avg('age'), 1) : 0,
+            'avg_rating' => $players->isNotEmpty() ? round($players->avg('overall'), 1) : 0,
+            'total_value' => $players->sum('market_value'),
+            'avg_value' => $players->isNotEmpty() ? $players->avg('market_value') : 0,
+            'injured_count' => $players->where('is_injured', true)->count(),
+            'suspended_count' => $players->where('is_suspended', true)->count(),
+        ];
+
+        $groupedPlayers = $players->groupBy(fn($player) => match (true) {
+            in_array($player->position, ['GK', 'TW']) => 'Torhüter',
+            in_array($player->position, ['LB', 'CB', 'RB', 'LWB', 'RWB', 'LV', 'IV', 'RV']) => 'Abwehr',
+            in_array($player->position, ['CDM', 'CM', 'CAM', 'LM', 'RM', 'DM', 'ZM', 'OM']) => 'Mittelfeld',
+            default => 'Sturm',
+        })->sortBy(fn($group, $key) => match ($key) {
+                'Torhüter' => 1,
+                'Abwehr' => 2,
+                'Mittelfeld' => 3,
+                'Sturm' => 4,
+                default => 99,
+            });
+
+        // --- Data for Matches Tab ---
+        $matches = GameMatch::query()
             ->where(function ($query) use ($club) {
                 $query->where('home_club_id', $club->id)
                     ->orWhere('away_club_id', $club->id);
             })
             ->with(['homeClub', 'awayClub'])
-            ->orderByDesc('played_at')
-            ->limit(5)
+            ->orderBy('kickoff_at')
             ->get();
+
+        $latestMatches = $matches->where('status', 'played')->sortByDesc('played_at')->take(5);
 
         return view('clubs.show', [
             'club' => $club,
@@ -150,6 +176,9 @@ class ClubController extends Controller
             'seasonStatsByContext' => $seasonStatsByContext,
             'seasonHistory' => $seasonHistory,
             'latestMatches' => $latestMatches,
+            'squadStats' => $squadStats,
+            'groupedPlayers' => $groupedPlayers,
+            'allMatches' => $matches,
         ]);
     }
 
@@ -176,7 +205,7 @@ class ClubController extends Controller
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'country' => ['required', 'string', 'max:80'],
             'league' => ['required', 'string', 'max:120'],
-            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:'.date('Y')],
+            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:' . date('Y')],
             'budget' => ['required', 'numeric', 'min:0'],
             'coins' => ['nullable', 'integer', 'min:0'],
             'wage_budget' => ['required', 'numeric', 'min:0'],
@@ -185,11 +214,11 @@ class ClubController extends Controller
             'season_objective' => ['nullable', 'in:avoid_relegation,mid_table,promotion,title,cup_run'],
             'captain_player_id' => [
                 'nullable',
-                Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id)),
+                Rule::exists('players', 'id')->where(fn($query) => $query->where('club_id', $club->id)),
             ],
             'vice_captain_player_id' => [
                 'nullable',
-                Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id)),
+                Rule::exists('players', 'id')->where(fn($query) => $query->where('club_id', $club->id)),
                 'different:captain_player_id',
             ],
             'notes' => ['nullable', 'string', 'max:1000'],
