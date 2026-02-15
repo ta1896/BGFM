@@ -219,7 +219,7 @@
             {{-- LIVE / FINISHED VIEW --}}
 
             <!-- Live Header -->
-            <div class="bg-slate-800/90 rounded-t-lg overflow-hidden backdrop-blur-sm">
+            <div class="bg-slate-800/90 rounded-t-lg backdrop-blur-sm" style="overflow: visible;">
                 <!-- Top Info Bar -->
                 <div
                     class="bg-slate-900/80 px-4 py-2 flex flex-wrap justify-between items-center text-xs text-slate-400 border-b border-slate-950">
@@ -316,7 +316,7 @@
                 </div>
 
                 <!-- Timeline -->
-                <div class="px-6 py-4 bg-slate-800/50 border-t border-slate-800/50">
+                <div class="px-6 py-4 bg-slate-800/50 border-t border-slate-800/50" style="overflow: visible;">
                     <div class="flex justify-between text-[10px] text-slate-500 mb-2">
                         <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
                             <span class="uppercase tracking-[0.15em] font-bold text-cyan-500/50">Heim</span></span>
@@ -720,14 +720,28 @@
                             narrativeLine = `<div class="text-[10px] text-slate-400 mt-1 italic leading-snug">"${a.narrative}"</div>`;
                         }
 
+                        // Smart tooltip alignment to avoid edge clipping
+                        let tooltipAlign = 'center';
+                        let tooltipStyle = 'min-width: 220px; left: 50%; transform: translateX(-50%);';
+                        let arrowStyle = 'margin: -4px auto 0;';
+                        if (leftPct < 15) {
+                            tooltipAlign = 'left';
+                            tooltipStyle = 'min-width: 220px; left: 0;';
+                            arrowStyle = 'margin: -4px 0 0 12px;';
+                        } else if (leftPct > 85) {
+                            tooltipAlign = 'right';
+                            tooltipStyle = 'min-width: 220px; right: 0;';
+                            arrowStyle = 'margin: -4px 12px 0 auto;';
+                        }
+
                         el.innerHTML = `
                             <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
                                 ${cfg.icon}
                             </div>
-                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="min-width: 200px; left: 50%; transform: translateX(-50%) translateY(0);">
+                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
                                 <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
                                     <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
-                                        <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
+                                        <span style="color: ${cfg.accent}" class="uppercase tracking-widest whitespace-nowrap">${cfg.icon} ${cfg.label}</span>
                                         <span class="text-slate-500 font-mono">${a.minute}'</span>
                                     </div>
                                     <div class="p-3 flex items-start gap-2.5">
@@ -739,7 +753,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="w-2 h-2 bg-slate-900 border-r border-b border-slate-700/50 rotate-45 mx-auto -mt-1"></div>
+                                <div class="w-2 h-2 bg-slate-900 border-r border-b border-slate-700/50 rotate-45" style="${arrowStyle}"></div>
                             </div>
                         `;
                         timelineContainer.appendChild(el);
