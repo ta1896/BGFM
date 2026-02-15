@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Competition;
 use App\Models\Country;
+use App\Models\Season;
+use App\Models\CompetitionSeason;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -51,10 +53,37 @@ class CompetitionController extends Controller
 
     public function edit(Competition $competition): View
     {
+        $competition->load('competitionSeasons.season');
+        $availableSeasons = Season::orderByDesc('start_date')->get();
+
         return view('admin.competitions.edit', [
             'competition' => $competition,
             'countries' => Country::orderBy('name')->get(),
+            'availableSeasons' => $availableSeasons,
         ]);
+    }
+
+    public function addSeason(Request $request, Competition $competition): RedirectResponse
+    {
+        $validated = $request->validate([
+            'season_id' => 'required|exists:seasons,id',
+            'format' => 'required|string',
+        ]);
+
+        // Check if already exists
+        if ($competition->competitionSeasons()->where('season_id', $validated['season_id'])->exists()) {
+            return back()->with('error', 'Saison ist bereits zugeordnet.');
+        }
+
+        $competition->competitionSeasons()->create([
+            'season_id' => $validated['season_id'],
+            'format' => $validated['format'],
+            'points_win' => 3,
+            'points_draw' => 1,
+            'points_loss' => 0,
+        ]);
+
+        return back()->with('status', 'Saison wurde zugeordnet.');
     }
 
     public function update(Request $request, Competition $competition): RedirectResponse

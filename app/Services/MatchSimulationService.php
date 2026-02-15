@@ -7,6 +7,7 @@ use App\Models\CompetitionSeason;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\Player;
+use App\Services\MatchEngine\TacticalManager;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +15,9 @@ class MatchSimulationService
 {
     public function __construct(
         private readonly StatisticsAggregationService $statisticsAggregationService,
-        private readonly PlayerPositionService $positionService
-    )
-    {
+        private readonly PlayerPositionService $positionService,
+        private readonly TacticalManager $tacticalManager
+    ) {
     }
 
     public function simulate(GameMatch $match): GameMatch
@@ -55,17 +56,17 @@ class MatchSimulationService
 
         $homeEvents = array_merge(
             $this->buildGoalEvents($match, $match->home_club_id, $homeGoals, $homePlayers),
-            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers, $homeLineup)
+            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers)
         );
 
         $awayEvents = array_merge(
             $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers),
-            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers, $awayLineup)
+            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers)
         );
 
         $events = array_merge($homeEvents, $awayEvents);
 
-        usort($events, static fn (array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
+        usort($events, static fn(array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
 
         DB::transaction(function () use ($match, $events, $homeGoals, $awayGoals, $homePlayers, $awayPlayers, $seed): void {
             $match->events()->delete();
@@ -136,7 +137,7 @@ class MatchSimulationService
         return $club->lineups()
             ->with(['players'])
             ->where('match_id', $match->id)
-            ->first() 
+            ->first()
             ?? $club->lineups()
                 ->with(['players'])
                 ->where('is_active', true)
@@ -149,7 +150,7 @@ class MatchSimulationService
             return $club->players()->orderByDesc('overall')->limit(11)->get();
         }
 
-        $starters = $lineup->players->filter(fn ($p) => !$p->pivot->is_bench)->take(11)->values();
+        $starters = $lineup->players->filter(fn($p) => !$p->pivot->is_bench)->take(11)->values();
         if ($starters->count() < 11) {
             $ids = $starters->pluck('id');
             $fallback = $club->players()->whereNotIn('id', $ids)->orderByDesc('overall')->limit(11 - $starters->count())->get();
@@ -158,8 +159,6 @@ class MatchSimulationService
 
         return $starters->take(11)->values();
     }
-
-    private function resolveMatchSquad(Club $club, GameMatch $match): Collection
 
     private function rollGoals(float $attackStrength, float $defenseStrength): int
     {
@@ -185,7 +184,7 @@ class MatchSimulationService
         $events = [];
         for ($i = 0; $i < $goalCount; $i++) {
             /** @var Player $scorer */
-            $scorer = $this->weightedPlayerPick($squad, static fn (Player $player) => $player->shooting + $player->overall);
+            $scorer = $this->weightedPlayerPick($squad, static fn(Player $player) => $player->shooting + $player->overall);
 
             $assist = null;
             if ($squad->count() > 1 && mt_rand(1, 100) <= 72) {
@@ -214,7 +213,7 @@ class MatchSimulationService
         $yellowCount = mt_rand(0, 3);
         for ($i = 0; $i < $yellowCount; $i++) {
             /** @var Player $player */
-            $player = $this->weightedPlayerPick($squad, static fn (Player $p) => max(10, 120 - $p->defending));
+            $player = $this->weightedPlayerPick($squad, static fn(Player $p) => max(10, 120 - $p->defending));
             $events[] = [
                 'minute' => mt_rand(8, 90),
                 'second' => mt_rand(0, 59),
@@ -241,7 +240,7 @@ class MatchSimulationService
         $chanceCount = mt_rand(1, 3);
         for ($i = 0; $i < $chanceCount; $i++) {
             /** @var Player $player */
-            $player = $this->weightedPlayerPick($squad, static fn (Player $p) => $p->shooting + $p->pace);
+            $player = $this->weightedPlayerPick($squad, static fn(Player $p) => $p->shooting + $p->pace);
             $events[] = [
                 'minute' => mt_rand(2, 90),
                 'second' => mt_rand(0, 59),

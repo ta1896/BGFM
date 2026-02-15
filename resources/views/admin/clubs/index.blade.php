@@ -26,19 +26,21 @@
                     <tr>
                         <td>
                             <span class="inline-flex items-center gap-2">
-                                <img class="sim-avatar sim-avatar-xs" src="{{ $club->logo_url }}" alt="{{ $club->name }}">
+                                <img class="h-5 w-5 rounded-full object-cover ring-1 ring-slate-800"
+                                    src="{{ $club->logo_url }}" alt="{{ $club->name }}">
                                 <span>{{ $club->name }}</span>
                             </span>
                             @if ($club->is_cpu)
                                 <span class="sim-pill ml-2">CPU</span>
                             @endif
                         </td>
-                        <td>{{ $club->user->name }}</td>
-                        <td>{{ $club->league }}</td>
+                        <td>{{ $club->user?->name ?? 'CPU / Kein Owner' }}</td>
+                        <td>{{ $club->league ?: '-' }}</td>
                         <td>{{ $club->players_count }}</td>
                         <td>{{ $club->lineups_count }}</td>
                         <td class="text-right">
-                            <a href="{{ route('admin.clubs.edit', $club) }}" class="text-cyan-300 hover:text-cyan-200">Bearbeiten</a>
+                            <a href="{{ route('admin.clubs.edit', $club) }}"
+                                class="text-cyan-300 hover:text-cyan-200">Bearbeiten</a>
                         </td>
                     </tr>
                 @empty

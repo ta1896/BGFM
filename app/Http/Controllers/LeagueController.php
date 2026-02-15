@@ -19,11 +19,12 @@ class LeagueController extends Controller
     {
         $competitionSeason = $this->resolveCompetitionSeason($request);
         $isAdmin = $request->user()->isAdmin();
-        $clubFilterOptions = $request->user()->clubs()->orderBy('name')->get(['id', 'name']);
+        $userClubs = $request->user()->clubs()->orderBy('name')->get(['id', 'name']);
+        $clubFilterOptions = $userClubs;
 
         $ownedClubIds = $isAdmin
             ? collect()
-            : $request->user()->clubs()->pluck('id');
+            : $userClubs->pluck('id');
 
         $selectedClubId = (int) $request->query('club');
         if (!$isAdmin && $selectedClubId > 0 && !$ownedClubIds->contains($selectedClubId)) {
@@ -36,8 +37,13 @@ class LeagueController extends Controller
         }
 
         $scopeFilter = (string) $request->query('scope', '');
-        if (!in_array($scopeFilter, ['today', 'week'], true)) {
+        if (!in_array($scopeFilter, ['today', 'week', 'upcoming'], true)) {
             $scopeFilter = '';
+        }
+
+        $typeFilter = (string) $request->query('type', '');
+        if (!in_array($typeFilter, ['league', 'cup', 'friendly'], true)) {
+            $typeFilter = '';
         }
 
         $normalizeDate = static function (?string $value): ?string {
@@ -69,41 +75,50 @@ class LeagueController extends Controller
             $dateTo = $dayFilter;
         }
 
-        $matches = collect();
-        if ($competitionSeason) {
-            $matches = GameMatch::query()
-                ->where('competition_season_id', $competitionSeason->id)
-                ->when($selectedClubId > 0, function ($query) use ($selectedClubId): void {
-                    $query->where(function ($clubQuery) use ($selectedClubId): void {
-                        $clubQuery->where('home_club_id', $selectedClubId)
-                            ->orWhere('away_club_id', $selectedClubId);
-                    });
-                })
-                ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
-                ->when($dateFrom, fn ($query) => $query->whereDate('kickoff_at', '>=', $dateFrom))
-                ->when($dateTo, fn ($query) => $query->whereDate('kickoff_at', '<=', $dateTo))
-                ->with(['homeClub', 'awayClub'])
-                ->orderBy('matchday')
-                ->orderBy('kickoff_at')
-                ->get()
-                ->groupBy('matchday');
+        $matchesQuery = GameMatch::query()
+            ->when($competitionSeason, fn($query) => $query->where('competition_season_id', $competitionSeason->id))
+            ->when($selectedClubId > 0, function ($query) use ($selectedClubId): void {
+                $query->where(function ($clubQuery) use ($selectedClubId): void {
+                    $clubQuery->where('home_club_id', $selectedClubId)
+                        ->orWhere('away_club_id', $selectedClubId);
+                });
+            })
+            ->when($typeFilter !== '', fn($query) => $query->where('type', $typeFilter))
+            ->when($statusFilter !== '', fn($query) => $query->where('status', $statusFilter))
+            ->when($dateFrom, fn($query) => $query->whereDate('kickoff_at', '>=', $dateFrom))
+            ->when($dateTo, fn($query) => $query->whereDate('kickoff_at', '<=', $dateTo))
+            ->when($scopeFilter === 'upcoming', fn($query) => $query->where('kickoff_at', '>=', now())->where('status', 'scheduled'))
+            ->with(['homeClub', 'awayClub', 'competitionSeason.competition', 'stadiumClub'])
+            ->orderBy('kickoff_at', 'asc');
+
+        $hasActiveFilters = $selectedClubId > 0 || $statusFilter !== '' || $scopeFilter !== '' || $typeFilter !== '' || $dayFilter !== null || $dateFrom !== null || $dateTo !== null;
+
+        if ($competitionSeason && !$hasActiveFilters && !$typeFilter) {
+            $matches = $matchesQuery->get()->groupBy('matchday');
+            $groupType = 'matchday';
+        } else {
+            $matches = $matchesQuery->get()->groupBy(fn($m) => $m->kickoff_at?->format('Y-m-d'));
+            $groupType = 'date';
         }
 
         return view('leagues.matches', [
             'competitionSeasons' => CompetitionSeason::with(['competition', 'season'])->orderByDesc('id')->get(),
             'activeCompetitionSeason' => $competitionSeason,
             'matchesByDay' => $matches,
+            'groupType' => $groupType,
             'ownedClubIds' => $ownedClubIds,
             'clubFilterOptions' => $clubFilterOptions,
             'filters' => [
+                'competition_season' => $request->query('competition_season'),
                 'club' => $selectedClubId > 0 ? $selectedClubId : null,
                 'status' => $statusFilter,
                 'scope' => $scopeFilter,
+                'type' => $typeFilter,
                 'day' => $dayFilter,
                 'from' => $dateFrom,
                 'to' => $dateTo,
             ],
-            'hasActiveFilters' => $selectedClubId > 0 || $statusFilter !== '' || $scopeFilter !== '' || $dayFilter !== null || $dateFrom !== null || $dateTo !== null,
+            'hasActiveFilters' => $hasActiveFilters,
         ]);
     }
 
@@ -138,7 +153,7 @@ class LeagueController extends Controller
 
         return redirect()
             ->route('league.matches', ['competition_season' => $competitionSeason->id])
-            ->with('status', $count.' Liga-Spiele wurden neu generiert.');
+            ->with('status', $count . ' Liga-Spiele wurden neu generiert.');
     }
 
     private function resolveCompetitionSeason(Request $request): ?CompetitionSeason
@@ -161,7 +176,7 @@ class LeagueController extends Controller
         }
 
         return $query
-            ->whereHas('season', fn ($q) => $q->where('is_current', true))
+            ->whereHas('season', fn($q) => $q->where('is_current', true))
             ->first()
             ?? $query->latest()->first();
     }

@@ -114,6 +114,8 @@ class ClubController extends Controller
             'stadium',
             'captain',
             'viceCaptain',
+            'achievements.competitionSeason.competition',
+            'achievements.competitionSeason.season',
         ]);
 
         $seasonId = (int) $request->query('season_id');

@@ -22,6 +22,9 @@ class CompetitionSeason extends Model
         'promoted_slots',
         'relegated_slots',
         'is_finished',
+        'league_winner_club_id',
+        'national_cup_winner_club_id',
+        'intl_cup_winner_club_id',
     ];
 
     protected function casts(): array
@@ -54,5 +57,25 @@ class CompetitionSeason extends Model
     public function matches(): HasMany
     {
         return $this->hasMany(GameMatch::class);
+    }
+
+    public function leagueWinner(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'league_winner_club_id');
+    }
+
+    public function nationalCupWinner(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'national_cup_winner_club_id');
+    }
+
+    public function intlCupWinner(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'intl_cup_winner_club_id');
+    }
+
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(ClubAchievement::class);
     }
 }

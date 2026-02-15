@@ -10,6 +10,7 @@ use App\Models\TrainingSession;
 use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -61,7 +62,7 @@ class DashboardController extends Controller
         $selectedCompetitionSeasonId = null;
 
         if ($activeClub) {
-            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
+            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor', 'lineups']);
 
             $activeLineup = $activeClub->lineups()
                 ->with('players')
@@ -82,20 +83,21 @@ class DashboardController extends Controller
             $selectedCompetitionSeasonId = $latestClubStat?->competition_season_id;
 
             if ($latestClubStat?->competition_season_id) {
-                $clubRank = SeasonClubStatistic::query()
-                    ->where('competition_season_id', $latestClubStat->competition_season_id)
-                    ->where('points', '>', (int) $latestClubStat->points)
-                    ->count() + 1;
+                $cacheKey = "club_rank_{$activeClub->id}_{$latestClubStat->competition_season_id}";
+                $clubRank = Cache::remember($cacheKey, 600, function () use ($latestClubStat) {
+                    return SeasonClubStatistic::query()
+                        ->where('competition_season_id', $latestClubStat->competition_season_id)
+                        ->where('points', '>', (int) $latestClubStat->points)
+                        ->count() + 1;
+                });
             } elseif ($activeClub->league_id) {
-                $clubRank = Club::query()
-                    ->where('league_id', $activeClub->league_id)
-                    ->where('reputation', '>', (int) $activeClub->reputation)
-                    ->count() + 1;
-            } elseif ($activeClub->league) {
-                $clubRank = Club::query()
-                    ->where('league', $activeClub->league)
-                    ->where('reputation', '>', (int) $activeClub->reputation)
-                    ->count() + 1;
+                $cacheKey = "club_rank_legacy_{$activeClub->id}_{$activeClub->league_id}";
+                $clubRank = Cache::remember($cacheKey, 600, function () use ($activeClub) {
+                    return Club::query()
+                        ->where('league_id', $activeClub->league_id)
+                        ->where('reputation', '>', (int) $activeClub->reputation)
+                        ->count() + 1;
+                });
             }
 
             $recentMatches = GameMatch::query()
@@ -171,7 +173,7 @@ class DashboardController extends Controller
                 ->get(['session_date', 'type']);
 
             $trainingByDate = $trainingSessionsThisWeek->groupBy(
-                fn (TrainingSession $session): string => $session->session_date->toDateString()
+                fn(TrainingSession $session): string => $session->session_date->format('Y-m-d')
             );
 
             $trainingGroupACount = $trainingSessionsThisWeek
@@ -191,7 +193,7 @@ class DashboardController extends Controller
                 ->get(['kickoff_at']);
 
             $matchesByDate = $matchesThisWeek->groupBy(
-                fn (GameMatch $match): string => $match->kickoff_at->toDateString()
+                fn(GameMatch $match): string => $match->kickoff_at->toDateString()
             );
 
             $weekdayLabels = [
@@ -272,7 +274,7 @@ class DashboardController extends Controller
             if ($unreadNotificationsCount > 0) {
                 $assistantTasks[] = [
                     'kind' => 'info',
-                    'label' => $unreadNotificationsCount.' ungelesene Hinweise',
+                    'label' => $unreadNotificationsCount . ' ungelesene Hinweise',
                     'description' => 'Transfer-, Match- und Verwaltungsupdates warten in der Inbox.',
                     'url' => route('notifications.index'),
                     'cta' => 'Inbox oeffnen',

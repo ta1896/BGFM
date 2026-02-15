@@ -174,6 +174,11 @@ class Club extends Model
         return $this->hasMany(FriendlyMatchRequest::class, 'challenged_club_id');
     }
 
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(ClubAchievement::class);
+    }
+
     public function getLogoUrlAttribute(): string
     {
         if (!$this->logo_path) {

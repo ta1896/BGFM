@@ -24,6 +24,7 @@ class SeasonClubStatistic extends Model
         'home_points',
         'away_points',
         'form_last5',
+        'rank',
     ];
 
     public function competitionSeason(): BelongsTo

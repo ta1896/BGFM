@@ -21,14 +21,41 @@ class PlayerController extends Controller
         $playerQuery = Player::query()
             ->whereHas('club', fn($query) => $query->where('user_id', $request->user()->id))
             ->with('club')
+            ->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")
             ->orderByDesc('overall');
 
         if ($clubId > 0) {
             $playerQuery->where('club_id', $clubId);
         }
 
+        $players = $playerQuery->get();
+
+        $squadStats = [
+            'count' => $players->count(),
+            'avg_age' => $players->isNotEmpty() ? round($players->avg('age'), 1) : 0,
+            'avg_rating' => $players->isNotEmpty() ? round($players->avg('overall'), 1) : 0,
+            'total_value' => $players->sum('market_value'),
+            'avg_value' => $players->isNotEmpty() ? $players->avg('market_value') : 0,
+            'injured_count' => $players->where('is_injured', true)->count(),
+            'suspended_count' => $players->where('is_suspended', true)->count(),
+        ];
+
+        $groupedPlayers = $players->groupBy(fn($player) => match (true) {
+            in_array($player->position, ['GK', 'TW']) => 'Torhüter',
+            in_array($player->position, ['LB', 'CB', 'RB', 'LWB', 'RWB', 'LV', 'IV', 'RV']) => 'Abwehr',
+            in_array($player->position, ['CDM', 'CM', 'CAM', 'LM', 'RM', 'DM', 'ZM', 'OM']) => 'Mittelfeld',
+            default => 'Sturm',
+        })->sortBy(fn($group, $key) => match ($key) {
+                'Torhüter' => 1,
+                'Abwehr' => 2,
+                'Mittelfeld' => 3,
+                'Sturm' => 4,
+                default => 99,
+            });
+
         return view('players.index', [
-            'players' => $playerQuery->paginate(15)->withQueryString(),
+            'groupedPlayers' => $groupedPlayers,
+            'squadStats' => $squadStats,
             'clubs' => $request->user()->clubs()->orderBy('name')->get(),
             'activeClubId' => $clubId,
         ]);

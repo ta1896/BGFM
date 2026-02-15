@@ -3,12 +3,6 @@
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div class="relative z-10">
                 <p class="sim-section-title mb-2">Command Center</p>
-                <h1 class="text-4xl font-bold leading-tight text-white sm:text-5xl">
-                    Welcome back, <br>
-                    <span class="bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent">
-                        {{ auth()->user()->name }}
-                    </span>
-                </h1>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -206,8 +200,16 @@
                                          <p class="text-[10px] uppercase font-bold text-slate-500">Home</p>
                                      </div>
 
-                                     <div class="text-center">
+                                     <div class="text-center flex flex-col items-center gap-1">
+                                         @if ($nextMatch->competitionSeason?->competition)
+                                             <div class="h-6 w-auto opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">
+                                                 <img class="h-full w-auto object-contain" src="{{ $nextMatch->competitionSeason->competition->logo_url }}" title="{{ $nextMatch->competitionSeason->competition->name }}">
+                                             </div>
+                                         @endif
                                          <span class="text-2xl font-black text-slate-700">VS</span>
+                                         @if ($nextMatch->stadiumClub)
+                                             <p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate max-w-[80px]">{{ $nextMatch->stadiumClub->name }}</p>
+                                         @endif
                                      </div>
 
                                      <div class="text-center group">

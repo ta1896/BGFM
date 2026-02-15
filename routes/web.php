@@ -113,6 +113,9 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::resource('competitions', AdminCompetitionController::class);
+        Route::post('/competitions/{competition}/add-season', [AdminCompetitionController::class, 'addSeason'])->name('competitions.add-season');
+        Route::resource('seasons', \App\Http\Controllers\Admin\SeasonController::class);
+        Route::resource('competition-seasons', \App\Http\Controllers\Admin\CompetitionSeasonController::class)->only(['edit', 'update']);
         Route::resource('clubs', AdminClubController::class);
         Route::resource('players', AdminPlayerController::class);
         Route::resource('lineups', AdminLineupController::class);

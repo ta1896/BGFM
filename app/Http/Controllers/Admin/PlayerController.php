@@ -21,14 +21,50 @@ class PlayerController extends Controller
 
         $query = Player::query()
             ->with(['club.user'])
+            ->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")
             ->orderByDesc('overall');
 
         if ($clubId > 0) {
             $query->where('club_id', $clubId);
+            $players = $query->get(); // Show all for specific club squad view
+        } else {
+            $players = $query->paginate(20)->withQueryString();
+        }
+
+        // Stats calculation (using Collection if paginated, but better logic for squad view)
+        $statsPlayers = ($players instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $players->getCollection() : $players;
+
+        $squadStats = [
+            'count' => $statsPlayers->count(),
+            'avg_age' => $statsPlayers->isNotEmpty() ? round($statsPlayers->avg('age'), 1) : 0,
+            'avg_rating' => $statsPlayers->isNotEmpty() ? round($statsPlayers->avg('overall'), 1) : 0,
+            'total_value' => $statsPlayers->sum('market_value'),
+            'avg_value' => $statsPlayers->isNotEmpty() ? $statsPlayers->avg('market_value') : 0,
+            'injured_count' => $statsPlayers->where('is_injured', true)->count(),
+            'suspended_count' => $statsPlayers->where('is_suspended', true)->count(),
+        ];
+
+        // Group only if club selected or we want to show it grouped anyway
+        $groupedPlayers = null;
+        if ($clubId > 0) {
+            $groupedPlayers = $statsPlayers->groupBy(fn($player) => match (true) {
+                in_array($player->position, ['GK', 'TW']) => 'Torhüter',
+                in_array($player->position, ['LB', 'CB', 'RB', 'LWB', 'RWB', 'LV', 'IV', 'RV']) => 'Abwehr',
+                in_array($player->position, ['CDM', 'CM', 'CAM', 'LM', 'RM', 'DM', 'ZM', 'OM']) => 'Mittelfeld',
+                default => 'Sturm',
+            })->sortBy(fn($group, $key) => match ($key) {
+                    'Torhüter' => 1,
+                    'Abwehr' => 2,
+                    'Mittelfeld' => 3,
+                    'Sturm' => 4,
+                    default => 99,
+                });
         }
 
         return view('admin.players.index', [
-            'players' => $query->paginate(20)->withQueryString(),
+            'players' => $players,
+            'groupedPlayers' => $groupedPlayers,
+            'squadStats' => $squadStats,
             'clubs' => Club::with('user')->orderBy('name')->get(),
             'activeClubId' => $clubId,
         ]);

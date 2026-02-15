@@ -29,11 +29,11 @@
 
     /* Glassmorphism Utilities */
     .sim-glass {
-        @apply backdrop-blur-md bg-slate-900/60 border border-slate-700/50;
+        @apply backdrop-blur-md bg-slate-900/60 border border-slate-700/20;
     }
 
     .sim-glass-strong {
-        @apply backdrop-blur-xl bg-slate-900/80 border border-slate-700/60;
+        @apply backdrop-blur-xl bg-slate-900/80 border border-slate-800/30;
     }
 
     /* Cards */
@@ -42,11 +42,11 @@
     }
 
     .sim-card:hover {
-        @apply border-slate-600/80 shadow-2xl shadow-cyan-900/10;
+        @apply border-slate-600/40 shadow-2xl shadow-cyan-900/5;
     }
 
     .sim-card-soft {
-        @apply rounded-xl border border-slate-700/30 bg-slate-800/30 transition-colors;
+        @apply rounded-xl border border-slate-800/20 bg-slate-800/20 transition-colors;
     }
 
     /* Text */
@@ -62,7 +62,7 @@
     .sim-input,
     .sim-select,
     .sim-textarea {
-        @apply w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-500/60 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all;
+        @apply w-full rounded-xl border border-slate-800/40 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-700 focus:border-cyan-500/40 focus:bg-slate-950/80 focus:outline-none focus:ring-4 focus:ring-cyan-500/5 transition-all;
     }
 
     /* Buttons */

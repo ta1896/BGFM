@@ -63,7 +63,12 @@
         $menuGroups['bg_admin'] = [
             'label' => 'Administration',
             'items' => [
-                ['route' => 'admin.dashboard', 'label' => 'ACP', 'active' => 'admin.*', 'icon' => 'cog'],
+                ['route' => 'admin.dashboard', 'label' => 'ACP Übersicht', 'active' => 'admin.dashboard', 'icon' => 'cog'],
+                ['route' => 'admin.competitions.index', 'label' => 'Wettbewerbe', 'active' => 'admin.competitions.*', 'icon' => 'trophy'],
+                ['route' => 'admin.seasons.index', 'label' => 'Saisons', 'active' => 'admin.seasons.*', 'icon' => 'calendar'],
+                ['route' => 'admin.clubs.index', 'label' => 'Vereine', 'active' => 'admin.clubs.*', 'icon' => 'building-library'],
+                ['route' => 'admin.players.index', 'label' => 'Spieler', 'active' => 'admin.players.*', 'icon' => 'identification'],
+                ['route' => 'admin.match-engine.index', 'label' => 'Match Engine', 'active' => 'admin.match-engine.*', 'icon' => 'cpu-chip'],
             ]
         ];
     }

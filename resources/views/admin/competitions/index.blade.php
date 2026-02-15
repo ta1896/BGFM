@@ -27,7 +27,8 @@
                     <tr>
                         <td class="font-semibold">
                             <div class="flex items-center gap-2">
-                                <img class="sim-avatar sim-avatar-sm" src="{{ $competition->logo_url }}" alt="{{ $competition->name }}">
+                                <img class="h-5 w-5 rounded-full object-cover ring-1 ring-slate-800"
+                                    src="{{ $competition->logo_url }}" alt="{{ $competition->name }}">
                                 <span>{{ $competition->name }}</span>
                             </div>
                         </td>
@@ -49,7 +50,8 @@
                             @endif
                         </td>
                         <td class="text-right">
-                            <a href="{{ route('admin.competitions.edit', $competition) }}" class="sim-btn-muted">Bearbeiten</a>
+                            <a href="{{ route('admin.competitions.edit', $competition) }}"
+                                class="sim-btn-muted">Bearbeiten</a>
                         </td>
                     </tr>
                 @endforeach
