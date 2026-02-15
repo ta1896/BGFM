@@ -30,6 +30,17 @@
             <form method="POST" action="{{ route('admin.simulation.settings.update') }}" class="space-y-8">
                 @csrf
 
+                @if ($errors->any())
+                    <div class="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                        <p class="font-semibold mb-2">Validierungsfehler:</p>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <!-- Scheduler Section -->
                 <div class="sim-card p-6">
                     <div class="border-b border-slate-700/50 pb-4 mb-6">
@@ -57,6 +68,10 @@
                             <p class="text-xs text-slate-500 mt-1">Spielminuten pro Echtzeit-Intervall.</p>
                         </div>
                     </div>
+
+                    {{-- These fields are validated as required but not shown in UI — pass current values --}}
+                    <input type="hidden" name="simulation[scheduler][claim_stale_after_seconds]" value="{{ data_get($simulationSettings, 'scheduler.claim_stale_after_seconds', 180) }}">
+                    <input type="hidden" name="simulation[scheduler][runner_lock_seconds]" value="{{ data_get($simulationSettings, 'scheduler.runner_lock_seconds', 120) }}">
 
                     <div class="mt-6 pt-4 border-t border-slate-700/50">
                         <x-input-label value="Automatische Match-Typen" class="mb-3" />
@@ -146,8 +161,9 @@
                         </div>
                         <div>
                             <x-input-label for="lineup_max_bench_players" value="Maximale Bankspieler" />
-                            <x-text-input id="lineup_max_bench_players" type="number" min="1" max="15" name="simulation[lineup][max_bench_players]" class="block mt-1 w-full" :value="old('simulation.lineup.max_bench_players', data_get($simulationSettings, 'lineup.max_bench_players', 5))" />
-                            <p class="text-xs text-slate-500 mt-2">Definiert die Größe der Ersatzbank für alle Wettbewerbe (global).</p>
+                            <x-text-input id="lineup_max_bench_players" type="number" min="1" max="10" name="simulation[lineup][max_bench_players]" class="block mt-1 w-full" :value="old('simulation.lineup.max_bench_players', data_get($simulationSettings, 'lineup.max_bench_players', 5))" />
+                            <x-input-error :messages="$errors->get('simulation.lineup.max_bench_players')" class="mt-1" />
+                            <p class="text-xs text-slate-500 mt-2">Definiert die Größe der Ersatzbank für alle Wettbewerbe (1–10).</p>
                         </div>
                     </div>
                 </div>

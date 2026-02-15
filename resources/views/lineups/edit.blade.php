@@ -251,7 +251,71 @@
                     <x-input-error :messages="$errors->get('starter_slots')" class="mt-3" />
 
                     <!-- THE PITCH -->
-                    <div class="sim-pitch relative overflow-hidden rounded-2xl shadow-2xl bg-slate-950 border border-slate-800/40">
+                    <div class="sim-pitch relative overflow-hidden rounded-2xl shadow-2xl border border-slate-800/40">
+                        {{-- SVG pitch markings (FIFA-spec: 68m × 105m, ×10 scale) --}}
+                        <svg class="absolute inset-0 w-full h-full z-[1] pointer-events-none" viewBox="0 0 680 1050" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                {{-- Clip top penalty arc to only show below penalty area --}}
+                                <clipPath id="clipTopArc">
+                                    <rect x="0" y="165" width="680" height="885" />
+                                </clipPath>
+                                {{-- Clip bottom penalty arc to only show above penalty area --}}
+                                <clipPath id="clipBottomArc">
+                                    <rect x="0" y="0" width="680" height="885" />
+                                </clipPath>
+                            </defs>
+
+                            {{-- All markings use white with slight transparency --}}
+                            <g stroke="rgba(255,255,255,0.55)" stroke-width="3" fill="none">
+
+                                {{-- Outer boundary --}}
+                                <rect x="1.5" y="1.5" width="677" height="1047" />
+
+                                {{-- Halfway line --}}
+                                <line x1="0" y1="525" x2="680" y2="525" />
+
+                                {{-- Center circle --}}
+                                <circle cx="340" cy="525" r="91.5" />
+
+                                {{-- Top penalty area --}}
+                                <rect x="138" y="0" width="404" height="165" />
+
+                                {{-- Bottom penalty area --}}
+                                <rect x="138" y="885" width="404" height="165" />
+
+                                {{-- Top goal area (6-yard box) --}}
+                                <rect x="248" y="0" width="184" height="55" />
+
+                                {{-- Bottom goal area (6-yard box) --}}
+                                <rect x="248" y="995" width="184" height="55" />
+
+                                {{-- Top goal net --}}
+                                <rect x="303" y="-25" width="74" height="26" stroke-width="3" />
+
+                                {{-- Bottom goal net --}}
+                                <rect x="303" y="1049" width="74" height="26" stroke-width="3" />
+
+                                {{-- Top penalty arc (D-shape, clipped) --}}
+                                <circle cx="340" cy="110" r="91.5" clip-path="url(#clipTopArc)" />
+
+                                {{-- Bottom penalty arc (D-shape, clipped) --}}
+                                <circle cx="340" cy="940" r="91.5" clip-path="url(#clipBottomArc)" />
+
+                                {{-- Corner arcs --}}
+                                <path d="M 10 0 A 10 10 0 0 0 0 10" />
+                                <path d="M 670 0 A 10 10 0 0 1 680 10" />
+                                <path d="M 0 1040 A 10 10 0 0 0 10 1050" />
+                                <path d="M 680 1040 A 10 10 0 0 1 670 1050" />
+                            </g>
+
+                            {{-- Center dot --}}
+                            <circle cx="340" cy="525" r="5" fill="rgba(255,255,255,0.55)" />
+
+                            {{-- Penalty spots --}}
+                            <circle cx="340" cy="110" r="4" fill="rgba(255,255,255,0.55)" />
+                            <circle cx="340" cy="940" r="4" fill="rgba(255,255,255,0.55)" />
+                        </svg>
+
                         <div class="sim-pitch-canvas relative w-full h-full">
                             @foreach ($slots as $slot)
                                 @php
@@ -515,6 +579,12 @@
         Hinweis: Wie in OpenWS kannst du Spieler ziehen und auf Feld-/Bank-Slots ablegen oder per Buttons schnell zuweisen.
     </p>
 
+    @php
+        $pf = $positionFit ?? ['main' => 1.0, 'second' => 0.92, 'third' => 0.84, 'foreign' => 0.76, 'foreign_gk' => 0.55];
+    @endphp
+    <script>
+        window.__positionFit = @json($pf);
+    </script>
     <script>
         (function () {
             const lineupMatchSelect = document.getElementById('lineupMatchSelect');
@@ -597,6 +667,36 @@
                 return 'wrong';
             }
 
+            /**
+             * Returns a fit multiplier using the ACP-configured values from
+             * window.__positionFit (set via config('simulation.position_fit.*')).
+             */
+            function fitFactor(playerCard, container) {
+                var pf = window.__positionFit || {};
+                var slotGroup = container.dataset.slotGroup || '';
+                if (!slotGroup || slotGroup === 'BENCH') {
+                    return pf.main || 1.0;
+                }
+
+                var mainGroup  = groupFromPosition(playerCard.dataset.positionMain);
+                var secondGroup = groupFromPosition(playerCard.dataset.positionSecond);
+                var thirdGroup = groupFromPosition(playerCard.dataset.positionThird);
+
+                if (mainGroup && mainGroup === slotGroup) {
+                    return pf.main || 1.0;
+                }
+                if (secondGroup && secondGroup === slotGroup) {
+                    return pf.second || 0.92;
+                }
+                if (thirdGroup && thirdGroup === slotGroup) {
+                    return pf.third || 0.84;
+                }
+                if (mainGroup === 'GK' || slotGroup === 'GK') {
+                    return pf.foreign_gk || 0.55;
+                }
+                return pf.foreign || 0.76;
+            }
+
             function syncSlotView(container) {
                 const select = getSelectForContainer(container);
                 if (!select) {
@@ -631,7 +731,20 @@
                 if (playerCard) {
                     if (slotName) slotName.textContent = playerCard.dataset.playerLastName || playerCard.dataset.playerName;
                     if (slotNum) slotNum.textContent = playerCard.dataset.playerNumber || '??';
-                    if (slotOverall) slotOverall.textContent = playerCard.dataset.playerOverall || '??';
+
+                    // Compute effective OVR using the position fit factor
+                    var baseOverall = parseFloat(playerCard.dataset.playerOverall) || 0;
+                    var factor = fitFactor(playerCard, container);
+                    var effectiveOvr = Math.round(baseOverall * factor);
+
+                    if (slotOverall) {
+                        if (factor < 1.0) {
+                            // Show effective value + factor percentage
+                            slotOverall.textContent = effectiveOvr + ' (' + Math.round(factor * 100) + '%)';
+                        } else {
+                            slotOverall.textContent = baseOverall || '??';
+                        }
+                    }
 
                     const fit = fitsSlot(container, playerCard);
                     if (fit) {

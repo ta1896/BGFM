@@ -128,26 +128,29 @@
 
     /* Pitch & Lineup Editor Styles */
     .sim-pitch {
-        @apply relative overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl;
-        background-image:
-            radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05), transparent 70%),
-            repeating-linear-gradient(90deg, transparent 0, transparent 9.5%, rgba(255, 255, 255, 0.03) 9.6%, transparent 9.7%);
+        @apply relative overflow-hidden rounded-xl shadow-2xl;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        background:
+            /* Subtle vignette for depth */
+            radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.3) 100%),
+            /* ── Grass stripe pattern ── */
+            repeating-linear-gradient(to bottom,
+                rgba(34, 120, 50, 0.95) 0,
+                rgba(34, 120, 50, 0.95) 10%,
+                rgba(28, 105, 42, 0.95) 10%,
+                rgba(28, 105, 42, 0.95) 20%);
         aspect-ratio: 3/4;
-        /* Classic pitch ratio */
     }
 
     @media (min-width: 1024px) {
         .sim-pitch {
             aspect-ratio: 4/3;
-            /* Landscape for larger screens if preferred, or keep vertical */
         }
     }
 
     .sim-pitch-canvas {
         @apply absolute inset-0 w-full h-full;
-        background-image:
-            linear-gradient(to bottom, transparent 49.8%, rgba(255, 255, 255, 0.1) 50%, transparent 50.2%),
-            linear-gradient(to right, transparent 49.8%, rgba(255, 255, 255, 0.05) 50%, transparent 50.2%);
+        z-index: 2;
     }
 
     .sim-pitch-slot {
