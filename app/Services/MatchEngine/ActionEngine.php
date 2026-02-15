@@ -17,6 +17,8 @@ class ActionEngine
     ) {
     }
 
+    private array $usedTemplateIds = [];
+
     /**
      * Main sequence simulation for a match minute.
      */
@@ -35,12 +37,35 @@ class ActionEngine
         if ($attackerStates->isEmpty() || $defenderStates->isEmpty())
             return;
 
+        // Load used IDs from cache for this match to avoid repetition across minutes
+        $this->usedTemplateIds = \Illuminate\Support\Facades\Cache::get("match_used_templates_{$match->id}", []);
+
         // Determine if an event happens (random roll based on strengths)
         $eventRoll = mt_rand(1, 100);
 
         if ($eventRoll <= 12) { // 12% chance for a notable action per sequence
             $this->processNotableAction($match, $minute, $sequence, $attackerClubId, $defenderClubId, $attackerStates, $defenderStates);
         }
+
+        // Save back to cache
+        \Illuminate\Support\Facades\Cache::put("match_used_templates_{$match->id}", $this->usedTemplateIds, 3600);
+    }
+
+    private function generateNarrative(string $type, array $data): string
+    {
+        $template = $this->narrativeEngine->pickTemplate($type, $data['locale'] ?? 'de', $this->usedTemplateIds);
+
+        if (!$template) {
+            return $this->narrativeEngine->getFallbackText($type, $data);
+        }
+
+        $this->usedTemplateIds[] = $template->id;
+        // Keep only last 20 to avoid over-filtering
+        if (count($this->usedTemplateIds) > 20) {
+            array_shift($this->usedTemplateIds);
+        }
+
+        return $this->narrativeEngine->replaceTokens($template->text, $data);
     }
 
     private function processNotableAction(
@@ -73,7 +98,7 @@ class ActionEngine
         if ($isGoal) {
             $this->recordGoal($match, $minute, $sequence, $attackerClubId, $attacker, $defenderClubId);
         } else {
-            $narrative = $this->narrativeEngine->generate('chance', [
+            $narrative = $this->generateNarrative('chance', [
                 'player' => $attacker->player->last_name,
                 'club' => $match->home_club_id === $attackerClubId ? $match->homeClub->name : $match->awayClub->name,
                 'opponent' => $defender->player->last_name,
@@ -90,7 +115,7 @@ class ActionEngine
         DB::transaction(function () use ($match, $minute, $sequence, $clubId, $scorer, $isHomeGoal) {
             $isHomeGoal ? $match->increment('home_score') : $match->increment('away_score');
 
-            $narrative = $this->narrativeEngine->generate('goal', [
+            $narrative = $this->generateNarrative('goal', [
                 'player' => $scorer->player->last_name,
                 'club' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
                 'score' => "{$match->home_score}:{$match->away_score}",
@@ -114,7 +139,7 @@ class ActionEngine
         elseif ($cardRoll <= 2)
             $card = 'red_card';
 
-        $narrative = $this->narrativeEngine->generate($card ?? 'foul', [
+        $narrative = $this->generateNarrative($card ?? 'foul', [
             'player' => $fouler->player->last_name,
             'opponent' => $victim->player->last_name,
             'club' => $defenderClubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
@@ -131,7 +156,7 @@ class ActionEngine
     {
         $player = $this->stateRepository->randomCollectionItem($states);
 
-        $narrative = $this->narrativeEngine->generate('injury', [
+        $narrative = $this->generateNarrative('injury', [
             'player' => $player->player->last_name,
             'club' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
         ]);

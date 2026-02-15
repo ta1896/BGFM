@@ -42,6 +42,8 @@ class TickerTemplateController extends Controller
             'locale' => 'required|string|size:2',
         ]);
 
+        $this->validatePlaceholders($validated['text']);
+
         MatchTickerTemplate::create($validated);
 
         return redirect()->route('admin.ticker-templates.index')->with('success', 'Vorlage erfolgreich erstellt.');
@@ -62,9 +64,25 @@ class TickerTemplateController extends Controller
             'locale' => 'required|string|size:2',
         ]);
 
+        $this->validatePlaceholders($validated['text']);
+
         $tickerTemplate->update($validated);
 
         return redirect()->route('admin.ticker-templates.index')->with('success', 'Vorlage erfolgreich aktualisiert.');
+    }
+
+    private function validatePlaceholders(string $text): void
+    {
+        $allowed = ['player', 'opponent', 'club', 'score'];
+        preg_match_all('/\{([^}]+)\}/', $text, $matches);
+
+        foreach ($matches[1] as $placeholder) {
+            if (!in_array($placeholder, $allowed)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'text' => ["Der Platzhalter {{$placeholder}} ist nicht erlaubt. Erlaubt sind: " . implode(', ', array_map(fn($p) => '{' . $p . '}', $allowed))],
+                ]);
+            }
+        }
     }
 
     public function destroy(MatchTickerTemplate $tickerTemplate)
