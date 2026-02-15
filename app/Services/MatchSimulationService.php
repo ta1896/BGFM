@@ -85,7 +85,7 @@ class MatchSimulationService
                 'weather' => $this->weather(),
                 'played_at' => now(),
                 'simulation_seed' => $seed,
-                'live_minute' => null,
+                'live_minute' => 0,
                 'live_paused' => false,
             ]);
 
