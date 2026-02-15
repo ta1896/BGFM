@@ -130,6 +130,8 @@ Route::middleware(['auth', 'verified', 'admin'])
             }
         );
 
+        Route::resource('ticker-templates', \App\Http\Controllers\Admin\TickerTemplateController::class);
+
         // Match Engine Index (pointing to settings for now as it seems to be the intended target)
         Route::get('/match-engine', [App\Http\Controllers\Admin\GeneralSimulationSettingsController::class, 'index'])->name('match-engine.index');
     });

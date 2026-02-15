@@ -159,6 +159,7 @@ open http://localhost
 | `/matches` | Globales Match-Center (Liga, Pokal, Testspiele) |
 | `/matches/{id}` | Live-Matchcenter & Simulation |
 | `/table` | Dynamische Ligatabelle (Historie verfügbar) |
+| `/acp/ticker-templates` | ACP: Verwaltung der Liveticker-Vorlagen |
 
 </details>
 
@@ -242,6 +243,12 @@ app/
 │   ├── Player.php         # Kaderdaten + Leistungswerte
 │   └── Lineup.php         # Formation + aktive Aufstellung
 ├── Services/
+│   ├── MatchEngine/                  # Neue modulare Match-Engine
+│   │   ├── LiveMatchTickerService.php # Orchestrator für Live-Matches
+│   │   ├── ActionEngine.php           # Simulation von Toren, Fouls, Karten
+│   │   ├── NarrativeEngine.php        # Dynamische Text-Generierung via Templates
+│   │   ├── SubstitutionManager.php    # Komplexes Auswechslungssystem
+│   │   └── LiveStateRepository.php    # DB-Operations für Live-Stats
 │   ├── TeamStrengthCalculator.php    # Teamstärke (ATK/MID/DEF/Chemie)
 │   ├── SeasonProgressionService.php  # Spieltag-Lauf, Auf-/Abstieg
 │   ├── CpuClubDecisionService.php    # CPU-Aufstellung & Taktik
