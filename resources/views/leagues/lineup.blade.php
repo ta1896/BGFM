@@ -7,7 +7,7 @@
         searchTerm: ''
     }">
         
-        <form method="POST" action="{{ route('matches.lineup.update', $match) }}" id="lineup-form">
+        <form method="POST" action="{{ route('lineups.match', $match) }}" id="lineup-form">
             @csrf
 
             <!-- 1. Top Bar: Templates -->

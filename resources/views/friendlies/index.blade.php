@@ -5,17 +5,7 @@
                 <p class="sim-section-title">Spiele</p>
                 <h1 class="mt-1 text-2xl font-bold text-white">Freundschaftsspiele planen</h1>
             </div>
-            @if ($clubs->isNotEmpty())
-                <form method="GET" action="{{ route('friendlies.index') }}">
-                    <select class="sim-select" name="club" onchange="this.form.submit()">
-                        @foreach ($clubs as $club)
-                            <option value="{{ $club->id }}" @selected($activeClub && $activeClub->id === $club->id)>
-                                {{ $club->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
-            @endif
+            <!-- Global Switcher in Header -->
         </div>
     </x-slot>
 
@@ -53,7 +43,8 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="sim-label" for="message">Hinweis</label>
-                        <input id="message" name="message" type="text" class="sim-input" maxlength="255" placeholder="Optionaler Kommentar">
+                        <input id="message" name="message" type="text" class="sim-input" maxlength="255"
+                            placeholder="Optionaler Kommentar">
                     </div>
                     <div class="md:col-span-2">
                         <button type="submit" class="sim-btn-primary">Anfrage senden</button>
@@ -67,10 +58,12 @@
                     @forelse ($friendlyMatches as $match)
                         <a href="{{ route('matches.show', $match) }}" class="sim-card-soft block px-3 py-2">
                             <div class="flex items-center gap-2 text-sm font-semibold text-white">
-                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->homeClub->logo_url }}" alt="{{ $match->homeClub->name }}">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->homeClub->logo_url }}"
+                                    alt="{{ $match->homeClub->name }}">
                                 <span>{{ $match->homeClub->name }}</span>
                                 <span class="text-slate-400">vs</span>
-                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->awayClub->logo_url }}" alt="{{ $match->awayClub->name }}">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $match->awayClub->logo_url }}"
+                                    alt="{{ $match->awayClub->name }}">
                                 <span>{{ $match->awayClub->name }}</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-400">{{ $match->kickoff_at?->format('d.m.Y H:i') }} Uhr</p>
@@ -89,10 +82,12 @@
                     @forelse ($outgoingRequests as $request)
                         <div class="sim-card-soft px-3 py-3">
                             <p class="flex items-center gap-2 text-sm font-semibold text-white">
-                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengedClub->logo_url }}" alt="{{ $request->challengedClub->name }}">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengedClub->logo_url }}"
+                                    alt="{{ $request->challengedClub->name }}">
                                 <span>{{ $request->challengedClub->name }}</span>
                             </p>
-                            <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr | {{ strtoupper($request->status) }}</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr |
+                                {{ strtoupper($request->status) }}</p>
                         </div>
                     @empty
                         <p class="text-sm text-slate-300">Keine ausgehenden Anfragen.</p>
@@ -106,10 +101,12 @@
                     @forelse ($incomingRequests as $request)
                         <div class="sim-card-soft px-3 py-3">
                             <p class="flex items-center gap-2 text-sm font-semibold text-white">
-                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengerClub->logo_url }}" alt="{{ $request->challengerClub->name }}">
+                                <img class="sim-avatar sim-avatar-xs" src="{{ $request->challengerClub->logo_url }}"
+                                    alt="{{ $request->challengerClub->name }}">
                                 <span>{{ $request->challengerClub->name }}</span>
                             </p>
-                            <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr | {{ strtoupper($request->status) }}</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ $request->kickoff_at?->format('d.m.Y H:i') }} Uhr |
+                                {{ strtoupper($request->status) }}</p>
                             @if ($request->status === 'pending')
                                 <div class="mt-3 flex gap-2">
                                     <form method="POST" action="{{ route('friendlies.accept', $request) }}">

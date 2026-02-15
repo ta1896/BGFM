@@ -15,8 +15,17 @@ class FriendlyMatchController extends Controller
 {
     public function index(Request $request): View
     {
-        $clubs = $request->user()->clubs()->orderBy('name')->get();
-        $activeClub = $clubs->firstWhere('id', (int) $request->query('club')) ?? $clubs->first();
+        $clubs = $request->user()->isAdmin()
+            ? Club::orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        // Use middleware provided active club (bound to container)
+        $activeClub = app()->has('activeClub') ? app('activeClub') : ($clubs->first() ?? null);
+
+        // Fallback if not found (though middleware should have handled it)
+        if (!$activeClub) {
+            $activeClub = $clubs->first();
+        }
 
         $outgoing = collect();
         $incoming = collect();
@@ -80,23 +89,35 @@ class FriendlyMatchController extends Controller
         $club = $request->user()->clubs()->whereKey((int) $validated['club_id'])->first();
         abort_unless($club, 403);
 
-        $opponent = Club::query()->findOrFail((int) $validated['opponent_club_id']);
-        abort_if($club->id === $opponent->id, 422, 'Bitte einen anderen Gegner waehlen.');
+        $opponent = Club::query()->find((int) $validated['opponent_club_id']);
+        abort_unless($opponent, 404, 'Gegner nicht gefunden.');
+
+        if ($club->id === $opponent->id) {
+            return back()->withErrors(['opponent_club_id' => 'Du kannst nicht gegen dich selbst spielen.']);
+        }
 
         $kickoffAt = Carbon::parse($validated['kickoff_at']);
-        abort_if($kickoffAt->lessThan(now()->addMinutes(15)), 422, 'Der Anstoss muss in der Zukunft liegen.');
 
-        $result = $service->createRequest(
-            $club,
-            $opponent,
-            $request->user(),
-            $kickoffAt,
-            $validated['message'] ?? null
-        );
+        // Relaxed validation: Just check if it's in the future (even 1 min is fine for testing)
+        if ($kickoffAt->isPast()) {
+            return back()->withErrors(['kickoff_at' => 'Der Anstoss muss in der Zukunft liegen.']);
+        }
+
+        try {
+            $result = $service->createRequest(
+                $club,
+                $opponent,
+                $request->user(),
+                $kickoffAt,
+                $validated['message'] ?? null
+            );
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Fehler beim Erstellen der Anfrage: ' . $e->getMessage()]);
+        }
 
         $status = $result['type'] === 'auto_accepted'
-            ? 'Freundschaftsspiel wurde automatisch angenommen und terminiert.'
-            : 'Anfrage wurde versendet.';
+            ? 'Freundschaftsspiel terminiert!'
+            : 'Anfrage wurde an ' . $opponent->name . ' gesendet.';
 
         return redirect()
             ->route('friendlies.index', ['club' => $club->id])
@@ -111,7 +132,11 @@ class FriendlyMatchController extends Controller
         $club = $request->user()->clubs()->whereKey($friendlyRequest->challenged_club_id)->first();
         abort_unless($club, 403);
 
-        $match = $service->acceptRequest($friendlyRequest, $request->user());
+        try {
+            $match = $service->acceptRequest($friendlyRequest, $request->user());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('matches.show', $match)
@@ -126,7 +151,11 @@ class FriendlyMatchController extends Controller
         $club = $request->user()->clubs()->whereKey($friendlyRequest->challenged_club_id)->first();
         abort_unless($club, 403);
 
-        $service->rejectRequest($friendlyRequest);
+        try {
+            $service->rejectRequest($friendlyRequest);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('friendlies.index', ['club' => $club->id])

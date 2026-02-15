@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\WebAuthnAuthentication;
+
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, WebAuthnAuthentication;
 
     /**
      * The attributes that are mass assignable.
@@ -23,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'default_club_id',
     ];
 
     /**
@@ -107,6 +111,16 @@ class User extends Authenticatable
     public function friendlyRequests(): HasMany
     {
         return $this->hasMany(FriendlyMatchRequest::class, 'requested_by_user_id');
+    }
+
+    public function defaultClub(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'default_club_id');
+    }
+
+    public function isDefaultClub(Club $club): bool
+    {
+        return $this->default_club_id === $club->id;
     }
 
     public function isAdmin(): bool

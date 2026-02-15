@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use App\Models\TrainingCamp;
 use App\Services\TrainingCampService;
 use Illuminate\Http\RedirectResponse;
@@ -12,12 +13,19 @@ class TrainingCampController extends Controller
 {
     public function index(Request $request): View
     {
-        $clubs = $request->user()->clubs()->orderBy('name')->get();
+        $clubs = $request->user()->isAdmin()
+            ? Club::orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
         $clubIds = $clubs->pluck('id')->all();
+
+        // Use active club to filter if present, otherwise show all authorized camps
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
         $camps = TrainingCamp::query()
             ->with('club')
-            ->whereIn('club_id', $clubIds)
+            ->when($activeClub, fn($q) => $q->where('club_id', $activeClub->id))
+            ->when(!$activeClub, fn($q) => $q->whereIn('club_id', $clubIds))
             ->orderByDesc('id')
             ->paginate(15);
 

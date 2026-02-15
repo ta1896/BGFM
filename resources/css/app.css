@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --color-slate-950: #020617;
+}
 
 @layer base {
     :root {
@@ -29,24 +32,24 @@
 
     /* Glassmorphism Utilities */
     .sim-glass {
-        @apply backdrop-blur-md bg-slate-900/60 border border-slate-700/20;
+        @apply backdrop-blur-md bg-slate-900/60 border border-slate-950;
     }
 
     .sim-glass-strong {
-        @apply backdrop-blur-xl bg-slate-900/80 border border-slate-800/30;
+        @apply backdrop-blur-xl bg-slate-900/80 border border-slate-950;
     }
 
     /* Cards */
     .sim-card {
-        @apply sim-glass rounded-2xl shadow-xl transition-all duration-300;
+        @apply sim-glass rounded-2xl transition-all duration-300;
     }
 
     .sim-card:hover {
-        @apply border-slate-600/40 shadow-2xl shadow-cyan-900/5;
+        @apply border-slate-600/40;
     }
 
     .sim-card-soft {
-        @apply rounded-xl border border-slate-800/20 bg-slate-800/20 transition-colors;
+        @apply rounded-xl border border-slate-950 bg-slate-800/20 transition-colors;
     }
 
     /* Text */
@@ -266,5 +269,21 @@
 
     .sim-avatar-xl {
         @apply h-14 w-14 md:h-16 md:w-16 ring-4 bg-slate-900 ring-slate-700/50 p-2 shadow-lg;
+    }
+
+    @keyframes flash {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .animate-flash {
+        animation: flash 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 }

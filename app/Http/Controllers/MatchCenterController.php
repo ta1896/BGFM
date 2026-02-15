@@ -36,10 +36,26 @@ class MatchCenterController extends Controller
             'plannedSubstitutions.playerIn',
         ]);
 
+        $comparison = [
+            'home' => [
+                'market_value' => $match->homeClub->players()->where('status', 'active')->sum('market_value') ?? 0,
+                'avg_age' => $match->homeClub->players()->where('status', 'active')->avg('age') ?? 0,
+                'strength' => $match->homeClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0,
+                'rank' => '-', // Placeholder
+            ],
+            'away' => [
+                'market_value' => $match->awayClub->players()->where('status', 'active')->sum('market_value') ?? 0,
+                'avg_age' => $match->awayClub->players()->where('status', 'active')->avg('age') ?? 0,
+                'strength' => $match->awayClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0,
+                'rank' => '-',
+            ],
+        ];
+
         return view('leagues.matchcenter', [
             'match' => $match,
             'canSimulate' => $this->canSimulate($request, $match),
             'manageableClubIds' => $this->manageableClubIds($request, $match),
+            'comparison' => $comparison,
         ]);
     }
 
@@ -156,6 +172,29 @@ class MatchCenterController extends Controller
         return response()->json($this->statePayload($request, $state));
     }
 
+    public function liveShout(
+        Request $request,
+        GameMatch $match,
+        LiveMatchTickerService $tickerService
+    ): JsonResponse {
+        $manageableClubIds = $this->manageableClubIds($request, $match);
+        $validated = $request->validate([
+            'club_id' => ['required', 'integer'],
+            'shout' => ['required', 'string', 'in:demand_more,concentrate,encourage,calm_down'],
+        ]);
+
+        $clubId = (int) $validated['club_id'];
+        abort_unless(in_array($clubId, $manageableClubIds, true), 403);
+
+        $state = $tickerService->handleManagerShout(
+            $match,
+            $clubId,
+            (string) $validated['shout']
+        );
+
+        return response()->json($this->statePayload($request, $state));
+    }
+
     public function liveState(Request $request, GameMatch $match): JsonResponse
     {
         $this->ensureReadable($request, $match);
@@ -239,7 +278,7 @@ class MatchCenterController extends Controller
             'manageable_club_ids' => $this->manageableClubIds($request, $match),
             'lineups' => $this->lineupsPayload($match),
             'events' => $match->events
-                ->sortByDesc(fn ($event) => ($event->minute * 60) + $event->second)
+                ->sortByDesc(fn($event) => ($event->minute * 60) + $event->second)
                 ->values()
                 ->map(function ($event): array {
                     return [
@@ -247,6 +286,8 @@ class MatchCenterController extends Controller
                         'minute' => (int) $event->minute,
                         'second' => (int) $event->second,
                         'event_type' => (string) $event->event_type,
+                        'club_id' => $event->club_id !== null ? (int) $event->club_id : null,
+                        'player_id' => $event->player_id !== null ? (int) $event->player_id : null,
                         'player_name' => $event->player?->full_name,
                         'assister_name' => $event->assister?->full_name,
                         'club_short_name' => $event->club?->short_name ?: $event->club?->name,
@@ -312,8 +353,23 @@ class MatchCenterController extends Controller
                 })
                 ->values()
                 ->all(),
+            'final_stats' => $match->playerStats
+                ->map(function ($stat): array {
+                    return [
+                        'player_id' => (int) $stat->player_id,
+                        'club_id' => (int) $stat->club_id,
+                        'player_name' => $stat->player?->full_name,
+                        'rating' => (float) $stat->rating,
+                        'goals' => (int) $stat->goals,
+                        'assists' => (int) $stat->assists,
+                        'minutes_played' => (int) $stat->minutes_played,
+                        'shots' => (int) $stat->shots,
+                    ];
+                })
+                ->values()
+                ->all(),
             'actions' => $match->liveActions
-                ->sortByDesc(fn ($action) => ($action->minute * 100000) + ($action->second * 1000) + $action->sequence)
+                ->sortByDesc(fn($action) => ($action->minute * 100000) + ($action->second * 1000) + $action->sequence)
                 ->take(80)
                 ->values()
                 ->map(function ($action): array {
@@ -330,6 +386,7 @@ class MatchCenterController extends Controller
                         'opponent_player_name' => $action->opponentPlayer?->full_name,
                         'action_type' => (string) $action->action_type,
                         'outcome' => (string) ($action->outcome ?? ''),
+                        'narrative' => (string) ($action->narrative ?? ''),
                         'metadata' => $action->metadata,
                     ];
                 })
@@ -443,5 +500,65 @@ class MatchCenterController extends Controller
         }
 
         return $lineups;
+    }
+
+    private function getTeamStates(GameMatch $match): array
+    {
+        $states = $match->liveTeamStates;
+
+        if ($states->isNotEmpty()) {
+            return $states->mapWithKeys(function ($state) {
+                return [
+                    (string) $state->club_id => [
+                        'club_id' => (int) $state->club_id,
+                        'tactical_style' => (string) $state->tactical_style,
+                        'phase' => (string) ($state->phase ?? ''),
+                        'possession_seconds' => (int) $state->possession_seconds,
+                        'actions_count' => (int) $state->actions_count,
+                        'dangerous_attacks' => (int) $state->dangerous_attacks,
+                        'pass_attempts' => (int) $state->pass_attempts,
+                        'pass_completions' => (int) $state->pass_completions,
+                        'tackle_attempts' => (int) $state->tackle_attempts,
+                        'tackle_won' => (int) $state->tackle_won,
+                        'fouls_committed' => (int) $state->fouls_committed,
+                        'corners_won' => (int) $state->corners_won,
+                        'shots' => (int) $state->shots,
+                        'shots_on_target' => (int) $state->shots_on_target,
+                        'expected_goals' => (float) $state->expected_goals,
+                        'yellow_cards' => (int) $state->yellow_cards,
+                        'red_cards' => (int) $state->red_cards,
+                        'substitutions_used' => (int) $state->substitutions_used,
+                        'tactical_changes_count' => (int) $state->tactical_changes_count,
+                        'last_tactical_change_minute' => $state->last_tactical_change_minute !== null ? (int) $state->last_tactical_change_minute : null,
+                        'last_substitution_minute' => $state->last_substitution_minute !== null ? (int) $state->last_substitution_minute : null,
+                    ],
+                ];
+            })->all();
+        }
+
+        // Fallback: Aggregate from Final Stats
+        return [
+            (string) $match->home_club_id => $this->aggregateTeamStats($match, $match->home_club_id),
+            (string) $match->away_club_id => $this->aggregateTeamStats($match, $match->away_club_id),
+        ];
+    }
+
+    private function aggregateTeamStats(GameMatch $match, int $clubId): array
+    {
+        $stats = $match->playerStats->where('club_id', $clubId);
+
+        return [
+            'club_id' => $clubId,
+            'possession_seconds' => 2700, // Fallback 50%
+            'shots' => (int) $stats->sum('shots'),
+            'pass_completions' => (int) $stats->sum('passes_completed'),
+            'pass_attempts' => (int) ($stats->sum('passes_completed') + $stats->sum('passes_failed')),
+            'fouls_committed' => 0, // Not in player stats
+            'yellow_cards' => (int) $stats->sum('yellow_cards'),
+            'red_cards' => (int) $stats->sum('red_cards'),
+            'corners_won' => 0,
+            'expected_goals' => 0.0,
+            // ... add others as 0
+        ];
     }
 }

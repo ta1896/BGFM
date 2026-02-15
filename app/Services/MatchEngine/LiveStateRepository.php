@@ -84,7 +84,11 @@ class LiveStateRepository
         string $actionType,
         ?string $outcome,
         ?string $narrative,
-        ?array $metadata
+        ?array $metadata,
+        ?int $x_coord = null,
+        ?int $y_coord = null,
+        ?float $xg = null,
+        ?int $momentum_value = null
     ): void {
         MatchLiveAction::create([
             'match_id' => $match->id,
@@ -98,6 +102,10 @@ class LiveStateRepository
             'outcome' => $outcome,
             'narrative' => $narrative,
             'metadata' => $metadata,
+            'x_coord' => $x_coord,
+            'y_coord' => $y_coord,
+            'xg' => $xg,
+            'momentum_value' => $momentum_value,
         ]);
     }
 

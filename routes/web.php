@@ -16,7 +16,6 @@ use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LineupsController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MatchCenterController;
-use App\Http\Controllers\MatchLineupController;
 use App\Http\Controllers\NationalTeamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
@@ -43,6 +42,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::patch('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::delete('/settings/passkeys/{id}', [App\Http\Controllers\SettingsController::class, 'destroyPasskey'])->name('settings.passkeys.destroy');
+
+    // WebAuthn Routes
+    \Laragear\WebAuthn\Http\Routes::routes();
+
     Route::middleware('has.club.or.admin')->group(
         function () {
             Route::resource('clubs', ClubController::class)->only(['index', 'show']);
@@ -57,12 +63,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
             Route::post('/matches/{match}/live/substitute', [MatchCenterController::class, 'liveSubstitute'])->name('matches.live.substitute');
             Route::post('/matches/{match}/live/substitute/plan', [MatchCenterController::class, 'livePlanSubstitute'])->name('matches.live.substitute.plan');
+            Route::post('/matches/{match}/live/shout', [MatchCenterController::class, 'liveShout'])->name('matches.live.shout');
             Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
-            Route::get('/matches/{match}/lineup', [MatchLineupController::class, 'edit'])->name('matches.lineup.edit');
-            Route::post('/matches/{match}/lineup', [MatchLineupController::class, 'update'])->name('matches.lineup.update');
-            Route::post('/matches/{match}/lineup/load-template', [MatchLineupController::class, 'loadTemplate'])->name('matches.lineup.load-template');
-            Route::post('/matches/{match}/lineup/auto-pick', [MatchLineupController::class, 'autoPick'])->name('matches.lineup.auto-pick');
-            Route::delete('/matches/{match}/lineup/templates/{template}', [MatchLineupController::class, 'destroyTemplate'])->name('matches.lineup.template.destroy');
+            Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
+            Route::get('/lineups/match/{match}', [LineupsController::class, 'match'])->name('lineups.match');
+            Route::get('/friendlies', [FriendlyMatchController::class, 'index'])->name('friendlies.index');
             Route::get('/friendlies', [FriendlyMatchController::class, 'index'])->name('friendlies.index');
             Route::post('/friendlies', [FriendlyMatchController::class, 'store'])->name('friendlies.store');
             Route::post('/friendlies/{friendlyRequest}/accept', [FriendlyMatchController::class, 'accept'])->name('friendlies.accept');

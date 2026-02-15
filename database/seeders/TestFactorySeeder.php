@@ -19,6 +19,10 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Models\GameMatch;
+use App\Models\MatchLiveAction;
+use App\Models\MatchEvent;
+use App\Models\MatchPlayerStat;
 
 class TestFactorySeeder extends Seeder
 {
@@ -107,6 +111,11 @@ class TestFactorySeeder extends Seeder
                 }
 
                 app(FixtureGeneratorService::class)->generateRoundRobin($competitionSeason->load('season'));
+
+                // Simulate a few matches with rich ticker data (for the first league)
+                if ($leagueIndex === 1) {
+                    $this->simulateDetailedTestMatches($competitionSeason);
+                }
             }
 
             // Avoid "unused variable" optimizations and keep explicit that both users are part of the data set.
@@ -117,9 +126,51 @@ class TestFactorySeeder extends Seeder
 
     private function cleanupPreviousFactoryData(): void
     {
-        Competition::query()->where('short_name', 'like', 'TSTL%')->delete();
-        Club::query()->where('slug', 'like', 'tst-l%')->delete();
-        Season::query()->where('name', 'like', 'TEST-%')->delete();
+        // 1. Matches & Actions
+        $testCompIds = Competition::query()->where('short_name', 'like', 'TSTL%')->pluck('id');
+        $testSeasonIds = Season::query()->where('name', 'like', 'TEST-%')->pluck('id');
+
+        // Find matches via competition_season
+        $matches = GameMatch::query()
+            ->whereHas('competitionSeason', function ($q) use ($testCompIds, $testSeasonIds) {
+                $q->whereIn('competition_id', $testCompIds)
+                    ->whereIn('season_id', $testSeasonIds);
+            });
+
+        $matchIds = $matches->pluck('id');
+
+        if ($matchIds->isNotEmpty()) {
+            MatchLiveAction::query()->whereIn('match_id', $matchIds)->delete();
+            MatchEvent::query()->whereIn('match_id', $matchIds)->delete();
+            MatchPlayerStat::query()->whereIn('match_id', $matchIds)->delete();
+            $matches->delete();
+        }
+
+        // 2. Club dependent data
+        $clubIds = Club::query()->where('slug', 'like', 'tst-l%')->pluck('id');
+
+        if ($clubIds->isNotEmpty()) {
+            Lineup::query()->whereIn('club_id', $clubIds)->delete();
+            PlayerContract::query()->whereIn('club_id', $clubIds)->delete();
+            SeasonClubRegistration::query()->whereIn('club_id', $clubIds)->delete();
+            SeasonClubStatistic::query()->whereIn('club_id', $clubIds)->delete();
+            // Players are usually linked to clubs, we should delete them too if created by factory
+            // But checking players via contracts is safer or just by club_id?
+            // TestFactorySeeder creates players attached to club???
+            // Players table doesn't have club_id in NewGen usually? It works via Contracts.
+            // But we should delete players that have NO contracts or are "Test Player"?
+            Player::query()->where('last_name', 'like', 'Testplayer%')->delete();
+        }
+
+        // 3. Competitions & Seasons
+        CompetitionSeason::query()
+            ->whereIn('competition_id', $testCompIds)
+            ->whereIn('season_id', $testSeasonIds)
+            ->delete();
+
+        Competition::query()->whereIn('id', $testCompIds)->delete();
+        Club::query()->whereIn('id', $clubIds)->delete();
+        Season::query()->whereIn('id', $testSeasonIds)->delete();
         Country::query()->where('iso_code', 'TS')->delete();
         User::query()->whereIn('email', [
             'test.admin@openws.local',
@@ -311,16 +362,22 @@ class TestFactorySeeder extends Seeder
      */
     private function createLineup(Club $club, Collection $players): void
     {
-        $lineup = Lineup::create([
+        /** @var Lineup $lineup */
+        $lineup = Lineup::firstOrNew([
             'club_id' => $club->id,
             'name' => 'Test Startelf',
+        ]);
+
+        $lineup->fill([
             'formation' => '4-3-3',
-            'tactical_style' => 'balanced',
+            'mentality' => 'normal',
             'attack_focus' => 'center',
             'is_active' => true,
             'is_template' => true,
             'notes' => 'Automatisch generierte Testaufstellung',
         ]);
+
+        $lineup->save();
 
         $starterIds = $players->take(11)->pluck('id')->values();
         $benchIds = $players->slice(11)->pluck('id')->values();
@@ -336,7 +393,7 @@ class TestFactorySeeder extends Seeder
 
         foreach ($starterIds as $index => $playerId) {
             $syncData[$playerId] = [
-                'pitch_position' => self::STARTER_SLOTS[$index] ?? ('POS-'.$index),
+                'pitch_position' => self::STARTER_SLOTS[$index] ?? ('POS-' . $index),
                 'sort_order' => $index,
                 'x_coord' => null,
                 'y_coord' => null,
@@ -349,7 +406,7 @@ class TestFactorySeeder extends Seeder
 
         foreach ($benchIds as $index => $playerId) {
             $syncData[$playerId] = [
-                'pitch_position' => 'BANK-'.($index + 1),
+                'pitch_position' => 'BANK-' . ($index + 1),
                 'sort_order' => $index,
                 'x_coord' => null,
                 'y_coord' => null,
@@ -380,5 +437,251 @@ class TestFactorySeeder extends Seeder
             'environment_level' => min(99, 54 + $clubIndex),
             'last_maintenance_at' => now()->subDays(7),
         ]);
+    }
+
+    private function simulateDetailedTestMatches(CompetitionSeason $competitionSeason): void
+    {
+        // Get 3 matches from matchday 1
+        $matches = GameMatch::where('competition_season_id', $competitionSeason->id)
+            ->where('matchday', 1)
+            ->take(3)
+            ->get();
+
+        foreach ($matches as $index => $match) {
+            $home = $match->homeClub;
+            $away = $match->awayClub;
+
+            // Random scores for variety
+            $homeGoals = $index === 0 ? 2 : ($index === 1 ? 1 : 3);
+            $awayGoals = $index === 0 ? 1 : ($index === 1 ? 1 : 0);
+
+            $match->update([
+                'status' => 'played',
+                'home_score' => $homeGoals,
+                'away_score' => $awayGoals,
+                'played_at' => now()->subHours(2),
+                'live_minute' => 90,
+                'is_finished' => true,
+            ]);
+
+            // Create some fake rich actions
+            $actions = [];
+            $sequence = 0;
+
+            // Kickoff
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 1,
+                'second' => 0,
+                'sequence' => ++$sequence,
+                'type' => 'kickoff',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'kickoff',
+                'outcome' => 'success',
+                'coordinate_x' => 50,
+                'coordinate_y' => 50,
+                'narrative' => "Anstoß für {$home->name}. Der Ball rollt!",
+            ];
+
+            // Midfield Possession
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 2,
+                'second' => 15,
+                'sequence' => ++$sequence,
+                'type' => 'possession',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'midfield_possession',
+                'outcome' => 'success',
+                'coordinate_x' => 55,
+                'coordinate_y' => 45,
+                'narrative' => "Ballbesitz für {$home->short_name} im Mittelfeld. Ruhiger Aufbau.",
+            ];
+
+            // Turnover
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 3,
+                'second' => 40,
+                'sequence' => ++$sequence,
+                'type' => 'turnover',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'turnover',
+                'outcome' => 'lost_possession',
+                'coordinate_x' => 65,
+                'coordinate_y' => 30,
+                'narrative' => "Ballverlust! {$away->short_name} schaltet schnell um.",
+            ];
+
+            // Early Foul / Free Kick
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 4,
+                'second' => 12,
+                'sequence' => ++$sequence,
+                'type' => 'foul',
+                'club_id' => $away->id,
+                'player_id' => null,
+                'action_type' => 'foul',
+                'outcome' => 'committed',
+                'coordinate_x' => 60,
+                'coordinate_y' => 20,
+                'narrative' => "Hartes Einsteigen von {$away->short_name} im Mittelfeld.",
+            ];
+
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 5,
+                'second' => 0,
+                'sequence' => ++$sequence,
+                'type' => 'free_kick',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'free_kick',
+                'outcome' => 'miss',
+                'coordinate_x' => 60,
+                'coordinate_y' => 20,
+                'narrative' => "Der Freistoß von {$home->short_name} bringt nichts ein.",
+            ];
+
+            // 15th Minute Chance
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 15,
+                'second' => 30,
+                'sequence' => ++$sequence,
+                'type' => 'attacking_possession',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'chance',
+                'outcome' => 'saved',
+                'coordinate_x' => 85,
+                'coordinate_y' => 40,
+                'narrative' => "Großchance für {$home->short_name}! Ein strammer Schuss aus 16 Metern.",
+            ];
+
+            // Corner
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 16,
+                'second' => 05,
+                'sequence' => ++$sequence,
+                'type' => 'set_piece',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'corner',
+                'outcome' => 'cleared',
+                'coordinate_x' => 100,
+                'coordinate_y' => 0,
+                'narrative' => "Eckball für {$home->short_name}. Der Ball fliegt in den Strafraum...",
+            ];
+
+            // Goal/Cards if needed based on score
+            if ($homeGoals > 0) {
+                $actions[] = [
+                    'match_id' => $match->id,
+                    'minute' => 34,
+                    'second' => 12,
+                    'sequence' => ++$sequence,
+                    'type' => 'goal',
+                    'club_id' => $home->id,
+                    'player_id' => null,
+                    'action_type' => 'goal',
+                    'outcome' => 'scored',
+                    'coordinate_x' => 92,
+                    'coordinate_y' => 50,
+                    'narrative' => "TOOOOR für {$home->short_name}! Ein herrlicher Treffer in den Winkel.",
+                ];
+            }
+
+            // Offside
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 41,
+                'second' => 45,
+                'sequence' => ++$sequence,
+                'type' => 'offside',
+                'club_id' => $away->id,
+                'player_id' => null,
+                'action_type' => 'offside',
+                'outcome' => 'whistle',
+                'coordinate_x' => 10,
+                'coordinate_y' => 80,
+                'narrative' => "Abseits! Der Stürmer von {$away->short_name} stand einen Schritt zu weit vorne.",
+            ];
+
+            // Half Time
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 45,
+                'second' => 0,
+                'sequence' => ++$sequence,
+                'type' => 'whistle',
+                'club_id' => null,
+                'player_id' => null,
+                'action_type' => 'half_time',
+                'outcome' => 'neutral',
+                'coordinate_x' => null,
+                'coordinate_y' => null,
+                'narrative' => "Halbzeitpfiff. Es geht in die Kabinen.",
+            ];
+
+            // Substitution
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 60,
+                'second' => 0,
+                'sequence' => ++$sequence,
+                'type' => 'substitution',
+                'club_id' => $home->id,
+                'player_id' => null,
+                'action_type' => 'substitution',
+                'outcome' => 'success',
+                'coordinate_x' => null,
+                'coordinate_y' => null,
+                'narrative' => "Wechsel bei {$home->short_name}. Frische Kräfte kommen ins Spiel.",
+            ];
+
+            // Late Chance
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 88,
+                'second' => 10,
+                'sequence' => ++$sequence,
+                'type' => 'attacking_possession',
+                'club_id' => $away->id,
+                'player_id' => null,
+                'action_type' => 'shot',
+                'outcome' => 'miss',
+                'coordinate_x' => 10,
+                'coordinate_y' => 50,
+                'narrative' => "Schuss von {$away->short_name}, aber knapp vorbei.",
+            ];
+
+            // Final Whistle
+            $actions[] = [
+                'match_id' => $match->id,
+                'minute' => 90,
+                'second' => 0,
+                'sequence' => ++$sequence,
+                'type' => 'whistle',
+                'club_id' => null,
+                'player_id' => null,
+                'action_type' => 'full_time',
+                'outcome' => 'neutral',
+                'coordinate_x' => null,
+                'coordinate_y' => null,
+                'narrative' => "Abpfiff! Das Spiel ist beendet.",
+            ];
+
+
+            // Insert
+            foreach ($actions as $action) {
+                MatchLiveAction::create($action);
+            }
+        }
     }
 }

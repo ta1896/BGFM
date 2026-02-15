@@ -237,20 +237,18 @@
                                         <div class="grid grid-cols-2 gap-2">
                                             <a href="{{ route('matches.show', $match) }}" class="flex items-center justify-center py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-700/40 rounded-lg transition-all border border-transparent">Matchcenter</a>
                                             
-                                            @if (auth()->user()->isAdmin() || $ownedClubIds->contains($match->home_club_id) || $ownedClubIds->contains($match->away_club_id))
-                                                @if ($match->status !== 'played')
-                                                    <a href="{{ route('matches.lineup.edit', ['match' => $match->id]) }}" class="flex items-center justify-center py-2.5 text-[10px] font-bold uppercase tracking-widest text-cyan-400 bg-cyan-500/5 hover:bg-cyan-500/15 rounded-lg transition-all border border-transparent">Aufstellung</a>
-                                                @elseif(auth()->user()->isAdmin())
+                                            @if (auth()->user()->isAdmin())
+                                                @if ($match->status === 'played')
                                                     <form method="POST" action="{{ route('matches.simulate', $match) }}" class="contents">
                                                         @csrf
                                                         <button type="submit" class="flex items-center justify-center py-2.5 text-[10px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/5 hover:bg-orange-500/15 rounded-lg transition-all border border-transparent">Re-Sim</button>
                                                     </form>
+                                                @elseif($match->status !== 'played')
+                                                     <form method="POST" action="{{ route('matches.simulate', $match) }}" class="contents">
+                                                        @csrf
+                                                        <button type="submit" class="flex items-center justify-center py-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 rounded-lg transition-all border border-transparent">Simulieren</button>
+                                                    </form>
                                                 @endif
-                                            @elseif(auth()->user()->isAdmin() && $match->status !== 'played')
-                                                 <form method="POST" action="{{ route('matches.simulate', $match) }}" class="contents">
-                                                    @csrf
-                                                    <button type="submit" class="flex items-center justify-center py-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 rounded-lg transition-all border border-transparent">Simulieren</button>
-                                                </form>
                                             @endif
                                         </div>
                                     </div>

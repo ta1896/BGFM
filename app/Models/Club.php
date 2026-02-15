@@ -37,6 +37,8 @@ class Club extends Model
         'coins',
         'wage_budget',
         'notes',
+        'rival_id_1',
+        'rival_id_2',
     ];
 
     protected function casts(): array
@@ -55,6 +57,21 @@ class Club extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function rival1(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'rival_id_1');
+    }
+
+    public function rival2(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'rival_id_2');
+    }
+
+    public function isRival(int $otherClubId): bool
+    {
+        return $this->rival_id_1 === $otherClubId || $this->rival_id_2 === $otherClubId;
     }
 
     public function captain(): BelongsTo

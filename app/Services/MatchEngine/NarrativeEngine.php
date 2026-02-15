@@ -11,9 +11,9 @@ class NarrativeEngine
     /**
      * Generate a dynamic narrative text for a given event.
      */
-    public function generate(string $eventType, array $data, string $locale = 'de', array $usedIds = []): string
+    public function generate(string $eventType, array $data, string $locale = 'de', array $usedIds = [], string $mood = 'neutral'): string
     {
-        $template = $this->pickTemplate($eventType, $locale, $usedIds);
+        $template = $this->pickTemplate($eventType, $locale, $mood, $usedIds);
 
         if (!$template) {
             return $this->getFallbackText($eventType, $data);
@@ -25,19 +25,35 @@ class NarrativeEngine
     /**
      * Pick a random template for the given event type, avoiding already used ones.
      */
-    public function pickTemplate(string $eventType, string $locale, array $usedIds = []): ?MatchTickerTemplate
+    public function pickTemplate(string $eventType, string $locale, string $mood = 'neutral', array $usedIds = []): ?MatchTickerTemplate
     {
-        // Cache name for all templates of this type/locale
-        $cacheKey = "ticker_templates_{$eventType}_{$locale}";
+        // Cache name including mood
+        $cacheKey = "ticker_templates_{$eventType}_{$locale}_{$mood}";
 
-        $templates = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($eventType, $locale) {
-            return MatchTickerTemplate::where('event_type', $eventType)
-                ->where('locale', $locale)
-                ->get();
+        $templates = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($eventType, $locale, $mood) {
+            $query = MatchTickerTemplate::where('event_type', $eventType)
+                ->where('locale', $locale);
+
+            // If mood is not neutral, we try to fetch specific mood templates + neutral ones as fallback in the collection
+            if ($mood !== 'neutral') {
+                $query->whereIn('mood', [$mood, 'neutral']);
+            } else {
+                $query->where('mood', 'neutral');
+            }
+
+            return $query->get();
         });
 
         if ($templates->isEmpty()) {
             return null;
+        }
+
+        // Filter by mood preference (try specific mood first)
+        if ($mood !== 'neutral') {
+            $moodTemplates = $templates->where('mood', $mood);
+            if ($moodTemplates->isNotEmpty()) {
+                $templates = $moodTemplates;
+            }
         }
 
         // Filter out used IDs if possible
@@ -64,6 +80,10 @@ class NarrativeEngine
             }
         }
 
+        // Add conditional stat logic if data contains stats objects
+        // This is a placeholder for potential complex logic, but for now we stick to simple replacement
+        // derived from the $data array which should be pre-populated by ActionEngine.
+
         return strtr($text, $replacements);
     }
 
@@ -82,6 +102,10 @@ class NarrativeEngine
             'substitution' => "Wechsel bei {$clubName}: {$playerName} kommt neu ins Spiel.",
             'foul' => "Foulspiel von {$playerName}.",
             'chance' => "Großchance für {$playerName}!",
+            'midfield_possession' => "Ballbesitz für {$clubName} im Mittelfeld.",
+            'turnover' => "Ballverlust von {$playerName}. {$clubName} erobert den Ball.",
+            'throw_in' => "Einwurf für {$clubName}.",
+            'clearance' => "Klärungsaktion von {$playerName}.",
             default => "Ereignis: {$eventType} durch {$playerName} ({$clubName}).",
         };
     }

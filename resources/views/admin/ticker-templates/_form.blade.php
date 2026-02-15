@@ -23,6 +23,31 @@
                 <option value="high" {{ (old('priority', $tickerTemplate->priority ?? 'normal') == 'high') ? 'selected' : '' }}>Hoch</option>
             </select>
         </div>
+        
+        <!-- New Fields -->
+        <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">Stimmung (Mood)</label>
+            <select name="mood"
+                class="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-4 text-slate-300 focus:ring-indigo-500">
+                @foreach($moods as $value => $label)
+                    <option value="{{ $value }}" {{ old('mood', $tickerTemplate->mood ?? 'neutral') == $value ? 'selected' : '' }}>
+                        {{ $label }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-400 mb-2">Kommentatoren-Stil</label>
+            <select name="commentator_style"
+                class="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-4 text-slate-300 focus:ring-indigo-500">
+                @foreach($styles as $value => $label)
+                    <option value="{{ $value }}" {{ old('commentator_style', $tickerTemplate->commentator_style ?? 'sachlich') == $value ? 'selected' : '' }}>
+                        {{ $label }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
     </div>
 
     <div class="col-span-1 md:col-span-2">

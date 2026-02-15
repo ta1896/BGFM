@@ -18,24 +18,106 @@ class LineupsController extends Controller
     //  INDEX
     // ────────────────────────────────────────────────────────
 
-    public function index(Request $request): View
+    public function index(Request $request): RedirectResponse|View
     {
-        $club = $this->resolveClub($request);
+        /** @var Club $club */
+        $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
 
-        $lineups = $club->lineups()
-            ->whereNull('match_id')
-            ->with('players')
-            ->orderByDesc('is_active')
-            ->latest()
-            ->get();
+        // Fallback
+        if (!$club) {
+            $club = $this->resolveClub($request);
+        }
 
-        $clubs = collect([$club]);
+        // 1. Find the next upcoming match (scheduled or live)
+        $nextMatch = GameMatch::query()
+            ->where(function ($query) use ($club): void {
+                $query->where('home_club_id', $club->id)
+                    ->orWhere('away_club_id', $club->id);
+            })
+            ->whereIn('status', ['scheduled', 'live'])
+            ->where('kickoff_at', '>=', now()->subHours(4)) // Include matches that just started
+            ->orderBy('kickoff_at')
+            ->first();
 
-        return view('lineups.index', [
-            'lineups' => $lineups,
-            'clubs' => $clubs,
-        ]);
+        // 2. If no match found, fallback to old view (or show "No Match" message)
+        if (!$nextMatch) {
+            // Keep the old view for now if no match exists, so they can at least see templates
+            $userClubs = $request->user()->isAdmin()
+                ? Club::where('is_cpu', false)->orderBy('name')->get()
+                : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
+
+            return view('lineups.index', [
+                'club' => $club,
+                'userClubs' => $userClubs,
+                'matches' => [],
+                'templates' => $club->lineups()
+                    ->whereNull('match_id')
+                    ->where('is_template', true)
+                    ->orderBy('name')
+                    ->get(),
+            ]);
+        }
+
+        // 3. Find existing lineup for this match
+        $lineup = $club->lineups()->where('match_id', $nextMatch->id)->first();
+
+        // 4. If no lineup, create one
+        if (!$lineup) {
+            $lineupName = 'Spieltag ' . $nextMatch->matchday . ' vs ' .
+                ($nextMatch->home_club_id === $club->id ? $nextMatch->awayClub->name : $nextMatch->homeClub->name);
+
+            $lineup = $club->lineups()->create([
+                'match_id' => $nextMatch->id,
+                'name' => substr($lineupName, 0, 120),
+                'formation' => '4-4-2', // Default
+                'is_active' => true,
+                'notes' => 'Automatisch erstellt für nächstes Spiel',
+            ]);
+        }
+
+        // 5. Redirect to Editor
+        return redirect()->route('lineups.edit', $lineup);
     }
+
+    // ────────────────────────────────────────────────────────
+    //  MATCH REDIRECT
+    // ────────────────────────────────────────────────────────
+
+    public function match(Request $request, GameMatch $match): RedirectResponse
+    {
+        /** @var Club $club */
+        $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
+
+        // Fallback
+        if (!$club) {
+            $club = $this->resolveClub($request);
+        }
+
+        // Verify match belongs to club
+        if ($match->home_club_id !== $club->id && $match->away_club_id !== $club->id) {
+            abort(403, 'Dieses Match gehoert nicht zu deinem Verein.');
+        }
+
+        // Find existing lineup
+        $lineup = $club->lineups()->where('match_id', $match->id)->first();
+
+        // Create if missing
+        if (!$lineup) {
+            $lineupName = 'Spieltag ' . $match->matchday . ' vs ' .
+                ($match->home_club_id === $club->id ? $match->awayClub->name : $match->homeClub->name);
+
+            $lineup = $club->lineups()->create([
+                'match_id' => $match->id,
+                'name' => substr($lineupName, 0, 120),
+                'formation' => '4-4-2',
+                'is_active' => true,
+                'notes' => 'Automatisch erstellt fuer Match #' . $match->id,
+            ]);
+        }
+
+        return redirect()->route('lineups.edit', $lineup);
+    }
+
 
     // ────────────────────────────────────────────────────────
     //  CREATE
@@ -97,14 +179,8 @@ class LineupsController extends Controller
         Request $request,
         Lineup $lineup,
         TeamStrengthCalculator $calculator
-    ): View {
-        $this->authorizeLineup($request, $lineup);
-        $lineup->load(['club.user', 'players']);
-
-        return view('lineups.show', [
-            'lineup' => $lineup,
-            'metrics' => $calculator->calculate($lineup),
-        ]);
+    ): \Illuminate\Http\RedirectResponse {
+        return redirect()->route('lineups.edit', $lineup);
     }
 
     // ────────────────────────────────────────────────────────
@@ -118,7 +194,7 @@ class LineupsController extends Controller
         TeamStrengthCalculator $calculator
     ): View {
         $this->authorizeLineup($request, $lineup);
-        $lineup->load(['club.user', 'players']);
+        $lineup->load(['club.user', 'players', 'match.homeClub', 'match.awayClub']);
 
         $club = $lineup->club;
         $clubPlayers = $club->players()
@@ -173,7 +249,7 @@ class LineupsController extends Controller
                     ->orWhere('away_club_id', $club->id);
             })
             ->whereIn('status', ['scheduled', 'live'])
-            ->with(['homeClub:id,name,short_name', 'awayClub:id,name,short_name'])
+            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path'])
             ->orderBy('kickoff_at')
             ->get();
 
@@ -358,7 +434,7 @@ class LineupsController extends Controller
         $this->syncPlayersFromRequest($lineup, $planner, $validated, $request);
 
         return redirect()
-            ->route('lineups.show', $lineup)
+            ->route('lineups.edit', $lineup)
             ->with('status', 'Aufstellung aktualisiert.');
     }
 
@@ -407,14 +483,26 @@ class LineupsController extends Controller
     private function resolveClub(Request $request): Club
     {
         $user = $request->user();
+        $startClubId = (int) $request->query('club');
 
         if ($user->isAdmin()) {
+            if ($startClubId > 0) {
+                $club = Club::find($startClubId);
+                if ($club)
+                    return $club;
+            }
             $club = Club::first();
             abort_if(!$club, 404, 'Kein Verein vorhanden.');
             return $club;
         }
 
-        $club = Club::where('user_id', $user->id)->first();
+        if ($startClubId > 0) {
+            $club = $user->clubs()->whereKey($startClubId)->first();
+            if ($club)
+                return $club;
+        }
+
+        $club = $user->clubs()->first();
         abort_if(!$club, 403, 'Du verwaltest keinen Verein.');
 
         return $club;

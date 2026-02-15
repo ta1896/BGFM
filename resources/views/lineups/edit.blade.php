@@ -51,54 +51,185 @@
 @endphp
 
 <x-app-layout>
-    <x-slot name="header">
-        <div class="sim-card p-5 sm:p-6">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <p class="sim-section-title">Aufstellung</p>
-                    <h1 class="mt-1 text-2xl font-bold text-white">{{ old('name', $lineup->name) }}</h1>
-                    <p class="mt-1 flex items-center gap-2 text-sm text-slate-300">
-                        <img class="sim-avatar sim-avatar-xs" src="{{ $lineup->club->logo_url }}" alt="{{ $lineup->club->name }}">
-                        <span>{{ $lineup->club->name }} | Vorlage bearbeiten</span>
-                    </p>
+    {{-- 
+        Custom Header for Match Lineup 
+        We use an inline header instead of <x-slot name="header"> to avoid the sticky behavior 
+        and provide a custom, rich match presentation.
+    --}}
+    
+    @php
+        $match = $lineup->match;
+        $homeClub = $match?->homeClub;
+        $awayClub = $match?->awayClub;
+        $weather = $match?->weather ?? 'clear';
+        
+        // Mock weather data for display based on basic weather string
+        $weatherIcons = [
+            'clear' => '<svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>',
+            'cloudy' => '<svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"></path></svg>',
+            'rainy' => '<svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"></path><path d="M5 18a1 1 0 001 1h1a1 1 0 100-2H6a1 1 0 00-1 1zm4 0a1 1 0 001 1h1a1 1 0 100-2h-1a1 1 0 00-1 1zm4 0a1 1 0 001 1h1a1 1 0 100-2h-1a1 1 0 00-1 1z"></path></svg>',
+            'windy' => '<svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"></path></svg>',
+        ];
+
+        $weatherLabels = [
+            'clear' => 'Sonnig / Klar',
+            'cloudy' => 'Bewoelkt',
+            'rainy' => 'Regen',
+            'windy' => 'Windig',
+        ];
+
+        $temp = match($match?->kickoff_at?->format('F')) {
+            'December', 'January', 'February' => mt_rand(-2, 5),
+            'March', 'November' => mt_rand(4, 10),
+            'April', 'October' => mt_rand(8, 15),
+            'May', 'September' => mt_rand(14, 20),
+            'June', 'July', 'August' => mt_rand(20, 32),
+            default => 12,
+        };
+        
+        // Use seed to make it consistent per match view if possible, or just rand for now
+        $wind = mt_rand(5, 35);
+        $rain = $weather === 'rainy' ? mt_rand(2, 12) : 0;
+        
+        $matchDate = $match?->kickoff_at?->format('d.m.Y') ?? now()->format('d.m.Y');
+        $matchTime = $match?->kickoff_at?->format('H:i') ?? '15:30';
+        $matchType = $match?->type === 'friendly' ? 'Freundschaft' : 'Liga';
+    @endphp
+
+    {{-- Override sticky header style for this page --}}
+    <style>
+        /* Force inherit position to disable sticky behavior from layout */
+        header.sticky {
+            position: relative !important;
+            top: auto !important;
+            z-index: 10 !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            border-bottom: none !important;
+        }
+        /* Hide the default header content if it tries to render empty slot */
+        header.sticky > div {
+            display: none !important;
+        }
+    </style>
+
+    <div class="mb-8 flex flex-col items-center">
+        {{-- Breadcrumb / Meta --}}
+        <div class="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">
+            <span class="text-cyan-400">Aufstellung</span>
+            <span>•</span>
+            <span>{{ $matchDate }}</span>
+            <span>•</span>
+            <span>{{ $matchTime }}</span>
+            <span>•</span>
+            <span>{{ $matchType }}</span>
+        </div>
+
+        {{-- Match Card --}}
+        <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-8 w-full">
+            {{-- Home Team --}}
+            <div class="flex items-center gap-6 text-right flex-1 justify-end">
+                <div class="flex flex-col items-end">
+                    <h1 class="text-3xl md:text-4xl font-black text-white leading-none tracking-tight">
+                        {{ $homeClub?->name ?? 'Heim' }}
+                    </h1>
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">Heim</span>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    @if ($clubMatches->isNotEmpty())
-                        @php
-                            $firstMatch = $clubMatches->first();
-                            $firstMatchUrl = route('matches.lineup.edit', [
-                                'match' => $firstMatch->id,
-                                'club' => $lineup->club_id,
-                                'lineup' => $lineup->id,
-                            ]);
-                        @endphp
-                        <div class="flex items-end gap-2">
-                            <div>
-                                <label class="sim-label mb-1" for="lineupMatchSelect">Match</label>
-                                <select id="lineupMatchSelect" class="sim-select w-72">
-                                    @foreach ($clubMatches as $clubMatch)
-                                        @php
-                                            $isHome = (int) $clubMatch->home_club_id === (int) $lineup->club_id;
-                                            $opponent = $isHome ? $clubMatch->awayClub : $clubMatch->homeClub;
-                                            $statusLabel = $clubMatch->status === 'live' ? 'LIVE' : strtoupper($clubMatch->status);
-                                        @endphp
-                                        <option
-                                            value="{{ route('matches.lineup.edit', ['match' => $clubMatch->id, 'club' => $lineup->club_id, 'lineup' => $lineup->id]) }}"
-                                        >
-                                            {{ $clubMatch->kickoff_at?->format('d.m H:i') }} | vs {{ $opponent?->name ?? 'Unbekannt' }} | {{ $statusLabel }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <a id="openMatchLineupLink" href="{{ $firstMatchUrl }}" class="sim-btn-primary">Fuer Match aufstellen</a>
-                        </div>
-                    @endif
-                    <a href="{{ route('lineups.show', $lineup) }}" class="sim-btn-muted">Details</a>
-                    <a href="{{ route('lineups.index', ['manage' => 1]) }}" class="sim-btn-muted">Alle Aufstellungen</a>
+                <div class="h-20 w-20 md:h-24 md:w-24 rounded-full bg-slate-800 border-2 border-slate-700 p-3 shadow-2xl shadow-black/30">
+                    <img src="{{ $homeClub?->logo_url }}" class="w-full h-full object-contain drop-shadow-md" alt="{{ $homeClub?->name }}">
+                </div>
+            </div>
+
+            {{-- VS Badge --}}
+            <div class="flex flex-col items-center px-4">
+                <div class="h-12 w-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600 flex items-center justify-center shadow-lg transform -skew-x-12 relative z-10">
+                     <span class="text-base font-black text-slate-200 transform skew-x-12">VS</span>
+                </div>
+            </div>
+
+            {{-- Away Team --}}
+            <div class="flex items-center gap-6 text-left flex-1 justify-start">
+                <div class="h-20 w-20 md:h-24 md:w-24 rounded-full bg-slate-800 border-2 border-slate-700 p-3 shadow-2xl shadow-black/30">
+                     <img src="{{ $awayClub?->logo_url }}" class="w-full h-full object-contain drop-shadow-md" alt="{{ $awayClub?->name }}">
+                </div>
+                <div class="flex flex-col items-start">
+                    <h1 class="text-3xl md:text-4xl font-black text-white leading-none tracking-tight">
+                        {{ $awayClub?->name ?? 'Gast' }}
+                    </h1>
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">Auswaerts</span>
                 </div>
             </div>
         </div>
-    </x-slot>
+
+        {{-- Weather Pill --}}
+        <div class="inline-flex items-center gap-4 px-6 py-2.5 rounded-full border border-slate-700/50 bg-slate-900/60 backdrop-blur-md shadow-lg mb-6">
+            {!! $weatherIcons[$weather] ?? $weatherIcons['clear'] !!}
+            <div class="flex items-center gap-3 text-xs font-bold text-slate-300">
+                <span>{{ $weatherLabels[$weather] ?? 'Unbekannt' }}</span>
+                <span class="text-slate-600">•</span>
+                <span>{{ $temp }}°C</span>
+                <span class="text-slate-600">•</span>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>{{ $wind }} km/h</span>
+                </div>
+                <span class="text-slate-600">•</span>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    <span>{{ $rain }} mm</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Match Selector --}}
+        @if ($clubMatches->count() > 1)
+            <div class="relative group" x-data="{ open: false }">
+                <button 
+                    @click="open = !open" 
+                    @click.away="open = false"
+                    type="button" 
+                    class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-cyan-400 transition-colors"
+                >
+                    <span>Anderes Match waehlen</span>
+                    <svg class="w-3 h-3 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <div 
+                    x-show="open" 
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                    x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
+                    x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
+                    class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-xl bg-slate-900 border border-slate-700 shadow-xl overflow-hidden z-50 py-1"
+                    style="display: none;"
+                >
+                    @foreach ($clubMatches as $clubMatch)
+                        @php
+                            $isCurrent = $clubMatch->id === $match->id;
+                            $isHome = (int) $clubMatch->home_club_id === (int) $lineup->club_id;
+                            $opponent = $isHome ? $clubMatch->awayClub : $clubMatch->homeClub;
+                            // Update URL to use the new lineup match redirector
+                            $url = route('lineups.match', ['match' => $clubMatch->id]);
+                        @endphp
+                        <a href="{{ $url }}" class="block px-4 py-3 hover:bg-slate-800 transition-colors {{ $isCurrent ? 'bg-slate-800/50' : '' }}">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] uppercase font-bold text-slate-500">{{ $clubMatch->kickoff_at?->format('d.m.Y H:i') }}</span>
+                                @if($isCurrent)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
+                                @endif
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <img src="{{ $opponent?->logo_url }}" class="w-5 h-5 object-contain opacity-80">
+                                <span class="text-xs font-bold text-slate-200">{{ $opponent?->name }}</span>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
 
     <form id="lineupEditForm" method="POST" action="{{ route('lineups.update', $lineup) }}" class="space-y-4">
         @csrf

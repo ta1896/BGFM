@@ -11,6 +11,7 @@ use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -35,7 +36,16 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        $activeClub = $clubs->firstWhere('id', (int) $request->query('club')) ?? $clubs->first();
+        // Use standard activeClub from container
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+
+        // Fallback for Dashboard specifically if middleware somehow failed or session is empty
+        if (!$activeClub) {
+            $activeClub = $clubs->first();
+        }
+
+        // Reload relationships needed for dashboard if they aren't already loaded
+        // (Middleware might have loaded basic model, but Dashboard needs more)
         $todayMatchesCount = GameMatch::query()
             ->whereDate('kickoff_at', now()->toDateString())
             ->count();

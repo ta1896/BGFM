@@ -36,6 +36,7 @@ class ClubController extends Controller
     {
         return view('admin.clubs.create', [
             'users' => User::orderBy('name')->get(),
+            'clubs' => Club::orderBy('name')->get(),
         ]);
     }
 
@@ -102,6 +103,7 @@ class ClubController extends Controller
         return view('admin.clubs.edit', [
             'club' => $club,
             'users' => User::orderBy('name')->get(),
+            'clubs' => Club::where('id', '!=', $club->id)->orderBy('name')->get(),
         ]);
     }
 
@@ -176,8 +178,8 @@ class ClubController extends Controller
         $viceCaptainRules = ['nullable', 'different:captain_player_id'];
 
         if ($club) {
-            $captainRules[] = Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id));
-            $viceCaptainRules[] = Rule::exists('players', 'id')->where(fn ($query) => $query->where('club_id', $club->id));
+            $captainRules[] = Rule::exists('players', 'id')->where(fn($query) => $query->where('club_id', $club->id));
+            $viceCaptainRules[] = Rule::exists('players', 'id')->where(fn($query) => $query->where('club_id', $club->id));
         } else {
             $captainRules[] = Rule::in([null, '']);
             $viceCaptainRules[] = Rule::in([null, '']);
@@ -190,7 +192,7 @@ class ClubController extends Controller
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'country' => ['required', 'string', 'max:80'],
             'league' => ['required', 'string', 'max:120'],
-            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:'.date('Y')],
+            'founded_year' => ['nullable', 'integer', 'min:1850', 'max:' . date('Y')],
             'budget' => ['required', 'numeric', 'min:0'],
             'coins' => ['nullable', 'integer', 'min:0'],
             'wage_budget' => ['required', 'numeric', 'min:0'],
@@ -201,6 +203,8 @@ class ClubController extends Controller
             'vice_captain_player_id' => $viceCaptainRules,
             'is_cpu' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'rival_id_1' => ['nullable', 'exists:clubs,id', 'different:rival_id_2'],
+            'rival_id_2' => ['nullable', 'exists:clubs,id', 'different:rival_id_1'],
         ]);
 
         $validated['is_cpu'] = $request->boolean('is_cpu');

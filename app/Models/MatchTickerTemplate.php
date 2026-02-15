@@ -13,6 +13,8 @@ class MatchTickerTemplate extends Model
         'event_type',
         'text',
         'priority',
+        'mood',
+        'commentator_style',
         'locale',
     ];
 
@@ -25,5 +27,21 @@ class MatchTickerTemplate extends Model
         'injury' => 'Verletzung',
         'substitution' => 'Auswechslung',
         'phase' => 'Spielphase (Start/Ende)',
+    ];
+
+    public const MOODS = [
+        'neutral' => 'Neutral (Standard)',
+        'excited' => 'Aufgeregt / Emotional',
+        'aggressive' => 'Aggressiv / Derby',
+        'humorous' => 'Humorvoll / Locker',
+        'frustrated' => 'Frustriert (Rückstand)',
+        'crunch_time' => 'Crunch Time (Spannung)',
+    ];
+
+    public const STYLES = [
+        'sachlich' => 'Sachlich & Informativ',
+        'fanatiker' => 'Fanatisch & Subjektiv',
+        'taktik' => 'Analytisch & Taktisch',
+        'poetisch' => 'Blumig & Poetisch',
     ];
 }

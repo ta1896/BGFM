@@ -123,17 +123,17 @@ class SubstitutionManager
     {
         $planned = MatchPlannedSubstitution::where('match_id', $match->id)
             ->where('planned_minute', '<=', $minute)
-            ->where('is_executed', false)
+            ->where('status', 'pending')
             ->get();
 
         foreach ($planned as $sub) {
             if ($this->isScoreConditionSatisfied($match, $sub->club_id, $sub->score_condition)) {
                 try {
                     $this->makeSubstitution($match, $sub->club_id, $sub->player_out_id, $sub->player_in_id, $minute, $sub->target_slot);
-                    $sub->update(['is_executed' => true, 'executed_at' => now(), 'actual_minute' => $minute]);
+                    $sub->update(['status' => 'executed', 'executed_minute' => $minute]);
                 } catch (\Exception $e) {
                     // Log or handle failed planned sub
-                    $sub->update(['is_executed' => true, 'metadata' => ['error' => $e->getMessage()]]);
+                    $sub->update(['status' => 'skipped', 'metadata' => ['error' => $e->getMessage()]]);
                 }
             }
         }

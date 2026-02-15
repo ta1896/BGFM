@@ -46,10 +46,13 @@ class CpuClubDecisionService
         $formation = $this->formation($starters);
         $style = $this->style($starters, $opponent->players);
 
+        $lineupName = 'CPU Matchday ' . ($match->matchday ?? '-') . ' (Match ' . $match->id . ')';
+        \Illuminate\Support\Facades\Log::info("CpuClubDecision: Creating lineup for Match {$match->id}, Club {$club->id} ({$club->name}), Name: {$lineupName}");
+
         $lineup = $club->lineups()->updateOrCreate(
             ['match_id' => $match->id],
             [
-                'name' => 'CPU Matchday '.($match->matchday ?? '-'),
+                'name' => $lineupName,
                 'formation' => $formation,
                 'tactical_style' => $style,
                 'is_active' => true,
@@ -64,7 +67,7 @@ class CpuClubDecisionService
 
         $captainId = $starters->sortByDesc('overall')->first()?->id;
         $setPieceId = $starters
-            ->sortByDesc(fn (Player $player) => $player->passing + $player->shooting)
+            ->sortByDesc(fn(Player $player) => $player->passing + $player->shooting)
             ->first()?->id;
 
         $pivot = $starters->values()->mapWithKeys(function (Player $player, int $index) use ($captainId, $setPieceId) {
@@ -86,11 +89,11 @@ class CpuClubDecisionService
     private function pickStarters(Collection $players, int $limit): Collection
     {
         $goalkeepers = $players
-            ->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
+            ->filter(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
             ->sortByDesc('overall')
             ->values();
         $others = $players
-            ->reject(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
+            ->reject(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'GK')
             ->sortByDesc(function (Player $player) {
                 return ($player->overall * 2) + $player->stamina + $player->morale;
             })
@@ -117,9 +120,9 @@ class CpuClubDecisionService
 
     private function formation(Collection $players): string
     {
-        $def = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'DEF')->count();
-        $mid = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'MID')->count();
-        $fwd = $players->filter(fn (Player $player) => $this->positionService->groupFromPosition($player->position) === 'FWD')->count();
+        $def = $players->filter(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'DEF')->count();
+        $mid = $players->filter(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'MID')->count();
+        $fwd = $players->filter(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'FWD')->count();
 
         if ($def >= 4 && $mid >= 4) {
             return '4-4-2';

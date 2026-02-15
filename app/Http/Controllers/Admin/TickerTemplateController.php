@@ -17,20 +17,32 @@ class TickerTemplateController extends Controller
             $query->whereIn('event_type', $types);
         }
 
+        if ($request->filled('mood') && $request->mood !== '') {
+            $query->where('mood', $request->mood);
+        }
+
+        if ($request->filled('commentator_style') && $request->commentator_style !== '') {
+            $query->where('commentator_style', $request->commentator_style);
+        }
+
         $templates = $query->orderBy('event_type')
             ->orderBy('created_at', 'desc')
             ->paginate(50)
             ->withQueryString();
 
         $eventTypes = MatchTickerTemplate::EVENT_TYPES;
+        $moods = MatchTickerTemplate::MOODS;
+        $styles = MatchTickerTemplate::STYLES;
 
-        return view('admin.ticker-templates.index', compact('templates', 'eventTypes'));
+        return view('admin.ticker-templates.index', compact('templates', 'eventTypes', 'moods', 'styles'));
     }
 
     public function create()
     {
         $eventTypes = MatchTickerTemplate::EVENT_TYPES;
-        return view('admin.ticker-templates.create', compact('eventTypes'));
+        $moods = MatchTickerTemplate::MOODS;
+        $styles = MatchTickerTemplate::STYLES;
+        return view('admin.ticker-templates.create', compact('eventTypes', 'moods', 'styles'));
     }
 
     public function store(Request $request)
@@ -39,6 +51,8 @@ class TickerTemplateController extends Controller
             'event_type' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
             'text' => 'required|string',
             'priority' => 'required|string|in:low,normal,high',
+            'mood' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
+            'commentator_style' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::STYLES)),
             'locale' => 'required|string|size:2',
         ]);
 
@@ -52,7 +66,9 @@ class TickerTemplateController extends Controller
     public function edit(MatchTickerTemplate $tickerTemplate)
     {
         $eventTypes = MatchTickerTemplate::EVENT_TYPES;
-        return view('admin.ticker-templates.edit', compact('tickerTemplate', 'eventTypes'));
+        $moods = MatchTickerTemplate::MOODS;
+        $styles = MatchTickerTemplate::STYLES;
+        return view('admin.ticker-templates.edit', compact('tickerTemplate', 'eventTypes', 'moods', 'styles'));
     }
 
     public function update(Request $request, MatchTickerTemplate $tickerTemplate)
@@ -61,6 +77,8 @@ class TickerTemplateController extends Controller
             'event_type' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
             'text' => 'required|string',
             'priority' => 'required|string|in:low,normal,high',
+            'mood' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
+            'commentator_style' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::STYLES)),
             'locale' => 'required|string|size:2',
         ]);
 

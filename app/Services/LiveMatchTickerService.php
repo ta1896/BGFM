@@ -11,6 +11,7 @@ use App\Models\MatchLivePlayerState;
 use App\Models\MatchLiveStateTransition;
 use App\Models\MatchLiveTeamState;
 use App\Models\MatchPlannedSubstitution;
+use App\Models\MatchTickerTemplate;
 use App\Models\Player;
 use App\Services\MatchEngine\ActionEngine;
 use App\Services\MatchEngine\LiveStateRepository;
@@ -105,6 +106,11 @@ class LiveMatchTickerService
 
             $this->initializeLiveState($lockedMatch->fresh(['homeClub', 'awayClub']));
 
+            // Assign a commentator style for this match (persisted in cache for duration)
+            $styles = array_keys(\App\Models\MatchTickerTemplate::STYLES);
+            $selectedStyle = $styles[array_rand($styles)];
+            \Illuminate\Support\Facades\Cache::put("match_commentator_style_{$lockedMatch->id}", $selectedStyle, 10800); // 3 hours
+
             $this->recordStateTransition(
                 $lockedMatch,
                 0,
@@ -113,7 +119,7 @@ class LiveMatchTickerService
                 'match_start',
                 null,
                 'pre_match',
-                ['status' => 'live']
+                ['status' => 'live', 'commentator_style' => $selectedStyle]
             );
         });
 
@@ -216,7 +222,11 @@ class LiveMatchTickerService
                 null,
                 'tactical_change',
                 $style,
-                ['style' => $style]
+                ['style' => $style],
+                null, // x
+                null, // y
+                0.0,  // xg
+                0     // momentum
             );
 
             $this->recordStateTransition(
@@ -230,6 +240,41 @@ class LiveMatchTickerService
                 ['style' => $style]
             );
         });
+
+        return $this->loadState($match);
+    }
+
+    public function handleManagerShout(GameMatch $match, int $clubId, string $shout): GameMatch
+    {
+        if ($match->status !== 'live' || $match->live_paused) {
+            return $this->loadState($match);
+        }
+
+        if (!in_array($clubId, [(int) $match->home_club_id, (int) $match->away_club_id], true)) {
+            return $this->loadState($match);
+        }
+
+        // Cache the shout for 5 minutes (or until overwritten)
+        // ActionEngine reads this cache key
+        \Illuminate\Support\Facades\Cache::put("match_shout_{$match->id}_{$clubId}", $shout, 300);
+
+        // Record an action for the ticker
+        $this->recordAction(
+            $match,
+            max((int) $match->live_minute, 1),
+            $this->randomInt(0, 59),
+            0,
+            $clubId,
+            null,
+            null,
+            'manager_shout',
+            $shout,
+            ['shout' => $shout],
+            null, // x
+            null, // y
+            0.0,  // xg
+            10    // momentum
+        );
 
         return $this->loadState($match);
     }
@@ -482,7 +527,11 @@ class LiveMatchTickerService
                 'planned_minute' => $minute,
                 'score_condition' => $scoreCondition,
                 'target_slot' => $resolvedTargetSlot,
-            ]
+            ],
+            null, // x
+            null, // y
+            0.0,  // xg
+            0     // momentum
         );
 
         $this->recordStateTransition(
@@ -743,7 +792,11 @@ class LiveMatchTickerService
                     'player_in_id' => $playerIn->id,
                     'player_out_id' => $playerOut->id,
                     'target_slot' => $resolvedTargetSlot,
-                ]
+                ],
+                50, // x (Midfield)
+                0,  // y (Side)
+                0.0, // xg
+                5    // momentum
             );
 
             $this->recordStateTransition(
@@ -859,7 +912,9 @@ class LiveMatchTickerService
         $homeStrength = $this->teamStrengthFromStates($homeStates, true, (string) $homeStyle);
         $awayStrength = $this->teamStrengthFromStates($awayStates, false, (string) $awayStyle);
 
-        $this->actionEngine->simulateActionSequence($match, $minute, 1, (int) $match->home_club_id, (int) $match->away_club_id, $homeStrength, $awayStrength);
+        $commentatorStyle = \Illuminate\Support\Facades\Cache::get("match_commentator_style_{$match->id}", 'sachlich');
+
+        $this->actionEngine->simulateActionSequence($match, $minute, 1, (int) $match->home_club_id, (int) $match->away_club_id, $homeStrength, $awayStrength, $commentatorStyle);
 
         $this->stateRepository->persistMinuteSnapshot($match, $minute);
     }
@@ -1695,7 +1750,11 @@ class LiveMatchTickerService
         ?int $opponentPlayerId,
         string $actionType,
         ?string $outcome,
-        ?array $metadata
+        ?array $metadata,
+        ?int $x_coord = null,
+        ?int $y_coord = null,
+        ?float $xg = null,
+        ?int $momentum_value = null
     ): void {
         MatchLiveAction::query()->create([
             'match_id' => $match->id,
@@ -1708,6 +1767,11 @@ class LiveMatchTickerService
             'action_type' => $actionType,
             'outcome' => $outcome,
             'metadata' => $metadata,
+            'narrative' => null, // Manual actions don't generate narrative here usually
+            'x_coord' => $x_coord,
+            'y_coord' => $y_coord,
+            'xg' => $xg,
+            'momentum_value' => $momentum_value,
         ]);
     }
 

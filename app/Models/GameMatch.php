@@ -153,4 +153,9 @@ class GameMatch extends Model
     {
         return $this->hasOne(FriendlyMatchRequest::class, 'accepted_match_id');
     }
+
+    public function lineups(): HasMany
+    {
+        return $this->hasMany(Lineup::class, 'match_id');
+    }
 }

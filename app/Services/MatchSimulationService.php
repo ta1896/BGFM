@@ -56,12 +56,14 @@ class MatchSimulationService
 
         $homeEvents = array_merge(
             $this->buildGoalEvents($match, $match->home_club_id, $homeGoals, $homePlayers),
-            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers)
+            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers),
+            $this->buildGenericEvents($match, $match->home_club_id, $homePlayers)
         );
 
         $awayEvents = array_merge(
             $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers),
-            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers)
+            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers),
+            $this->buildGenericEvents($match, $match->away_club_id, $awayPlayers)
         );
 
         $events = array_merge($homeEvents, $awayEvents);
@@ -248,6 +250,40 @@ class MatchSimulationService
                 'player_id' => $player->id,
                 'event_type' => 'chance',
                 'metadata' => ['quality' => mt_rand(1, 100) <= 35 ? 'big' : 'normal'],
+            ];
+        }
+
+        return $events;
+    }
+
+    private function buildGenericEvents(GameMatch $match, int $clubId, Collection $squad): array
+    {
+        $events = [];
+        $count = mt_rand(4, 7); // Scatters 4-7 generic events per team
+
+        for ($i = 0; $i < $count; $i++) {
+            $typeRoll = mt_rand(1, 100);
+            $type = 'midfield_possession';
+
+            if ($typeRoll <= 50)
+                $type = 'midfield_possession';
+            elseif ($typeRoll <= 75)
+                $type = 'turnover';
+            elseif ($typeRoll <= 90)
+                $type = 'throw_in';
+            else
+                $type = 'clearance';
+
+            /** @var Player $player */
+            $player = $this->randomCollectionItem($squad);
+
+            $events[] = [
+                'minute' => mt_rand(1, 90),
+                'second' => mt_rand(0, 59),
+                'club_id' => $clubId,
+                'player_id' => $player->id,
+                'event_type' => $type,
+                'metadata' => null,
             ];
         }
 

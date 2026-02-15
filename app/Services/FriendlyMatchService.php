@@ -23,39 +23,42 @@ class FriendlyMatchService
         ?string $message = null
     ): array {
         return DB::transaction(function () use ($challenger, $challenged, $actor, $kickoffAt, $message): array {
-            $autoAccept = $challenged->is_cpu || !$challenged->user_id;
+            $isCpu = $challenged->is_cpu || !$challenged->user_id;
 
+            // Create the request
             $request = FriendlyMatchRequest::create([
                 'challenger_club_id' => $challenger->id,
                 'challenged_club_id' => $challenged->id,
                 'requested_by_user_id' => $actor->id,
                 'kickoff_at' => $kickoffAt,
-                'stadium_club_id' => $challenger->id,
-                'status' => $autoAccept ? 'auto_accepted' : 'pending',
+                'stadium_club_id' => $challenger->id, // Stadium is always Challenger's home
+                'status' => $isCpu ? 'auto_accepted' : 'pending',
                 'message' => $message,
-                'responded_at' => $autoAccept ? now() : null,
+                'responded_at' => $isCpu ? now() : null,
             ]);
 
             $match = null;
-            if ($autoAccept) {
-                $match = $this->createFriendlyMatch($challenger, $challenged, $kickoffAt);
+            if ($isCpu) {
+                // Auto-create match for CPU teams
+                $match = $this->createMatchFromRequest($request);
                 $request->update(['accepted_match_id' => $match->id]);
             } else {
+                // Notify human opponent
                 if ($challenged->user_id) {
                     GameNotification::create([
                         'user_id' => $challenged->user_id,
                         'club_id' => $challenged->id,
                         'type' => 'friendly_request',
                         'title' => 'Freundschaftsspiel-Anfrage',
-                        'message' => $challenger->name.' moechte ein Freundschaftsspiel am '.$kickoffAt->format('d.m.Y H:i').' spielen.',
-                        'action_url' => '/friendlies?club='.$challenged->id,
+                        'message' => $challenger->name . ' möchte ein Testspiel am ' . $kickoffAt->format('d.m.Y H:i') . ' bestreiten.',
+                        'action_url' => '/friendlies?club=' . $challenged->id,
                     ]);
                 }
             }
 
             return [
-                'type' => $autoAccept ? 'auto_accepted' : 'pending',
-                'request' => $request->fresh(['challengerClub', 'challengedClub', 'acceptedMatch']),
+                'type' => $isCpu ? 'auto_accepted' : 'pending',
+                'request' => $request,
                 'match' => $match,
             ];
         });
@@ -63,42 +66,35 @@ class FriendlyMatchService
 
     public function acceptRequest(FriendlyMatchRequest $request, User $actor): GameMatch
     {
-        abort_if($request->status !== 'pending', 422, 'Diese Anfrage ist nicht mehr offen.');
+        if ($request->status !== 'pending') {
+            throw new \RuntimeException('Diese Anfrage ist nicht mehr offen.');
+        }
 
         return DB::transaction(function () use ($request, $actor): GameMatch {
-            $request->loadMissing(['challengerClub', 'challengedClub']);
+            // Load relationships if missing
+            if (!$request->relationLoaded('challengerClub') || !$request->relationLoaded('challengedClub')) {
+                $request->load(['challengerClub', 'challengedClub']);
+            }
 
-            $match = $this->createFriendlyMatch(
-                $request->challengerClub,
-                $request->challengedClub,
-                Carbon::parse($request->kickoff_at)
-            );
+            // Create the actual match
+            $match = $this->createMatchFromRequest($request);
 
+            // Update request status
             $request->update([
                 'status' => 'accepted',
                 'accepted_match_id' => $match->id,
                 'responded_at' => now(),
             ]);
 
+            // Notify Challenger
             if ($request->challengerClub->user_id) {
                 GameNotification::create([
                     'user_id' => $request->challengerClub->user_id,
                     'club_id' => $request->challengerClub->id,
                     'type' => 'friendly_request_accepted',
-                    'title' => 'Freundschaftsspiel bestaetigt',
-                    'message' => $request->challengedClub->name.' hat die Anfrage angenommen.',
-                    'action_url' => '/matches/'.$match->id,
-                ]);
-            }
-
-            if ($actor->id !== (int) $request->requested_by_user_id) {
-                GameNotification::create([
-                    'user_id' => $actor->id,
-                    'club_id' => $request->challenged_club_id,
-                    'type' => 'friendly_request_handled',
-                    'title' => 'Freundschaftsspiel bestaetigt',
-                    'message' => 'Die Anfrage wurde angenommen und terminiert.',
-                    'action_url' => '/matches/'.$match->id,
+                    'title' => 'Freundschaftsspiel bestätigt',
+                    'message' => $request->challengedClub->name . ' hat die Anfrage angenommen.',
+                    'action_url' => '/matches/' . $match->id,
                 ]);
             }
 
@@ -108,9 +104,9 @@ class FriendlyMatchService
 
     public function rejectRequest(FriendlyMatchRequest $request): void
     {
-        abort_if($request->status !== 'pending', 422, 'Diese Anfrage ist nicht mehr offen.');
-
-        $request->loadMissing(['challengerClub', 'challengedClub']);
+        if ($request->status !== 'pending') {
+            throw new \RuntimeException('Diese Anfrage ist nicht mehr offen.');
+        }
 
         DB::transaction(function () use ($request): void {
             $request->update([
@@ -118,21 +114,27 @@ class FriendlyMatchService
                 'responded_at' => now(),
             ]);
 
+            $request->loadMissing(['challengerClub', 'challengedClub']);
+
+            // Notify Challenger
             if ($request->challengerClub->user_id) {
                 GameNotification::create([
                     'user_id' => $request->challengerClub->user_id,
                     'club_id' => $request->challenger_club_id,
                     'type' => 'friendly_request_rejected',
                     'title' => 'Freundschaftsspiel abgelehnt',
-                    'message' => $request->challengedClub->name.' hat die Anfrage abgelehnt.',
-                    'action_url' => '/friendlies?club='.$request->challenger_club_id,
+                    'message' => $request->challengedClub->name . ' hat die Anfrage abgelehnt.',
+                    'action_url' => '/friendlies?club=' . $request->challenger_club_id,
                 ]);
             }
         });
     }
 
-    private function createFriendlyMatch(Club $homeClub, Club $awayClub, Carbon $kickoffAt): GameMatch
+    private function createMatchFromRequest(FriendlyMatchRequest $request): GameMatch
     {
+        // Challenger is HOME, Opponent is AWAY
+        // Stadium is Challenger's Stadium
+
         return GameMatch::create([
             'competition_season_id' => null,
             'season_id' => null,
@@ -141,11 +143,11 @@ class FriendlyMatchService
             'stage' => 'Friendly',
             'round_number' => null,
             'matchday' => null,
-            'kickoff_at' => $kickoffAt,
+            'kickoff_at' => $request->kickoff_at,
             'status' => 'scheduled',
-            'home_club_id' => $homeClub->id,
-            'away_club_id' => $awayClub->id,
-            'stadium_club_id' => $homeClub->id,
+            'home_club_id' => $request->challenger_club_id,
+            'away_club_id' => $request->challenged_club_id,
+            'stadium_club_id' => $request->challenger_club_id,
             'simulation_seed' => random_int(10000, 99999),
         ]);
     }

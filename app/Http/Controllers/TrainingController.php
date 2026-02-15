@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use App\Models\TrainingSession;
 use App\Services\TrainingService;
 use Illuminate\Http\RedirectResponse;
@@ -13,12 +14,24 @@ class TrainingController extends Controller
 {
     public function index(Request $request): View
     {
-        $clubs = $request->user()->clubs()->with('players')->orderBy('name')->get();
+        $clubs = $request->user()->isAdmin()
+            ? Club::with('players')->orderBy('name')->get()
+            : $request->user()->clubs()->with('players')->orderBy('name')->get();
+
         $clubIds = $clubs->pluck('id');
 
-        $selectedClubId = (int) $request->query('club');
+        // Use standard activeClub
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+
+        $selectedClubId = $activeClub?->id ?? (int) $request->query('club');
+
         if ($selectedClubId > 0 && !$clubIds->contains($selectedClubId)) {
-            $selectedClubId = 0;
+            // If admin, they might be viewing a club not in the list if the list logic was strict, 
+            // but we fetched all clubs for admin above, so this check is fine.
+            // For managers, if they try to view a club they don't own, fallback.
+            if (!$request->user()->isAdmin()) {
+                $selectedClubId = 0;
+            }
         }
 
         $normalizeDate = static function (?string $value): ?string {
