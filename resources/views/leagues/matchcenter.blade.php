@@ -644,7 +644,7 @@
 
                 const renderState = (state) => {
                     latestState = state;
-                    scoreEl.textContent = `${state.home_score} : ${state.away_score}`;
+                    scoreEl.textContent = `${state.home_score ?? '-'} : ${state.away_score ?? '-'}`;
                     statusEl.textContent = state.status === 'played' ? 'Beendet' : `Live ${state.live_minute}'`;
 
                     // Fallback for Legacy/Instant-Sim Matches (No Actions, Only Events)
