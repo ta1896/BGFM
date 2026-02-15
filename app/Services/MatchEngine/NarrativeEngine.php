@@ -34,12 +34,14 @@ class NarrativeEngine
             $query = MatchTickerTemplate::where('event_type', $eventType)
                 ->where('locale', $locale);
 
-            // If mood is not neutral, we try to fetch specific mood templates + neutral ones as fallback in the collection
+            // If mood is not neutral, we try to fetch specific mood templates + neutral ones. 
+            // If mood IS neutral (default), we fetch ALL templates to have variety, 
+            // because "neutral" in simulation context just means "no specific preference".
             if ($mood !== 'neutral') {
                 $query->whereIn('mood', [$mood, 'neutral']);
-            } else {
-                $query->where('mood', 'neutral');
             }
+            // If neutral, we don't add a mood where-clause, so we get all moods (excited, sad, etc.)
+            // The logic below (lines 51+) will prioritize if we had a preference, but for neutral we don't care.
 
             return $query->get();
         });
