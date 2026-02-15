@@ -68,7 +68,34 @@ class MatchSimulationService
             $this->buildGenericEvents($match, $match->away_club_id, $awayPlayers)
         );
 
-        $events = array_merge($homeEvents, $awayEvents);
+        $gamePhaseEvents = [
+            [
+                'minute' => 0,
+                'second' => 0,
+                'club_id' => $match->home_club_id,
+                'player_id' => null,
+                'event_type' => 'kickoff',
+                'metadata' => null,
+            ],
+            [
+                'minute' => 45,
+                'second' => 0,
+                'club_id' => null,
+                'player_id' => null,
+                'event_type' => 'half_time',
+                'metadata' => null,
+            ],
+            [
+                'minute' => 90,
+                'second' => 0,
+                'club_id' => null,
+                'player_id' => null,
+                'event_type' => 'full_time',
+                'metadata' => null,
+            ]
+        ];
+
+        $events = array_merge($homeEvents, $awayEvents, $gamePhaseEvents);
 
         usort($events, static fn(array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
 

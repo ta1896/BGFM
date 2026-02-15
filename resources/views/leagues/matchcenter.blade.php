@@ -691,7 +691,7 @@
                 const renderTimeline = (actions) => {
                     if (!timelineContainer) return;
                     timelineContainer.innerHTML = '';
-                    const relevant = actions.filter(a => ['goal', 'red_card', 'yellow_card', 'substitution', 'chance', 'save', 'shot'].includes(a.action_type));
+                    const relevant = actions.filter(a => ['goal', 'red_card', 'yellow_card', 'substitution', 'chance', 'save', 'shot', 'corner', 'free_kick', 'injury', 'offside'].includes(a.action_type));
 
                     const eventConfig = {
                         goal:         { icon: '⚽', color: 'bg-slate-900 border-2 border-green-500', label: 'Tor', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
@@ -701,6 +701,10 @@
                         chance:       { icon: '🎯', color: 'bg-emerald-600 border-none', label: 'Großchance', accent: '#34d399', headerBg: 'rgba(16,185,129,0.3)' },
                         save:         { icon: '🧤', color: 'bg-green-600 border-none', label: 'Parade', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
                         shot:         { icon: '💥', color: 'bg-slate-700 border-none', label: 'Schuss', accent: '#94a3b8', headerBg: 'rgba(100,116,139,0.3)' },
+                        corner:       { icon: '🚩', color: 'bg-teal-600 border-none', label: 'Eckball', accent: '#2dd4bf', headerBg: 'rgba(45,212,191,0.3)' },
+                        free_kick:    { icon: '🎯', color: 'bg-amber-600 border-none', label: 'Freistoß', accent: '#fbbf24', headerBg: 'rgba(251,191,36,0.3)' },
+                        offside:      { icon: '🚫', color: 'bg-indigo-500 border-none', label: 'Abseits', accent: '#818cf8', headerBg: 'rgba(129,140,248,0.3)' },
+                        injury:       { icon: '🚑', color: 'bg-rose-500 border-none', label: 'Verletzung', accent: '#fb7185', headerBg: 'rgba(251,113,133,0.3)' },
                     };
 
                     relevant.forEach(a => {

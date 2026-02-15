@@ -12,6 +12,11 @@ class TickerTemplateController extends Controller
     {
         $query = MatchTickerTemplate::query();
 
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('text', 'like', "%{$search}%");
+        }
+
         if ($request->filled('event_types')) {
             $types = (array) $request->event_types;
             $query->whereIn('event_type', $types);

@@ -23,6 +23,13 @@
         <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
             <div class="p-6 bg-slate-900/50">
                 <form action="{{ route('admin.ticker-templates.index') }}" method="GET" id="filter-form">
+                    <div class="mb-6">
+                        <label
+                            class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Suche</label>
+                        <input type="text" name="search" value="{{ request('search') }}"
+                            placeholder="Text durchsuchen..."
+                            class="w-full bg-slate-800 border-none rounded-lg text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 placeholder-slate-600">
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div>
                             <label
@@ -46,7 +53,8 @@
                                 <option value="">Alle Stile</option>
                                 @foreach($styles as $key => $label)
                                     <option value="{{ $key }}" {{ request('commentator_style') == $key ? 'selected' : '' }}>
-                                        {{ $label }}</option>
+                                        {{ $label }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -69,9 +77,8 @@
                                             <label class="cursor-pointer group">
                                                 <input type="checkbox" name="event_types[]" value="{{ $value }}" class="hidden"
                                                     onclick="this.form.submit()" {{ $selected ? 'checked' : '' }}>
-                                                <span
-                                                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-medium uppercase tracking-wide
-                                                            {{ $selected
+                                                <span class="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-medium uppercase tracking-wide
+                                                                                {{ $selected
                             ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20'
                             : 'bg-slate-900 border-slate-800 text-slate-400 group-hover:border-slate-600' }}">
                                                     @if($selected)
@@ -101,11 +108,11 @@
                         <tr class="hover:bg-slate-800/30 transition-colors group">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
-                                                                @if($template->event_type == 'goal') bg-emerald-500/10 text-emerald-400
-                                                                @elseif($template->event_type == 'yellow_card') bg-amber-500/10 text-amber-400
-                                                                @elseif($template->event_type == 'red_card') bg-rose-500/10 text-rose-400
-                                                                @else bg-slate-800 text-slate-400
-                                                                @endif">
+                                                                    @if($template->event_type == 'goal') bg-emerald-500/10 text-emerald-400
+                                                                    @elseif($template->event_type == 'yellow_card') bg-amber-500/10 text-amber-400
+                                                                    @elseif($template->event_type == 'red_card') bg-rose-500/10 text-rose-400
+                                                                    @else bg-slate-800 text-slate-400
+                                                                    @endif">
                                     {{ \App\Models\MatchTickerTemplate::EVENT_TYPES[$template->event_type] ?? $template->event_type }}
                                 </span>
                                 <div class="text-[9px] text-slate-500 mt-1 uppercase font-mono tracking-tighter">
