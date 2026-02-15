@@ -291,6 +291,7 @@ class MatchCenterController extends Controller
                         'player_name' => $event->player?->full_name,
                         'assister_name' => $event->assister?->full_name,
                         'club_short_name' => $event->club?->short_name ?: $event->club?->name,
+                        'narrative' => (string) ($event->narrative ?? ''),
                     ];
                 })
                 ->all(),
@@ -368,26 +369,29 @@ class MatchCenterController extends Controller
                 })
                 ->values()
                 ->all(),
-            'actions' => $match->liveActions
-                ->sortByDesc(fn($action) => ($action->minute * 100000) + ($action->second * 1000) + $action->sequence)
+            'actions' => ($match->liveActions->isNotEmpty() ? $match->liveActions : $match->events)
+                ->sortByDesc(fn($item) => ($item->minute * 100000) + ($item->second * 1000) + ($item->sequence ?? 0))
                 ->take(80)
                 ->values()
-                ->map(function ($action): array {
+                ->map(function ($item): array {
+                    // Normalize between MatchLiveAction and MatchEvent
+                    $isAction = isset($item->action_type);
+
                     return [
-                        'id' => (int) $action->id,
-                        'minute' => (int) $action->minute,
-                        'second' => (int) $action->second,
-                        'sequence' => (int) $action->sequence,
-                        'club_id' => $action->club_id !== null ? (int) $action->club_id : null,
-                        'club_short_name' => $action->club?->short_name ?: $action->club?->name,
-                        'player_id' => $action->player_id !== null ? (int) $action->player_id : null,
-                        'player_name' => $action->player?->full_name,
-                        'opponent_player_id' => $action->opponent_player_id !== null ? (int) $action->opponent_player_id : null,
-                        'opponent_player_name' => $action->opponentPlayer?->full_name,
-                        'action_type' => (string) $action->action_type,
-                        'outcome' => (string) ($action->outcome ?? ''),
-                        'narrative' => (string) ($action->narrative ?? ''),
-                        'metadata' => $action->metadata,
+                        'id' => (int) $item->id,
+                        'minute' => (int) $item->minute,
+                        'second' => (int) $item->second,
+                        'sequence' => (int) ($item->sequence ?? 0),
+                        'club_id' => $item->club_id !== null ? (int) $item->club_id : null,
+                        'club_short_name' => $item->club?->short_name ?: $item->club?->name,
+                        'player_id' => $item->player_id !== null ? (int) $item->player_id : null,
+                        'player_name' => $item->player?->full_name,
+                        'opponent_player_id' => $isAction && $item->opponent_player_id !== null ? (int) $item->opponent_player_id : null,
+                        'opponent_player_name' => $isAction ? $item->opponentPlayer?->full_name : null,
+                        'action_type' => (string) ($isAction ? $item->action_type : $item->event_type),
+                        'outcome' => (string) ($item->outcome ?? ''),
+                        'narrative' => (string) ($item->narrative ?? ''),
+                        'metadata' => $item->metadata,
                     ];
                 })
                 ->all(),

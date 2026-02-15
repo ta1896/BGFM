@@ -263,7 +263,7 @@
                         <!-- Score -->
                         <div class="text-center w-1/3">
                             <div class="text-7xl font-black text-white tracking-tighter sim-score-glow" id="live-score">
-                                {{ $match->home_score }} : {{ $match->away_score }}
+                                {{ $match->home_score ?? '-' }} : {{ $match->away_score ?? '-' }}
                             </div>
                             <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
                                             {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"

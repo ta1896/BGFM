@@ -7,6 +7,7 @@ use App\Models\CompetitionSeason;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\Player;
+use App\Services\MatchEngine\NarrativeEngine;
 use App\Services\MatchEngine\TacticalManager;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,8 @@ class MatchSimulationService
     public function __construct(
         private readonly StatisticsAggregationService $statisticsAggregationService,
         private readonly PlayerPositionService $positionService,
-        private readonly TacticalManager $tacticalManager
+        private readonly TacticalManager $tacticalManager,
+        private readonly NarrativeEngine $narrativeEngine
     ) {
     }
 
@@ -69,6 +71,31 @@ class MatchSimulationService
         $events = array_merge($homeEvents, $awayEvents);
 
         usort($events, static fn(array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
+
+        // Generate narrative texts for each event using ticker templates
+        $usedTemplateIds = [];
+        $allPlayers = $homePlayers->concat($awayPlayers)->keyBy('id');
+        foreach ($events as &$event) {
+            $player = $allPlayers->get($event['player_id']);
+            $clubId = $event['club_id'];
+            $isHome = $clubId === $match->home_club_id;
+            $clubName = $isHome
+                ? ($match->homeClub->short_name ?? $match->homeClub->name)
+                : ($match->awayClub->short_name ?? $match->awayClub->name);
+
+            $event['narrative'] = $this->narrativeEngine->generate(
+                $event['event_type'],
+                [
+                    'player' => $player?->full_name ?? 'Spieler',
+                    'club' => $clubName,
+                    'minute' => $event['minute'],
+                    'score' => ($homeGoals ?? 0) . ':' . ($awayGoals ?? 0),
+                ],
+                'de',
+                $usedTemplateIds
+            );
+        }
+        unset($event);
 
         DB::transaction(function () use ($match, $events, $homeGoals, $awayGoals, $homePlayers, $awayPlayers, $seed): void {
             $match->events()->delete();
