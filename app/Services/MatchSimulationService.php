@@ -74,6 +74,9 @@ class MatchSimulationService
             $match->events()->delete();
             $match->playerStats()->delete();
 
+            // Clean up any live simulation data if the match was in live mode
+            DB::table('match_live_actions')->where('match_id', $match->id)->delete();
+
             $match->update([
                 'status' => 'played',
                 'home_score' => $homeGoals,
@@ -82,6 +85,8 @@ class MatchSimulationService
                 'weather' => $this->weather(),
                 'played_at' => now(),
                 'simulation_seed' => $seed,
+                'live_minute' => null,
+                'live_paused' => false,
             ]);
 
             if ($events !== []) {
@@ -259,20 +264,29 @@ class MatchSimulationService
     private function buildGenericEvents(GameMatch $match, int $clubId, Collection $squad): array
     {
         $events = [];
-        $count = mt_rand(4, 7); // Scatters 4-7 generic events per team
+        $count = mt_rand(6, 12); // Scatters 6-12 generic events per team
 
         for ($i = 0; $i < $count; $i++) {
             $typeRoll = mt_rand(1, 100);
-            $type = 'midfield_possession';
 
-            if ($typeRoll <= 50)
-                $type = 'midfield_possession';
-            elseif ($typeRoll <= 75)
-                $type = 'turnover';
-            elseif ($typeRoll <= 90)
+            if ($typeRoll <= 20)
+                $type = 'foul';
+            elseif ($typeRoll <= 35)
+                $type = 'corner';
+            elseif ($typeRoll <= 48)
+                $type = 'shot';
+            elseif ($typeRoll <= 58)
+                $type = 'free_kick';
+            elseif ($typeRoll <= 66)
+                $type = 'offside';
+            elseif ($typeRoll <= 76)
                 $type = 'throw_in';
-            else
+            elseif ($typeRoll <= 86)
                 $type = 'clearance';
+            elseif ($typeRoll <= 93)
+                $type = 'turnover';
+            else
+                $type = 'midfield_possession';
 
             /** @var Player $player */
             $player = $this->randomCollectionItem($squad);
