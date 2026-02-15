@@ -691,30 +691,57 @@
                 const renderTimeline = (actions) => {
                     if (!timelineContainer) return;
                     timelineContainer.innerHTML = '';
-                    // Use actions for timeline to ensure we have goals/cards
-                    const relevant = actions.filter(a => ['goal', 'red_card', 'yellow_card', 'substitution'].includes(a.action_type));
+                    const relevant = actions.filter(a => ['goal', 'red_card', 'yellow_card', 'substitution', 'chance', 'save', 'shot'].includes(a.action_type));
+
+                    const eventConfig = {
+                        goal:         { icon: '⚽', color: 'bg-slate-900 border-2 border-green-500', label: 'Tor', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
+                        yellow_card:  { icon: '🟨', color: 'bg-yellow-500 border-none', label: 'Gelbe Karte', accent: '#facc15', headerBg: 'rgba(202,138,4,0.3)' },
+                        red_card:     { icon: '🟥', color: 'bg-red-600 border-none', label: 'Rote Karte', accent: '#f87171', headerBg: 'rgba(220,38,38,0.3)' },
+                        substitution: { icon: '🔄', color: 'bg-indigo-600 border-none', label: 'Wechsel', accent: '#818cf8', headerBg: 'rgba(79,70,229,0.3)' },
+                        chance:       { icon: '🎯', color: 'bg-emerald-600 border-none', label: 'Großchance', accent: '#34d399', headerBg: 'rgba(16,185,129,0.3)' },
+                        save:         { icon: '🧤', color: 'bg-green-600 border-none', label: 'Parade', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
+                        shot:         { icon: '💥', color: 'bg-slate-700 border-none', label: 'Schuss', accent: '#94a3b8', headerBg: 'rgba(100,116,139,0.3)' },
+                    };
 
                     relevant.forEach(a => {
                         const el = document.createElement('div');
-                        const leftPct = (a.minute / 95) * 100; // Cap at 95 minutes for visual?
+                        const leftPct = (a.minute / 95) * 100;
                         el.className = 'absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer';
                         el.style.left = `${Math.min(100, Math.max(0, leftPct))}%`;
 
-                        let icon = '⚽';
-                        let color = 'bg-slate-900 border-2 border-slate-500';
-                        if (a.action_type === 'goal') { icon = '⚽'; color = 'bg-slate-900 border-2 border-green-500'; }
-                        if (a.action_type === 'yellow_card') { icon = '🟨'; color = 'bg-yellow-500 border-none'; }
-                        if (a.action_type === 'red_card') { icon = '🟥'; color = 'bg-red-600 border-none'; }
-                        if (a.action_type === 'substitution') { icon = '🔄'; color = 'bg-indigo-600 border-none'; }
+                        const cfg = eventConfig[a.action_type] || eventConfig.goal;
+                        const isHome = Number(a.club_id) === homeClubId;
+                        const teamName = isHome ? '{{ $match->homeClub->short_name ?? $match->homeClub->name }}' : '{{ $match->awayClub->short_name ?? $match->awayClub->name }}';
+                        const teamLogo = isHome ? homeClubLogo : awayClubLogo;
+
+                        // Build narrative line
+                        let narrativeLine = '';
+                        if (a.narrative) {
+                            narrativeLine = `<div class="text-[10px] text-slate-400 mt-1 italic leading-snug">"${a.narrative}"</div>`;
+                        }
 
                         el.innerHTML = `
-                                                                                                                                                                        <div class="w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                                                                                                                                                           ${icon}
-                                                                                                                                                                        </div>
-                                                                                                                                                                        <div class="absolute bottom-full mb-1 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-20">
-                                                                                                                                                                            ${a.minute}' ${a.player_name || ''}
-                                                                                                                                                                        </div>
-                                                                                                                                                                `;
+                            <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                ${cfg.icon}
+                            </div>
+                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="min-width: 200px; left: 50%; transform: translateX(-50%) translateY(0);">
+                                <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
+                                    <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
+                                        <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
+                                        <span class="text-slate-500 font-mono">${a.minute}'</span>
+                                    </div>
+                                    <div class="p-3 flex items-start gap-2.5">
+                                        <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
+                                        <div class="flex-1 min-w-0">
+                                            ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
+                                            <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
+                                            ${narrativeLine}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="w-2 h-2 bg-slate-900 border-r border-b border-slate-700/50 rotate-45 mx-auto -mt-1"></div>
+                            </div>
+                        `;
                         timelineContainer.appendChild(el);
                     });
                 };
