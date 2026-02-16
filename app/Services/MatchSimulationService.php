@@ -110,11 +110,23 @@ class MatchSimulationService
                 ? ($match->homeClub->short_name ?? $match->homeClub->name)
                 : ($match->awayClub->short_name ?? $match->awayClub->name);
 
+            $opponentName = !$isHome
+                ? ($match->homeClub->short_name ?? $match->homeClub->name)
+                : ($match->awayClub->short_name ?? $match->awayClub->name);
+
+            $assisterName = null;
+            if (!empty($event['assister_player_id'])) {
+                $assister = $allPlayers->get($event['assister_player_id']);
+                $assisterName = $assister?->full_name;
+            }
+
             $event['narrative'] = $this->narrativeEngine->generate(
                 $event['event_type'],
                 [
                     'player' => $player?->full_name ?? 'Spieler',
                     'club' => $clubName,
+                    'opponent' => $opponentName,
+                    'assister' => $assisterName ?? 'Mitspieler',
                     'minute' => $event['minute'],
                     'score' => ($homeGoals ?? 0) . ':' . ($awayGoals ?? 0),
                 ],
@@ -253,6 +265,16 @@ class MatchSimulationService
                 $assist = $this->randomCollectionItem($assistCandidates);
             }
 
+            $goalType = mt_rand(1, 100);
+            if ($goalType <= 60)
+                $type = 'aus dem Spiel';
+            elseif ($goalType <= 85)
+                $type = 'Kopfball';
+            elseif ($goalType <= 95)
+                $type = 'Fernschuss';
+            else
+                $type = 'Abstauber';
+
             $events[] = [
                 'minute' => mt_rand(4, 90),
                 'second' => mt_rand(0, 59),
@@ -260,7 +282,11 @@ class MatchSimulationService
                 'player_id' => $scorer->id,
                 'assister_player_id' => $assist?->id,
                 'event_type' => 'goal',
-                'metadata' => ['xg_bucket' => mt_rand(8, 35) / 100],
+                'metadata' => [
+                    'xg_bucket' => mt_rand(8, 35) / 100,
+                    'goal_type' => $type,
+                    'assister_name' => $assist?->full_name,
+                ],
             ];
         }
 

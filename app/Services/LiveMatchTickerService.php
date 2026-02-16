@@ -1121,6 +1121,16 @@ class LiveMatchTickerService
             }
         }
 
+        $goalType = 'aus dem Spiel';
+        $attackerState = $this->teamStateFor($match, $attackerClubId);
+        if ($attackerState && $attackerState->last_set_piece_type === 'corner') {
+            $goalType = 'Kopfball';
+        } elseif ($xg > 0.6) {
+            $goalType = 'Abstauber';
+        } elseif ($xg < 0.1) {
+            $goalType = 'Distanzschuss';
+        }
+
         $match->events()->create([
             'minute' => $minute,
             'second' => $this->randomInt(0, 59),
@@ -1131,6 +1141,8 @@ class LiveMatchTickerService
             'metadata' => [
                 'xg_bucket' => round($xg, 2),
                 'sequence' => $sequence,
+                'goal_type' => $goalType,
+                'assister_name' => $assistState?->player?->full_name,
             ],
         ]);
 
@@ -1145,7 +1157,11 @@ class LiveMatchTickerService
             $this->incrementPlayerState($assistState, ['assists' => 1]);
         }
 
-        $this->recordAction($match, $minute, $this->randomInt(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, (int) $goalkeeper->player_id, 'shot', 'goal', ['xg' => round($xg, 2)]);
+        $this->recordAction($match, $minute, $this->randomInt(0, 59), $sequence, $attackerClubId, (int) $ballCarrier->player_id, (int) $goalkeeper->player_id, 'shot', 'goal', [
+            'xg' => round($xg, 2),
+            'goal_type' => $goalType,
+            'assister_name' => $assistState?->player?->full_name,
+        ]);
     }
 
     private function handleFoulAndSetPiece(
@@ -1254,7 +1270,10 @@ class LiveMatchTickerService
                 'club_id' => $attackerClubId,
                 'player_id' => $taker->player_id,
                 'event_type' => 'penalty_scored',
-                'metadata' => ['sequence' => $sequence],
+                'metadata' => [
+                    'sequence' => $sequence,
+                    'goal_type' => 'Elfmeter',
+                ],
             ]);
             if ($attackerClubId === (int) $match->home_club_id) {
                 $match->increment('home_score');

@@ -371,7 +371,7 @@ class MatchCenterController extends Controller
                 ->all(),
             'actions' => ($match->liveActions->isNotEmpty() ? $match->liveActions : $match->events)
                 ->sortByDesc(fn($item) => ($item->minute * 100000) + ($item->second * 1000) + ($item->sequence ?? 0))
-                ->take(80)
+                ->take(150)
                 ->values()
                 ->map(function ($item): array {
                     // Normalize between MatchLiveAction and MatchEvent
@@ -386,6 +386,7 @@ class MatchCenterController extends Controller
                         'club_short_name' => $item->club?->short_name ?: $item->club?->name,
                         'player_id' => $item->player_id !== null ? (int) $item->player_id : null,
                         'player_name' => $item->player?->full_name,
+                        'assister_name' => $isAction ? null : $item->assister?->full_name,
                         'opponent_player_id' => $isAction && $item->opponent_player_id !== null ? (int) $item->opponent_player_id : null,
                         'opponent_player_name' => $isAction ? $item->opponentPlayer?->full_name : null,
                         'action_type' => (string) ($isAction ? $item->action_type : $item->event_type),

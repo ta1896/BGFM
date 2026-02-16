@@ -32,7 +32,7 @@
     <!-- Main Container -->
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-6 space-y-0" id="match-live-root">
 
-        @if($match->status === 'scheduled')
+        @if ($match->status === 'scheduled')
             {{-- PRE-MATCH VIEW --}}
             <div class="bg-slate-800 rounded-lg overflow-hidden">
                 <!-- Header -->
@@ -194,7 +194,7 @@
                         </div>
                     </div>
 
-                    @if($canSimulate)
+                    @if ($canSimulate)
                         <div class="mt-6 flex justify-center gap-4">
                             <form action="{{ route('matches.live.start', $match) }}" method="POST">
                                 @csrf
@@ -266,18 +266,22 @@
                                 {{ $match->home_score ?? '-' }} : {{ $match->away_score ?? '-' }}
                             </div>
                             <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                            {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
+                                                                                    {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
                                 id="live-status">
-                                @if($match->status !== 'played')
+                                @if ($match->status !== 'played')
                                     <span class="sim-live-dot"></span>
                                 @endif
                                 {{ $match->status === 'played' ? 'Beendet' : 'Live ' . $match->live_minute . "'" }}
                             </div>
-                            @if($match->status === 'live' && $canSimulate && $match->live_paused)
-                                <div class="mt-3">
+                            @if ($match->status === 'live' && $canSimulate && $match->live_paused)
+                                <div class="mt-3 flex flex-col items-center gap-2">
                                     <button id="live-resume-btn"
                                         class="text-xs bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-lg font-bold animate-pulse shadow-lg shadow-green-500/25">
                                         ▶ Fortsetzen
+                                    </button>
+                                    <button id="live-simulate-remainder-btn"
+                                        class="text-[10px] text-slate-400 hover:text-white underline decoration-slate-600 hover:decoration-white transition-colors">
+                                        Restliches Spiel simulieren
                                     </button>
                                 </div>
                             @endif
@@ -356,7 +360,7 @@
                         <button id="btn-toggle-sound"
                             class="px-3 py-1.5 rounded text-xs bg-slate-800 text-slate-400 border border-slate-950 hover:bg-slate-700">🔇
                             Sound aus</button>
-                        @if($match->status === 'live')
+                        @if ($match->status === 'live')
                             @foreach ($manageableClubIds as $clubId)
                                 <div class="relative group">
                                     <button
@@ -505,7 +509,7 @@
         }
     </script>
 
-    @if($match->status !== 'scheduled')
+    @if ($match->status !== 'scheduled')
         <!-- Interaction Modals -->
         <div id="modal-substitution" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
             <div class="bg-slate-800 rounded-lg shadow-2xl border border-slate-950 w-full max-w-md overflow-hidden">
@@ -574,16 +578,14 @@
                     resume: "{{ route('matches.live.resume', $match) }}",
                     shout: "{{ route('matches.live.shout', $match) }}",
                     substitute: "{{ route('matches.live.substitute', $match) }}",
-                    style: "{{ route('matches.live.style', $match) }}"
+                    style: "{{ route('matches.live.style', $match) }}",
+                    simulate: "{{ route('matches.simulate', $match) }}"
                 };
 
-                // Audio Engine (Re-integrated)
                 const SoundEngine = {
                     sounds: {
                         whistle: new Audio('https://inv.tux.pizza/vi/whistle-referee/audio.mp3'),
-                        goal_home: new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg'),
-                        goal_away: new Audio('https://actions.google.com/sounds/v1/crowds/crowd_gasp.ogg'),
-                        chance: new Audio('https://actions.google.com/sounds/v1/crowds/crowd_gasp.ogg'),
+                        goal: new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate_stutter.ogg'),
                     },
                     enabled: false,
                     btn: document.getElementById('btn-toggle-sound'),
@@ -598,37 +600,40 @@
                         }
                     },
                     updateBtn() {
-                        if (!this.btn) return;
-                        this.btn.textContent = this.enabled ? '🔊 Sound an' : '🔇 Sound aus';
-                        this.btn.classList.toggle('text-green-400', this.enabled);
+                        if (this.btn) {
+                            this.btn.innerHTML = this.enabled ? '🔊 <span class="text-[10px] ml-1">AN</span>' : '🔇 <span class="text-[10px] ml-1">AUS</span>';
+                            this.btn.classList.toggle('text-indigo-400', this.enabled);
+                            this.btn.classList.toggle('text-slate-500', !this.enabled);
+                        }
                     },
-                    play(type, isHome) {
-                        if (!this.enabled) return;
-                        let audio = null;
-                        if (type === 'goal') audio = isHome ? this.sounds.goal_home : this.sounds.goal_away;
-                        else if (type === 'chance') audio = this.sounds.chance;
-                        else if (type === 'whistle') audio = this.sounds.whistle;
-
-                        if (audio) { audio.currentTime = 0; audio.play().catch(() => { }); }
+                    play(type) {
+                        if (this.enabled && this.sounds[type]) {
+                            this.sounds[type].play().catch(() => { });
+                        }
                     }
                 };
 
-                // Elements
+                let latestState = null;
+                let lastStateHash = "";
+                let processedEventIds = new Set();
+
                 const scoreEl = document.getElementById('live-score');
                 const statusEl = document.getElementById('live-status');
+                const timelineContainer = document.getElementById('timeline-events-container');
                 const eventsList = document.getElementById('live-events-list');
                 const statsGrid = document.getElementById('stats-grid');
                 const visualLineupsOverlay = document.getElementById('visual-lineups-overlay');
                 const actionMapOverlay = document.getElementById('action-map-overlay');
                 const momentumChart = document.getElementById('momentum-chart');
-                const timelineContainer = document.getElementById('timeline-events-container');
-
-                let processedEventIds = new Set();
-                let latestState = null;
 
                 const fetchState = async () => {
-                    const res = await fetch(routes.state, { headers: { 'Accept': 'application/json' } });
-                    if (res.ok) renderState(await res.json());
+                    try {
+                        const res = await fetch(routes.state);
+                        const state = await res.json();
+                        renderState(state);
+                    } catch (e) {
+                        console.error("Fetch State Error:", e);
+                    }
                 };
 
                 const sendPost = async (url, payload = {}) => {
@@ -637,51 +642,47 @@
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    // Refresh immediately
                     fetchState();
                     return res;
                 };
 
                 const renderState = (state) => {
                     latestState = state;
-                    scoreEl.textContent = `${state.home_score ?? '-'} : ${state.away_score ?? '-'}`;
-                    statusEl.textContent = state.status === 'played' ? 'Beendet' : `Live ${state.live_minute}'`;
+                    if (scoreEl) scoreEl.textContent = `${state.home_score ?? '-'} : ${state.away_score ?? '-'}`;
+                    if (statusEl) statusEl.textContent = state.status === 'played' ? 'Beendet' : `Live ${state.live_minute}'`;
 
-                    // Fallback for Legacy/Instant-Sim Matches (No Actions, Only Events)
-                    let actionsSource = state.actions;
-                    if (!actionsSource || actionsSource.length === 0) {
-                        actionsSource = (state.events || []).map(e => ({
+                    let actionsSource = state.actions || [];
+                    if (actionsSource.length === 0 && state.events) {
+                        actionsSource = state.events.map(e => ({
                             id: e.id,
                             minute: e.minute,
-                            second: e.second,
-                            action_type: e.event_type, // 'goal', 'yellow_card', 'red_card', 'substitution'
+                            action_type: e.event_type,
                             club_id: e.club_id,
-                            player_id: e.player_id,
                             player_name: e.player_name,
-                            club_short_name: e.club_short_name,
-                            narrative: null,
-                            outcome: e.event_type === 'goal' ? 'scored' : null
+                            narrative: e.narrative
                         }));
                     }
 
-                    // Timeline
+                    const currentHash = JSON.stringify({
+                        score: `${state.home_score}-${state.away_score}`,
+                        status: state.status,
+                        minute: state.live_minute,
+                        actionsCount: actionsSource.length,
+                        lastAction: actionsSource.length > 0 ? actionsSource[actionsSource.length - 1].id : null
+                    });
+
+                    if (currentHash === lastStateHash) return;
+                    lastStateHash = currentHash;
+
                     renderTimeline(actionsSource);
-                    // Events (Ticker)
                     updateTicker(actionsSource);
-                    // Stats
                     renderStats(state.team_states);
-                    // Lineups
                     renderVisualLineups(state.lineups);
-                    // Action Map (Only works with real actions, otherwise empty)
                     renderActionMap(state.actions);
-                    // Heatmap (Only works with real actions)
                     renderHeatmap(state.actions);
-                    // Momentum
                     renderMomentum(state.actions);
-                    // Ratings
                     renderRatings(state.player_states, state.final_stats);
 
-                    // Resume Button
                     const resumeBtn = document.getElementById('live-resume-btn');
                     if (resumeBtn) {
                         resumeBtn.parentElement.classList.toggle('hidden', !(state.live_paused && state.can_simulate));
@@ -691,20 +692,22 @@
                 const renderTimeline = (actions) => {
                     if (!timelineContainer) return;
                     timelineContainer.innerHTML = '';
-                    const relevant = actions.filter(a => ['goal', 'red_card', 'yellow_card', 'substitution', 'chance', 'save', 'shot', 'corner', 'free_kick', 'injury', 'offside'].includes(a.action_type));
+                    const relevantTypes = ['goal', 'red_card', 'yellow_card', 'substitution'];
+                    const relevant = actions.filter(a => relevantTypes.includes(a.action_type));
 
                     const eventConfig = {
-                        goal:         { icon: '⚽', color: 'bg-slate-900 border-2 border-green-500', label: 'Tor', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
-                        yellow_card:  { icon: '🟨', color: 'bg-yellow-500 border-none', label: 'Gelbe Karte', accent: '#facc15', headerBg: 'rgba(202,138,4,0.3)' },
-                        red_card:     { icon: '🟥', color: 'bg-red-600 border-none', label: 'Rote Karte', accent: '#f87171', headerBg: 'rgba(220,38,38,0.3)' },
-                        substitution: { icon: '🔄', color: 'bg-indigo-600 border-none', label: 'Wechsel', accent: '#818cf8', headerBg: 'rgba(79,70,229,0.3)' },
-                        chance:       { icon: '🎯', color: 'bg-emerald-600 border-none', label: 'Großchance', accent: '#34d399', headerBg: 'rgba(16,185,129,0.3)' },
-                        save:         { icon: '🧤', color: 'bg-green-600 border-none', label: 'Parade', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
-                        shot:         { icon: '💥', color: 'bg-slate-700 border-none', label: 'Schuss', accent: '#94a3b8', headerBg: 'rgba(100,116,139,0.3)' },
-                        corner:       { icon: '🚩', color: 'bg-teal-600 border-none', label: 'Eckball', accent: '#2dd4bf', headerBg: 'rgba(45,212,191,0.3)' },
-                        free_kick:    { icon: '🎯', color: 'bg-amber-600 border-none', label: 'Freistoß', accent: '#fbbf24', headerBg: 'rgba(251,191,36,0.3)' },
-                        offside:      { icon: '🚫', color: 'bg-indigo-500 border-none', label: 'Abseits', accent: '#818cf8', headerBg: 'rgba(129,140,248,0.3)' },
-                        injury:       { icon: '🚑', color: 'bg-rose-500 border-none', label: 'Verletzung', accent: '#fb7185', headerBg: 'rgba(251,113,133,0.3)' },
+                        goal: { icon: '⚽', color: 'bg-slate-900 border-2 border-green-500', label: 'Tor', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
+                        yellow_card: { icon: '🟨', color: 'bg-slate-900 border-2 border-yellow-500', label: 'Gelbe Karte', accent: '#facc15', headerBg: 'rgba(202,138,4,0.3)' },
+                        red_card: { icon: '🟥', color: 'bg-slate-900 border-2 border-red-500', label: 'Rote Karte', accent: '#f87171', headerBg: 'rgba(220,38,38,0.3)' },
+                        substitution: { icon: '🔄', color: 'bg-slate-900 border-2 border-indigo-500', label: 'Wechsel', accent: '#818cf8', headerBg: 'rgba(79,70,229,0.3)' },
+                        chance: { icon: '🎯', color: 'bg-emerald-600', label: 'Großchance', accent: '#34d399', headerBg: 'rgba(16,185,129,0.3)' },
+                        save: { icon: '🧤', color: 'bg-green-600', label: 'Parade', accent: '#4ade80', headerBg: 'rgba(22,163,74,0.3)' },
+                        shot: { icon: '💥', color: 'bg-slate-700', label: 'Schuss', accent: '#94a3b8', headerBg: 'rgba(100,116,139,0.3)' },
+                        corner: { icon: '🚩', color: 'bg-teal-600', label: 'Eckball', accent: '#2dd4bf', headerBg: 'rgba(45,212,191,0.3)' },
+                        free_kick: { icon: '🎯', color: 'bg-amber-600', label: 'Freistoß', accent: '#fbbf24', headerBg: 'rgba(251,191,36,0.3)' },
+                        offside: { icon: '🚫', color: 'bg-indigo-500', label: 'Abseits', accent: '#818cf8', headerBg: 'rgba(129,140,248,0.3)' },
+                        injury: { icon: '🚑', color: 'bg-rose-500', label: 'Verletzung', accent: '#fb7185', headerBg: 'rgba(251,113,133,0.3)' },
+                        clearance: { icon: '🛡️', color: 'bg-slate-600', label: 'Klärung', accent: '#cbd5e1', headerBg: 'rgba(148,163,184,0.3)' },
                     };
 
                     relevant.forEach(a => {
@@ -718,373 +721,283 @@
                         const teamName = isHome ? '{{ $match->homeClub->short_name ?? $match->homeClub->name }}' : '{{ $match->awayClub->short_name ?? $match->awayClub->name }}';
                         const teamLogo = isHome ? homeClubLogo : awayClubLogo;
 
-                        // Build narrative line
-                        let narrativeLine = '';
-                        if (a.narrative) {
-                            narrativeLine = `<div class="text-[10px] text-slate-400 mt-1 italic leading-snug">"${a.narrative}"</div>`;
-                        }
+                        let narrativeLine = a.narrative ? `<div class="text-[10px] text-slate-400 mt-1 italic leading-snug">"${a.narrative}"</div>` : '';
 
-                        // Smart tooltip alignment to avoid edge clipping
-                        let tooltipAlign = 'center';
                         let tooltipStyle = 'min-width: 220px; left: 50%; transform: translateX(-50%);';
-                        let arrowStyle = 'margin: -4px auto 0;';
-                        if (leftPct < 15) {
-                            tooltipAlign = 'left';
-                            tooltipStyle = 'min-width: 220px; left: 0;';
-                            arrowStyle = 'margin: -4px 0 0 12px;';
-                        } else if (leftPct > 85) {
-                            tooltipAlign = 'right';
-                            tooltipStyle = 'min-width: 220px; right: 0;';
-                            arrowStyle = 'margin: -4px 12px 0 auto;';
-                        }
+                        if (leftPct < 15) tooltipStyle = 'min-width: 220px; left: 0;';
+                        else if (leftPct > 85) tooltipStyle = 'min-width: 220px; right: 0;';
 
                         el.innerHTML = `
-                            <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                ${cfg.icon}
-                            </div>
-                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
-                                <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
-                                    <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
-                                        <span style="color: ${cfg.accent}" class="uppercase tracking-widest whitespace-nowrap">${cfg.icon} ${cfg.label}</span>
-                                        <span class="text-slate-500 font-mono">${a.minute}'</span>
-                                    </div>
-                                    <div class="p-3 flex items-start gap-2.5">
-                                        <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
-                                        <div class="flex-1 min-w-0">
-                                            ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
-                                            <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
-                                            ${narrativeLine}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="w-2 h-2 bg-slate-900 border-r border-b border-slate-700/50 rotate-45" style="${arrowStyle}"></div>
-                            </div>
-                        `;
+                                                            <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                                                ${cfg.icon}
+                                                            </div>
+                                                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
+                                                                <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
+                                                                    <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
+                                                                        <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
+                                                                        <span class="text-slate-500 font-mono">${a.minute}'</span>
+                                                                    </div>
+                                                                    <div class="p-3 flex items-start gap-2.5">
+                                                                        <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
+                                                                        <div class="flex-1 min-w-0">
+                                                                            ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
+                                                                            <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
+                                                                            ${narrativeLine}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        `;
                         timelineContainer.appendChild(el);
                     });
                 };
 
-                const updateTicker = (actions) => {
-                    if (!actions) return;
+                const renderEventCard = (a, isHome, mins, logoUrl) => {
+                    const type = a.action_type;
+                    const narrative = a.narrative || '';
+                    const initials = a.player_name ? a.player_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
+                    const sideColor = isHome ? 'cyan-500' : 'indigo-500';
+                    const sideLabel = isHome ? 'HEIM' : 'GAST';
 
-                    // Filter for relevant ticker items (exclude internal or empty narrative ones if any)
-                    // We want to show: goals, chances, cards, fouls, substitutions, shots, injuries
-                    // Sorted descending (newest first)
-                    // Actions from controller are already sorted desc.
+                    // Extract score if available
+                    let scoreDisplay = null;
+                    const scoreMatch = narrative.match(/(\d+)\s*:\s*(\d+)/);
+                    if (scoreMatch) scoreDisplay = `${scoreMatch[1]}:${scoreMatch[2]}`;
 
-                    // We need to deduplicate actions if we fetch frequently? 
-                    // processedEventIds checks `id`.
+                    const isGoal = type === 'goal' || (type === 'shot' && a.outcome === 'goal');
 
-                    const html = actions.map(a => {
-                        // Mark as processed for sound
-                        if ((a.action_type === 'goal') && !processedEventIds.has(a.id)) {
-                            SoundEngine.play('goal', Number(a.club_id) === homeClubId);
+                    // --- 1. PREMIUM HEADER LAYOUT (GOAL, YELLOW_CARD, RED_CARD) ---
+                    if (isGoal || ['yellow_card', 'red_card'].includes(type)) {
+                        let headerText = '';
+                        let headerBg = '';
+                        let icon = '';
+
+                        if (isGoal) {
+                            headerText = `TOR FÜR ${sideLabel}`;
+                            headerBg = 'bg-cyan-950/80 border-cyan-500/30';
+                            icon = '⚽';
+                        } else if (type === 'yellow_card') {
+                            headerText = `GELBE KARTE ${sideLabel}`;
+                            headerBg = 'bg-yellow-900/40 border-yellow-500/30';
+                            icon = '🟨';
+                        } else if (type === 'red_card') {
+                            headerText = `ROTE KARTE ${sideLabel}`;
+                            headerBg = 'bg-red-900/40 border-red-500/30';
+                            icon = '🟥';
                         }
+
+                        return `
+                                            <div class="w-full mb-8 animate-fade-in-up">
+                                                <div class="relative max-w-2xl mx-auto">
+                                                    <!-- Time Bubble (Top Left - matching latest image) -->
+                                                    <div class="absolute -top-3 left-4 z-20">
+                                                        <span class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[10px] font-black text-white shadow-xl">${mins}'</span>
+                                                    </div>
+
+                                                    <!-- Premium Card -->
+                                                    <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                        <!-- Colored Header Strip -->
+                                                        <div class="${headerBg} border-b py-2 text-center">
+                                                            <span class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                                                                <span>${icon}</span> ${headerText}
+                                                            </span>
+                                                        </div>
+
+                                                        <!-- Body -->
+                                                <div class="p-6">
+                                                    <div class="flex items-start gap-6">
+                                                        <!-- Left: Visual/Shield -->
+                                                        <div class="relative shrink-0 pt-1">
+                                                            <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
+                                                                <span class="${sideColor === 'cyan-500' ? 'text-cyan-400' : 'text-indigo-400'}">🛡️</span>
+                                                            </div>
+                                                            <img src="${logoUrl}" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-slate-900 shadow-lg bg-slate-800 p-0.5">
+                                                        </div>
+
+                                                        <!-- Right: Info Section -->
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex justify-between items-start mb-2">
+                                                                <div class="flex flex-col">
+                                                                    <span class="text-xl font-black text-white leading-tight uppercase tracking-tight">${a.player_name || 'Unbekannt'}</span>
+                                                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">${a.club_short_name || sideLabel}</span>
+                                                                </div>
+                                                                ${isGoal && scoreDisplay ? `
+                                                                    <div class="text-3xl font-black text-white tracking-tighter drop-shadow-lg font-mono">${scoreDisplay}</div>
+                                                                ` : ''}
+                                                            </div>
+
+                                                            ${isGoal ? `
+                                                                <div class="mb-4 flex flex-wrap items-center gap-3">
+                                                                    <span class="text-[10px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest rounded-sm">${a.metadata?.goal_type || 'TOR'}</span>
+                                                                    ${a.assister_name ? `
+                                                                        <div class="flex items-center gap-1.5 opacity-80">
+                                                                            <span class="text-[10px] text-slate-500 font-bold uppercase">Assistent</span>
+                                                                            <span class="text-[11px] text-slate-300 font-black">${a.assister_name}</span>
+                                                                        </div>
+                                                                    ` : ''}
+                                                                </div>
+                                                            ` : ''}
+
+                                                            <div class="text-sm text-slate-400 italic leading-relaxed py-3 px-4 bg-slate-800/50 rounded-lg border-l-2 border-slate-700">
+                                                                "${narrative.replace(/"/g, '')}"
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                    }
+
+                    // --- 2. SUBSTITUTION LAYOUT ---
+                    if (type === 'substitution') {
+                        let playerIn = a.player_name;
+                        let playerOut = '???';
+                        const outMatch = narrative.match(/für\s+([^.]+)/);
+                        if (outMatch) playerOut = outMatch[1].trim();
+
+                        return `
+                                             <div class="w-full mb-6 animate-fade-in-up">
+                                                <div class="relative max-w-xl mx-auto">
+                                                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                                                        <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-slate-400">${mins}'</span>
+                                                    </div>
+                                                    <div class="w-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
+                                                        <div class="bg-indigo-900/20 py-1.5 text-center border-b border-slate-700">
+                                                            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">Spielerwechsel ${sideLabel}</span>
+                                                        </div>
+                                                        <div class="flex items-stretch divide-x divide-slate-700/50">
+                                                            <div class="flex-1 p-4 flex items-center gap-3">
+                                                                <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs animate-pulse">⬆️</div>
+                                                                <div class="min-w-0">
+                                                                    <div class="text-[10px] text-emerald-500 font-black uppercase leading-none mb-1">Ein</div>
+                                                                    <div class="text-sm font-bold text-white truncate">${playerIn}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-1 p-4 flex items-center justify-end gap-3 text-right">
+                                                                <div class="min-w-0">
+                                                                    <div class="text-[10px] text-red-500 font-black uppercase leading-none mb-1">Aus</div>
+                                                                    <div class="text-sm font-bold text-slate-400 truncate">${playerOut}</div>
+                                                                </div>
+                                                                <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-xs">⬇️</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                             </div>`;
+                    }
+
+                    // --- 3. MINIMAL LAYOUT (with Team Indicator) ---
+                    let icon = '⚽';
+                    if (type === 'chance') icon = '🎯';
+                    else if (type === 'save') icon = '🧤';
+                    else if (type === 'shot') icon = '💥';
+                    else if (type === 'corner') icon = '🚩';
+                    else if (type === 'foul') icon = '⚠️';
+                    else if (type === 'offside') icon = '🚫';
+                    else if (type === 'injury') icon = '🚑';
+
+                    return `
+                                        <div class="group flex items-start gap-4 w-full mb-3 px-3 py-2.5 hover:bg-slate-700/30 rounded-lg transition-all border-l-4 border-${sideColor}/30 hover:border-${sideColor} animate-fade-in-up">
+                                            <div class="font-mono text-xs text-slate-500 pt-0.5 min-w-[32px] text-right">${mins}'</div>
+                                            <div class="text-lg pt-0.5 filter grayscale group-hover:grayscale-0 transition-all">${icon}</div>
+                                            <div class="flex-1 text-sm text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
+                                                <span class="font-black text-[10px] uppercase tracking-wider text-${sideColor} mr-2">${sideLabel}</span>
+                                                ${narrative.replace(/"/g, '')}
+                                            </div>
+                                        </div>`;
+                };
+                const updateTicker = (actions) => {
+                    if (!eventsList) return;
+                    const html = actions.slice().map(a => {
+                        // META EVENTS (Kickoff, Halftime, etc) - V4 MILESTONE REDESIGN
+                        if (['kickoff', 'half_time', 'full_time'].includes(a.action_type)) {
+                            let label = 'INFORMATION', icon = 'ℹ️', color = 'text-slate-300', headerBg = 'bg-slate-800/80 border-slate-700/50';
+                            if (a.action_type === 'kickoff') { label = 'ANPFIFF'; icon = '📢'; color = 'text-emerald-400'; headerBg = 'bg-emerald-950/40 border-emerald-500/30'; }
+                            else if (a.action_type === 'half_time') { label = 'HALBZEIT'; icon = '☕'; color = 'text-amber-400'; headerBg = 'bg-amber-950/40 border-amber-500/30'; }
+                            else if (a.action_type === 'full_time') { label = 'SPIELENDE'; icon = '🏁'; color = 'text-red-400'; headerBg = 'bg-red-950/40 border-red-500/30'; }
+
+                            let text = a.narrative || (a.action_type === 'kickoff' ? "Das Spiel beginnt." : (a.action_type === 'half_time' ? "Halbzeit." : "Spielende."));
+
+                            return `
+                                                        <div class="w-full my-8 flex flex-col items-center justify-center animate-fade-in-up">
+                                                            <div class="relative w-full max-w-md">
+                                                                <!-- Milestone Card -->
+                                                                <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                                    <!-- Label Header Strip -->
+                                                                    <div class="${headerBg} border-b py-2 text-center">
+                                                                        <span class="text-[10px] font-black uppercase tracking-[0.3em] ${color} flex items-center justify-center gap-2">
+                                                                            <span>${icon}</span> ${label}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <!-- Milestone Body -->
+                                                                    <div class="p-5 text-center px-10">
+                                                                        <div class="text-sm text-slate-300 font-bold leading-relaxed">
+                                                                            "${text.replace(/"/g, '')}"
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Connection Lines -->
+                                                                <div class="absolute -left-10 right-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                                <div class="absolute -right-10 left-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                            </div>
+                                                        </div>`;
+                        }
+
+                        if (a.action_type === 'goal' && !processedEventIds.has(a.id)) SoundEngine.play('goal');
                         processedEventIds.add(a.id);
 
                         const isHome = Number(a.club_id) === homeClubId;
                         const logoUrl = isHome ? homeClubLogo : awayClubLogo;
-                        // Time
-                        const minutes = String(a.minute).padStart(2, '0');
+                        const mins = String(a.minute).padStart(2, '0');
 
-                        // Icon & Color for Special Events
-                        let specialType = null;
-                        if (a.action_type === 'goal') specialType = 'goal';
-                        else if (a.action_type === 'yellow_card') specialType = 'yellow';
-                        else if (a.action_type === 'red_card') specialType = 'red';
-                        else if (a.action_type === 'substitution') specialType = 'sub';
-                        else if (a.action_type === 'chance') specialType = 'chance';
-                        else if (a.action_type === 'foul') specialType = 'foul';
-                        else if (a.action_type === 'corner') specialType = 'corner';
-                        else if (a.action_type === 'save') specialType = 'save';
-                        else if (a.action_type === 'shot') specialType = 'shot';
-                        else if (a.action_type === 'injury') specialType = 'injury';
-                        else if (a.action_type === 'free_kick') specialType = 'free_kick';
-                        else if (a.action_type === 'offside') specialType = 'offside';
-
-                        // Narrative Text
-                        // Fallback if narrative is empty (it shouldn't be for these types)
-                        let text = a.narrative;
-
-                        if (!text) {
-                            if (a.action_type === 'goal') {
-                                text = `Toooor für ${a.club_short_name}! ${a.player_name || 'Ein Spieler'} trifft ins Netz.`;
-                            } else if (a.action_type === 'yellow_card') {
-                                text = `Gelbe Karte für ${a.player_name || 'den Spieler'}.`;
-                            } else if (a.action_type === 'red_card') {
-                                text = `Platzverweis! Rote Karte für ${a.player_name || 'den Spieler'}.`;
-                            } else if (a.action_type === 'kickoff') {
-                                text = `Anstoß! Der Ball rollt.`;
-                            } else if (a.action_type === 'half_time') {
-                                text = `Halbzeitpause.`;
-                            } else if (a.action_type === 'full_time') {
-                                text = `Abpfiff. Das Spiel ist beendet.`;
-                            } else if (a.action_type === 'free_kick') {
-                                text = `Freistoß für ${a.club_short_name}.`;
-                            } else if (a.action_type === 'substitution') {
-                                text = `Wechsel bei ${a.club_short_name}.`;
-                            } else if (a.action_type === 'chance') {
-                                text = `Großchance für ${a.club_short_name}!`;
-                            } else if (a.action_type === 'foul') {
-                                text = `Foulspiel von ${a.player_name || a.club_short_name}.`;
-                            } else if (a.action_type === 'corner') {
-                                text = `Eckball für ${a.club_short_name}.`;
-                            } else if (a.action_type === 'offside') {
-                                text = `Abseitsstellung von ${a.player_name || a.club_short_name}.`;
-                            } else if (a.action_type === 'save') {
-                                text = `Parade! Der Torhüter rettet.`;
-                            } else if (a.action_type === 'shot') {
-                                text = `Schuss von ${a.player_name}, aber kein Problem für den Keeper.`;
-                            } else if (a.action_type === 'midfield_possession') {
-                                text = `Ballbesitz ${a.club_short_name} im Mittelfeld.`;
-                            } else if (a.action_type === 'turnover') {
-                                text = `Ballverlust durch ${a.player_name || a.club_short_name}.`;
-                            } else if (a.action_type === 'throw_in') {
-                                text = `Einwurf für ${a.club_short_name}.`;
-                            } else if (a.action_type === 'clearance') {
-                                text = `Gute Klärungsaktion von ${a.player_name || a.club_short_name}.`;
-                            } else {
-                                text = `Ereignis: ${String(a.action_type).replace(/_/g, ' ').toUpperCase()}`;
-                            }
-                        }
-
-                        // --- SPECIAL DESIGN FOR ALL KEY EVENTS ---
-                        if (specialType) {
-                            let headerClass = 'bg-slate-900 border-b border-slate-800/30';
-                            let icon = '';
-                            let title = `${minutes}. Minute`;
-                            let titleClass = 'text-white';
-                            let playerFaceHtml = '';
-                            let cardBorder = 'border-slate-800/30';
-                            let accentColor = 'slate';
-
-                            if (specialType === 'goal') {
-                                headerClass = 'bg-gradient-to-r from-sky-950/40 to-slate-900 border-b border-sky-500/10';
-                                cardBorder = 'border-sky-900/30';
-                                icon = '⚽';
-                                title = `TOOOOR in der ${minutes}. Minute`;
-                                titleClass = 'text-sky-400';
-                                accentColor = 'sky';
-                            } else if (specialType === 'yellow') {
-                                headerClass = 'bg-gradient-to-r from-yellow-950/40 to-slate-900 border-b border-yellow-500/10';
-                                cardBorder = 'border-yellow-900/30';
-                                icon = '🟨';
-                                title = `Gelbe Karte (${minutes}. Min)`;
-                                titleClass = 'text-yellow-400';
-                                accentColor = 'yellow';
-                            } else if (specialType === 'red') {
-                                headerClass = 'bg-gradient-to-r from-red-950/40 to-slate-900 border-b border-red-500/10';
-                                cardBorder = 'border-red-900/30';
-                                icon = '🟥';
-                                title = `PLATZVERWEIS (${minutes}. Min)`;
-                                titleClass = 'text-red-400';
-                                accentColor = 'red';
-                            } else if (specialType === 'chance') {
-                                headerClass = 'bg-gradient-to-r from-emerald-950/40 to-slate-900 border-b border-emerald-500/10';
-                                cardBorder = 'border-emerald-900/30';
-                                icon = '🎯';
-                                title = `GROßCHANCE (${minutes}. Min)`;
-                                titleClass = 'text-emerald-400';
-                                accentColor = 'emerald';
-                            } else if (specialType === 'sub') {
-                                headerClass = 'bg-gradient-to-r from-violet-950/40 to-slate-900 border-b border-violet-500/10';
-                                cardBorder = 'border-violet-900/30';
-                                icon = '🔄';
-                                title = `WECHSEL (${minutes}. Min)`;
-                                titleClass = 'text-violet-400';
-                                accentColor = 'violet';
-                            } else if (specialType === 'foul') {
-                                headerClass = 'bg-gradient-to-r from-orange-950/40 to-slate-900 border-b border-orange-500/10';
-                                cardBorder = 'border-orange-900/30';
-                                icon = '⚡';
-                                title = `FOUL (${minutes}. Min)`;
-                                titleClass = 'text-orange-400';
-                                accentColor = 'orange';
-                            } else if (specialType === 'corner') {
-                                headerClass = 'bg-gradient-to-r from-teal-950/40 to-slate-900 border-b border-teal-500/10';
-                                cardBorder = 'border-teal-900/30';
-                                icon = '🚩';
-                                title = `ECKBALL (${minutes}. Min)`;
-                                titleClass = 'text-teal-400';
-                                accentColor = 'teal';
-                            } else if (specialType === 'save') {
-                                headerClass = 'bg-gradient-to-r from-green-950/40 to-slate-900 border-b border-green-500/10';
-                                cardBorder = 'border-green-900/30';
-                                icon = '🧤';
-                                title = `PARADE (${minutes}. Min)`;
-                                titleClass = 'text-green-400';
-                                accentColor = 'green';
-                            } else if (specialType === 'shot') {
-                                headerClass = 'bg-gradient-to-r from-slate-800/40 to-slate-900 border-b border-slate-500/10';
-                                cardBorder = 'border-slate-700/30';
-                                icon = '💥';
-                                title = `SCHUSS (${minutes}. Min)`;
-                                titleClass = 'text-slate-300';
-                                accentColor = 'slate';
-                            } else if (specialType === 'injury') {
-                                headerClass = 'bg-gradient-to-r from-rose-950/40 to-slate-900 border-b border-rose-500/10';
-                                cardBorder = 'border-rose-900/30';
-                                icon = '�';
-                                title = `VERLETZUNG (${minutes}. Min)`;
-                                titleClass = 'text-rose-400';
-                                accentColor = 'rose';
-                            } else if (specialType === 'free_kick') {
-                                headerClass = 'bg-gradient-to-r from-amber-950/40 to-slate-900 border-b border-amber-500/10';
-                                cardBorder = 'border-amber-900/30';
-                                icon = '🎯';
-                                title = `FREISTOSS (${minutes}. Min)`;
-                                titleClass = 'text-amber-400';
-                                accentColor = 'amber';
-                            } else if (specialType === 'offside') {
-                                headerClass = 'bg-gradient-to-r from-indigo-950/40 to-slate-900 border-b border-indigo-500/10';
-                                cardBorder = 'border-indigo-900/30';
-                                icon = '🚫';
-                                title = `ABSEITS (${minutes}. Min)`;
-                                titleClass = 'text-indigo-400';
-                                accentColor = 'indigo';
-                            }
-
-                            if (a.player_name) {
-                                const colorMap = {
-                                    sky: '#38bdf8', yellow: '#facc15', red: '#f87171', emerald: '#34d399',
-                                    violet: '#a78bfa', orange: '#fb923c', teal: '#2dd4bf', green: '#4ade80',
-                                    slate: '#94a3b8', rose: '#fb7185', amber: '#fbbf24', indigo: '#818cf8'
-                                };
-                                const hexColor = colorMap[accentColor] || '#94a3b8';
-                                playerFaceHtml = `
-                                    <div class="w-8 h-8 rounded-full bg-slate-950 flex items-center justify-center overflow-hidden shrink-0" style="border: 1px solid ${hexColor}20">
-                                        <span class="text-[10px] font-bold font-mono" style="color: ${hexColor}">${a.player_name.charAt(0)}</span>
-                                    </div>
-                                `;
-                            }
-
-                            return `
-                                                                                                                        <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-4 w-full animate-fade-in-up">
-                                                                                                                            <div class="relative shrink-0">
-                                                                                                                                <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-1 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950">
-                                                                                                                                ${specialType === 'goal' ? '<div class="absolute -top-1 -right-1 text-[8px]">⚽</div>' : ''}
-                                                                                                                            </div>
-                                                                                                                            <div class="flex flex-col w-full max-w-lg">
-                                                                                                                                <div class="rounded-lg overflow-hidden w-full bg-slate-900 relative border ${cardBorder}">
-                                                                                                                                    <!-- Header -->
-                                                                                                                                    <div class="${headerClass} px-3 py-1 text-[10px] font-bold flex justify-between items-center">
-                                                                                                                                        <span class="flex items-center gap-1.5 uppercase tracking-widest ${titleClass}">${icon} ${title}</span>
-                                                                                                                                        ${a.player_name ? `<span class="opacity-30 text-[9px] uppercase tracking-tighter bg-black/30 px-1 py-0.5 rounded text-white font-mono">#${a.player_id % 99}</span>` : ''}
-                                                                                                                                    </div>
-                                                                                                                                    <!-- Content -->
-                                                                                                                                    <div class="p-2.5 flex gap-2.5 items-center bg-slate-900/40 relative">
-                                                                                                                                        ${playerFaceHtml}
-                                                                                                                                        <div class="flex-1 min-w-0">
-                                                                                                                                            ${a.player_name ? `<div class="font-bold text-sm leading-tight text-slate-100 truncate">${a.player_name}</div>` : ''}
-                                                                                                                                            <div class="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">${a.outcome === 'scored' ? 'TOOOOR!' : String(a.action_type).replace(/_/g, ' ').toUpperCase()}</div>
-                                                                                                                                        </div>
-
-                                                                                                                                         <!-- Narrative Text -->
-                                                                                                                                        <div class="text-xs text-slate-500 font-medium leading-relaxed pl-3 border-l border-slate-950 ml-2 italic">
-                                                                                                                                            "${text}"
-                                                                                                                                        </div>
-                                                                                                                                    </div>
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    `;
-                        }
-
-                        // --- STANDARD CHAT BUBBLE (Deep Dark Mode) ---
-                        return `
-                                                                                                                    <div class="flex ${isHome ? 'flex-row' : 'flex-row-reverse'} items-start gap-2 mb-2 w-full group">
-                                                                                                                        <!-- Team Logo -->
-                                                                                                                        <img src="${logoUrl}" class="w-7 h-7 object-contain drop-shadow mt-0.5 shrink-0 bg-slate-900 rounded-full p-1 border border-slate-950 opacity-30 group-hover:opacity-100 transition-opacity">
-
-                                                                                                                        <!-- Bubble -->
-                                                                                                                        <div class="flex flex-col max-w-lg ${isHome ? 'items-start' : 'items-end'}">
-                                                                                                                            <div class="bg-slate-950/40 text-slate-500 px-3 py-1.5 rounded  relative text-xs leading-relaxed border border-slate-950 group-hover:border-slate-950 transition-colors">
-                                                                                                                                <!-- Minute Badge -->
-                                                                                                                                <div class="text-[8px] font-bold text-slate-700 mb-0.5 flex items-center gap-1 uppercase tracking-widest">
-                                                                                                                                    ${minutes}. MIN
-                                                                                                                                </div>
-
-                                                                                                                                <div class="font-medium">
-                                                                                                                                    ${text}
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                `;
+                        return renderEventCard(a, isHome, mins, logoUrl);
                     }).join('');
-
-                    if (html) {
-                        eventsList.innerHTML = html;
-                    } else {
-                        eventsList.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-8">Noch keine Ereignisse...</div>';
-                    }
-                };
-
-                const renderStats = (teamStates) => {
+                    eventsList.innerHTML = html || '<div class="text-sm text-slate-500 italic text-center py-8">Noch keine Ereignisse...</div>';
+                }; const renderStats = (teamStates) => {
                     if (!statsGrid) return;
-                    const home = teamStates[String(homeClubId)] || {};
-                    const away = teamStates[String(awayClubId)] || {};
-
-                    const statRow = (label, hVal, aVal, suffix = '') => `
-                                                                                                                        <div class="bg-slate-800 p-3 rounded border border-slate-950" >
-                                                                                                                                                                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${label}</div>
-                                                                                                                                                                        <div class="flex justify-between items-end font-mono">
-                                                                                                                                                                            <span class="text-lg font-bold ${hVal > aVal ? 'text-green-400' : 'text-slate-300'}">${hVal}${suffix}</span>
-                                                                                                                                                                            <span class="text-lg font-bold ${aVal > hVal ? 'text-green-400' : 'text-slate-300'}">${aVal}${suffix}</span>
-                                                                                                                                                                        </div>
-                                                                                                                                                                        <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
-                                                                                                                                                                             <div class="bg-cyan-500 h-full" style="width: ${(hVal / ((hVal + aVal) || 1)) * 100}%"></div>
-                                                                                                                                                                             <div class="bg-indigo-500 h-full flex-1"></div>
-                                                                                                                                                                        </div>
-                                                                                                                                                                    </div>
-                                                                                                                `;
-
+                    const home = teamStates[String(homeClubId)] || {}, away = teamStates[String(awayClubId)] || {};
+                    const row = (lbl, h, a, s = '') => {
+                        const hN = Number(h), aN = Number(a);
+                        return `
+                                                            <div class="bg-slate-800 p-3 rounded border border-slate-950">
+                                                                <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${lbl}</div>
+                                                                <div class="flex justify-between items-end font-mono">
+                                                                    <span class="text-lg font-bold ${hN > aN ? 'text-green-400' : 'text-slate-300'}">${h}${s}</span>
+                                                                    <span class="text-lg font-bold ${aN > hN ? 'text-green-400' : 'text-slate-300'}">${a}${s}</span>
+                                                                </div>
+                                                                <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
+                                                                    <div class="bg-cyan-500 h-full" style="width: ${(hN / ((hN + aN) || 1)) * 100}%"></div>
+                                                                    <div class="bg-indigo-500 h-full flex-1"></div>
+                                                                </div>
+                                                            </div>`;
+                    };
                     statsGrid.innerHTML = [
-                        statRow('Ballbesitz', Math.round((Number(home.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), Math.round((Number(away.possession_seconds || 0) / (Number(home.possession_seconds || 0) + Number(away.possession_seconds || 0) || 1)) * 100), '%'),
-                        statRow('xG (Erwartete Tore)', Number(home.expected_goals || 0).toFixed(2), Number(away.expected_goals || 0).toFixed(2)),
-                        statRow('Schüsse', home.shots || 0, away.shots || 0),
-                        statRow('Pässe', home.pass_completions || 0, away.pass_completions || 0),
-                        statRow('Fouls', home.fouls_committed || 0, away.fouls_committed || 0),
-                        statRow('Ecken', home.corners_won || 0, away.corners_won || 0),
-                        statRow('Gelbe Karten', home.yellow_cards || 0, away.yellow_cards || 0),
-                        statRow('Rote Karten', home.red_cards || 0, away.red_cards || 0),
+                        row('Ballbesitz', Math.round((home.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), Math.round((away.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), '%'),
+                        row('xG', (home.expected_goals || 0).toFixed(2), (away.expected_goals || 0).toFixed(2)),
+                        row('Schüsse', home.shots || 0, away.shots || 0),
+                        row('Pässe', home.pass_completions || 0, away.pass_completions || 0),
+                        row('Fouls', home.fouls_committed || 0, away.fouls_committed || 0),
+                        row('Ecken', home.corners_won || 0, away.corners_won || 0),
                     ].join('');
                 };
 
                 const renderVisualLineups = (lineups) => {
                     if (!visualLineupsOverlay) return;
-
-                    const slotMap = {
-                        'GK': [50, 95], 'TW': [50, 95],
-                        'LB': [15, 80], 'LV': [15, 80], 'RB': [85, 80], 'RV': [85, 80],
-                        'CB': [35, 85], 'IV': [35, 85], 'LCB': [35, 85], 'RCB': [65, 85],
-                        'CDM': [50, 70], 'DM': [50, 70], 'LCM': [35, 60], 'RCM': [65, 60],
-                        'LM': [15, 45], 'RM': [85, 45], 'CAM': [50, 45], 'OM': [50, 45],
-                        'ST': [50, 15], 'MS': [50, 15], 'LS': [35, 15], 'RS': [65, 15],
-                        'LW': [15, 20], 'LF': [15, 20], 'RW': [85, 20], 'RF': [85, 20]
-                    };
-
+                    const slots = { 'GK': [50, 95], 'TW': [50, 95], 'LB': [15, 80], 'RB': [85, 80], 'CB': [50, 85], 'IV': [50, 85], 'DM': [50, 70], 'CM': [50, 60], 'LM': [15, 45], 'RM': [85, 45], 'ST': [50, 15] };
                     let html = '';
                     [homeClubId, awayClubId].forEach((cid, idx) => {
                         const l = lineups[String(cid)];
                         if (!l) return;
-                        const isHome = idx === 0;
-
                         l.starters.forEach(p => {
-                            let [x, y] = slotMap[p.slot] || [50, 50];
-                            if (!isHome) {
-                                x = 100 - x;
-                                y = 100 - y;
-                            }
-                            const color = isHome ? 'bg-cyan-600' : 'bg-indigo-600';
-                            html += `<div class="absolute w-10 h-10 ${color} border-2 border-slate-700 rounded-full flex flex-col items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group"
-                                                                                                            style = "left: ${x}%; top: ${y}%;">
-                                                                                                                                                                            <span class="text-white font-bold text-xs">${String(p.name).substring(0, 1)}</span>
-                                                                                                                                                                            <div class="absolute bottom-full mb-1 flex flex-col items-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                                                                                                                                                                <div class="bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
-                                                                                                                                                                                <div class="text-[9px] text-yellow-300 font-mono">${p.slot}</div>
-                                                                                                                                                                            </div>
-                                                                                                                                                                        </div>`;
+                            let [x, y] = slots[p.slot] || [50, 50];
+                            if (idx === 1) { x = 100 - x; y = 100 - y; }
+                            html += `<div class="absolute w-8 h-8 ${idx === 0 ? 'bg-cyan-600' : 'bg-indigo-600'} border-2 border-slate-700 rounded-full flex items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group" style="left: ${x}%; top: ${y}%;">
+                                                                <span class="text-white font-bold text-[10px]">${p.name.substring(0, 1)}</span>
+                                                                <div class="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-black/80 text-white text-[9px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
+                                                            </div>`;
                         });
                     });
                     visualLineupsOverlay.innerHTML = html;
@@ -1093,257 +1006,111 @@
                 const renderActionMap = (actions) => {
                     if (!actionMapOverlay) return;
                     actionMapOverlay.innerHTML = '';
-                    const significant = actions.filter(a => a.x_coord).slice(0, 8);
-
-                    significant.forEach(a => {
-                        const el = document.createElement('div');
-                        const isHome = Number(a.club_id) === homeClubId;
-                        const color = isHome ? 'bg-cyan-400' : 'bg-indigo-500';
-                        el.className = `absolute w-2 h-2 rounded-full ${color} shadow-sm transform -translate-x-1/2 -translate-y-1/2`;
-                        el.style.left = `${Math.min(100, Math.max(0, a.x_coord))}% `;
-                        el.style.top = `${Math.min(100, Math.max(0, a.y_coord))}% `;
-                        actionMapOverlay.appendChild(el);
+                    actions.forEach(a => {
+                        const x = parseFloat(a.x_coord), y = parseFloat(a.y_coord);
+                        if (!isNaN(x) && !isNaN(y)) {
+                            const el = document.createElement('div');
+                            el.className = `absolute w-2 h-2 rounded-full ${Number(a.club_id) === homeClubId ? 'bg-cyan-400' : 'bg-indigo-500'} shadow-sm transform -translate-x-1/2 -translate-y-1/2`;
+                            el.style.left = `${x}%`; el.style.top = `${y}%`;
+                            actionMapOverlay.appendChild(el);
+                        }
                     });
                 };
 
-                // Heatmap Logic
                 const renderHeatmap = (actions) => {
-                    const container = document.getElementById('tab-content-heatmap');
-                    if (!container) return;
-                    // Only render if tab is visible to save perf? Or structure it
-
-                    // 10x7 Grid
-                    const cols = 10;
-                    const rows = 7;
-                    const grid = Array(rows).fill().map(() => Array(cols).fill(0));
-
-                    // Count
+                    const cont = document.getElementById('tab-content-heatmap');
+                    if (!cont) return;
+                    const rows = 7, cols = 10, grid = Array.from({ length: rows }, () => Array(cols).fill(0));
                     let max = 1;
                     actions.forEach(a => {
-                        if (a.x_coord !== null && a.y_coord !== null) {
-                            const c = Math.min(cols - 1, Math.floor((a.x_coord / 100) * cols));
-                            const r = Math.min(rows - 1, Math.floor((a.y_coord / 100) * rows));
-                            grid[r][c]++;
-                            if (grid[r][c] > max) max = grid[r][c];
+                        const x = parseFloat(a.x_coord), y = parseFloat(a.y_coord);
+                        if (!isNaN(x) && !isNaN(y)) {
+                            const c = Math.min(cols - 1, Math.max(0, Math.floor((x / 100) * cols)));
+                            const r = Math.min(rows - 1, Math.max(0, Math.floor((y / 100) * rows)));
+                            grid[r][c]++; if (grid[r][c] > max) max = grid[r][c];
                         }
                     });
-
-                    // Generate HTML
-                    let html = `<div class="relative w-full max-w-4xl mx-auto aspect-[105/68] bg-slate-800 rounded border border-slate-950 overflow-hidden shadow-inner bg-[url('https://raw.githubusercontent.com/mladenilic/soccer-pitch-bg/master/pitch.svg')] bg-cover bg-center grid grid-cols-10 grid-rows-7">`;
-
-                    for (let r = 0; r < rows; r++) {
-                        for (let c = 0; c < cols; c++) {
-                            const val = grid[r][c];
-                            const alpha = val > 0 ? Math.min(0.8, (val / max) * 0.8 + 0.1) : 0;
-                            // Use a hot color gradient? Red.
-                            html += `<div class="w-full h-full bg-red-500 transition-all duration-1000" style="opacity: ${alpha}"></div>`;
-                        }
-                    }
-                    html += `</div>`;
-
-                    container.innerHTML = `
-                                                                                                                <div class="mb-4 text-center text-xs text-slate-400 uppercase tracking-widest">Live Ballaktionen Heatmap</div>
-                                                                                                                    ${html}
-                                                                                                            `;
+                    let html = `<div class="relative w-full max-w-4xl mx-auto aspect-[105/68] bg-slate-800 rounded border border-slate-950 overflow-hidden bg-[url('https://raw.githubusercontent.com/mladenilic/soccer-pitch-bg/master/pitch.svg')] bg-cover grid grid-cols-10 grid-rows-7">`;
+                    grid.forEach(row => row.forEach(val => { html += `<div class="bg-red-500 transition-opacity duration-1000" style="opacity: ${val > 0 ? (val / max) * 0.6 + 0.1 : 0}"></div>`; }));
+                    cont.innerHTML = html + '</div>';
                 };
 
                 const renderMomentum = (actions) => {
                     if (!momentumChart) return;
-                    const relevant = actions.filter(a => a.momentum_value).slice(-25);
-                    momentumChart.innerHTML = relevant.map(a => {
-                        const val = Number(a.momentum_value);
-                        const h = Math.min(100, Math.abs(val) * 2);
-                        const color = val > 0 ? 'bg-cyan-500' : 'bg-indigo-500';
-                        return `<div class="w-1.5 mx-[1px] rounded-t ${color} opacity-80" style="height: ${h}%;"></div>`;
-                    }).join('');
+                    const relevant = actions.filter(a => !isNaN(parseFloat(a.momentum_value))).slice(-30);
+                    momentumChart.innerHTML = relevant.map(a => `<div class="w-1.5 mx-[1.5px] rounded-t ${parseFloat(a.momentum_value) > 0 ? 'bg-cyan-500' : 'bg-indigo-500'} opacity-80" style="height: ${Math.min(100, Math.abs(parseFloat(a.momentum_value)) * 2)}%;"></div>`).join('');
                 };
 
                 const renderRatings = (playerStates, finalStats) => {
-                    const container = document.getElementById('ratings-table-container');
-                    if (!container) return;
+                    const cont = document.getElementById('ratings-table-container');
+                    if (!cont) return;
+                    const data = (playerStates && playerStates.length > 0) ? playerStates : (finalStats || []);
+                    if (data.length === 0) { cont.innerHTML = '<div class="text-slate-500 text-center py-4">Keine Werte</div>'; return; }
 
-                    let data = playerStates;
-                    if ((!data || data.length === 0) && finalStats && finalStats.length > 0) {
-                        data = finalStats;
-                    }
-
-                    if (!data || data.length === 0) {
-                        container.innerHTML = '<div class="text-slate-500 text-center py-4">Keine Spielerwerte verfügbar</div>';
-                        return;
-                    }
-
-                    // Live Rating Calculation
-                    // Base 6.0
-                    // Goal +1.0, Assist +0.5, ShotOT +0.2, PassComp/Att > 0.8 +0.3 ...
-                    const calculateRating = (s) => {
+                    const getR = (s) => {
                         if (s.rating) return Number(s.rating);
-
-                        let r = 6.0;
-                        r += (s.goals || 0) * 1.0;
-                        r += (s.assists || 0) * 0.5;
-                        r += (s.shots_on_target || 0) * 0.2;
-                        r += (s.tackle_won || 0) * 0.1;
-                        // Avoid div by zero
-                        if (s.pass_attempts > 5 && (s.pass_completions / s.pass_attempts) > 0.85) r += 0.3;
-
-                        r -= (s.fouls_committed || 0) * 0.2;
-                        r -= (s.yellow_cards || 0) * 0.5;
-                        if (s.red_cards) r -= 2.0;
-
+                        let r = 6.0; r += (s.goals || 0) * 1.0; r += (s.assists || 0) * 0.5; r -= (s.yellow_cards || 0) * 0.5;
                         return Math.max(1, Math.min(10, r));
                     };
-
-                    const withRatings = playerStates.map(s => ({ ...s, rating: calculateRating(s) }));
-                    const sorted = withRatings.sort((a, b) => b.rating - a.rating);
-
-                    let html = `<table class="w-full text-sm text-left text-slate-300">
-                                                                                                                                                                    <thead class="text-xs text-slate-400 uppercase bg-slate-700/50">
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <th class="px-4 py-2">Spieler</th>
-                                                                                                                                                                            <th class="px-4 py-2 text-center">Note</th>
-                                                                                                                                                                            <th class="px-4 py-2 text-center">Tore</th>
-                                                                                                                                                                            <th class="px-4 py-2 text-center">Assists</th>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                    </thead>
-                                                                                                                                                                    <tbody class="divide-y divide-slate-700">`;
-
-                    sorted.forEach(s => {
-                        let ratingColor = 'text-slate-300';
-                        if (s.rating >= 8) ratingColor = 'text-green-400 font-bold';
-                        else if (s.rating >= 7) ratingColor = 'text-green-300';
-                        else if (s.rating < 5) ratingColor = 'text-red-400';
-
-                        html += `<tr class="bg-slate-800 border-b border-slate-950 hover:bg-slate-700/50">
-                                                                                                                                                                        <td class="px-4 py-2 font-medium text-slate-200">
-                                                                                                                                                                            ${s.player_name} <span class="text-xs text-slate-500">(${Number(s.club_id) === homeClubId ? 'Heim' : 'Gast'})</span>
-                                                                                                                                                                        </td>
-                                                                                                                                                                        <td class="px-4 py-2 text-center ${ratingColor}">${s.rating.toFixed(1)}</td>
-                                                                                                                                                                        <td class="px-4 py-2 text-center text-slate-400">${s.goals || '-'}</td>
-                                                                                                                                                                        <td class="px-4 py-2 text-center text-slate-400">${s.assists || '-'}</td>
-                                                                                                                                                                    </tr>`;
-                    });
-                    html += `</tbody></table> `;
-                    container.innerHTML = html;
+                    const html = data.map(s => {
+                        const r = getR(s);
+                        const c = r >= 8 ? 'text-green-400' : (r >= 7 ? 'text-emerald-400' : (r >= 6 ? 'text-slate-300' : 'text-orange-400'));
+                        return `<div class="flex items-center justify-between p-2 border-b border-slate-800/50"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-500 shadow-inner">${s.player_name ? s.player_name.substring(0, 1) : 'P'}</div><span class="text-xs font-medium text-slate-300">${s.player_name || 'Spieler'}</span></div><div class="font-mono font-bold ${c}">${r.toFixed(1)}</div></div>`;
+                    }).join('');
+                    cont.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${html}</div>`;
                 };
 
-                // UI Interactions
                 window.openSubstitutions = (clubId) => {
-                    const l = latestState?.lineups?.[String(clubId)];
-                    if (!l) return alert('Keine Daten verfügbar');
-
                     document.getElementById('sub-club-id').value = clubId;
-
-                    // Populate selects
-                    const selOut = document.getElementById('sub-player-out');
-                    const selIn = document.getElementById('sub-player-in');
-                    selOut.innerHTML = '';
-                    selIn.innerHTML = '';
-
-                    l.starters.forEach(p => {
-                        selOut.innerHTML += `<option value = "${p.id}" > ${p.name} (${p.position})</option> `;
-                    });
-                    l.bench.forEach(p => {
-                        selIn.innerHTML += `<option value = "${p.id}" > ${p.name} (${p.position})</option> `;
-                    });
-
+                    const selOut = document.getElementById('sub-player-out'), selIn = document.getElementById('sub-player-in');
+                    selOut.innerHTML = ''; selIn.innerHTML = '';
+                    const l = latestState?.lineups[String(clubId)];
+                    if (!l) return;
+                    l.starters.forEach(p => selOut.innerHTML += `<option value="${p.id}">${p.name} (${p.slot})</option>`);
+                    l.bench.forEach(p => selIn.innerHTML += `<option value="${p.id}">${p.name} (${p.position})</option>`);
                     document.getElementById('modal-substitution').classList.remove('hidden');
                 };
 
                 window.openTactics = (clubId) => {
                     document.getElementById('tac-club-id').value = clubId;
                     const grid = document.getElementById('tac-style-grid');
-                    grid.innerHTML = '';
-
-                    ['balanced', 'offensive', 'defensive', 'counter'].forEach(style => {
-                        grid.innerHTML += `<button onclick = "submitTactic('${style}')" class="p-2 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 text-sm uppercase font-semibold transition" > ${style}</button> `;
-                    });
-
+                    grid.innerHTML = ['balanced', 'offensive', 'defensive', 'counter'].map(style => `<button onclick="submitTactic('${style}')" class="p-2 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 text-sm uppercase font-semibold transition">${style}</button>`).join('');
                     document.getElementById('modal-tactics').classList.remove('hidden');
                 };
 
                 window.submitTactic = async (style) => {
-                    const clubId = document.getElementById('tac-club-id').value;
-                    await sendPost(routes.style, { club_id: clubId, style: style });
+                    const id = document.getElementById('tac-club-id').value;
+                    await sendPost(routes.style, { club_id: id, style });
                     document.getElementById('tac-feedback').textContent = 'Taktik geändert!';
                     setTimeout(() => closeModal('modal-tactics'), 1000);
                 };
 
-                document.getElementById('btn-confirm-sub').addEventListener('click', async () => {
-                    const clubId = document.getElementById('sub-club-id').value;
-                    const pOut = document.getElementById('sub-player-out').value;
-                    const pIn = document.getElementById('sub-player-in').value;
-
-                    await sendPost(routes.substitute, {
-                        club_id: clubId,
-                        player_out_id: pOut,
-                        player_in_id: pIn
-                    });
+                document.getElementById('btn-confirm-sub')?.addEventListener('click', async () => {
+                    const cid = document.getElementById('sub-club-id').value, pOut = document.getElementById('sub-player-out').value, pIn = document.getElementById('sub-player-in').value;
+                    await sendPost(routes.substitute, { club_id: cid, player_out_id: pOut, player_in_id: pIn });
                     closeModal('modal-substitution');
                 });
 
-                // Helper to wire buttons (called after body load? No, buttons exist in static HTML mostly, or we bind dynamically)
-                // We used onclick="alert" before. Now we need to change those or bind listeners.
-                // Since I can't easily change the HTML part in this tool call (too large), I will bind via JS delegate.
-                document.addEventListener('click', (e) => {
-                    if (e.target.dataset.action === 'open-sub') {
-                        openSubstitutions(e.target.dataset.clubId);
-                    }
-                    if (e.target.dataset.action === 'open-tac') {
-                        openTactics(e.target.dataset.clubId);
-                    }
-                });
-
-                // ALSO: I need to update the buttons in the "Popover Menu" to use these data attributes.
-                // But I haven't replaced the HTML part of the buttons above (lines 381, 384).
-                // I will try to target them by their text content or onclick attribute if possible, OR
-                // BETTER: Just replace the onclick attribute via JS on init.
-
                 const fixButtons = () => {
                     document.querySelectorAll('button').forEach(b => {
-                        if (b.textContent.includes('Spielerwechsel')) {
+                        if (b.textContent.includes('Spielerwechsel') || b.textContent.includes('Taktik')) {
                             b.onclick = null;
-                            b.addEventListener('click', (e) => {
-                                // Find closest clubId context?
-                                // The button is inside a loop, I need to know the clubId.
-                                // The parent div or previous buttons have `data - club - id`.
-                                // The popover structure: div.absolute > ... > button
-                                // The parent "Manager" button has no ID.
-                                // But the "Shout" buttons in the SAME popover have `data - club - id`.
-                                const wrapper = b.closest('.absolute');
-                                if (wrapper) {
-                                    const shoutBtn = wrapper.querySelector('[data-club-id]');
-                                    if (shoutBtn) openSubstitutions(shoutBtn.dataset.clubId);
-                                }
-                            });
-                        }
-                        if (b.textContent.includes('Taktik')) {
-                            b.onclick = null;
-                            b.addEventListener('click', (e) => {
-                                const wrapper = b.closest('.absolute');
-                                if (wrapper) {
-                                    const shoutBtn = wrapper.querySelector('[data-club-id]');
-                                    if (shoutBtn) openTactics(shoutBtn.dataset.clubId);
-                                }
+                            b.addEventListener('click', () => {
+                                const btn = b.closest('.absolute')?.querySelector('[data-club-id]');
+                                if (btn) b.textContent.includes('Wechsel') ? openSubstitutions(btn.dataset.clubId) : openTactics(btn.dataset.clubId);
                             });
                         }
                     });
                 };
 
+                document.querySelectorAll('[data-live-action="shout"]').forEach(btn => btn.addEventListener('click', () => sendPost(routes.shout, { club_id: btn.dataset.clubId, shout: btn.dataset.shout })));
+                document.getElementById('live-resume-btn')?.addEventListener('click', () => sendPost(routes.resume));
+                document.getElementById('live-simulate-remainder-btn')?.addEventListener('click', () => sendPost(routes.simulate));
 
-                // Shouts bindings
-                document.querySelectorAll('[data-live-action="shout"]').forEach(btn => {
-                    btn.addEventListener('click', () => sendPost(routes.shout, { club_id: btn.dataset.clubId, shout: btn.dataset.shout }));
-                });
-
-                // Resume
-                const resumeBtn = document.getElementById('live-resume-btn');
-                if (resumeBtn) resumeBtn.addEventListener('click', () => sendPost(routes.resume));
-
-                // Init
                 SoundEngine.init();
-                fixButtons(); // Fix the placeholder alerts
+                fixButtons();
                 fetchState();
-                setInterval(fetchState, 5000);
+                setInterval(fetchState, 10000);
             })();
         </script>
     @endif

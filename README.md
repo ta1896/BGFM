@@ -5,7 +5,7 @@
 **Eine vollständige Fußball-Manager-Simulation mit Ultra-Premium Dark-UI, Laravel 12 & Docker**
 
 > [!IMPORTANT]
-> **Neu: Match Center 2.0 & Borderless Design** — Die gesamte Benutzeroberfläche wurde radikal modernisiert für einen absolut grenzenlosen "Clean Look".
+> **Neu: Match Center V4 & Premium Live-Ticker** — Radikal modernisierte Event-Darstellung, Echtzeit-Simulation mit AJAX und detaillierte Tor-Metadaten (Vorlage & Tor-Art).
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)](https://php.net)
@@ -43,7 +43,7 @@
 - **Spieler** — Detail-Profile, Karrierehistorie, dynamisches Potenzial
 - **Kader-Management** — Responsive Kaderliste, Bank-Slots, Positions-Rating
 - **Premium UI** — Glassmorphismus, borderless Design, SVG Pitch-Visualisierung
-- **Match Center 2.0** — Globaler Spielplan, Live-Ticker, radikal cleane Optik
+- **Match Center V4** — Premium Ticker, Live-Simulation (AJAX), detaillierte Tor-Metadaten
 
 </td>
 <td width="50%">
@@ -258,6 +258,20 @@ app/
 │   └── TrainingCampService.php       # Trainingslager-Effekte
 └── ...
 resources/views/          # Blade Templates (responsive Dark UI)
+
+---
+
+## 🏟️ Match Center V4 - Das Herzstück
+
+Das Match Center wurde in Version 4 grundlegend überarbeitet, um eine immersive, tv-reife Simulationserfahrung zu bieten.
+
+### ⚡ Hauptfeatures
+- **Premium Event-Cards**: Symmetrische Header-Designs für Tore und Karten mit integrierten Zeit-Bubbles.
+- **Detaillierte Tor-Metadaten**: Automatische Erkennung von Tor-Arten (Kopfball, Fernschuss, Elfmeter) und Erfassung des Vorlagengebers.
+- **Smart Update Polling**: Ein 10-Sekunden Intervall mit Change-Detection verhindert unnötiges Flackern der UI.
+- **AJAX Live-Simulation**: Spiele können ohne Neuladen der Seite im Hintergrund simuliert werden.
+- **Milestone Cards**: Besondere visuelle Hervorhebung von Anpfiff, Halbzeit und Abpfiff.
+- **Smarte Zeit-Logik**: Dynamische Berechnung der Position von Zeit-Bubbles und Narrativen für maximale Lesbarkeit.
 ```
 
 ---

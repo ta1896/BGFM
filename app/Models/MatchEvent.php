@@ -19,6 +19,7 @@ class MatchEvent extends Model
         'assister_player_id',
         'event_type',
         'metadata',
+        'narrative',
     ];
 
     protected function casts(): array
