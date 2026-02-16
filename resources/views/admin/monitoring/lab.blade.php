@@ -47,8 +47,30 @@
                             class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-white/5">
                             Konfiguration
                         </h3>
-                        <form id="lab-simulate-form" class="space-y-6">
+
+                        <!-- Mode Switcher -->
+                        <div class="flex p-1 bg-slate-950/50 rounded-xl mb-6 relative z-10">
+                            <button type="button" onclick="switchLabMode('single')"
+                                class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg text-white bg-slate-800 shadow-lg ring-1 ring-white/10 transition-all"
+                                id="tab-single">
+                                Single
+                            </button>
+                            <button type="button" onclick="switchLabMode('batch')"
+                                class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg text-slate-500 hover:text-slate-300 transition-all"
+                                id="tab-batch">
+                                Batch
+                            </button>
+                            <button type="button" onclick="switchLabMode('ab')"
+                                class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg text-slate-500 hover:text-slate-300 transition-all"
+                                id="tab-ab">
+                                A/B
+                            </button>
+                        </div>
+
+                        <!-- 1. Single Simulation Form -->
+                        <form id="lab-simulate-form-single" class="space-y-6 mode-form block">
                             @csrf
+                            <input type="hidden" name="mode" value="single">
                             <div>
                                 <label
                                     class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Heimteam</label>
@@ -71,9 +93,105 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <button type="submit" id="simulate-btn"
+                            <button type="submit" id="simulate-btn-single"
                                 class="w-full py-4 bg-emerald-600 text-white font-black rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
                                 Simulation starten
+                            </button>
+                        </form>
+
+                        <!-- 2. Batch Simulation Form -->
+                        <form id="lab-simulate-form-batch" class="space-y-6 mode-form hidden">
+                            @csrf
+                            <input type="hidden" name="mode" value="batch">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Team
+                                    A</label>
+                                <select name="home_club_id"
+                                    class="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition">
+                                    @foreach($clubs as $club)
+                                        <option value="{{ $club->id }}">{{ $club->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Team
+                                    B</label>
+                                <select name="away_club_id"
+                                    class="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition">
+                                    @foreach($clubs as $club)
+                                        <option value="{{ $club->id }}" @if($loop->index == 1) selected @endif>
+                                            {{ $club->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Anzahl
+                                    Iterationen</label>
+                                <input type="number" name="iterations" value="50" min="10" max="250"
+                                    class="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition text-center font-mono">
+                            </div>
+                            <button type="submit" id="simulate-btn-batch"
+                                class="w-full py-4 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
+                                Batch Run Starten
+                            </button>
+                        </form>
+
+                        <!-- 3. A/B Simulation Form -->
+                        <form id="lab-simulate-form-ab" class="space-y-6 mode-form hidden">
+                            @csrf
+                            <input type="hidden" name="mode" value="ab">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Test-Paarung</label>
+                                <div class="flex gap-2">
+                                    <select name="home_club_id"
+                                        class="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-2 focus:ring-pink-500/50 transition truncate">
+                                        @foreach($clubs as $club)
+                                            <option value="{{ $club->id }}">{{ $club->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="away_club_id"
+                                        class="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-2 focus:ring-pink-500/50 transition truncate">
+                                        @foreach($clubs as $club)
+                                            <option value="{{ $club->id }}" @if($loop->index == 1) selected @endif>
+                                                {{ $club->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Variant A -->
+                            <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                                <h4 class="text-[9px] font-black text-white uppercase tracking-wider mb-2">Variante A
+                                    (Kontrolle)</h4>
+                                <select name="config_a[aggression]"
+                                    class="w-full bg-slate-950 border-white/10 rounded-lg text-xs text-slate-400 p-2 mb-2">
+                                    <option value="normal" selected>Aggression: Normal</option>
+                                    <option value="high">Aggression: Hoch</option>
+                                    <option value="low">Aggression: Niedrig</option>
+                                </select>
+                            </div>
+
+                            <!-- Variant B -->
+                            <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                                <h4 class="text-[9px] font-black text-pink-400 uppercase tracking-wider mb-2">Variante B
+                                    (Test)</h4>
+                                <select name="config_b[aggression]"
+                                    class="w-full bg-slate-950 border-white/10 rounded-lg text-xs text-pink-300 p-2 mb-2 focus:ring-pink-500">
+                                    <option value="normal">Aggression: Normal</option>
+                                    <option value="high" selected>Aggression: Hoch</option>
+                                    <option value="low">Aggression: Niedrig</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" id="simulate-btn-ab"
+                                class="w-full py-4 bg-pink-600 text-white font-black rounded-xl shadow-lg shadow-pink-500/20 hover:bg-pink-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
+                                A/B Vergleich Starten
                             </button>
                         </form>
                     </div>
@@ -217,136 +335,359 @@
                 </div>
             </div>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     </div>
     </div>
 
     <script>
-        document.getElementById('lab-simulate-form').addEventListener('submit', async function (e) {
-            e.preventDefault();
+        // Mode Switcher Logic
+        function switchLabMode(mode) {
+            // Update Tabs
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('bg-slate-800', 'text-white', 'shadow-lg', 'ring-1', 'ring-white/10');
+                el.classList.add('text-slate-500');
+            });
+            const activeTab = document.getElementById('tab-' + mode);
+            activeTab.classList.remove('text-slate-500');
+            activeTab.classList.add('bg-slate-800', 'text-white', 'shadow-lg', 'ring-1', 'ring-white/10');
 
-            const btn = document.getElementById('simulate-btn');
+            // Update Forms
+            document.querySelectorAll('.mode-form').forEach(el => el.classList.add('hidden'));
+            document.getElementById('lab-simulate-form-' + mode).classList.remove('hidden');
+
+            // Reset View
+            document.getElementById('lab-placeholder').classList.remove('hidden');
+            document.getElementById('lab-results').classList.add('hidden');
+        }
+
+        // Attach Event Listeners to all forms
+        document.querySelectorAll('.mode-form').forEach(form => {
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const mode = this.querySelector('input[name="mode"]').value;
+                const btn = document.getElementById('simulate-btn-' + mode);
+                const originalText = btn.innerText;
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Simuliere...</span>';
+
+                try {
+                    const formData = new FormData(this);
+
+                    // Determine Endpoint based on mode (or use same controller with mode param)
+                    // For now we use the same endpoint and handle mode in controller
+                    const response = await fetch('{{ route('admin.monitoring.lab.run') }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        handleSimulationResult(mode, data.data);
+                    } else {
+                        alert('Fehler: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Ein Netzwerkfehler ist aufgetreten.');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            });
+        });
+
+        function handleSimulationResult(mode, data) {
             const placeholder = document.getElementById('lab-placeholder');
             const results = document.getElementById('lab-results');
 
-            btn.disabled = true;
-            btn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Simuliere...</span>';
-
-            try {
-                const formData = new FormData(this);
-                const response = await fetch('{{ route('admin.monitoring.lab.run') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    const sim = data.data;
-
-                    // Update Score
-                    document.getElementById('res-home-name').innerText = this.home_club_id.options[this.home_club_id.selectedIndex].text;
-                    document.getElementById('res-away-name').innerText = this.away_club_id.options[this.away_club_id.selectedIndex].text;
-                    document.getElementById('res-score').innerText = `${sim.home_score}:${sim.away_score}`;
-                    document.getElementById('res-attendance').innerText = sim.attendance.toLocaleString();
-                    document.getElementById('res-weather').innerText = sim.weather;
-
-                    // Update Metadata
-                    document.getElementById('res-metadata').innerHTML = `
-                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
-                            <span class="text-slate-500 uppercase tracking-tighter">Seed Code</span>
-                            <span class="text-white font-black">${sim.seed}</span>
-                        </div>
-                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
-                            <span class="text-slate-500 uppercase tracking-tighter">Players Home</span>
-                            <span class="text-white font-black">${sim.home_players.length}</span>
-                        </div>
-                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
-                            <span class="text-slate-500 uppercase tracking-tighter">Players Away</span>
-                            <span class="text-white font-black">${sim.away_players.length}</span>
-                        </div>
-                        <div class="mt-4 pt-4 border-t border-emerald-500/20">
-                            <div class="text-emerald-500 font-black uppercase tracking-widest text-[8px] animate-pulse">Simulation Engine v2.0 Live</div>
-                        </div>
-                    `;
-
-                    // Update Events
-                    const eventsContainer = document.getElementById('res-events');
-                    eventsContainer.innerHTML = '';
-
-                    sim.events.forEach((event, idx) => {
-                        const div = document.createElement('div');
-                        // Staggered animation effect
-                        div.style.animationDelay = `${idx * 0.05}s`;
-                        div.className = 'flex items-start gap-5 bg-slate-900/40 p-5 rounded-[1.5rem] border border-white/5 hover:border-emerald-500/30 hover:bg-slate-900/60 transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2';
-
-                        let icon = '⚽';
-                        let colorClass = 'text-emerald-400';
-                        let bgClass = 'bg-emerald-500/10';
-
-                        if (event.event_type === 'yellow_card') { icon = '🟨'; colorClass = 'text-yellow-400'; bgClass = 'bg-yellow-500/10'; }
-                        if (event.event_type === 'red_card') { icon = '🟥'; colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; }
-                        if (event.event_type === 'substitution') { icon = '🔄'; colorClass = 'text-blue-400'; bgClass = 'bg-blue-500/10'; }
-                        if (event.event_type === 'injury') { icon = '🚑'; colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; }
-                        if (event.event_type === 'foul') { icon = '🚨'; colorClass = 'text-orange-400'; bgClass = 'bg-orange-500/10'; }
-                        if (event.event_type === 'chance') { icon = '🔥'; colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10'; }
-                        if (event.event_type === 'corner') { icon = '🚩'; colorClass = 'text-teal-400'; bgClass = 'bg-teal-500/10'; }
-
-                        div.innerHTML = `
-                            <div class="w-10 h-10 shrink-0 ${bgClass} rounded-xl flex items-center justify-center text-[11px] border border-white/10 font-black ${colorClass} shadow-lg ring-1 ring-inset ring-white/5">
-                                ${event.minute}'
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-3 mb-2">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <span class="text-sm scale-110 drop-shadow">${icon}</span>
-                                        <h5 class="text-[10px] font-black uppercase text-slate-300 truncate tracking-wider">
-                                            ${event.club_name || event.club_short_name || 'Unbekannt'}
-                                        </h5>
-                                    </div>
-                                    <span class="text-[10px] font-mono font-black text-slate-500 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">${event.score || ''}</span>
-                                </div>
-                                <p class="text-[13px] text-slate-200 font-medium leading-[1.6] tracking-tight antialiased">
-                                    ${event.narrative || 'Spielereignis ohne Kommentar.'}
-                                </p>
-                                <details class="mt-4 group/debug">
-                                    <summary class="text-[8px] text-slate-600 cursor-pointer hover:text-slate-400 uppercase tracking-[0.2em] font-black list-none flex items-center gap-2 transition-colors">
-                                        <div class="w-1 h-3 bg-slate-800 rounded-full transition-colors group-hover/debug:bg-emerald-500/50"></div>
-                                        <span>Raw Engine Data</span>
-                                    </summary>
-                                    <div class="mt-3 p-4 bg-black/80 rounded-[1.25rem] border border-white/10 text-[9px] text-emerald-500/70 overflow-x-auto font-mono leading-relaxed shadow-inner">
-                                        ${JSON.stringify(event, null, 2)}
-                                    </div>
-                                </details>
-                            </div>
-                        `;
-                        eventsContainer.appendChild(div);
-                    });
-
-                    // Show results with scroll and focus
-                    placeholder.classList.add('hidden');
-                    results.classList.remove('hidden');
-                    results.focus();
-
-                    // Smooth scroll to results
-                    window.scrollTo({
-                        top: results.offsetTop - 100,
-                        behavior: 'smooth'
-                    });
-
-                } else {
-                    alert('Fehler: ' + data.message);
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Ein Netzwerkfehler ist aufgetreten.');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'Simulation starten';
+            if (mode === 'single') {
+                renderSingleResult(data);
+            } else if (mode === 'batch') {
+                renderBatchResult(data);
+            } else if (mode === 'ab') {
+                renderABResult(data);
+            } else if (mode === 'heatmap') {
+                renderHeatmapResult(data);
             }
-        });
+
+            placeholder.classList.add('hidden');
+            results.classList.remove('hidden');
+
+            // Smooth scroll
+            window.scrollTo({
+                top: results.offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+
+        function renderSingleResult(sim) {
+            // ... (The existing rendering logic, moved here) ...
+            // Simplified for brevity in this replacement step, I will need to inject the full renderer back or refactor
+            // Actually, to avoid breaking the existing logic, I will paste the previous renderer here
+
+            // Inject content into existing DOM structure (re-using the Single Match UI)
+            document.getElementById('res-home-name').textContent = sim.home_club.name;
+            document.getElementById('res-away-name').textContent = sim.away_club.name;
+            document.getElementById('res-score').textContent = `${sim.home_score}:${sim.away_score}`;
+            document.getElementById('res-weather').textContent = sim.weather;
+            document.getElementById('res-attendance').textContent = sim.attendance;
+
+            // Update Metadata
+            document.getElementById('res-metadata').innerHTML = `
+                <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
+                    <span class="text-slate-500 uppercase tracking-tighter">Engine Performance</span>
+                    <span class="text-white font-black">${sim.duration_ms}ms</span>
+                </div>
+                 <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
+                    <span class="text-slate-500 uppercase tracking-tighter">Event Integrity</span>
+                    <span class="${sim.health.is_stable ? 'text-emerald-500' : 'text-amber-500'} font-black">
+                        ${sim.health.is_stable ? 'PERFECT' : 'AUDIT REQUIRED'}
+                    </span>
+                </div>
+                 <div class="mt-4 pt-4 border-t border-white/10">
+                    <h5 class="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Deep Simulation Audit</h5>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-[8px]">
+                            <span class="text-slate-400">Score Validation</span>
+                            <span class="${sim.health.audit.score_validated ? 'text-emerald-500' : 'text-red-500'} font-black">
+                                ${sim.health.audit.score_validated ? 'PASSED' : 'FAILED'}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-[8px]">
+                            <span class="text-slate-400">Timeline Integrity</span>
+                            <span class="${sim.health.audit.timeline_validated ? 'text-emerald-500' : 'text-red-500'} font-black">
+                                ${sim.health.audit.timeline_validated ? 'SECURE' : 'ERROR'}
+                            </span>
+                        </div>
+                         <div class="flex items-center justify-between text-[8px]">
+                            <span class="text-slate-400">Squad Consistency</span>
+                            <span class="${sim.health.audit.players_validated ? 'text-emerald-500' : 'text-amber-500'} font-black">
+                                ${sim.health.audit.players_validated ? 'VERIFIED' : 'MISMATCH'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const eventsContainer = document.getElementById('res-events');
+            eventsContainer.innerHTML = '';
+
+            sim.events.forEach((event, idx) => {
+                const div = document.createElement('div');
+                div.style.animationDelay = `${idx * 0.05}s`;
+
+                const isBroken = !event.narrative || event.narrative.includes('[') || event.narrative.includes(']');
+
+                div.className = `flex items-start gap-5 p-5 rounded-[1.5rem] border transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2 
+                    ${isBroken ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10' : 'bg-slate-900/40 border-white/5 hover:border-emerald-500/30 hover:bg-slate-900/60'}`;
+
+                let icon = '⚽';
+                let colorClass = isBroken ? 'text-red-400' : 'text-emerald-400';
+                let bgClass = isBroken ? 'bg-red-500/10' : 'bg-emerald-500/10';
+
+                if (event.event_type === 'yellow_card') { icon = '🟨'; if (!isBroken) { colorClass = 'text-yellow-400'; bgClass = 'bg-yellow-500/10'; } }
+                if (event.event_type === 'red_card') { icon = '🟥'; if (!isBroken) { colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; } }
+                if (event.event_type === 'substitution') { icon = '🔄'; if (!isBroken) { colorClass = 'text-blue-400'; bgClass = 'bg-blue-500/10'; } }
+                if (event.event_type === 'injury') { icon = '🚑'; if (!isBroken) { colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; } }
+                if (event.event_type === 'foul') { icon = '🚨'; if (!isBroken) { colorClass = 'text-orange-400'; bgClass = 'bg-orange-500/10'; } }
+                if (event.event_type === 'chance') { icon = '🔥'; if (!isBroken) { colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10'; } }
+                if (event.event_type === 'corner') { icon = '🚩'; if (!isBroken) { colorClass = 'text-teal-400'; bgClass = 'bg-teal-500/10'; } }
+
+                div.innerHTML = `
+                    <div class="w-10 h-10 shrink-0 ${bgClass} rounded-xl flex items-center justify-center text-[11px] border border-white/10 font-black ${colorClass} shadow-lg ring-1 ring-inset ring-white/5">
+                        ${event.minute}'
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-sm scale-110 drop-shadow">${icon}</span>
+                                <h5 class="text-[10px] font-black uppercase text-slate-300 truncate tracking-wider">
+                                    ${event.club_name || event.club_short_name || 'Unbekannt'}
+                                </h5>
+                            </div>
+                            <span class="text-[10px] font-mono font-black text-slate-500 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">${event.score || ''}</span>
+                        </div>
+                        <p class="text-[13px] ${isBroken ? 'text-red-400/90' : 'text-slate-200'} font-medium leading-[1.6] tracking-tight antialiased">
+                            ${event.narrative || 'Spielereignis ohne Kommentar.'}
+                        </p>
+                    </div>
+                `;
+                eventsContainer.appendChild(div);
+            });
+        }
+
+        function renderBatchResult(data) {
+            const container = document.getElementById('res-events');
+            container.innerHTML = `
+                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                    <div class="text-center space-y-2">
+                        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Batch Simulation Report</div>
+                        <h2 class="text-2xl font-black text-white">Stress Test Analysis</h2>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-white/5 text-[10px] text-slate-400">
+                            <span>${data.iterations} Iterationen</span>
+                            <span>•</span>
+                            <span>${data.home_club.name} vs ${data.away_club.name}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Stat Cards -->
+                        <div class="sim-card p-6 flex flex-col items-center justify-center bg-slate-900/50">
+                            <span class="text-[9px] uppercase tracking-widest text-slate-500 mb-1">Heim-Siege</span>
+                            <span class="text-3xl font-black text-emerald-400">${data.stats.home_win_rate}%</span>
+                        </div>
+                        <div class="sim-card p-6 flex flex-col items-center justify-center bg-slate-900/50">
+                             <span class="text-[9px] uppercase tracking-widest text-slate-500 mb-1">Unentschieden</span>
+                             <span class="text-3xl font-black text-slate-400">${data.stats.draw_rate}%</span>
+                        </div>
+                        <div class="sim-card p-6 flex flex-col items-center justify-center bg-slate-900/50">
+                             <span class="text-[9px] uppercase tracking-widest text-slate-500 mb-1">Gast-Siege</span>
+                             <span class="text-3xl font-black text-blue-400">${data.stats.away_win_rate}%</span>
+                        </div>
+                    </div>
+
+                    <div class="sim-card p-6 bg-slate-900/50">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6">Tore pro Spiel (Durchschnitt)</h4>
+                        <div id="chart-goals" class="h-64"></div>
+                    </div>
+                </div>
+             `;
+
+            // Render Charts
+            const options = {
+                chart: { type: 'bar', height: 250, toolbar: { show: false }, background: 'transparent' },
+                series: [{ name: 'Tore', data: [data.stats.avg_home_goals, data.stats.avg_away_goals] }],
+                xaxis: {
+                    categories: [data.home_club.name, data.away_club.name],
+                    labels: { style: { colors: '#94a3b8', fontSize: '10px', fontFamily: 'Inter' } },
+                    axisBorder: { show: false }, axisTicks: { show: false }
+                },
+                yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px', fontFamily: 'Inter' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.05)' },
+                colors: ['#10b981', '#3b82f6'],
+                plotOptions: { bar: { borderRadius: 4, columnWidth: '40%', distributed: true } },
+                dataLabels: { enabled: true, style: { fontSize: '12px', fontFamily: 'Inter', fontWeight: 900 } },
+                legend: { show: false },
+                theme: { mode: 'dark' }
+            };
+            new ApexCharts(document.querySelector("#chart-goals"), options).render();
+        }
+
+        function renderABResult(data) {
+            const container = document.getElementById('res-events');
+
+            // Calculate diff colors
+            const goalsDiffColor = data.diff.home_goals > 0 ? 'text-emerald-400' : (data.diff.home_goals < 0 ? 'text-red-400' : 'text-slate-400');
+            const cardsDiffColor = data.diff.cards > 0 ? 'text-amber-400' : (data.diff.cards < 0 ? 'text-emerald-400' : 'text-slate-400');
+
+            container.innerHTML = `
+                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                    <div class="text-center space-y-2">
+                         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-pink-500">A/B Engine Comparison</div>
+                        <h2 class="text-2xl font-black text-white">Variant Analysis</h2>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-white/5 text-[10px] text-slate-400">
+                            <span>${data.iterations} Iterationen p. Var.</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Variant A -->
+                        <div class="sim-card p-6 border-t-4 border-slate-500 bg-slate-900/50">
+                            <h3 class="text-sm font-black text-white mb-4 flex items-center justify-between">
+                                <span>Variante A (Kontrolle)</span>
+                                <span class="text-[9px] bg-slate-800 px-2 py-1 rounded text-slate-400 uppercase tracking-wider">Baseline</span>
+                            </h3>
+                             <dl class="space-y-2 text-xs">
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Tore (Heim)</dt>
+                                    <dd class="font-mono text-white">${data.variant_a.stats.avg_home_goals}</dd>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Auswärtssiege</dt>
+                                    <dd class="font-mono text-white">${data.variant_a.stats.win_rate_away}%</dd>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Karten Ø</dt>
+                                    <dd class="font-mono text-white">${data.variant_a.stats.avg_cards}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                         <!-- Variant B -->
+                        <div class="sim-card p-6 border-t-4 border-pink-500 bg-slate-900/50 relative overflow-hidden">
+                             <div class="absolute top-0 right-0 p-3 opacity-5 text-4xl">🧪</div>
+                            <h3 class="text-sm font-black text-white mb-4 flex items-center justify-between">
+                                <span>Variante B (Test)</span>
+                                <span class="text-[9px] bg-pink-500/10 text-pink-400 border border-pink-500/20 px-2 py-1 rounded uppercase tracking-wider">Aggression: High</span>
+                            </h3>
+                             <dl class="space-y-2 text-xs">
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Tore (Heim)</dt>
+                                    <dd class="font-mono text-white">${data.variant_b.stats.avg_home_goals}</dd>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Auswärtssiege</dt>
+                                    <dd class="font-mono text-white">${data.variant_b.stats.win_rate_away}%</dd>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-white/5">
+                                    <dt class="text-slate-500">Karten Ø</dt>
+                                    <dd class="font-mono text-white">${data.variant_b.stats.avg_cards}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Diff Summary -->
+                    <div class="sim-card p-6 bg-slate-900/50 border border-white/5">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Veränderung (B vs A)</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-black/20 rounded-xl">
+                                <div class="text-[9px] text-slate-500 uppercase tracking-wider mb-1">Tore Delta</div>
+                                <div class="text-xl font-black ${goalsDiffColor}">${data.diff.home_goals > 0 ? '+' : ''}${data.diff.home_goals}</div>
+                            </div>
+                            <div class="text-center p-4 bg-black/20 rounded-xl">
+                                <div class="text-[9px] text-slate-500 uppercase tracking-wider mb-1">Karten Delta</div>
+                                <div class="text-xl font-black ${cardsDiffColor}">${data.diff.cards > 0 ? '+' : ''}${data.diff.cards}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sim-card p-6 bg-slate-900/50">
+                        <div id="chart-ab" class="h-64"></div>
+                    </div>
+                </div>
+             `;
+
+            // Comparison Chart
+            const options = {
+                chart: { type: 'bar', height: 250, toolbar: { show: false }, background: 'transparent' },
+                series: [
+                    { name: 'Variante A', data: [data.variant_a.stats.avg_home_goals, data.variant_a.stats.avg_cards, data.variant_a.stats.avg_injuries] },
+                    { name: 'Variante B', data: [data.variant_b.stats.avg_home_goals, data.variant_b.stats.avg_cards, data.variant_b.stats.avg_injuries] }
+                ],
+                xaxis: {
+                    categories: ['Tore (Heim)', 'Karten', 'Verletzungen'],
+                    labels: { style: { colors: '#94a3b8', fontSize: '10px', fontFamily: 'Inter' } },
+                    axisBorder: { show: false }, axisTicks: { show: false }
+                },
+                yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px', fontFamily: 'Inter' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.05)' },
+                colors: ['#64748b', '#ec4899'],
+                plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+                dataLabels: { enabled: false },
+                legend: { show: true, labels: { colors: '#cbd5e1' }, position: 'top' },
+                theme: { mode: 'dark' },
+                stroke: { show: true, width: 2, colors: ['transparent'] }
+            };
+            new ApexCharts(document.querySelector("#chart-ab"), options).render();
+        }
     </script>
 
     <style>

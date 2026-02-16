@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 
 class NarrativeEngine
 {
+    protected static array $usageStats = [];
+
     /**
      * Generate a dynamic narrative text for a given event.
      */
@@ -19,7 +21,20 @@ class NarrativeEngine
             return $this->getFallbackText($eventType, $data);
         }
 
+        // Track usage
+        self::$usageStats[$template->id] = (self::$usageStats[$template->id] ?? 0) + 1;
+
         return $this->replaceTokens($template->text, $data);
+    }
+
+    public static function getUsageStats(): array
+    {
+        return self::$usageStats;
+    }
+
+    public static function clearUsageStats(): void
+    {
+        self::$usageStats = [];
     }
 
     /**

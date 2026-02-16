@@ -18,7 +18,7 @@ class LineupsController extends Controller
     //  INDEX
     // ────────────────────────────────────────────────────────
 
-    public function index(Request $request): RedirectResponse|View
+    public function index(Request $request): View
     {
         /** @var Club $club */
         $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
@@ -28,55 +28,43 @@ class LineupsController extends Controller
             $club = $this->resolveClub($request);
         }
 
-        // 1. Find the next upcoming match (scheduled or live)
-        $nextMatch = GameMatch::query()
+        // 1. Fetch upcoming matches for the club
+        $matches = GameMatch::query()
             ->where(function ($query) use ($club): void {
                 $query->where('home_club_id', $club->id)
                     ->orWhere('away_club_id', $club->id);
             })
             ->whereIn('status', ['scheduled', 'live'])
-            ->where('kickoff_at', '>=', now()->subHours(4)) // Include matches that just started
+            ->where('kickoff_at', '>=', now()->subHours(4))
+            ->with([
+                'homeClub',
+                'awayClub',
+                'lineups' => function ($q) use ($club) {
+                    $q->where('club_id', $club->id);
+                }
+            ])
             ->orderBy('kickoff_at')
-            ->first();
+            ->get();
 
-        // 2. If no match found, fallback to old view (or show "No Match" message)
-        if (!$nextMatch) {
-            // Keep the old view for now if no match exists, so they can at least see templates
-            $userClubs = $request->user()->isAdmin()
-                ? Club::where('is_cpu', false)->orderBy('name')->get()
-                : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
+        // 2. Fetch templates
+        $templates = $club->lineups()
+            ->whereNull('match_id')
+            ->where('is_template', true)
+            ->with('players')
+            ->orderBy('name')
+            ->get();
 
-            return view('lineups.index', [
-                'club' => $club,
-                'userClubs' => $userClubs,
-                'matches' => [],
-                'templates' => $club->lineups()
-                    ->whereNull('match_id')
-                    ->where('is_template', true)
-                    ->orderBy('name')
-                    ->get(),
-            ]);
-        }
+        // 3. User clubs for the switcher
+        $userClubs = $request->user()->isAdmin()
+            ? Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
 
-        // 3. Find existing lineup for this match
-        $lineup = $club->lineups()->where('match_id', $nextMatch->id)->first();
-
-        // 4. If no lineup, create one
-        if (!$lineup) {
-            $lineupName = 'Spieltag ' . $nextMatch->matchday . ' vs ' .
-                ($nextMatch->home_club_id === $club->id ? $nextMatch->awayClub->name : $nextMatch->homeClub->name);
-
-            $lineup = $club->lineups()->create([
-                'match_id' => $nextMatch->id,
-                'name' => substr($lineupName, 0, 120),
-                'formation' => '4-4-2', // Default
-                'is_active' => true,
-                'notes' => 'Automatisch erstellt für nächstes Spiel',
-            ]);
-        }
-
-        // 5. Redirect to Editor
-        return redirect()->route('lineups.edit', $lineup);
+        return view('lineups.index', [
+            'club' => $club,
+            'userClubs' => $userClubs,
+            'matches' => $matches,
+            'templates' => $templates,
+        ]);
     }
 
     // ────────────────────────────────────────────────────────

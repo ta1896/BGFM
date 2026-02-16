@@ -75,6 +75,8 @@ class MatchSimulationService
      */
     public function calculateSimulation(GameMatch $match, array $options = []): array
     {
+        $startTime = microtime(true);
+
         if ($match->status === 'played' && !($options['is_sandbox'] ?? false)) {
             $match->refresh();
         }
@@ -134,6 +136,8 @@ class MatchSimulationService
             $events[] = $eventData;
         }
 
+        $duration = round((microtime(true) - $startTime) * 1000, 2);
+
         return [
             'home_score' => $homeGoals,
             'away_score' => $awayGoals,
@@ -143,6 +147,7 @@ class MatchSimulationService
             'seed' => mt_rand(100000, 999999999),
             'home_players' => $homePlayers,
             'away_players' => $awayPlayers,
+            'duration_ms' => $duration,
         ];
     }
 
