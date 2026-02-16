@@ -76,15 +76,25 @@ class NarrativeEngine
     {
         $replacements = [];
 
+        // Manual mapping for common aliases to ensure templates work with different service naming conventions
+        $mapping = [
+            'player_name' => 'player',
+            'club_name' => 'club',
+            'opponent_name' => 'opponent',
+            'assister_name' => 'assister',
+        ];
+
+        foreach ($mapping as $alias => $token) {
+            if (isset($data[$alias]) && !isset($data[$token])) {
+                $data[$token] = $data[$alias];
+            }
+        }
+
         foreach ($data as $key => $value) {
             if (is_scalar($value)) {
                 $replacements["{{$key}}"] = (string) $value;
             }
         }
-
-        // Add conditional stat logic if data contains stats objects
-        // This is a placeholder for potential complex logic, but for now we stick to simple replacement
-        // derived from the $data array which should be pre-populated by ActionEngine.
 
         return strtr($text, $replacements);
     }

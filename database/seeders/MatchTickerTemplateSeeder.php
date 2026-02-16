@@ -183,6 +183,83 @@ class MatchTickerTemplateSeeder extends Seeder
                 'Bitter für {club}: {player} kann wohl nicht weitermachen.',
                 '{player} hinkt vom Platz. Wir hoffen auf nichts Ernstes.',
                 'Unsportlich? Nein, {player} ist wirklich schmerzverzerrt am Boden.',
+            ],
+            'corner' => [
+                'Ecke für {club}. {player} legt sich den Ball bereit.',
+                '{player} flankt den Eckball hoch hinein.',
+                'Eckstoß! Kann {club} daraus Profit schlagen?',
+                '{player} zirkelt die Ecke auf den kurzen Pfosten.',
+                'Nächste Ecke für {club}. Der Druck wächst.',
+            ],
+            'shot' => [
+                '{player} fackelt nicht lange und zieht ab!',
+                'Schussversuch von {player}, aber weit drüber.',
+                'Starker Schuss von {player}, der Torwart muss zupacken.',
+                'Direktabnahme von {player}! Der Ball zischt am Tor vorbei.',
+                '{player} probiert es aus der Distanz, aber kein Problem für den Keeper.',
+            ],
+            'free_kick' => [
+                'Freistoß aus aussichtsreicher Position für {club} durch {player}.',
+                '{player} führt den Freistoß kurz aus.',
+                'Direkter Freistoß! {player} nimmt Maß.',
+                '{player} flankt den Freistoß hoch in den Sechzehner.',
+                'Gefährliche Freistoßposition! {player} tritt an.',
+            ],
+            'offside' => [
+                'Abseits! {player} war einen Schritt zu früh gestartet.',
+                'Der Linienrichter hebt die Fahne: Abseits {player}.',
+                'Knappe Entscheidung, aber {player} stand im Abseits.',
+                'Pfiff! {player} im Abseits ertappt.',
+                '{club} im Vorwärtsgang, doch {player} steht in der verbotenen Zone.',
+            ],
+            'throw_in' => [
+                'Einwurf für {club} durch {player}.',
+                '{player} führt den Einwurf schnell aus.',
+                'Das Spiel geht weiter mit einem Einwurf von {player}.',
+                'Hektik an der Seitenlinie: Einwurf von {player}.',
+            ],
+            'clearance' => [
+                '{player} klärt den Ball kompromisslos ins Seitenaus.',
+                'Befreiungsschlag von {player}!',
+                '{player} bereinigt die Situation mit einem weiten Schlag.',
+                'Wichtige Klärungsaktion von {player}.',
+                'Sicher geklärt von {player}.',
+            ],
+            'turnover' => [
+                'Ballverlust von {player}! Jetzt muss es schnell gehen.',
+                'Fehlpass von {player}, der Gegner übernimmt.',
+                '{player} verliert den Ball im Aufbau.',
+                'Unnötiger Ballverlust von {player}.',
+                'Der Gegner spritzt dazwischen: {player} ist den Ball los.',
+            ],
+            'midfield_possession' => [
+                '{club} lässt den Ball sicher durch die eigenen Reihen laufen.',
+                '{player} verteilt die Bälle im Mittelfeld.',
+                'Ruhiger Spielaufbau von {club}.',
+                '{player} behauptet den Ball im Zentrum.',
+                '{club} kontrolliert jetzt das Geschehen.',
+            ],
+            'kickoff' => [
+                'Anpfiff! Der Ball rollt im Stadion von {club}.',
+                'Das Spiel beginnt! {club} hat Anstoß.',
+                'Los geht\'s! Mal sehen, wer heute die Oberhand behält.',
+            ],
+            'half_time' => [
+                'Halbzeit! Die Spieler gehen in die Kabinen.',
+                'Pausenpfiff. Zeit zum Durchatmen.',
+                '45 Minuten sind rum. {score} zur Pause.',
+            ],
+            'full_time' => [
+                'Schlusspfiff! Das Spiel ist aus.',
+                'Ende Gelände! Der Schiedsrichter beendet die Partie.',
+                'Full Time! Endstand: {score}.',
+            ],
+            'save' => [
+                'Starke Parade von {player}! Er hält sicher.',
+                'Glanztat! {player} lenkt den Ball um den Pfosten.',
+                'Sicherer Rückhalt: {player} begräbt den Ball unter sich.',
+                'Wahnsinnsreflex! {player} rettet auf der Linie.',
+                'Kein Durchkommen! {player} ist zur Stelle.',
             ]
         ];
 

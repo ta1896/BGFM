@@ -30,7 +30,8 @@ class SimulateScheduledMatchesJob implements ShouldQueue
     public function __construct(
         public readonly int $limit = 0,
         public readonly array $types = ['friendly', 'league', 'cup'],
-        public readonly int $minutesPerRun = 5
+        public readonly int $minutesPerRun = 5,
+        public readonly array $matchIds = []
     ) {
     }
 
@@ -63,8 +64,13 @@ class SimulateScheduledMatchesJob implements ShouldQueue
                 $processingQuery
                     ->whereNull('live_processing_started_at')
                     ->orWhere('live_processing_started_at', '<=', $claimStaleBefore);
-            })
-            ->orderBy('kickoff_at')
+            });
+
+        if ($this->matchIds !== []) {
+            $query->whereIn('id', $this->matchIds);
+        }
+
+        $query->orderBy('kickoff_at')
             ->orderBy('id');
 
         if ($limit > 0) {
@@ -72,7 +78,7 @@ class SimulateScheduledMatchesJob implements ShouldQueue
         }
 
         /** @var array<int, int> $candidateIds */
-        $candidateIds = $query->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $candidateIds = $query->pluck('id')->map(fn($id): int => (int) $id)->all();
 
         $summary = [
             'candidate_matches' => count($candidateIds),

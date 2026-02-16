@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Services\FormationPlannerService;
 use App\Services\LiveMatchTickerService;
 use App\Services\MatchSimulationService;
 use App\Services\PlayerPositionService;
@@ -350,6 +351,7 @@ class MatchCenterController extends Controller
                         'yellow_cards' => (int) $state->yellow_cards,
                         'red_cards' => (int) $state->red_cards,
                         'saves' => (int) $state->saves,
+                        'photo_url' => $state->player?->photo_url,
                     ];
                 })
                 ->values()
@@ -454,11 +456,62 @@ class MatchCenterController extends Controller
                 ->where('match_id', $match->id)
                 ->where('club_id', $clubId)
                 ->first();
+
+            $players = collect();
+            $formation = '4-4-2';
+
             if (!$lineup) {
-                continue;
+                // AUTO-FILL: Generate a virtual lineup if missing
+                $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;
+                $selection = app(FormationPlannerService::class)->strongestByFormation(
+                    $club->players()->whereIn('status', ['active', 'transfer_listed'])->get(),
+                    '4-4-2',
+                    5
+                );
+
+                $formation = '4-4-2';
+                foreach ($selection['starters'] ?? [] as $slot => $playerId) {
+                    $player = \App\Models\Player::find($playerId);
+                    if ($player) {
+                        $players->push((object) [
+                            'id' => $player->id,
+                            'full_name' => $player->full_name,
+                            'position_main' => $player->position_main,
+                            'position' => $player->position,
+                            'photo_url' => $player->photo_url,
+                            'pivot' => (object) [
+                                'pitch_position' => $slot,
+                                'sort_order' => 1,
+                                'is_bench' => false,
+                                'bench_order' => null
+                            ]
+                        ]);
+                    }
+                }
+                foreach ($selection['bench'] ?? [] as $idx => $playerId) {
+                    $player = \App\Models\Player::find($playerId);
+                    if ($player) {
+                        $players->push((object) [
+                            'id' => $player->id,
+                            'full_name' => $player->full_name,
+                            'position_main' => $player->position_main,
+                            'position' => $player->position,
+                            'photo_url' => $player->photo_url,
+                            'pivot' => (object) [
+                                'pitch_position' => 'BANK-' . ($idx + 1),
+                                'sort_order' => 100 + $idx,
+                                'is_bench' => true,
+                                'bench_order' => $idx + 1
+                            ]
+                        ]);
+                    }
+                }
+            } else {
+                $formation = (string) $lineup->formation;
+                $players = $lineup->players;
             }
 
-            $players = $lineup->players->map(function ($player) use ($positionService): array {
+            $mappedPlayers = $players->map(function ($player) use ($positionService): array {
                 $slot = (string) ($player->pivot->pitch_position ?? '');
                 $isRemoved = str_starts_with(strtoupper($slot), 'OUT-');
                 $fitFactor = $positionService->fitFactorWithProfile(
@@ -478,27 +531,28 @@ class MatchCenterController extends Controller
                     'is_removed' => $isRemoved,
                     'bench_order' => $player->pivot->bench_order !== null ? (int) $player->pivot->bench_order : null,
                     'fit_factor' => round($fitFactor, 2),
+                    'photo_url' => $player->photo_url,
                 ];
             });
 
             $lineups[(string) $clubId] = [
                 'club_id' => $clubId,
-                'formation' => (string) $lineup->formation,
-                'tactical_style' => (string) $lineup->tactical_style,
-                'attack_focus' => (string) $lineup->attack_focus,
-                'starters' => $players
+                'formation' => $formation,
+                'tactical_style' => $lineup ? (string) $lineup->tactical_style : 'balanced',
+                'attack_focus' => $lineup ? (string) $lineup->attack_focus : 'center',
+                'starters' => $mappedPlayers
                     ->where('is_bench', false)
                     ->where('is_removed', false)
                     ->sortBy('sort_order')
                     ->values()
                     ->all(),
-                'bench' => $players
+                'bench' => $mappedPlayers
                     ->where('is_bench', true)
                     ->where('is_removed', false)
                     ->sortBy('bench_order')
                     ->values()
                     ->all(),
-                'removed' => $players
+                'removed' => $mappedPlayers
                     ->where('is_removed', true)
                     ->sortBy('sort_order')
                     ->values()

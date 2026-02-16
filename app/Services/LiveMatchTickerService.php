@@ -13,6 +13,7 @@ use App\Models\MatchLiveTeamState;
 use App\Models\MatchPlannedSubstitution;
 use App\Models\MatchTickerTemplate;
 use App\Models\Player;
+use App\Services\MatchEngine\NarrativeEngine;
 use App\Services\MatchEngine\ActionEngine;
 use App\Services\MatchEngine\LiveStateRepository;
 use App\Services\MatchEngine\SubstitutionManager;
@@ -50,6 +51,7 @@ class LiveMatchTickerService
         private readonly SubstitutionManager $substitutionManager,
         private readonly LiveStateRepository $stateRepository,
         private readonly TacticalManager $tacticalManager,
+        private readonly NarrativeEngine $narrativeEngine,
         private readonly MatchSimulationExecutor $simulationExecutor,
         private readonly DefaultSimulationStrategy $simulationStrategy,
         private readonly MatchFinishedObserverPipeline $matchFinishedObserverPipeline
@@ -1775,6 +1777,28 @@ class LiveMatchTickerService
         ?float $xg = null,
         ?int $momentum_value = null
     ): void {
+        $narrative = null;
+
+        if ($actionType !== 'kickoff' && $actionType !== 'half_time' && $actionType !== 'full_time') {
+            $data = $metadata ?? [];
+            if ($playerId) {
+                $player = Player::find($playerId);
+                $data['player'] = $player?->last_name ?? 'Spieler';
+            }
+            if ($opponentPlayerId) {
+                $opp = Player::find($opponentPlayerId);
+                $data['opponent'] = $opp?->last_name ?? 'Gegenspieler';
+            }
+            if ($clubId) {
+                $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;
+                $data['club'] = $club?->short_name ?? $club?->name ?? 'Verein';
+            }
+            $data['score'] = "{$match->home_score}:{$match->away_score}";
+            $data['minute'] = $minute;
+
+            $narrative = $this->narrativeEngine->generate($actionType, $data, 'de');
+        }
+
         MatchLiveAction::query()->create([
             'match_id' => $match->id,
             'minute' => max(0, min(120, $minute)),
@@ -1786,7 +1810,7 @@ class LiveMatchTickerService
             'action_type' => $actionType,
             'outcome' => $outcome,
             'metadata' => $metadata,
-            'narrative' => null, // Manual actions don't generate narrative here usually
+            'narrative' => $narrative,
             'x_coord' => $x_coord,
             'y_coord' => $y_coord,
             'xg' => $xg,

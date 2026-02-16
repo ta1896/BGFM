@@ -20,6 +20,7 @@ class MatchLiveAction extends Model
         'opponent_player_id',
         'action_type',
         'outcome',
+        'narrative',
         'x_coord',
         'y_coord',
         'xg',

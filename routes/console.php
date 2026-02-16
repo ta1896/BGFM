@@ -27,7 +27,7 @@ Artisan::command('game:process-matchday {--competition-season=}', function (Seas
     if ($competitionSeasonId !== null) {
         $competitionSeason = CompetitionSeason::find((int) $competitionSeasonId);
         if (!$competitionSeason) {
-            $this->error('CompetitionSeason nicht gefunden: '.$competitionSeasonId);
+            $this->error('CompetitionSeason nicht gefunden: ' . $competitionSeasonId);
 
             return 1;
         }
@@ -63,7 +63,7 @@ Schedule::command('game:process-matchday')
     ->everyFifteenMinutes()
     ->withoutOverlapping();
 
-Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run=} {--force}', function (SimulationSettingsService $simulationSettings, LiveMatchTickerService $tickerService) {
+Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run=} {--force} {--ids=}', function (SimulationSettingsService $simulationSettings, LiveMatchTickerService $tickerService) {
     $truncateMessage = static function (?string $message, int $maxBytes = 250): ?string {
         if ($message === null) {
             return null;
@@ -92,7 +92,7 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
     $typesOption = $this->option('types');
     $defaultTypes = $simulationSettings->schedulerDefaultTypes();
     $inputTypes = array_filter(array_map(
-        static fn (string $value): string => trim(strtolower($value)),
+        static fn(string $value): string => trim(strtolower($value)),
         explode(',', $typesOption === null ? implode(',', $defaultTypes) : (string) $typesOption)
     ));
     $types = array_values(array_intersect($allowedTypes, $inputTypes));
@@ -133,7 +133,7 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
             'requested_types' => $types,
             'runner_lock_seconds' => $runnerLockSeconds,
             'started_at' => now(),
-            'message' => $truncateMessage($abandonedRunsRecovered > 0 ? ('Recovered stale runs: '.$abandonedRunsRecovered) : null),
+            'message' => $truncateMessage($abandonedRunsRecovered > 0 ? ('Recovered stale runs: ' . $abandonedRunsRecovered) : null),
         ]);
     } catch (Throwable) {
         $run = null;
@@ -147,8 +147,8 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
         if (array_key_exists('message', $attributes)) {
             $attributes['message'] = $truncateMessage(
                 is_scalar($attributes['message']) || $attributes['message'] === null
-                    ? (string) ($attributes['message'] ?? '')
-                    : null
+                ? (string) ($attributes['message'] ?? '')
+                : null
             );
         }
 
@@ -172,8 +172,8 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
         if (!$force && !$simulationSettings->isScheduledSimulationDue()) {
             $intervalMinutes = max(1, (int) config('simulation.scheduler.interval_minutes', 1));
             $lastRunAt = $simulationSettings->scheduledSimulationLastRunAt();
-            $skipMessage = 'Intervall '.$intervalMinutes.' Minute(n), letzter Lauf: '
-                .($lastRunAt ? $lastRunAt->format('Y-m-d H:i:s') : 'n/a').'.';
+            $skipMessage = 'Intervall ' . $intervalMinutes . ' Minute(n), letzter Lauf: '
+                . ($lastRunAt ? $lastRunAt->format('Y-m-d H:i:s') : 'n/a') . '.';
 
             $updateRun($run, [
                 'status' => 'skipped_interval',
@@ -182,13 +182,16 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
             ]);
 
             $this->info(
-                'Auto-Simulation uebersprungen ('.$skipMessage.')'
+                'Auto-Simulation uebersprungen (' . $skipMessage . ')'
             );
 
             return 0;
         }
 
-        $job = new SimulateScheduledMatchesJob($limit, $types, $minutesPerRun);
+        $idsOption = $this->option('ids');
+        $matchIds = $idsOption ? array_map('intval', explode(',', (string) $idsOption)) : [];
+
+        $job = new SimulateScheduledMatchesJob($limit, $types, $minutesPerRun, $matchIds);
         $summary = $job->handle($tickerService);
         $simulationSettings->markScheduledSimulationRun();
         $hasFailures = (int) ($summary['failed_matches'] ?? 0) > 0;
@@ -204,12 +207,12 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
             'skipped_unclaimable' => (int) ($summary['skipped_unclaimable'] ?? 0),
             'stale_claim_takeovers' => (int) ($summary['stale_claim_takeovers'] ?? 0),
             'finished_at' => now(),
-            'message' => $abandonedRunsRecovered > 0 ? ('Recovered stale runs: '.$abandonedRunsRecovered) : null,
+            'message' => $abandonedRunsRecovered > 0 ? ('Recovered stale runs: ' . $abandonedRunsRecovered) : null,
         ]);
 
         $this->info(
-            'Auto-Simulation abgeschlossen (limit: '.$limit.', minutes-per-run: '.$minutesPerRun.', types: '.implode(',', $types).', processed: '
-            .(int) ($summary['processed_matches'] ?? 0).', failures: '.(int) ($summary['failed_matches'] ?? 0).').'
+            'Auto-Simulation abgeschlossen (limit: ' . $limit . ', minutes-per-run: ' . $minutesPerRun . ', types: ' . implode(',', $types) . ', processed: '
+            . (int) ($summary['processed_matches'] ?? 0) . ', failures: ' . (int) ($summary['failed_matches'] ?? 0) . ').'
         );
 
         return 0;
@@ -250,10 +253,10 @@ Artisan::command('game:simulation-health {--limit=20} {--strict}', function () {
         return 0;
     }
 
-    $this->info('Simulation Health (letzte '.$runs->count().' Laeufe)');
+    $this->info('Simulation Health (letzte ' . $runs->count() . ' Laeufe)');
     $this->table(
         ['Run', 'Status', 'Processed', 'Failed', 'Stale-Takeovers', 'Started', 'Finished'],
-        $runs->map(fn (SimulationSchedulerRun $run): array => [
+        $runs->map(fn(SimulationSchedulerRun $run): array => [
             (string) $run->run_token,
             (string) $run->status,
             (int) $run->processed_matches,
@@ -276,16 +279,16 @@ Artisan::command('game:simulation-health {--limit=20} {--strict}', function () {
 
     $alerts = [];
     if ($failedRuns > $failedThreshold) {
-        $alerts[] = 'failed_runs='.$failedRuns.' (threshold '.$failedThreshold.')';
+        $alerts[] = 'failed_runs=' . $failedRuns . ' (threshold ' . $failedThreshold . ')';
     }
     if ($skippedLockedRuns > $skippedLockedThreshold) {
-        $alerts[] = 'skipped_locked='.$skippedLockedRuns.' (threshold '.$skippedLockedThreshold.')';
+        $alerts[] = 'skipped_locked=' . $skippedLockedRuns . ' (threshold ' . $skippedLockedThreshold . ')';
     }
     if ($staleTakeovers > $staleTakeoversThreshold) {
-        $alerts[] = 'stale_takeovers='.$staleTakeovers.' (threshold '.$staleTakeoversThreshold.')';
+        $alerts[] = 'stale_takeovers=' . $staleTakeovers . ' (threshold ' . $staleTakeoversThreshold . ')';
     }
     if ($abandonedRuns > $abandonedRunsThreshold) {
-        $alerts[] = 'abandoned_runs='.$abandonedRuns.' (threshold '.$abandonedRunsThreshold.')';
+        $alerts[] = 'abandoned_runs=' . $abandonedRuns . ' (threshold ' . $abandonedRunsThreshold . ')';
     }
 
     if ($alerts === []) {
@@ -294,7 +297,7 @@ Artisan::command('game:simulation-health {--limit=20} {--strict}', function () {
         return 0;
     }
 
-    $this->warn('Warnung: '.implode(', ', $alerts));
+    $this->warn('Warnung: ' . implode(', ', $alerts));
 
     if ((bool) $this->option('strict')) {
         $this->error('Strict mode: Alert-Schwelle ueberschritten.');
@@ -400,7 +403,7 @@ Artisan::command('game:backfill-player-club-model {--dry-run} {--chunk=500}', fu
 
     $report = $service->run($dryRun, $chunk);
 
-    $this->info('Backfill fuer Spieler/Verein abgeschlossen'.($dryRun ? ' (Dry-Run)' : '').'.');
+    $this->info('Backfill fuer Spieler/Verein abgeschlossen' . ($dryRun ? ' (Dry-Run)' : '') . '.');
 
     $this->table(
         ['Kennzahl', 'Wert'],
@@ -427,14 +430,14 @@ Artisan::command('game:backfill-player-club-model {--dry-run} {--chunk=500}', fu
     $this->info('Audit vor Backfill:');
     $this->table(
         ['Pruefung', 'Anzahl'],
-        collect($report['audit_before'])->map(fn ($value, $key) => [$key, $value])->values()->all()
+        collect($report['audit_before'])->map(fn($value, $key) => [$key, $value])->values()->all()
     );
 
     $this->newLine();
     $this->info($dryRun ? 'Audit nach Backfill (simuliert):' : 'Audit nach Backfill:');
     $this->table(
         ['Pruefung', 'Anzahl'],
-        collect($report['audit_after'])->map(fn ($value, $key) => [$key, $value])->values()->all()
+        collect($report['audit_after'])->map(fn($value, $key) => [$key, $value])->values()->all()
     );
 
     return 0;
@@ -458,7 +461,7 @@ Artisan::command(
         if ($matchId !== null) {
             $match = \App\Models\GameMatch::query()->find((int) $matchId);
             if (!$match) {
-                $this->error('Match nicht gefunden: '.$matchId);
+                $this->error('Match nicht gefunden: ' . $matchId);
 
                 return 1;
             }
@@ -478,7 +481,7 @@ Artisan::command(
         if ($competitionSeasonId !== null) {
             $competitionSeason = \App\Models\CompetitionSeason::query()->find((int) $competitionSeasonId);
             if (!$competitionSeason) {
-                $this->error('CompetitionSeason nicht gefunden: '.$competitionSeasonId);
+                $this->error('CompetitionSeason nicht gefunden: ' . $competitionSeasonId);
 
                 return 1;
             }
@@ -518,7 +521,7 @@ Artisan::command(
             $this->info('Integritaets-Audit:');
             $this->table(
                 ['Pruefung', 'Anzahl'],
-                collect($audit)->map(fn ($value, $key) => [$key, $value])->values()->all()
+                collect($audit)->map(fn($value, $key) => [$key, $value])->values()->all()
             );
         }
 

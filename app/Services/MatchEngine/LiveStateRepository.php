@@ -6,6 +6,7 @@ use App\Models\GameMatch;
 use App\Models\MatchLivePlayerState;
 use App\Models\MatchLiveTeamState;
 use App\Models\MatchLiveMinuteSnapshot;
+use App\Models\MatchEvent;
 use App\Models\MatchLiveAction;
 use App\Models\MatchLiveStateTransition;
 use Illuminate\Support\Collection;
@@ -107,6 +108,22 @@ class LiveStateRepository
             'xg' => $xg,
             'momentum_value' => $momentum_value,
         ]);
+
+        // Create MatchEvent for significant events to persist them permanently
+        $significantTypes = ['goal', 'yellow_card', 'red_card', 'substitution', 'injury', 'chance'];
+        if (in_array($actionType, $significantTypes, true)) {
+            MatchEvent::create([
+                'match_id' => $match->id,
+                'minute' => $minute,
+                'second' => $second,
+                'club_id' => $clubId,
+                'player_id' => $playerId,
+                'assister_player_id' => $metadata['assister_id'] ?? null,
+                'event_type' => $actionType,
+                'metadata' => $metadata,
+                'narrative' => $narrative,
+            ]);
+        }
     }
 
     public function recordStateTransition(
@@ -141,15 +158,17 @@ class LiveStateRepository
             'minute' => $minute,
             'home_score' => $match->home_score,
             'away_score' => $match->away_score,
-            'home_possession' => $homeState?->possession_percentage ?? 50,
-            'away_possession' => $awayState?->possession_percentage ?? 50,
-            'home_shots' => $homeState?->shots ?? 0,
-            'away_shots' => $awayState?->shots ?? 0,
-            'home_shots_on_target' => $homeState?->shots_on_target ?? 0,
-            'away_shots_on_target' => $awayState?->shots_on_target ?? 0,
-            'metadata' => [
-                'home_phase' => $homeState?->current_phase,
-                'away_phase' => $awayState?->current_phase,
+            'home_phase' => $homeState?->current_phase,
+            'away_phase' => $awayState?->current_phase,
+            'home_tactical_style' => (string) $homeState?->tactical_style,
+            'away_tactical_style' => (string) $awayState?->tactical_style,
+            'payload' => [
+                'home_possession' => $homeState?->possession_percentage ?? 50,
+                'away_possession' => $awayState?->possession_percentage ?? 50,
+                'home_shots' => $homeState?->shots ?? 0,
+                'away_shots' => $awayState?->shots ?? 0,
+                'home_shots_on_target' => $homeState?->shots_on_target ?? 0,
+                'away_shots_on_target' => $awayState?->shots_on_target ?? 0,
             ],
         ]);
     }

@@ -274,14 +274,16 @@ class ActionEngine
         if ($isGoal) {
             $this->recordGoal($match, $minute, $sequence, $attackerClubId, $attacker, $defenderClubId);
         } else {
-            $narrative = $this->generateNarrative($match, 'chance', [
-                'player' => $attacker->player->last_name,
-                'club' => $match->home_club_id === $attackerClubId ? $match->homeClub->name : $match->awayClub->name,
-                'opponent' => $defender->player->last_name,
-                'minute' => $minute,
+            $metadata = [
+                'player_name' => $attacker->player->last_name,
+                'club_name' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
+                'opponent_name' => $defender->player->last_name,
+                'quality' => 'normal', // Can be expanded
                 'player_goals' => $attacker->goals,
                 'player_shots' => $attacker->shots,
-            ], $attackerClubId);
+            ];
+
+            $narrative = $this->generateNarrative($match, 'chance', array_merge($metadata, ['minute' => $minute, 'player' => $attacker->player->last_name, 'club' => $metadata['club_name'], 'opponent' => $defender->player->last_name]), $attackerClubId);
 
             [$x, $y] = $this->generateCoordinates($match, $attackerClubId, 'chance');
             $xg = $this->calculateXG('chance', 'miss');
@@ -298,7 +300,7 @@ class ActionEngine
                 'chance',
                 'miss',
                 $narrative,
-                null,
+                $metadata,
                 $x,
                 $y,
                 $xg,
@@ -379,12 +381,14 @@ class ActionEngine
         DB::transaction(function () use ($match, $minute, $sequence, $clubId, $scorer, $isHomeGoal) {
             $isHomeGoal ? $match->increment('home_score') : $match->increment('away_score');
 
-            $narrative = $this->generateNarrative($match, 'goal', [
-                'player' => $scorer->player->last_name,
-                'club' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
+            $metadata = [
+                'player_name' => $scorer->player->last_name,
+                'club_name' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
                 'score' => "{$match->home_score}:{$match->away_score}",
-                'minute' => $minute,
-            ], $clubId);
+                'goal_type' => 'aus dem Spiel', // Placeholder logic if needed
+            ];
+
+            $narrative = $this->generateNarrative($match, 'goal', array_merge($metadata, ['minute' => $minute, 'player' => $scorer->player->last_name, 'club' => $metadata['club_name']]), $clubId);
 
             [$x, $y] = $this->generateCoordinates($match, $clubId, 'goal');
             $xg = $this->calculateXG('goal', 'scored');
@@ -401,7 +405,7 @@ class ActionEngine
                 'goal',
                 'scored',
                 $narrative,
-                null,
+                $metadata,
                 $x,
                 $y,
                 $xg,
@@ -429,12 +433,14 @@ class ActionEngine
         if ($cardRoll <= $redThresh) // Check red last to override
             $card = 'red_card';
 
-        $narrative = $this->generateNarrative($match, $card ?? 'foul', [
-            'player' => $fouler->player->last_name,
-            'opponent' => $victim->player->last_name,
-            'club' => $defenderClubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
-            'minute' => $minute,
-        ], $defenderClubId); // Defender is the actor (fouler)
+        $metadata = [
+            'player_name' => $fouler->player->last_name,
+            'opponent_name' => $victim->player->last_name,
+            'club_name' => $defenderClubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
+            'card' => $card,
+        ];
+
+        $narrative = $this->generateNarrative($match, $card ?? 'foul', array_merge($metadata, ['minute' => $minute, 'player' => $fouler->player->last_name, 'opponent' => $victim->player->last_name, 'club' => $metadata['club_name']]), $defenderClubId); // Defender is the actor (fouler)
 
         [$x, $y] = $this->generateCoordinates($match, $defenderClubId, $card ?? 'foul');
         $momentum = $this->calculateMomentumImpact($card ?? 'foul', 'committed');
@@ -450,7 +456,7 @@ class ActionEngine
             $card ?? 'foul',
             'committed',
             $narrative,
-            null,
+            $metadata,
             $x,
             $y,
             0.0,
@@ -466,11 +472,12 @@ class ActionEngine
     {
         $player = $this->stateRepository->randomCollectionItem($states);
 
-        $narrative = $this->generateNarrative($match, 'injury', [
-            'player' => $player->player->last_name,
-            'club' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
-            'minute' => $minute,
-        ], $clubId);
+        $metadata = [
+            'player_name' => $player->player->last_name,
+            'club_name' => $clubId === $match->home_club_id ? $match->homeClub->short_name : $match->awayClub->short_name,
+        ];
+
+        $narrative = $this->generateNarrative($match, 'injury', array_merge($metadata, ['minute' => $minute, 'player' => $player->player->last_name, 'club' => $metadata['club_name']]), $clubId);
 
         [$x, $y] = $this->generateCoordinates($match, $clubId, 'injury');
 
@@ -485,7 +492,7 @@ class ActionEngine
             'injury',
             'sustained',
             $narrative,
-            null,
+            $metadata,
             $x,
             $y,
             0.0,
@@ -513,11 +520,11 @@ class ActionEngine
         if ($actionRoll <= 50) {
             // Standard Midfield Possession
             $type = 'midfield_possession';
-            $narrative = $this->generateNarrative($match, 'midfield_possession', [
-                'player' => $actor->player->last_name,
-                'club' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
-                'minute' => $minute,
-            ], $attackerClubId);
+            $metadata = [
+                'player_name' => $actor->player->last_name,
+                'club_name' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
+            ];
+            $narrative = $this->generateNarrative($match, 'midfield_possession', array_merge($metadata, ['minute' => $minute]), $attackerClubId);
 
         } elseif ($actionRoll <= 75) {
             // Turnover / Defensive Action
@@ -525,31 +532,33 @@ class ActionEngine
             $outcome = 'lost_possession';
             $actor = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => $s->player->defending + $s->player->physical);
             $actingClubId = $defenderClubId;
+            $opponent = $this->stateRepository->randomCollectionItem($attackerStates)->player;
 
-            $narrative = $this->generateNarrative($match, 'turnover', [
-                'player' => $actor->player->last_name,
-                'opponent' => $this->stateRepository->randomCollectionItem($attackerStates)->player->last_name,
-                'club' => $match->home_club_id === $defenderClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
-                'minute' => $minute,
-            ], $defenderClubId);
+            $metadata = [
+                'player_name' => $actor->player->last_name,
+                'opponent_name' => $opponent->last_name,
+                'club_name' => $match->home_club_id === $defenderClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
+            ];
+
+            $narrative = $this->generateNarrative($match, 'turnover', array_merge($metadata, ['minute' => $minute]), $defenderClubId);
 
         } elseif ($actionRoll <= 90) {
             // Throw-in
             $type = 'throw_in';
-            $narrative = $this->generateNarrative($match, 'throw_in', [
-                'player' => $actor->player->last_name,
-                'club' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
-                'minute' => $minute,
-            ], $attackerClubId);
+            $metadata = [
+                'player_name' => $actor->player->last_name,
+                'club_name' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
+            ];
+            $narrative = $this->generateNarrative($match, 'throw_in', array_merge($metadata, ['minute' => $minute]), $attackerClubId);
 
         } else {
             // Clearance / Long Ball
             $type = 'clearance';
-            $narrative = $this->generateNarrative($match, 'clearance', [
-                'player' => $actor->player->last_name,
-                'club' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
-                'minute' => $minute,
-            ], $attackerClubId);
+            $metadata = [
+                'player_name' => $actor->player->last_name,
+                'club_name' => $match->home_club_id === $attackerClubId ? $match->homeClub->short_name : $match->awayClub->short_name,
+            ];
+            $narrative = $this->generateNarrative($match, 'clearance', array_merge($metadata, ['minute' => $minute]), $attackerClubId);
         }
 
         [$x, $y] = $this->generateCoordinates($match, $actingClubId, 'midfield'); // Use midfield coords
@@ -565,7 +574,7 @@ class ActionEngine
             $type,
             $outcome,
             $narrative,
-            null,
+            $metadata,
             $x,
             $y,
             0.0,

@@ -266,7 +266,7 @@
                                 {{ $match->home_score ?? '-' }} : {{ $match->away_score ?? '-' }}
                             </div>
                             <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                                                                        {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
+                                                                                                {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
                                 id="live-status">
                                 @if ($match->status !== 'played')
                                     <span class="sim-live-dot"></span>
@@ -421,12 +421,41 @@
                 <!-- 2. SPIELFELD (PITCH) TAB -->
                 <div id="tab-content-pitch" class="tab-content hidden h-full">
                     <div
-                        class="relative w-full max-w-4xl mx-auto aspect-[105/68] bg-emerald-800 rounded border border-emerald-900 overflow-hidden shadow-inner bg-[url('https://raw.githubusercontent.com/mladenilic/soccer-pitch-bg/master/pitch.svg')] bg-cover bg-center">
+                        class="relative w-full max-w-4xl mx-auto aspect-[105/68] bg-emerald-800 rounded border border-emerald-900 overflow-hidden shadow-inner bg-cover bg-center">
+
+                        <!-- CSS Pitch Lines fallback/overlay -->
+                        <div class="absolute inset-0 pointer-events-none opacity-40">
+                            <!-- Outer border -->
+                            <div class="absolute inset-4 border-2 border-white/80"></div>
+                            <!-- Half way line -->
+                            <div class="absolute inset-y-4 left-1/2 w-0.5 bg-white/80 -translate-x-1/2"></div>
+                            <!-- Center circle -->
+                            <div
+                                class="absolute top-1/2 left-1/2 w-32 h-32 border-2 border-white/80 rounded-full -translate-x-1/2 -translate-y-1/2">
+                            </div>
+                            <!-- Center spot -->
+                            <div
+                                class="absolute top-1/2 left-1/2 w-2 h-2 bg-white/80 rounded-full -translate-x-1/2 -translate-y-1/2">
+                            </div>
+                            <!-- Boxes -->
+                            <div class="absolute inset-y-[20%] left-4 w-[16%] border-2 border-white/80 border-l-0"></div>
+                            <div class="absolute inset-y-[20%] right-4 w-[16%] border-2 border-white/80 border-r-0"></div>
+                            <div class="absolute inset-y-[35%] left-4 w-[6%] border-2 border-white/80 border-l-0"></div>
+                            <div class="absolute inset-y-[35%] right-4 w-[6%] border-2 border-white/80 border-r-0"></div>
+                        </div>
+
+                        <div id="pitch-players-overlay" class="absolute inset-0">
+                            <!-- Players injected by JS -->
+                        </div>
                         <div id="action-map-overlay" class="absolute inset-0">
                             <!-- Action dots -->
                         </div>
+                        <div id="pitch-ball"
+                            class="absolute w-4 h-4 bg-white rounded-full border-2 border-slate-900 shadow-lg transform -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-1000 hidden">
+                            <div class="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
+                        </div>
                         <div class="absolute bottom-4 left-4 bg-black/50 p-2 rounded text-[10px] text-white">
-                            Live Action Map
+                            Live Match View
                         </div>
                     </div>
                 </div>
@@ -461,12 +490,50 @@
 
                 <!-- 5. AUFSTELLUNGEN TAB -->
                 <div id="tab-content-lineups" class="tab-content hidden">
-                    <!-- Visual Pitch for Lineups -->
-                    <div
-                        class="relative w-full max-w-5xl mx-auto aspect-[105/68] bg-emerald-900 rounded border border-emerald-900 overflow-hidden shadow-2xl bg-[url('https://raw.githubusercontent.com/mladenilic/soccer-pitch-bg/master/pitch.svg')] bg-cover bg-center">
-                        <!-- Lineups Container -->
-                        <div id="visual-lineups-overlay" class="absolute inset-0">
-                            <!-- JS will inject players here -->
+                    <div class="bg-slate-900/60 rounded-xl border border-slate-950 overflow-hidden shadow-2xl">
+                        <!-- Header -->
+                        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+                            <div>
+                                <h3 class="text-lg font-black text-white uppercase tracking-tight">Live-Aufstellungen</h3>
+                                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                                    Heim links • Gast rechts • <span id="lineup-formations-label"
+                                        class="text-cyan-400">Loading...</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button
+                                    class="px-3 py-1 text-[10px] font-black uppercase tracking-tighter bg-cyan-600 text-white rounded shadow-sm">Spielfeld</button>
+                                <button
+                                    class="px-3 py-1 text-[10px] font-black uppercase tracking-tighter text-slate-500 hover:text-slate-300">Liste</button>
+                            </div>
+                        </div>
+
+                        <!-- Visual Pitch for Lineups -->
+                        <div class="relative w-full aspect-[105/68] bg-emerald-950/20 overflow-hidden shadow-inner">
+                            <!-- CSS Pitch Lines for Lineups -->
+                            <div class="absolute inset-0 pointer-events-none opacity-20">
+                                <div class="absolute inset-4 border border-white/40"></div>
+                                <div class="absolute inset-y-4 left-1/2 w-px bg-white/40 -translate-x-1/2"></div>
+                                <div
+                                    class="absolute top-1/2 left-1/2 w-48 h-48 border border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2">
+                                </div>
+                                <div class="absolute inset-y-[20%] left-4 w-[16%] border border-white/40 border-l-0"></div>
+                                <div class="absolute inset-y-[20%] right-4 w-[16%] border border-white/40 border-r-0"></div>
+                            </div>
+
+                            <!-- Lineups Container -->
+                            <div id="visual-lineups-overlay" class="absolute inset-0">
+                                <!-- JS will inject premium player cards here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank & Ereignisse Section -->
+                    <div class="mt-8">
+                        <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] mb-4 pl-1">Bank & Ereignisse
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="bank-ereignisse-container">
+                            <!-- Team Columns (Home/Away) injected by JS -->
                         </div>
                     </div>
                 </div>
@@ -677,7 +744,7 @@
                     renderTimeline(actionsSource);
                     updateTicker(actionsSource);
                     renderStats(state.team_states);
-                    renderVisualLineups(state.lineups);
+                    renderVisualLineups(state);
                     renderActionMap(state.actions);
                     renderHeatmap(state.actions);
                     renderMomentum(state.actions);
@@ -728,26 +795,26 @@
                         else if (leftPct > 85) tooltipStyle = 'min-width: 220px; right: 0;';
 
                         el.innerHTML = `
-                                                                <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                                                    ${cfg.icon}
-                                                                </div>
-                                                                <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
-                                                                    <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
-                                                                        <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
-                                                                            <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
-                                                                            <span class="text-slate-500 font-mono">${a.minute}'</span>
-                                                                        </div>
-                                                                        <div class="p-3 flex items-start gap-2.5">
-                                                                            <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
-                                                                            <div class="flex-1 min-w-0">
-                                                                                ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
-                                                                                <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
-                                                                                ${narrativeLine}
+                                                                    <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                                                        ${cfg.icon}
+                                                                    </div>
+                                                                    <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
+                                                                        <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
+                                                                            <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
+                                                                                <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
+                                                                                <span class="text-slate-500 font-mono">${a.minute}'</span>
+                                                                            </div>
+                                                                            <div class="p-3 flex items-start gap-2.5">
+                                                                                <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
+                                                                                <div class="flex-1 min-w-0">
+                                                                                    ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
+                                                                                    <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
+                                                                                    ${narrativeLine}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            `;
+                                                                `;
                         timelineContainer.appendChild(el);
                     });
                 };
@@ -787,66 +854,66 @@
                         }
 
                         return `
-                                                <div class="w-full mb-8 animate-fade-in-up">
-                                                    <div class="relative max-w-2xl mx-auto">
-                                                        <!-- Time Bubble (Top Left - matching latest image) -->
-                                                        <div class="absolute -top-3 left-4 z-20">
-                                                            <span class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[10px] font-black text-white shadow-xl">${mins}'</span>
-                                                        </div>
-
-                                                        <!-- Premium Card -->
-                                                        <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
-                                                            <!-- Colored Header Strip -->
-                                                            <div class="${headerBg} border-b py-2 text-center">
-                                                                <span class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                                                                    <span>${icon}</span> ${headerText}
-                                                                </span>
+                                                    <div class="w-full mb-8 animate-fade-in-up">
+                                                        <div class="relative max-w-2xl mx-auto">
+                                                            <!-- Time Bubble (Top Left - matching latest image) -->
+                                                            <div class="absolute -top-3 left-4 z-20">
+                                                                <span class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[10px] font-black text-white shadow-xl">${mins}'</span>
                                                             </div>
 
-                                                            <!-- Body -->
-                                                    <div class="p-6">
-                                                        <div class="flex items-start gap-6">
-                                                            <!-- Left: Visual/Shield -->
-                                                            <div class="relative shrink-0 pt-1">
-                                                                <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
-                                                                    <span class="${sideColor === 'cyan-500' ? 'text-cyan-400' : 'text-indigo-400'}">🛡️</span>
+                                                            <!-- Premium Card -->
+                                                            <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                                <!-- Colored Header Strip -->
+                                                                <div class="${headerBg} border-b py-2 text-center">
+                                                                    <span class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                                                                        <span>${icon}</span> ${headerText}
+                                                                    </span>
                                                                 </div>
-                                                                <img src="${logoUrl}" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-slate-900 shadow-lg bg-slate-800 p-0.5">
-                                                            </div>
 
-                                                            <!-- Right: Info Section -->
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="flex justify-between items-start mb-2">
-                                                                    <div class="flex flex-col">
-                                                                        <span class="text-xl font-black text-white leading-tight uppercase tracking-tight">${a.player_name || 'Unbekannt'}</span>
-                                                                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">${a.club_short_name || sideLabel}</span>
+                                                                <!-- Body -->
+                                                        <div class="p-6">
+                                                            <div class="flex items-start gap-6">
+                                                                <!-- Left: Visual/Shield -->
+                                                                <div class="relative shrink-0 pt-1">
+                                                                    <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
+                                                                        <span class="${sideColor === 'cyan-500' ? 'text-cyan-400' : 'text-indigo-400'}">🛡️</span>
                                                                     </div>
-                                                                    ${isGoal && scoreDisplay ? `
-                                                                        <div class="text-3xl font-black text-white tracking-tighter drop-shadow-lg font-mono">${scoreDisplay}</div>
-                                                                    ` : ''}
+                                                                    <img src="${logoUrl}" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-slate-900 shadow-lg bg-slate-800 p-0.5">
                                                                 </div>
 
-                                                                ${isGoal ? `
-                                                                    <div class="mb-4 flex flex-wrap items-center gap-3">
-                                                                        <span class="text-[10px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest rounded-sm">${a.metadata?.goal_type || 'TOR'}</span>
-                                                                        ${a.assister_name ? `
-                                                                            <div class="flex items-center gap-1.5 opacity-80">
-                                                                                <span class="text-[10px] text-slate-500 font-bold uppercase">Assistent</span>
-                                                                                <span class="text-[11px] text-slate-300 font-black">${a.assister_name}</span>
-                                                                            </div>
+                                                                <!-- Right: Info Section -->
+                                                                <div class="flex-1 min-w-0">
+                                                                    <div class="flex justify-between items-start mb-2">
+                                                                        <div class="flex flex-col">
+                                                                            <span class="text-xl font-black text-white leading-tight uppercase tracking-tight">${a.player_name || 'Unbekannt'}</span>
+                                                                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">${a.club_short_name || sideLabel}</span>
+                                                                        </div>
+                                                                        ${isGoal && scoreDisplay ? `
+                                                                            <div class="text-3xl font-black text-white tracking-tighter drop-shadow-lg font-mono">${scoreDisplay}</div>
                                                                         ` : ''}
                                                                     </div>
-                                                                ` : ''}
 
-                                                                <div class="text-sm text-slate-400 italic leading-relaxed py-3 px-4 bg-slate-800/50 rounded-lg border-l-2 border-slate-700">
-                                                                    "${narrative.replace(/"/g, '')}"
+                                                                    ${isGoal ? `
+                                                                        <div class="mb-4 flex flex-wrap items-center gap-3">
+                                                                            <span class="text-[10px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest rounded-sm">${a.metadata?.goal_type || 'TOR'}</span>
+                                                                            ${a.assister_name ? `
+                                                                                <div class="flex items-center gap-1.5 opacity-80">
+                                                                                    <span class="text-[10px] text-slate-500 font-bold uppercase">Assistent</span>
+                                                                                    <span class="text-[11px] text-slate-300 font-black">${a.assister_name}</span>
+                                                                                </div>
+                                                                            ` : ''}
+                                                                        </div>
+                                                                    ` : ''}
+
+                                                                    <div class="text-sm text-slate-400 italic leading-relaxed py-3 px-4 bg-slate-800/50 rounded-lg border-l-2 border-slate-700">
+                                                                        "${narrative.replace(/"/g, '')}"
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>`;
+                                            </div>`;
                     }
 
                     // --- 2. SUBSTITUTION LAYOUT ---
@@ -857,34 +924,34 @@
                         if (outMatch) playerOut = outMatch[1].trim();
 
                         return `
-                                                 <div class="w-full mb-6 animate-fade-in-up">
-                                                    <div class="relative max-w-xl mx-auto">
-                                                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-                                                            <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-slate-400">${mins}'</span>
-                                                        </div>
-                                                        <div class="w-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
-                                                            <div class="bg-indigo-900/20 py-1.5 text-center border-b border-slate-700">
-                                                                <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">Spielerwechsel ${sideLabel}</span>
+                                                     <div class="w-full mb-6 animate-fade-in-up">
+                                                        <div class="relative max-w-xl mx-auto">
+                                                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                                                                <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-slate-400">${mins}'</span>
                                                             </div>
-                                                            <div class="flex items-stretch divide-x divide-slate-700/50">
-                                                                <div class="flex-1 p-4 flex items-center gap-3">
-                                                                    <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs animate-pulse">⬆️</div>
-                                                                    <div class="min-w-0">
-                                                                        <div class="text-[10px] text-emerald-500 font-black uppercase leading-none mb-1">Ein</div>
-                                                                        <div class="text-sm font-bold text-white truncate">${playerIn}</div>
+                                                            <div class="w-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
+                                                                <div class="bg-indigo-900/20 py-1.5 text-center border-b border-slate-700">
+                                                                    <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">Spielerwechsel ${sideLabel}</span>
+                                                                </div>
+                                                                <div class="flex items-stretch divide-x divide-slate-700/50">
+                                                                    <div class="flex-1 p-4 flex items-center gap-3">
+                                                                        <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs animate-pulse">⬆️</div>
+                                                                        <div class="min-w-0">
+                                                                            <div class="text-[10px] text-emerald-500 font-black uppercase leading-none mb-1">Ein</div>
+                                                                            <div class="text-sm font-bold text-white truncate">${playerIn}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-1 p-4 flex items-center justify-end gap-3 text-right">
+                                                                        <div class="min-w-0">
+                                                                            <div class="text-[10px] text-red-500 font-black uppercase leading-none mb-1">Aus</div>
+                                                                            <div class="text-sm font-bold text-slate-400 truncate">${playerOut}</div>
+                                                                        </div>
+                                                                        <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-xs">⬇️</div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="flex-1 p-4 flex items-center justify-end gap-3 text-right">
-                                                                    <div class="min-w-0">
-                                                                        <div class="text-[10px] text-red-500 font-black uppercase leading-none mb-1">Aus</div>
-                                                                        <div class="text-sm font-bold text-slate-400 truncate">${playerOut}</div>
-                                                                    </div>
-                                                                    <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-xs">⬇️</div>
-                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                 </div>`;
+                                                     </div>`;
                     }
 
                     // --- 3. MINIMAL LAYOUT (with Team Indicator) ---
@@ -896,16 +963,21 @@
                     else if (type === 'foul') icon = '⚠️';
                     else if (type === 'offside') icon = '🚫';
                     else if (type === 'injury') icon = '🚑';
+                    else if (type === 'midfield_possession') icon = '👟';
+                    else if (type === 'turnover') icon = '❌';
+                    else if (type === 'throw_in') icon = '👐';
+                    else if (type === 'clearance') icon = '🛡️';
+                    else if (type === 'free_kick') icon = '🦶';
 
                     return `
-                                            <div class="group flex items-start gap-4 w-full mb-3 px-3 py-2.5 hover:bg-slate-700/30 rounded-lg transition-all border-l-4 border-${sideColor}/30 hover:border-${sideColor} animate-fade-in-up">
-                                                <div class="font-mono text-xs text-slate-500 pt-0.5 min-w-[32px] text-right">${mins}'</div>
-                                                <div class="text-lg pt-0.5 filter grayscale group-hover:grayscale-0 transition-all">${icon}</div>
-                                                <div class="flex-1 text-sm text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
-                                                    <span class="font-black text-[10px] uppercase tracking-wider text-${sideColor} mr-2">${sideLabel}</span>
-                                                    ${narrative.replace(/"/g, '')}
-                                                </div>
-                                            </div>`;
+                                                <div class="group flex items-start gap-4 w-full mb-3 px-3 py-2.5 hover:bg-slate-700/30 rounded-lg transition-all border-l-4 border-${sideColor}/30 hover:border-${sideColor} animate-fade-in-up">
+                                                    <div class="font-mono text-xs text-slate-500 pt-0.5 min-w-[32px] text-right">${mins}'</div>
+                                                    <div class="text-lg pt-0.5 transition-all group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.6)] scale-100 group-hover:scale-110">${icon}</div>
+                                                    <div class="flex-1 text-sm text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
+                                                        <span class="font-black text-[10px] uppercase tracking-wider text-${sideColor} mr-2">${sideLabel}</span>
+                                                        ${narrative.replace(/"/g, '')}
+                                                    </div>
+                                                </div>`;
                 };
                 const updateTicker = (actions) => {
                     if (!eventsList) return;
@@ -920,30 +992,30 @@
                             let text = (a.narrative && !a.narrative.startsWith('Ereignis:')) ? a.narrative : (a.action_type === 'kickoff' ? "Das Spiel beginnt." : (a.action_type === 'half_time' ? "Halbzeit." : "Spielende."));
 
                             return `
-                                                            <div class="w-full my-8 flex flex-col items-center justify-center animate-fade-in-up">
-                                                                <div class="relative w-full max-w-md">
-                                                                    <!-- Milestone Card -->
-                                                                    <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
-                                                                        <!-- Label Header Strip -->
-                                                                        <div class="${headerBg} border-b py-2 text-center">
-                                                                            <span class="text-[10px] font-black uppercase tracking-[0.3em] ${color} flex items-center justify-center gap-2">
-                                                                                <span>${icon}</span> ${label}
-                                                                            </span>
-                                                                        </div>
+                                                                <div class="w-full my-8 flex flex-col items-center justify-center animate-fade-in-up">
+                                                                    <div class="relative w-full max-w-md">
+                                                                        <!-- Milestone Card -->
+                                                                        <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                                            <!-- Label Header Strip -->
+                                                                            <div class="${headerBg} border-b py-2 text-center">
+                                                                                <span class="text-[10px] font-black uppercase tracking-[0.3em] ${color} flex items-center justify-center gap-2">
+                                                                                    <span>${icon}</span> ${label}
+                                                                                </span>
+                                                                            </div>
 
-                                                                        <!-- Milestone Body -->
-                                                                        <div class="p-5 text-center px-10">
-                                                                            <div class="text-sm text-slate-300 font-bold leading-relaxed">
-                                                                                "${text.replace(/"/g, '')}"
+                                                                            <!-- Milestone Body -->
+                                                                            <div class="p-5 text-center px-10">
+                                                                                <div class="text-sm text-slate-300 font-bold leading-relaxed">
+                                                                                    "${text.replace(/"/g, '')}"
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
 
-                                                                    <!-- Connection Lines -->
-                                                                    <div class="absolute -left-10 right-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
-                                                                    <div class="absolute -right-10 left-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
-                                                                </div>
-                                                            </div>`;
+                                                                        <!-- Connection Lines -->
+                                                                        <div class="absolute -left-10 right-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                                        <div class="absolute -right-10 left-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                                    </div>
+                                                                </div>`;
                         }
 
                         if (a.action_type === 'goal' && !processedEventIds.has(a.id)) SoundEngine.play('goal');
@@ -962,17 +1034,17 @@
                     const row = (lbl, h, a, s = '') => {
                         const hN = Number(h), aN = Number(a);
                         return `
-                                                                <div class="bg-slate-800 p-3 rounded border border-slate-950">
-                                                                    <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${lbl}</div>
-                                                                    <div class="flex justify-between items-end font-mono">
-                                                                        <span class="text-lg font-bold ${hN > aN ? 'text-green-400' : 'text-slate-300'}">${h}${s}</span>
-                                                                        <span class="text-lg font-bold ${aN > hN ? 'text-green-400' : 'text-slate-300'}">${a}${s}</span>
-                                                                    </div>
-                                                                    <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
-                                                                        <div class="bg-cyan-500 h-full" style="width: ${(hN / ((hN + aN) || 1)) * 100}%"></div>
-                                                                        <div class="bg-indigo-500 h-full flex-1"></div>
-                                                                    </div>
-                                                                </div>`;
+                                                                    <div class="bg-slate-800 p-3 rounded border border-slate-950">
+                                                                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${lbl}</div>
+                                                                        <div class="flex justify-between items-end font-mono">
+                                                                            <span class="text-lg font-bold ${hN > aN ? 'text-green-400' : 'text-slate-300'}">${h}${s}</span>
+                                                                            <span class="text-lg font-bold ${aN > hN ? 'text-green-400' : 'text-slate-300'}">${a}${s}</span>
+                                                                        </div>
+                                                                        <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
+                                                                            <div class="bg-cyan-500 h-full" style="width: ${(hN / ((hN + aN) || 1)) * 100}%"></div>
+                                                                            <div class="bg-indigo-500 h-full flex-1"></div>
+                                                                        </div>
+                                                                    </div>`;
                     };
                     statsGrid.innerHTML = [
                         row('Ballbesitz', Math.round((home.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), Math.round((away.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), '%'),
@@ -984,34 +1056,210 @@
                     ].join('');
                 };
 
-                const renderVisualLineups = (lineups) => {
-                    if (!visualLineupsOverlay) return;
-                    const slots = { 'GK': [50, 95], 'TW': [50, 95], 'LB': [15, 80], 'RB': [85, 80], 'CB': [50, 85], 'IV': [50, 85], 'DM': [50, 70], 'CM': [50, 60], 'LM': [15, 45], 'RM': [85, 45], 'ST': [50, 15] };
-                    let html = '';
-                    [homeClubId, awayClubId].forEach((cid, idx) => {
-                        const l = lineups[String(cid)];
-                        if (!l) return;
-                        l.starters.forEach(p => {
-                            let [x, y] = slots[p.slot] || [50, 50];
-                            if (idx === 1) { x = 100 - x; y = 100 - y; }
-                            html += `<div class="absolute w-8 h-8 ${idx === 0 ? 'bg-cyan-600' : 'bg-indigo-600'} border-2 border-slate-700 rounded-full flex items-center justify-center shadow-lg transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition cursor-pointer group" style="left: ${x}%; top: ${y}%;">
-                                                                    <span class="text-white font-bold text-[10px]">${p.name.substring(0, 1)}</span>
-                                                                    <div class="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-black/80 text-white text-[9px] px-2 py-1 rounded whitespace-nowrap">${p.name}</div>
-                                                                </div>`;
+                const renderVisualLineups = (state) => {
+                    const lineups = state.lineups;
+                    const pitchOverlay = document.getElementById('visual-lineups-overlay');
+                    const secondaryPitchOverlay = document.getElementById('pitch-players-overlay');
+                    const bankContainer = document.getElementById('bank-ereignisse-container');
+                    const formationLabel = document.getElementById('lineup-formations-label');
+
+                    if (formationLabel && lineups[String(homeClubId)] && lineups[String(awayClubId)]) {
+                        formationLabel.textContent = `${lineups[String(homeClubId)].formation} vs ${lineups[String(awayClubId)].formation}`;
+                    }
+
+                    const renderStarters = (container, isLineupTab) => {
+                        if (!container) return;
+                        container.innerHTML = '';
+                        
+                        // Tab-specific slots for strict separation or dynamic view
+                        const dynamicSlots = { 
+                            // Spielfeld tab: Traditional tactical layout
+                            'TW': [6, 50], 'GK': [6, 50],
+                            'LV': [22, 10], 'RV': [22, 90], 'IV': [18, 50], 'IV-L': [18, 30], 'IV-R': [18, 70],
+                            'DM': [30, 50], 'DM-L': [32, 28], 'DM-R': [32, 72],
+                            'LM': [42, 10], 'RM': [42, 90], 'ZM': [40, 50], 'ZM-L': [38, 32], 'ZM-R': [38, 68],
+                            'ZOM': [48, 50], 'LAM': [46, 25], 'RAM': [46, 75],
+                            'ST': [56, 50], 'ST-L': [52, 35], 'ST-R': [52, 65],
+                            'LW': [54, 15], 'RW': [54, 85]
+                        };
+
+                        const strictSlots = { 
+                            // Aufstellung tab: Strict separation (x stays < 50 for Home, > 50 for Away)
+                            'TW': [8, 50], 'GK': [8, 50],
+                            'LV': [22, 15], 'RV': [22, 85], 'IV': [20, 50], 'IV-L': [20, 35], 'IV-R': [20, 65],
+                            'DM': [30, 50], 'DM-L': [32, 30], 'DM-R': [32, 70],
+                            'LM': [42, 15], 'RM': [42, 85], 'ZM': [40, 50], 'ZM-L': [38, 35], 'ZM-R': [38, 65],
+                            'ZOM': [46, 50], 'LAM': [46, 25], 'RAM': [46, 75],
+                            'ST': [48, 50], 'ST-L': [48, 35], 'ST-R': [48, 65],
+                            'LW': [48, 15], 'RW': [48, 85]
+                        };
+
+                        const activeSlots = isLineupTab ? strictSlots : dynamicSlots;
+
+                        // Local event count map
+                        const playerEvents = {};
+                        (state.events || []).forEach(e => {
+                            if (!e.player_id) return;
+                            if (!playerEvents[e.player_id]) playerEvents[e.player_id] = { goals: 0, yellow: 0, red: 0 };
+                            if (e.type === 'goal') playerEvents[e.player_id].goals++;
+                            if (e.type === 'yellow_card') playerEvents[e.player_id].yellow++;
+                            if (e.type === 'red_card') playerEvents[e.player_id].red++;
                         });
-                    });
-                    visualLineupsOverlay.innerHTML = html;
+
+                        [homeClubId, awayClubId].forEach((cid, idx) => {
+                            const l = lineups[String(cid)];
+                            if (!l) return;
+                            l.starters.forEach(p => {
+                                let slotKey = p.slot.toUpperCase();
+                                let coords = activeSlots[slotKey] || activeSlots[slotKey.split('-')[0]] || [25, 50];
+                                let x = coords[0], y = coords[1];
+                                
+                                // Perspective swap: x = 100 - x for Away Team
+                                if (idx === 1) { 
+                                    x = 100 - x; 
+                                }
+
+                                const pEl = document.createElement('div');
+                                pEl.className = `absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group z-20`;
+                                pEl.style.left = `${x}%`;
+                                pEl.style.top = `${y}%`;
+
+                                if (isLineupTab) {
+                                    const evs = playerEvents[p.id] || { goals: 0, yellow: 0, red: 0 };
+                                    let badges = '';
+                                    if (evs.goals > 0) badges += `<div class="flex items-center gap-0.5 bg-black/80 rounded-full pl-0.5 pr-1 py-0.5 border border-white/20 shadow-lg"><img src="/images/icons/ball.svg" class="w-2 h-2 invert opacity-80"><span class="text-[7px] text-white font-black">${evs.goals}</span></div>`;
+                                    if (evs.yellow > 0) badges += `<div class="w-2 h-3 bg-yellow-400 rounded-sm border border-black/20 shadow-lg"></div>`;
+                                    if (evs.red > 0) badges += `<div class="w-2 h-3 bg-red-600 rounded-sm border border-black/20 shadow-lg"></div>`;
+
+                                    pEl.innerHTML = `
+                                            <div class="relative group-hover:z-50">
+                                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 ${idx === 0 ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)]'} bg-slate-800 overflow-hidden transition-all group-hover:scale-125 group-hover:border-white">
+                                                    <img src="${p.photo_url}" class="w-full h-full object-cover">
+                                                </div>
+                                                <!-- Event Badges (Goals/Cards) -->
+                                                ${badges ? `<div class="absolute -right-2 top-0 flex flex-col gap-1 z-20">${badges}</div>` : ''}
+
+                                                <!-- Position Bubble -->
+                                                <div class="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-sm px-1 text-[7px] font-black text-white uppercase z-10">${p.slot}</div>
+                                            </div>
+                                            <!-- Name Card -->
+                                            <div class="mt-1.5 px-3 py-1 bg-slate-900/95 border border-slate-700/50 rounded shadow-lg backdrop-blur-sm min-w-[70px] text-center transition-all group-hover:bg-slate-800 group-hover:border-slate-500">
+                                                <span class="text-[9px] font-black text-white whitespace-nowrap tracking-wide leading-none uppercase drop-shadow-sm">${p.name.split(' ').pop()}</span>
+                                            </div>
+                                        `;
+                                } else {
+                                    // ... existing dot style ...
+                                    pEl.setAttribute('data-player-id', p.id);
+                                    pEl.className += ` w-7 h-7 ${idx === 0 ? 'bg-cyan-600' : 'bg-indigo-600'} border-2 border-slate-700/50 rounded-full flex items-center justify-center shadow-lg transition hover:scale-125 hover:z-50 cursor-pointer`;
+                                    pEl.innerHTML = `
+                                            <span class="text-white font-black text-[9px] pointer-events-none">${p.name.split(' ').pop().substring(0, 3).toUpperCase()}</span>
+                                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-slate-900 border border-slate-700 text-white text-[10px] px-2 py-1 rounded shadow-xl whitespace-nowrap z-50">
+                                                <div class="font-bold">${p.name}</div>
+                                                <div class="text-[8px] text-slate-400 capitalize">${p.slot} | ${p.position}</div>
+                                            </div>
+                                        `;
+                                }
+                                container.appendChild(pEl);
+                            });
+                        });
+                    };
+
+                    renderStarters(pitchOverlay, true);
+                    renderStarters(secondaryPitchOverlay, false);
+
+                    if (bankContainer) {
+                        bankContainer.innerHTML = '';
+                        [homeClubId, awayClubId].forEach((cid, idx) => {
+                            const l = lineups[String(cid)];
+                            const teamName = idx === 0 ? "{{ $match->homeClub->name }}" : "{{ $match->awayClub->name }}";
+                            if (!l) return;
+
+                            const col = document.createElement('div');
+                            col.className = 'bg-slate-900/40 border border-slate-950 rounded-xl p-5';
+
+                            const renderPlayerRow = (p) => `
+                                    <div class="flex items-center gap-3 p-2 bg-slate-800/40 border border-slate-800 rounded-lg mb-2">
+                                        <img src="${p.photo_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs font-bold text-white truncate">${p.name}</div>
+                                            <div class="text-[10px] text-slate-500 font-bold uppercase">${p.position}</div>
+                                        </div>
+                                    </div>
+                                `;
+
+                            const benchHtml = l.bench.length > 0 ? `<div class="grid grid-cols-2 gap-2">${l.bench.map(renderPlayerRow).join('')}</div>` : '<div class="text-[10px] text-slate-600 italic">Keine Bankspieler</div>';
+
+                            // Find substituted players from 'removed' list who were actually substituted (not red cards)
+                            const subsOut = (l.removed || []).filter(p => !p.is_sent_off);
+                            const subsHtml = subsOut.length > 0 ? `<div class="space-y-1">${subsOut.map(p => `<div class="text-[11px] text-slate-400">${p.name}</div>`).join('')}</div>` : '<div class="text-[11px] text-slate-600 italic">Niemand ausgewechselt</div>';
+
+                            // Find red carded players
+                            const sentOff = (l.removed || []).filter(p => p.is_sent_off);
+                            const sentOffHtml = sentOff.length > 0 ? `<div class="space-y-1">${sentOff.map(p => `<div class="text-[11px] text-red-400 font-bold">${p.name}</div>`).join('')}</div>` : '<div class="text-[11px] text-slate-600 italic">Keine Platzverweise</div>';
+
+                            col.innerHTML = `
+                                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                                        <h4 class="font-black text-white text-xs uppercase tracking-wider">${teamName}</h4>
+                                        <div class="flex gap-2">
+                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">BANK: ${l.bench.length}</span>
+                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">AUS: ${subsOut.length}</span>
+                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">ROT: ${sentOff.length}</span>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-2">Bank</div>
+                                            ${benchHtml}
+                                        </div>
+                                        <div class="pt-2 border-t border-slate-800/50">
+                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Ausgewechselt</div>
+                                            ${subsHtml}
+                                        </div>
+                                        <div class="pt-2 border-t border-slate-800/50">
+                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Platzverweis</div>
+                                            ${sentOffHtml}
+                                        </div>
+                                    </div>
+                                `;
+                            bankContainer.appendChild(col);
+                        });
+                    }
                 };
 
                 const renderActionMap = (actions) => {
                     if (!actionMapOverlay) return;
                     actionMapOverlay.innerHTML = '';
-                    actions.forEach(a => {
+
+                    const ball = document.getElementById('pitch-ball');
+                    const latest = actions[0];
+
+                    if (latest && ball) {
+                        const bx = parseFloat(latest.x_coord), by = parseFloat(latest.y_coord);
+                        if (!isNaN(bx) && !isNaN(by)) {
+                            ball.classList.remove('hidden');
+                            ball.style.left = `${bx}%`;
+                            ball.style.top = `${by}%`;
+
+                            // Highlight involved player if possible
+                            document.querySelectorAll('#pitch-players-overlay [data-player-id]').forEach(p => {
+                                p.classList.remove('ring-4', 'ring-white', 'scale-125', 'z-40');
+                            });
+                            if (latest.player_id) {
+                                const activePlayer = document.querySelector(`#pitch-players-overlay [data-player-id="${latest.player_id}"]`);
+                                if (activePlayer) activePlayer.classList.add('ring-4', 'ring-white', 'scale-125', 'z-40');
+                            }
+                        }
+                    }
+
+                    actions.slice(0, 20).forEach((a, i) => {
                         const x = parseFloat(a.x_coord), y = parseFloat(a.y_coord);
                         if (!isNaN(x) && !isNaN(y)) {
                             const el = document.createElement('div');
-                            el.className = `absolute w-2 h-2 rounded-full ${Number(a.club_id) === homeClubId ? 'bg-cyan-400' : 'bg-indigo-500'} shadow-sm transform -translate-x-1/2 -translate-y-1/2`;
-                            el.style.left = `${x}%`; el.style.top = `${y}%`;
+                            const opacity = Math.max(0.1, 1 - (i / 20));
+                            el.className = `absolute w-2 h-2 rounded-full ${Number(a.club_id) === homeClubId ? 'bg-cyan-400' : 'bg-indigo-500'} shadow-sm transform -translate-x-1/2 -translate-y-1/2 transition-opacity`;
+                            el.style.left = `${x}%`;
+                            el.style.top = `${y}%`;
+                            el.style.opacity = opacity;
                             actionMapOverlay.appendChild(el);
                         }
                     });
