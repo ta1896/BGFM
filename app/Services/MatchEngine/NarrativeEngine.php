@@ -114,6 +114,9 @@ class NarrativeEngine
             'turnover' => "Ballverlust von {$playerName}. {$clubName} erobert den Ball.",
             'throw_in' => "Einwurf für {$clubName}.",
             'clearance' => "Klärungsaktion von {$playerName}.",
+            'kickoff' => "Das Spiel wurde angepfiffen.",
+            'half_time' => "Halbzeitpause. Die Spieler begeben sich in die Kabinen.",
+            'full_time' => "Das Spiel ist beendet.",
             default => "Ereignis: {$eventType} durch {$playerName} ({$clubName}).",
         };
     }
