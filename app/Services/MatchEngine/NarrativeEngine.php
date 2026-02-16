@@ -92,7 +92,12 @@ class NarrativeEngine
 
         foreach ($data as $key => $value) {
             if (is_scalar($value)) {
-                $replacements["{{$key}}"] = (string) $value;
+                $strValue = (string) $value;
+                $replacements["{{$key}}"] = $strValue;
+                $replacements["{" . strtoupper($key) . "}"] = $strValue;
+                $replacements["[{$key}]"] = $strValue;
+                // Also support uppercase variants for square brackets if common
+                $replacements["[" . strtoupper($key) . "]"] = $strValue;
             }
         }
 

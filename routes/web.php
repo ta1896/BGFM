@@ -57,7 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/lineups/{lineup}/activate', [LineupsController::class, 'activate'])->name('lineups.activate');
             Route::get('/matches', [LeagueController::class, 'matches'])->name('league.matches');
             Route::get('/matches/{match}', [MatchCenterController::class, 'show'])->name('matches.show');
-            Route::post('/matches/{match}/simulate', [MatchCenterController::class, 'simulate'])->name('matches.simulate');
+            Route::match(['get', 'post'], '/matches/{match}/simulate', [MatchCenterController::class, 'simulate'])->name('matches.simulate');
             Route::post('/matches/{match}/live/start', [MatchCenterController::class, 'liveStart'])->name('matches.live.start');
             Route::post('/matches/{match}/live/resume', [MatchCenterController::class, 'liveResume'])->name('matches.live.resume');
             Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
@@ -137,8 +137,22 @@ Route::middleware(['auth', 'verified', 'admin'])
 
         Route::resource('ticker-templates', \App\Http\Controllers\Admin\TickerTemplateController::class);
 
-        // Match Engine Index (pointing to settings for now as it seems to be the intended target)
+        // Match Engine Index
         Route::get('/match-engine', [App\Http\Controllers\Admin\GeneralSimulationSettingsController::class, 'index'])->name('match-engine.index');
+
+        // Monitoring & Debug Center
+        Route::prefix('monitoring')->name('monitoring.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\MonitoringController::class, 'index'])->name('index');
+            Route::get('/logs', [App\Http\Controllers\Admin\MonitoringController::class, 'logs'])->name('logs');
+            Route::get('/analysis', [App\Http\Controllers\Admin\MonitoringController::class, 'analysis'])->name('analysis');
+            Route::get('/lab', [App\Http\Controllers\Admin\MonitoringController::class, 'lab'])->name('lab');
+            Route::get('/internals', [App\Http\Controllers\Admin\MonitoringController::class, 'internals'])->name('internals');
+            Route::get('/scheduler', [App\Http\Controllers\Admin\MonitoringController::class, 'scheduler'])->name('scheduler');
+            Route::delete('/logs/clear', [App\Http\Controllers\Admin\MonitoringController::class, 'clearLogs'])->name('logs.clear');
+            Route::post('/repair', [App\Http\Controllers\Admin\MonitoringController::class, 'repair'])->name('repair');
+            Route::post('/clear-cache', [App\Http\Controllers\Admin\MonitoringController::class, 'clearCache'])->name('clear-cache');
+            Route::post('/lab/run', [App\Http\Controllers\Admin\MonitoringController::class, 'runLabSimulation'])->name('lab.run');
+        });
     });
 
 require __DIR__ . '/auth.php';

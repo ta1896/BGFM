@@ -227,8 +227,7 @@ class LiveMatchTickerService
                 ['style' => $style],
                 null, // x
                 null, // y
-                0.0,  // xg
-                0     // momentum
+                0.0  // xg
             );
 
             $this->recordStateTransition(
@@ -274,8 +273,7 @@ class LiveMatchTickerService
             ['shout' => $shout],
             null, // x
             null, // y
-            0.0,  // xg
-            10    // momentum
+            0.0  // xg
         );
 
         return $this->loadState($match);
@@ -532,8 +530,7 @@ class LiveMatchTickerService
             ],
             null, // x
             null, // y
-            0.0,  // xg
-            0     // momentum
+            0.0  // xg
         );
 
         $this->recordStateTransition(
@@ -797,8 +794,7 @@ class LiveMatchTickerService
                 ],
                 50, // x (Midfield)
                 0,  // y (Side)
-                0.0, // xg
-                5    // momentum
+                0.0 // xg
             );
 
             $this->recordStateTransition(
@@ -1774,30 +1770,28 @@ class LiveMatchTickerService
         ?array $metadata,
         ?int $x_coord = null,
         ?int $y_coord = null,
-        ?float $xg = null,
-        ?int $momentum_value = null
+        ?float $xg = null
     ): void {
-        $narrative = null;
-
-        if ($actionType !== 'kickoff' && $actionType !== 'half_time' && $actionType !== 'full_time') {
-            $data = $metadata ?? [];
-            if ($playerId) {
-                $player = Player::find($playerId);
-                $data['player'] = $player?->last_name ?? 'Spieler';
-            }
-            if ($opponentPlayerId) {
-                $opp = Player::find($opponentPlayerId);
-                $data['opponent'] = $opp?->last_name ?? 'Gegenspieler';
-            }
-            if ($clubId) {
-                $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;
-                $data['club'] = $club?->short_name ?? $club?->name ?? 'Verein';
-            }
-            $data['score'] = "{$match->home_score}:{$match->away_score}";
-            $data['minute'] = $minute;
-
-            $narrative = $this->narrativeEngine->generate($actionType, $data, 'de');
+        $data = $metadata ?? [];
+        if ($playerId) {
+            $player = Player::find($playerId);
+            $data['player'] = $player?->full_name ?? 'Spieler';
+            $data['player_name'] = $player?->full_name;
         }
+        if ($opponentPlayerId) {
+            $opp = Player::find($opponentPlayerId);
+            $data['opponent'] = $opp?->full_name ?? 'Gegenspieler';
+            $data['opponent_name'] = $opp?->full_name;
+        }
+        if ($clubId) {
+            $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;
+            $data['club'] = $club?->short_name ?? $club?->name ?? 'Verein';
+            $data['club_name'] = $data['club'];
+        }
+        $data['score'] = "{$match->home_score}:{$match->away_score}";
+        $data['minute'] = $minute;
+
+        $narrative = $this->narrativeEngine->generate($actionType, $data, 'de');
 
         MatchLiveAction::query()->create([
             'match_id' => $match->id,
@@ -1814,7 +1808,6 @@ class LiveMatchTickerService
             'x_coord' => $x_coord,
             'y_coord' => $y_coord,
             'xg' => $xg,
-            'momentum_value' => $momentum_value,
         ]);
     }
 
@@ -2257,7 +2250,7 @@ class LiveMatchTickerService
 
     private function loadState(GameMatch $match): GameMatch
     {
-        return $match->fresh([
+        $match = $match->fresh([
             'homeClub',
             'awayClub',
             'events.player',
@@ -2275,5 +2268,12 @@ class LiveMatchTickerService
             'plannedSubstitutions.playerOut',
             'plannedSubstitutions.playerIn',
         ]);
+
+        if ($match->status === 'live' && $match->liveTeamStates->isEmpty()) {
+            $this->initializeLiveState($match);
+            $match->refresh();
+        }
+
+        return $match;
     }
 }

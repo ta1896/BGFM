@@ -266,7 +266,7 @@
                                 {{ $match->home_score ?? '-' }} : {{ $match->away_score ?? '-' }}
                             </div>
                             <div class="mt-3 inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                                                                                {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
+                                                                                                    {{ $match->status === 'played' ? 'bg-slate-700/60 text-slate-300' : 'bg-green-500/10 text-green-400 border border-green-500/20' }}"
                                 id="live-status">
                                 @if ($match->status !== 'played')
                                     <span class="sim-live-dot"></span>
@@ -462,21 +462,8 @@
 
                 <!-- 3. STATISTIKEN TAB -->
                 <div id="tab-content-stats" class="tab-content hidden">
-                    <!-- Momentum Graph -->
-                    <div class="bg-slate-900 rounded p-4 mb-6 border border-slate-950">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-slate-200 text-sm">Momentum-Trend</h4>
-                            <span class="text-xs text-slate-500">Komplettes Spiel</span>
-                        </div>
-                        <div class="h-32 w-full relative" id="momentum-chart-container">
-                            <div class="absolute inset-0 flex items-center justify-center text-xs text-slate-600">Lade
-                                Grafik...</div>
-                            <div id="momentum-chart" class="flex h-full w-full items-end gap-[1px] overflow-hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Stat Cards -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
+                    <!-- Match Ticker -->
+                    <div class="max-w-3xl mx-auto space-y-8" id="stats-grid">
                         <!-- Filled by JS -->
                     </div>
                 </div>
@@ -691,7 +678,6 @@
                 const statsGrid = document.getElementById('stats-grid');
                 const visualLineupsOverlay = document.getElementById('visual-lineups-overlay');
                 const actionMapOverlay = document.getElementById('action-map-overlay');
-                const momentumChart = document.getElementById('momentum-chart');
 
                 const fetchState = async () => {
                     try {
@@ -747,7 +733,6 @@
                     renderVisualLineups(state);
                     renderActionMap(state.actions);
                     renderHeatmap(state.actions);
-                    renderMomentum(state.actions);
                     renderRatings(state.player_states, state.final_stats);
 
                     const resumeBtn = document.getElementById('live-resume-btn');
@@ -795,26 +780,26 @@
                         else if (leftPct > 85) tooltipStyle = 'min-width: 220px; right: 0;';
 
                         el.innerHTML = `
-                                                                    <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
-                                                                        ${cfg.icon}
-                                                                    </div>
-                                                                    <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
-                                                                        <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
-                                                                            <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
-                                                                                <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
-                                                                                <span class="text-slate-500 font-mono">${a.minute}'</span>
-                                                                            </div>
-                                                                            <div class="p-3 flex items-start gap-2.5">
-                                                                                <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
-                                                                                <div class="flex-1 min-w-0">
-                                                                                    ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
-                                                                                    <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
-                                                                                    ${narrativeLine}
+                                                                        <div class="w-6 h-6 rounded-full ${cfg.color} flex items-center justify-center text-[10px] shadow z-10 hover:scale-125 transition text-white">
+                                                                            ${cfg.icon}
+                                                                        </div>
+                                                                        <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-all duration-200 group-hover:translate-y-0 translate-y-1" style="${tooltipStyle}">
+                                                                            <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700/50 shadow-xl shadow-black/40">
+                                                                                <div class="px-3 py-1.5 text-[10px] font-bold flex items-center justify-between gap-3" style="background: ${cfg.headerBg}; border-bottom: 1px solid ${cfg.accent}30;">
+                                                                                    <span style="color: ${cfg.accent}" class="uppercase tracking-widest">${cfg.icon} ${cfg.label}</span>
+                                                                                    <span class="text-slate-500 font-mono">${a.minute}'</span>
+                                                                                </div>
+                                                                                <div class="p-3 flex items-start gap-2.5">
+                                                                                    <img src="${teamLogo}" class="w-7 h-7 rounded-full bg-slate-800 p-0.5 object-contain shrink-0 border border-slate-700/50">
+                                                                                    <div class="flex-1 min-w-0">
+                                                                                        ${a.player_name ? `<div class="text-xs font-bold text-white truncate">${a.player_name}</div>` : ''}
+                                                                                        <div class="text-[10px] text-slate-500 font-medium">${teamName}</div>
+                                                                                        ${narrativeLine}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                `;
+                                                                    `;
                         timelineContainer.appendChild(el);
                     });
                 };
@@ -854,66 +839,66 @@
                         }
 
                         return `
-                                                    <div class="w-full mb-8 animate-fade-in-up">
-                                                        <div class="relative max-w-2xl mx-auto">
-                                                            <!-- Time Bubble (Top Left - matching latest image) -->
-                                                            <div class="absolute -top-3 left-4 z-20">
-                                                                <span class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[10px] font-black text-white shadow-xl">${mins}'</span>
-                                                            </div>
-
-                                                            <!-- Premium Card -->
-                                                            <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
-                                                                <!-- Colored Header Strip -->
-                                                                <div class="${headerBg} border-b py-2 text-center">
-                                                                    <span class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                                                                        <span>${icon}</span> ${headerText}
-                                                                    </span>
+                                                        <div class="w-full mb-8 animate-fade-in-up">
+                                                            <div class="relative max-w-2xl mx-auto">
+                                                                <!-- Time Bubble (Top Left - matching latest image) -->
+                                                                <div class="absolute -top-3 left-4 z-20">
+                                                                    <span class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[10px] font-black text-white shadow-xl">${mins}'</span>
                                                                 </div>
 
-                                                                <!-- Body -->
-                                                        <div class="p-6">
-                                                            <div class="flex items-start gap-6">
-                                                                <!-- Left: Visual/Shield -->
-                                                                <div class="relative shrink-0 pt-1">
-                                                                    <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
-                                                                        <span class="${sideColor === 'cyan-500' ? 'text-cyan-400' : 'text-indigo-400'}">🛡️</span>
+                                                                <!-- Premium Card -->
+                                                                <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                                    <!-- Colored Header Strip -->
+                                                                    <div class="${headerBg} border-b py-2 text-center">
+                                                                        <span class="text-xs font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                                                                            <span>${icon}</span> ${headerText}
+                                                                        </span>
                                                                     </div>
-                                                                    <img src="${logoUrl}" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-slate-900 shadow-lg bg-slate-800 p-0.5">
-                                                                </div>
 
-                                                                <!-- Right: Info Section -->
-                                                                <div class="flex-1 min-w-0">
-                                                                    <div class="flex justify-between items-start mb-2">
-                                                                        <div class="flex flex-col">
-                                                                            <span class="text-xl font-black text-white leading-tight uppercase tracking-tight">${a.player_name || 'Unbekannt'}</span>
-                                                                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">${a.club_short_name || sideLabel}</span>
+                                                                    <!-- Body -->
+                                                            <div class="p-6">
+                                                                <div class="flex items-start gap-6">
+                                                                    <!-- Left: Visual/Shield -->
+                                                                    <div class="relative shrink-0 pt-1">
+                                                                        <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
+                                                                            <span class="${sideColor === 'cyan-500' ? 'text-cyan-400' : 'text-indigo-400'}">🛡️</span>
                                                                         </div>
-                                                                        ${isGoal && scoreDisplay ? `
-                                                                            <div class="text-3xl font-black text-white tracking-tighter drop-shadow-lg font-mono">${scoreDisplay}</div>
-                                                                        ` : ''}
+                                                                        <img src="${logoUrl}" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-slate-900 shadow-lg bg-slate-800 p-0.5">
                                                                     </div>
 
-                                                                    ${isGoal ? `
-                                                                        <div class="mb-4 flex flex-wrap items-center gap-3">
-                                                                            <span class="text-[10px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest rounded-sm">${a.metadata?.goal_type || 'TOR'}</span>
-                                                                            ${a.assister_name ? `
-                                                                                <div class="flex items-center gap-1.5 opacity-80">
-                                                                                    <span class="text-[10px] text-slate-500 font-bold uppercase">Assistent</span>
-                                                                                    <span class="text-[11px] text-slate-300 font-black">${a.assister_name}</span>
-                                                                                </div>
+                                                                    <!-- Right: Info Section -->
+                                                                    <div class="flex-1 min-w-0">
+                                                                        <div class="flex justify-between items-start mb-2">
+                                                                            <div class="flex flex-col">
+                                                                                <span class="text-xl font-black text-white leading-tight uppercase tracking-tight">${a.player_name || 'Unbekannt'}</span>
+                                                                                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">${a.club_short_name || sideLabel}</span>
+                                                                            </div>
+                                                                            ${isGoal && scoreDisplay ? `
+                                                                                <div class="text-3xl font-black text-white tracking-tighter drop-shadow-lg font-mono">${scoreDisplay}</div>
                                                                             ` : ''}
                                                                         </div>
-                                                                    ` : ''}
 
-                                                                    <div class="text-sm text-slate-400 italic leading-relaxed py-3 px-4 bg-slate-800/50 rounded-lg border-l-2 border-slate-700">
-                                                                        "${narrative.replace(/"/g, '')}"
+                                                                        ${isGoal ? `
+                                                                            <div class="mb-4 flex flex-wrap items-center gap-3">
+                                                                                <span class="text-[10px] px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest rounded-sm">${a.metadata?.goal_type || 'TOR'}</span>
+                                                                                ${a.assister_name ? `
+                                                                                    <div class="flex items-center gap-1.5 opacity-80">
+                                                                                        <span class="text-[10px] text-slate-500 font-bold uppercase">Assistent</span>
+                                                                                        <span class="text-[11px] text-slate-300 font-black">${a.assister_name}</span>
+                                                                                    </div>
+                                                                                ` : ''}
+                                                                            </div>
+                                                                        ` : ''}
+
+                                                                        <div class="text-sm text-slate-400 italic leading-relaxed py-3 px-4 bg-slate-800/50 rounded-lg border-l-2 border-slate-700">
+                                                                            "${narrative.replace(/"/g, '')}"
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>`;
+                                                </div>`;
                     }
 
                     // --- 2. SUBSTITUTION LAYOUT ---
@@ -924,34 +909,34 @@
                         if (outMatch) playerOut = outMatch[1].trim();
 
                         return `
-                                                     <div class="w-full mb-6 animate-fade-in-up">
-                                                        <div class="relative max-w-xl mx-auto">
-                                                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-                                                                <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-slate-400">${mins}'</span>
-                                                            </div>
-                                                            <div class="w-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
-                                                                <div class="bg-indigo-900/20 py-1.5 text-center border-b border-slate-700">
-                                                                    <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">Spielerwechsel ${sideLabel}</span>
+                                                         <div class="w-full mb-6 animate-fade-in-up">
+                                                            <div class="relative max-w-xl mx-auto">
+                                                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                                                                    <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-slate-400">${mins}'</span>
                                                                 </div>
-                                                                <div class="flex items-stretch divide-x divide-slate-700/50">
-                                                                    <div class="flex-1 p-4 flex items-center gap-3">
-                                                                        <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs animate-pulse">⬆️</div>
-                                                                        <div class="min-w-0">
-                                                                            <div class="text-[10px] text-emerald-500 font-black uppercase leading-none mb-1">Ein</div>
-                                                                            <div class="text-sm font-bold text-white truncate">${playerIn}</div>
+                                                                <div class="w-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
+                                                                    <div class="bg-indigo-900/20 py-1.5 text-center border-b border-slate-700">
+                                                                        <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">Spielerwechsel ${sideLabel}</span>
+                                                                    </div>
+                                                                    <div class="flex items-stretch divide-x divide-slate-700/50">
+                                                                        <div class="flex-1 p-4 flex items-center gap-3">
+                                                                            <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs animate-pulse">⬆️</div>
+                                                                            <div class="min-w-0">
+                                                                                <div class="text-[10px] text-emerald-500 font-black uppercase leading-none mb-1">Ein</div>
+                                                                                <div class="text-sm font-bold text-white truncate">${playerIn}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="flex-1 p-4 flex items-center justify-end gap-3 text-right">
+                                                                            <div class="min-w-0">
+                                                                                <div class="text-[10px] text-red-500 font-black uppercase leading-none mb-1">Aus</div>
+                                                                                <div class="text-sm font-bold text-slate-400 truncate">${playerOut}</div>
+                                                                            </div>
+                                                                            <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-xs">⬇️</div>
                                                                         </div>
                                                                     </div>
-                                                                    <div class="flex-1 p-4 flex items-center justify-end gap-3 text-right">
-                                                                        <div class="min-w-0">
-                                                                            <div class="text-[10px] text-red-500 font-black uppercase leading-none mb-1">Aus</div>
-                                                                            <div class="text-sm font-bold text-slate-400 truncate">${playerOut}</div>
-                                                                        </div>
-                                                                        <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-xs">⬇️</div>
-                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                     </div>`;
+                                                         </div>`;
                     }
 
                     // --- 3. MINIMAL LAYOUT (with Team Indicator) ---
@@ -970,14 +955,14 @@
                     else if (type === 'free_kick') icon = '🦶';
 
                     return `
-                                                <div class="group flex items-start gap-4 w-full mb-3 px-3 py-2.5 hover:bg-slate-700/30 rounded-lg transition-all border-l-4 border-${sideColor}/30 hover:border-${sideColor} animate-fade-in-up">
-                                                    <div class="font-mono text-xs text-slate-500 pt-0.5 min-w-[32px] text-right">${mins}'</div>
-                                                    <div class="text-lg pt-0.5 transition-all group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.6)] scale-100 group-hover:scale-110">${icon}</div>
-                                                    <div class="flex-1 text-sm text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
-                                                        <span class="font-black text-[10px] uppercase tracking-wider text-${sideColor} mr-2">${sideLabel}</span>
-                                                        ${narrative.replace(/"/g, '')}
-                                                    </div>
-                                                </div>`;
+                                                    <div class="group flex items-start gap-4 w-full mb-3 px-3 py-2.5 hover:bg-slate-700/30 rounded-lg transition-all border-l-4 border-${sideColor}/30 hover:border-${sideColor} animate-fade-in-up">
+                                                        <div class="font-mono text-xs text-slate-500 pt-0.5 min-w-[32px] text-right">${mins}'</div>
+                                                        <div class="text-lg pt-0.5 transition-all group-hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.6)] scale-100 group-hover:scale-110">${icon}</div>
+                                                        <div class="flex-1 text-sm text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
+                                                            <span class="font-black text-[10px] uppercase tracking-wider text-${sideColor} mr-2">${sideLabel}</span>
+                                                            ${narrative.replace(/"/g, '')}
+                                                        </div>
+                                                    </div>`;
                 };
                 const updateTicker = (actions) => {
                     if (!eventsList) return;
@@ -992,30 +977,30 @@
                             let text = (a.narrative && !a.narrative.startsWith('Ereignis:')) ? a.narrative : (a.action_type === 'kickoff' ? "Das Spiel beginnt." : (a.action_type === 'half_time' ? "Halbzeit." : "Spielende."));
 
                             return `
-                                                                <div class="w-full my-8 flex flex-col items-center justify-center animate-fade-in-up">
-                                                                    <div class="relative w-full max-w-md">
-                                                                        <!-- Milestone Card -->
-                                                                        <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
-                                                                            <!-- Label Header Strip -->
-                                                                            <div class="${headerBg} border-b py-2 text-center">
-                                                                                <span class="text-[10px] font-black uppercase tracking-[0.3em] ${color} flex items-center justify-center gap-2">
-                                                                                    <span>${icon}</span> ${label}
-                                                                                </span>
-                                                                            </div>
+                                                                    <div class="w-full my-8 flex flex-col items-center justify-center animate-fade-in-up">
+                                                                        <div class="relative w-full max-w-md">
+                                                                            <!-- Milestone Card -->
+                                                                            <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-2xl backdrop-blur-md">
+                                                                                <!-- Label Header Strip -->
+                                                                                <div class="${headerBg} border-b py-2 text-center">
+                                                                                    <span class="text-[10px] font-black uppercase tracking-[0.3em] ${color} flex items-center justify-center gap-2">
+                                                                                        <span>${icon}</span> ${label}
+                                                                                    </span>
+                                                                                </div>
 
-                                                                            <!-- Milestone Body -->
-                                                                            <div class="p-5 text-center px-10">
-                                                                                <div class="text-sm text-slate-300 font-bold leading-relaxed">
-                                                                                    "${text.replace(/"/g, '')}"
+                                                                                <!-- Milestone Body -->
+                                                                                <div class="p-5 text-center px-10">
+                                                                                    <div class="text-sm text-slate-300 font-bold leading-relaxed">
+                                                                                        "${text.replace(/"/g, '')}"
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
 
-                                                                        <!-- Connection Lines -->
-                                                                        <div class="absolute -left-10 right-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
-                                                                        <div class="absolute -right-10 left-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
-                                                                    </div>
-                                                                </div>`;
+                                                                            <!-- Connection Lines -->
+                                                                            <div class="absolute -left-10 right-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                                            <div class="absolute -right-10 left-full top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-transparent via-slate-700 to-slate-800/50 hidden md:block"></div>
+                                                                        </div>
+                                                                    </div>`;
                         }
 
                         if (a.action_type === 'goal' && !processedEventIds.has(a.id)) SoundEngine.play('goal');
@@ -1028,32 +1013,74 @@
                         return renderEventCard(a, isHome, mins, logoUrl);
                     }).join('');
                     eventsList.innerHTML = html || '<div class="text-sm text-slate-500 italic text-center py-8">Noch keine Ereignisse...</div>';
-                }; const renderStats = (teamStates) => {
+                };
+                const renderStats = (teamStates) => {
                     if (!statsGrid) return;
                     const home = teamStates[String(homeClubId)] || {}, away = teamStates[String(awayClubId)] || {};
-                    const row = (lbl, h, a, s = '') => {
+
+                    const totalPossession = (home.possession_seconds + away.possession_seconds) || 1;
+                    const homePoss = Math.round((home.possession_seconds / totalPossession) * 100);
+                    const awayPoss = Math.round((away.possession_seconds / totalPossession) * 100);
+
+                    // 1. POSSESSION (Big Circular / Bar Split)
+                    let html = `
+                            <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-800 mb-8">
+                                <h4 class="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Ballbesitz</h4>
+                                <div class="flex items-center justify-center gap-8">
+                                    <div class="text-center">
+                                        <div class="text-3xl font-black text-cyan-400">${homePoss}%</div>
+                                        <div class="text-[10px] text-slate-500 uppercase font-bold mt-1">Heim</div>
+                                    </div>
+                                    <div class="flex-1 max-w-xs h-3 bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+                                        <div class="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" style="width: ${homePoss}%"></div>
+                                        <div class="bg-gradient-to-l from-indigo-600 to-indigo-400 h-full flex-1 shadow-[0_0_10px_rgba(79,70,229,0.5)]"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-3xl font-black text-indigo-400">${awayPoss}%</div>
+                                        <div class="text-[10px] text-slate-500 uppercase font-bold mt-1">Gast</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                    // 2. COMPARISON BARS
+                    const row = (lbl, h, a, icon) => {
                         const hN = Number(h), aN = Number(a);
+                        const total = hN + aN || 1;
+                        const hPct = (hN / total) * 100;
+                        const aPct = (aN / total) * 100;
+
                         return `
-                                                                    <div class="bg-slate-800 p-3 rounded border border-slate-950">
-                                                                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 text-center">${lbl}</div>
-                                                                        <div class="flex justify-between items-end font-mono">
-                                                                            <span class="text-lg font-bold ${hN > aN ? 'text-green-400' : 'text-slate-300'}">${h}${s}</span>
-                                                                            <span class="text-lg font-bold ${aN > hN ? 'text-green-400' : 'text-slate-300'}">${a}${s}</span>
-                                                                        </div>
-                                                                        <div class="mt-1 h-1 bg-slate-700 rounded-full flex overflow-hidden">
-                                                                            <div class="bg-cyan-500 h-full" style="width: ${(hN / ((hN + aN) || 1)) * 100}%"></div>
-                                                                            <div class="bg-indigo-500 h-full flex-1"></div>
-                                                                        </div>
-                                                                    </div>`;
+                                <div class="mb-5 last:mb-0">
+                                    <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
+                                        <span class="${hN > aN ? 'text-cyan-400' : ''}">${h}</span>
+                                        <span class="flex items-center gap-2 opacity-80"><span>${icon}</span> ${lbl}</span>
+                                        <span class="${aN > hN ? 'text-indigo-400' : ''}">${a}</span>
+                                    </div>
+                                    <div class="flex h-2 bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="flex-1 flex justify-end">
+                                            <div class="h-full bg-cyan-500 transition-all duration-1000" style="width: ${hPct}%"></div>
+                                        </div>
+                                        <div class="w-0.5 bg-slate-900"></div>
+                                        <div class="flex-1 flex justify-start">
+                                            <div class="h-full bg-indigo-500 transition-all duration-1000" style="width: ${aPct}%"></div>
+                                        </div>
+                                    </div>
+                                </div>`;
                     };
-                    statsGrid.innerHTML = [
-                        row('Ballbesitz', Math.round((home.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), Math.round((away.possession_seconds / (home.possession_seconds + away.possession_seconds || 1)) * 100), '%'),
-                        row('xG', (home.expected_goals || 0).toFixed(2), (away.expected_goals || 0).toFixed(2)),
-                        row('Schüsse', home.shots || 0, away.shots || 0),
-                        row('Pässe', home.pass_completions || 0, away.pass_completions || 0),
-                        row('Fouls', home.fouls_committed || 0, away.fouls_committed || 0),
-                        row('Ecken', home.corners_won || 0, away.corners_won || 0),
-                    ].join('');
+
+                    html += `
+                            <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                                ${row('xGoals', (home.expected_goals || 0).toFixed(2), (away.expected_goals || 0).toFixed(2), '⚽')}
+                                ${row('Schüsse', home.shots || 0, away.shots || 0, '🎯')}
+                                ${row('Pässe', home.pass_completions || 0, away.pass_completions || 0, '👟')}
+                                ${row('Fouls', home.fouls_committed || 0, away.fouls_committed || 0, '⚠️')}
+                                ${row('Ecken', home.corners_won || 0, away.corners_won || 0, '🚩')}
+                                ${row('Karten', (home.yellow_cards || 0) + (home.red_cards || 0), (away.yellow_cards || 0) + (away.red_cards || 0), '🟨')}
+                            </div>
+                        `;
+
+                    statsGrid.innerHTML = html;
                 };
 
                 const renderVisualLineups = (state) => {
@@ -1070,9 +1097,9 @@
                     const renderStarters = (container, isLineupTab) => {
                         if (!container) return;
                         container.innerHTML = '';
-                        
+
                         // Tab-specific slots for strict separation or dynamic view
-                        const dynamicSlots = { 
+                        const dynamicSlots = {
                             // Spielfeld tab: Traditional tactical layout
                             'TW': [6, 50], 'GK': [6, 50],
                             'LV': [22, 10], 'RV': [22, 90], 'IV': [18, 50], 'IV-L': [18, 30], 'IV-R': [18, 70],
@@ -1083,7 +1110,7 @@
                             'LW': [54, 15], 'RW': [54, 85]
                         };
 
-                        const strictSlots = { 
+                        const strictSlots = {
                             // Aufstellung tab: Strict separation (x stays < 50 for Home, > 50 for Away)
                             'TW': [8, 50], 'GK': [8, 50],
                             'LV': [22, 15], 'RV': [22, 85], 'IV': [20, 50], 'IV-L': [20, 35], 'IV-R': [20, 65],
@@ -1113,10 +1140,10 @@
                                 let slotKey = p.slot.toUpperCase();
                                 let coords = activeSlots[slotKey] || activeSlots[slotKey.split('-')[0]] || [25, 50];
                                 let x = coords[0], y = coords[1];
-                                
+
                                 // Perspective swap: x = 100 - x for Away Team
-                                if (idx === 1) { 
-                                    x = 100 - x; 
+                                if (idx === 1) {
+                                    x = 100 - x;
                                 }
 
                                 const pEl = document.createElement('div');
@@ -1131,33 +1158,40 @@
                                     if (evs.yellow > 0) badges += `<div class="w-2 h-3 bg-yellow-400 rounded-sm border border-black/20 shadow-lg"></div>`;
                                     if (evs.red > 0) badges += `<div class="w-2 h-3 bg-red-600 rounded-sm border border-black/20 shadow-lg"></div>`;
 
-                                    pEl.innerHTML = `
-                                            <div class="relative group-hover:z-50">
-                                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 ${idx === 0 ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)]'} bg-slate-800 overflow-hidden transition-all group-hover:scale-125 group-hover:border-white">
-                                                    <img src="${p.photo_url}" class="w-full h-full object-cover">
-                                                </div>
-                                                <!-- Event Badges (Goals/Cards) -->
-                                                ${badges ? `<div class="absolute -right-2 top-0 flex flex-col gap-1 z-20">${badges}</div>` : ''}
+                                    const rating = p.overall || '-';
+                                    const ratingColor = rating >= 80 ? 'bg-emerald-500' : (rating >= 70 ? 'bg-green-500' : (rating >= 60 ? 'bg-amber-500' : 'bg-slate-500'));
 
-                                                <!-- Position Bubble -->
-                                                <div class="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-sm px-1 text-[7px] font-black text-white uppercase z-10">${p.slot}</div>
-                                            </div>
-                                            <!-- Name Card -->
-                                            <div class="mt-1.5 px-3 py-1 bg-slate-900/95 border border-slate-700/50 rounded shadow-lg backdrop-blur-sm min-w-[70px] text-center transition-all group-hover:bg-slate-800 group-hover:border-slate-500">
-                                                <span class="text-[9px] font-black text-white whitespace-nowrap tracking-wide leading-none uppercase drop-shadow-sm">${p.name.split(' ').pop()}</span>
-                                            </div>
-                                        `;
+                                    pEl.innerHTML = `
+                                                <div class="relative group-hover:z-50">
+                                                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 ${idx === 0 ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)]'} bg-slate-800 overflow-hidden transition-all group-hover:scale-125 group-hover:border-white">
+                                                        <img src="${p.photo_url}" class="w-full h-full object-cover">
+                                                    </div>
+
+                                                    <!-- Rating Badge -->
+                                                    <div class="absolute -left-1 -top-1 w-5 h-5 rounded-full ${ratingColor} border-2 border-slate-900 flex items-center justify-center text-[9px] font-black text-white shadow-lg z-30 transform group-hover:scale-110 transition">${rating}</div>
+
+                                                    <!-- Event Badges (Goals/Cards) -->
+                                                    ${badges ? `<div class="absolute -right-2 top-0 flex flex-col gap-1 z-20">${badges}</div>` : ''}
+
+                                                    <!-- Position Bubble -->
+                                                    <div class="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-sm px-1 text-[7px] font-black text-white uppercase z-10">${p.slot}</div>
+                                                </div>
+                                                <!-- Name Card -->
+                                                <div class="mt-1.5 px-3 py-1 bg-slate-900/95 border border-slate-700/50 rounded shadow-lg backdrop-blur-sm min-w-[70px] text-center transition-all group-hover:bg-slate-800 group-hover:border-slate-500">
+                                                    <span class="text-[9px] font-black text-white whitespace-nowrap tracking-wide leading-none uppercase drop-shadow-sm">${p.name.split(' ').pop()}</span>
+                                                </div>
+                                            `;
                                 } else {
                                     // ... existing dot style ...
                                     pEl.setAttribute('data-player-id', p.id);
                                     pEl.className += ` w-7 h-7 ${idx === 0 ? 'bg-cyan-600' : 'bg-indigo-600'} border-2 border-slate-700/50 rounded-full flex items-center justify-center shadow-lg transition hover:scale-125 hover:z-50 cursor-pointer`;
                                     pEl.innerHTML = `
-                                            <span class="text-white font-black text-[9px] pointer-events-none">${p.name.split(' ').pop().substring(0, 3).toUpperCase()}</span>
-                                            <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-slate-900 border border-slate-700 text-white text-[10px] px-2 py-1 rounded shadow-xl whitespace-nowrap z-50">
-                                                <div class="font-bold">${p.name}</div>
-                                                <div class="text-[8px] text-slate-400 capitalize">${p.slot} | ${p.position}</div>
-                                            </div>
-                                        `;
+                                                <span class="text-white font-black text-[9px] pointer-events-none">${p.name.split(' ').pop().substring(0, 3).toUpperCase()}</span>
+                                                <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-slate-900 border border-slate-700 text-white text-[10px] px-2 py-1 rounded shadow-xl whitespace-nowrap z-50">
+                                                    <div class="font-bold">${p.name}</div>
+                                                    <div class="text-[8px] text-slate-400 capitalize">${p.slot} | ${p.position}</div>
+                                                </div>
+                                            `;
                                 }
                                 container.appendChild(pEl);
                             });
@@ -1178,14 +1212,14 @@
                             col.className = 'bg-slate-900/40 border border-slate-950 rounded-xl p-5';
 
                             const renderPlayerRow = (p) => `
-                                    <div class="flex items-center gap-3 p-2 bg-slate-800/40 border border-slate-800 rounded-lg mb-2">
-                                        <img src="${p.photo_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-bold text-white truncate">${p.name}</div>
-                                            <div class="text-[10px] text-slate-500 font-bold uppercase">${p.position}</div>
+                                        <div class="flex items-center gap-3 p-2 bg-slate-800/40 border border-slate-800 rounded-lg mb-2">
+                                            <img src="${p.photo_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-700">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-xs font-bold text-white truncate">${p.name}</div>
+                                                <div class="text-[10px] text-slate-500 font-bold uppercase">${p.position}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                `;
+                                    `;
 
                             const benchHtml = l.bench.length > 0 ? `<div class="grid grid-cols-2 gap-2">${l.bench.map(renderPlayerRow).join('')}</div>` : '<div class="text-[10px] text-slate-600 italic">Keine Bankspieler</div>';
 
@@ -1198,29 +1232,29 @@
                             const sentOffHtml = sentOff.length > 0 ? `<div class="space-y-1">${sentOff.map(p => `<div class="text-[11px] text-red-400 font-bold">${p.name}</div>`).join('')}</div>` : '<div class="text-[11px] text-slate-600 italic">Keine Platzverweise</div>';
 
                             col.innerHTML = `
-                                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
-                                        <h4 class="font-black text-white text-xs uppercase tracking-wider">${teamName}</h4>
-                                        <div class="flex gap-2">
-                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">BANK: ${l.bench.length}</span>
-                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">AUS: ${subsOut.length}</span>
-                                            <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">ROT: ${sentOff.length}</span>
+                                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                                            <h4 class="font-black text-white text-xs uppercase tracking-wider">${teamName}</h4>
+                                            <div class="flex gap-2">
+                                                <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">BANK: ${l.bench.length}</span>
+                                                <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">AUS: ${subsOut.length}</span>
+                                                <span class="px-1.5 py-0.5 bg-slate-950 text-[8px] text-slate-500 rounded border border-slate-800">ROT: ${sentOff.length}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="space-y-4">
-                                        <div>
-                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-2">Bank</div>
-                                            ${benchHtml}
+                                        <div class="space-y-4">
+                                            <div>
+                                                <div class="text-[10px] text-slate-500 font-black uppercase mb-2">Bank</div>
+                                                ${benchHtml}
+                                            </div>
+                                            <div class="pt-2 border-t border-slate-800/50">
+                                                <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Ausgewechselt</div>
+                                                ${subsHtml}
+                                            </div>
+                                            <div class="pt-2 border-t border-slate-800/50">
+                                                <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Platzverweis</div>
+                                                ${sentOffHtml}
+                                            </div>
                                         </div>
-                                        <div class="pt-2 border-t border-slate-800/50">
-                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Ausgewechselt</div>
-                                            ${subsHtml}
-                                        </div>
-                                        <div class="pt-2 border-t border-slate-800/50">
-                                            <div class="text-[10px] text-slate-500 font-black uppercase mb-1">Platzverweis</div>
-                                            ${sentOffHtml}
-                                        </div>
-                                    </div>
-                                `;
+                                    `;
                             bankContainer.appendChild(col);
                         });
                     }
@@ -1281,12 +1315,6 @@
                     let html = `<div class="relative w-full max-w-4xl mx-auto aspect-[105/68] bg-slate-800 rounded border border-slate-950 overflow-hidden bg-[url('https://raw.githubusercontent.com/mladenilic/soccer-pitch-bg/master/pitch.svg')] bg-cover grid grid-cols-10 grid-rows-7">`;
                     grid.forEach(row => row.forEach(val => { html += `<div class="bg-red-500 transition-opacity duration-1000" style="opacity: ${val > 0 ? (val / max) * 0.6 + 0.1 : 0}"></div>`; }));
                     cont.innerHTML = html + '</div>';
-                };
-
-                const renderMomentum = (actions) => {
-                    if (!momentumChart) return;
-                    const relevant = actions.filter(a => !isNaN(parseFloat(a.momentum_value))).slice(-30);
-                    momentumChart.innerHTML = relevant.map(a => `<div class="w-1.5 mx-[1.5px] rounded-t ${parseFloat(a.momentum_value) > 0 ? 'bg-cyan-500' : 'bg-indigo-500'} opacity-80" style="height: ${Math.min(100, Math.abs(parseFloat(a.momentum_value)) * 2)}%;"></div>`).join('');
                 };
 
                 const renderRatings = (playerStates, finalStats) => {

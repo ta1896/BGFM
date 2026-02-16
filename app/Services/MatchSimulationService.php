@@ -11,6 +11,7 @@ use App\Services\MatchEngine\NarrativeEngine;
 use App\Services\MatchEngine\TacticalManager;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class MatchSimulationService
 {
@@ -18,148 +19,42 @@ class MatchSimulationService
         private readonly StatisticsAggregationService $statisticsAggregationService,
         private readonly PlayerPositionService $positionService,
         private readonly TacticalManager $tacticalManager,
-        private readonly NarrativeEngine $narrativeEngine
+        private readonly NarrativeEngine $narrativeEngine,
+        private readonly SimulationSettingsService $settingsService
     ) {
     }
 
     public function simulate(GameMatch $match): GameMatch
     {
-        if ($match->status === 'played') {
-            return $match->load([
-                'homeClub',
-                'awayClub',
-                'events.player',
-                'events.club',
-                'playerStats.player',
-                'playerStats.club',
-            ]);
-        }
+        $result = $this->calculateSimulation($match);
 
-        $match->loadMissing(['homeClub.players', 'awayClub.players']);
-
-        $homeLineup = $this->resolveLineup($match->homeClub, $match);
-        $awayLineup = $this->resolveLineup($match->awayClub, $match);
-
-        $homePlayers = $this->extractPlayers($homeLineup, $match->homeClub);
-        $awayPlayers = $this->extractPlayers($awayLineup, $match->awayClub);
-
-        if ($homePlayers->isEmpty() || $awayPlayers->isEmpty()) {
-            return $match;
-        }
-
-        $seed = $match->simulation_seed ?: random_int(10000, 99999);
-        mt_srand($seed);
-
-        $homeStrength = $this->teamStrength($homePlayers, true, $homeLineup);
-        $awayStrength = $this->teamStrength($awayPlayers, false, $awayLineup);
-
-        $homeGoals = $this->rollGoals($homeStrength, $awayStrength);
-        $awayGoals = $this->rollGoals($awayStrength, $homeStrength);
-
-        $homeEvents = array_merge(
-            $this->buildGoalEvents($match, $match->home_club_id, $homeGoals, $homePlayers),
-            $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers),
-            $this->buildGenericEvents($match, $match->home_club_id, $homePlayers)
-        );
-
-        $awayEvents = array_merge(
-            $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers),
-            $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers),
-            $this->buildGenericEvents($match, $match->away_club_id, $awayPlayers)
-        );
-
-        $gamePhaseEvents = [
-            [
-                'minute' => 0,
-                'second' => 0,
-                'club_id' => $match->home_club_id,
-                'player_id' => null,
-                'event_type' => 'kickoff',
-                'metadata' => null,
-            ],
-            [
-                'minute' => 45,
-                'second' => 0,
-                'club_id' => null,
-                'player_id' => null,
-                'event_type' => 'half_time',
-                'metadata' => null,
-            ],
-            [
-                'minute' => 90,
-                'second' => 0,
-                'club_id' => null,
-                'player_id' => null,
-                'event_type' => 'full_time',
-                'metadata' => null,
-            ]
-        ];
-
-        $events = array_merge($homeEvents, $awayEvents, $gamePhaseEvents);
-
-        usort($events, static fn(array $a, array $b) => [$a['minute'], $a['second']] <=> [$b['minute'], $b['second']]);
-
-        // Generate narrative texts for each event using ticker templates
-        $usedTemplateIds = [];
-        $allPlayers = $homePlayers->concat($awayPlayers)->keyBy('id');
-        foreach ($events as &$event) {
-            $player = $allPlayers->get($event['player_id']);
-            $clubId = $event['club_id'];
-            $isHome = $clubId === $match->home_club_id;
-            $clubName = $isHome
-                ? ($match->homeClub->short_name ?? $match->homeClub->name)
-                : ($match->awayClub->short_name ?? $match->awayClub->name);
-
-            $opponentName = !$isHome
-                ? ($match->homeClub->short_name ?? $match->homeClub->name)
-                : ($match->awayClub->short_name ?? $match->awayClub->name);
-
-            $assisterName = null;
-            if (!empty($event['assister_player_id'])) {
-                $assister = $allPlayers->get($event['assister_player_id']);
-                $assisterName = $assister?->full_name;
-            }
-
-            $event['narrative'] = $this->narrativeEngine->generate(
-                $event['event_type'],
-                [
-                    'player' => $player?->full_name ?? 'Spieler',
-                    'club' => $clubName,
-                    'opponent' => $opponentName,
-                    'assister' => $assisterName ?? 'Mitspieler',
-                    'minute' => $event['minute'],
-                    'score' => ($homeGoals ?? 0) . ':' . ($awayGoals ?? 0),
-                ],
-                'de',
-                $usedTemplateIds
-            );
-        }
-        unset($event);
-
-        DB::transaction(function () use ($match, $events, $homeGoals, $awayGoals, $homePlayers, $awayPlayers, $seed): void {
-            $match->events()->delete();
-            $match->playerStats()->delete();
-
-            // Clean up any live simulation data if the match was in live mode
+        DB::transaction(function () use ($match, $result): void {
+            // Clean up any existing simulation data first
             DB::table('match_live_actions')->where('match_id', $match->id)->delete();
+            DB::table('match_live_team_states')->where('match_id', $match->id)->delete();
+            DB::table('match_player_stats')->where('match_id', $match->id)->delete();
+            $match->events()->delete();
 
             $match->update([
                 'status' => 'played',
-                'home_score' => $homeGoals,
-                'away_score' => $awayGoals,
-                'attendance' => $this->attendance($match->homeClub),
-                'weather' => $this->weather(),
+                'home_score' => $result['home_score'],
+                'away_score' => $result['away_score'],
+                'attendance' => $result['attendance'],
+                'weather' => $result['weather'],
                 'played_at' => now(),
-                'simulation_seed' => $seed,
+                'simulation_seed' => $result['seed'],
                 'live_minute' => 0,
                 'live_paused' => false,
             ]);
 
-            if ($events !== []) {
-                $match->events()->createMany($events);
+            if ($result['events'] !== []) {
+                $match->events()->createMany($result['events']);
             }
 
-            $this->createPlayerStats($match, $homePlayers, $awayPlayers);
+            $playerStats = $this->createPlayerStats($match, $result['home_players'], $result['away_players']);
+            DB::table('match_player_stats')->insert($playerStats);
+            $this->createLiveTeamStats($match, $playerStats);
+            $this->createLiveActions($match, $result['events']);
         });
 
         if ($match->competition_season_id) {
@@ -172,14 +67,83 @@ class MatchSimulationService
 
         $this->statisticsAggregationService->rebuildPlayerCompetitionStatsForMatch($match->fresh());
 
-        return $match->fresh([
-            'homeClub',
+        return $match;
+    }
+
+    /**
+     * Calculate simulation results without persisting to DB.
+     */
+    public function calculateSimulation(GameMatch $match, array $options = []): array
+    {
+        if ($match->status === 'played' && !($options['is_sandbox'] ?? false)) {
+            $match->refresh();
+        }
+
+        $match->load([
+            'homeClub.stadium',
             'awayClub',
-            'events.player',
-            'events.club',
-            'playerStats.player',
-            'playerStats.club',
+            'competitionSeason',
         ]);
+
+        $homeLineup = $this->resolveLineup($match->homeClub, $match);
+        $awayLineup = $this->resolveLineup($match->awayClub, $match);
+
+        $homePlayers = $this->extractPlayers($homeLineup, $match->homeClub);
+        $awayPlayers = $this->extractPlayers($awayLineup, $match->awayClub);
+
+        $homeStrength = $this->teamStrength($homePlayers, true, $homeLineup);
+        $awayStrength = $this->teamStrength($awayPlayers, false, $awayLineup);
+
+
+        $homeGoals = $this->rollGoals($homeStrength, $awayStrength);
+        $awayGoals = $this->rollGoals($awayStrength, $homeStrength);
+
+        $matchEvents = [];
+        $matchEvents = array_merge($matchEvents, $this->buildGoalEvents($match, $match->home_club_id, $homeGoals, $homePlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildGoalEvents($match, $match->away_club_id, $awayGoals, $awayPlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildCardAndChanceEvents($match, $match->home_club_id, $homePlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildCardAndChanceEvents($match, $match->away_club_id, $awayPlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildGenericEvents($match, $match->home_club_id, $homePlayers, $awayPlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildGenericEvents($match, $match->away_club_id, $awayPlayers, $homePlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildInjuryEvents($match, $match->home_club_id, $homePlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildInjuryEvents($match, $match->away_club_id, $awayPlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildSubstitutionEvents($match, $match->home_club_id, $homePlayers));
+        $matchEvents = array_merge($matchEvents, $this->buildSubstitutionEvents($match, $match->away_club_id, $awayPlayers));
+
+        // Sort events by time
+        usort($matchEvents, static fn($a, $b) => ($a['minute'] * 60 + $a['second']) <=> ($b['minute'] * 60 + $b['second']));
+
+        // Add sequence numbers and narratives
+        $events = [];
+        $sequence = 1;
+        $currentHomeScore = 0;
+        $currentAwayScore = 0;
+
+        foreach ($matchEvents as $eventData) {
+            if ($eventData['event_type'] === 'goal') {
+                if ($eventData['club_id'] === $match->home_club_id) {
+                    $currentHomeScore++;
+                } else {
+                    $currentAwayScore++;
+                }
+            }
+
+            $eventData['score'] = "{$currentHomeScore}:{$currentAwayScore}";
+            $eventData['sequence'] = $sequence++;
+            $eventData['narrative'] = $this->narrativeEngine->generate($eventData['event_type'], $eventData);
+            $events[] = $eventData;
+        }
+
+        return [
+            'home_score' => $homeGoals,
+            'away_score' => $awayGoals,
+            'events' => $events,
+            'attendance' => min(60000, $this->attendance($match->homeClub)),
+            'weather' => $this->weather(),
+            'seed' => mt_rand(100000, 999999999),
+            'home_players' => $homePlayers,
+            'away_players' => $awayPlayers,
+        ];
     }
 
     private function teamStrength(Collection $players, bool $isHome, ?Lineup $lineup = null): float
@@ -280,6 +244,11 @@ class MatchSimulationService
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $scorer->id,
+                'player' => $scorer->full_name,
+                'player_name' => $scorer->full_name,
+                'club' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
+                'club_name' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
+                'assister_name' => $assist?->full_name,
                 'assister_player_id' => $assist?->id,
                 'event_type' => 'goal',
                 'metadata' => [
@@ -306,6 +275,10 @@ class MatchSimulationService
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $player->id,
+                'player' => $player->full_name,
+                'player_name' => $player->full_name,
+                'club' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
+                'club_name' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
                 'event_type' => 'yellow_card',
                 'metadata' => null,
             ];
@@ -319,12 +292,16 @@ class MatchSimulationService
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $player->id,
+                'player' => $player->full_name,
+                'player_name' => $player->full_name,
+                'club' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
+                'club_name' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
                 'event_type' => 'red_card',
                 'metadata' => null,
             ];
         }
 
-        $chanceCount = mt_rand(1, 3);
+        $chanceCount = mt_rand(2, 4);
         for ($i = 0; $i < $chanceCount; $i++) {
             /** @var Player $player */
             $player = $this->weightedPlayerPick($squad, static fn(Player $p) => $p->shooting + $p->pace);
@@ -333,6 +310,10 @@ class MatchSimulationService
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $player->id,
+                'player' => $player->full_name,
+                'player_name' => $player->full_name,
+                'club' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
+                'club_name' => ($clubId === (int) $match->home_club_id) ? $match->homeClub->name : $match->awayClub->name,
                 'event_type' => 'chance',
                 'metadata' => ['quality' => mt_rand(1, 100) <= 35 ? 'big' : 'normal'],
             ];
@@ -341,10 +322,78 @@ class MatchSimulationService
         return $events;
     }
 
-    private function buildGenericEvents(GameMatch $match, int $clubId, Collection $squad): array
+    private function buildInjuryEvents(GameMatch $match, int $clubId, Collection $squad): array
+    {
+        if (mt_rand(1, 100) > 12) { // 12% chance for an injury per team
+            return [];
+        }
+
+        /** @var Player $player */
+        $player = $this->randomCollectionItem($squad);
+        if (!$player) {
+            return [];
+        }
+
+        $clubName = ($clubId === (int) $match->home_club_id)
+            ? ($match->homeClub->short_name ?? $match->homeClub->name)
+            : ($match->awayClub->short_name ?? $match->awayClub->name ?? 'Club');
+
+        return [
+            [
+                'minute' => mt_rand(5, 88),
+                'second' => mt_rand(0, 59),
+                'club_id' => $clubId,
+                'player_id' => $player->id,
+                'player' => $player->full_name,
+                'player_name' => $player->full_name,
+                'club' => $clubName,
+                'club_name' => $clubName,
+                'event_type' => 'injury',
+                'metadata' => ['is_serious' => mt_rand(1, 100) <= 20],
+            ]
+        ];
+    }
+
+    private function buildSubstitutionEvents(GameMatch $match, int $clubId, Collection $squad): array
     {
         $events = [];
-        $count = mt_rand(6, 12); // Scatters 6-12 generic events per team
+        $count = mt_rand(1, 3); // Simulating 1-3 subs per match
+
+        for ($i = 0; $i < $count; $i++) {
+            /** @var Player $playerOut */
+            $playerOut = $this->randomCollectionItem($squad);
+            if (!$playerOut) {
+                continue;
+            }
+
+            $clubName = ($clubId === (int) $match->home_club_id)
+                ? ($match->homeClub->short_name ?? $match->homeClub->name)
+                : ($match->awayClub->short_name ?? $match->awayClub->name ?? 'Club');
+
+            $events[] = [
+                'minute' => mt_rand(45, 89),
+                'second' => mt_rand(0, 59),
+                'club_id' => $clubId,
+                'player_id' => $playerOut->id,
+                'player' => $playerOut->full_name,
+                'player_name' => $playerOut->full_name,
+                'club' => $clubName,
+                'club_name' => $clubName,
+                'event_type' => 'substitution',
+                'metadata' => [
+                    'player_in' => 'Einwechselspieler', // Simplified for lab
+                ],
+            ];
+        }
+
+        return $events;
+    }
+
+    private function buildGenericEvents(GameMatch $match, int $clubId, Collection $squad, Collection $opponentSquad): array
+    {
+        $events = [];
+        // Increased frequency: generate 8-15 generic events per team
+        $count = mt_rand(8, 15);
 
         for ($i = 0; $i < $count; $i++) {
             $typeRoll = mt_rand(1, 100);
@@ -370,15 +419,31 @@ class MatchSimulationService
 
             /** @var Player $player */
             $player = $this->randomCollectionItem($squad);
+            $clubName = ($clubId === (int) $match->home_club_id) ? ($match->homeClub->short_name ?? $match->homeClub->name) : ($match->awayClub->short_name ?? $match->awayClub->name);
 
-            $events[] = [
+            $eventData = [
+                'player' => $player->full_name,
+                'player_name' => $player->full_name,
+                'club' => $clubName,
+                'club_name' => $clubName,
+            ];
+
+            if (in_array($type, ['foul', 'free_kick', 'turnover'])) {
+                /** @var Player $opponent */
+                $opponent = $this->randomCollectionItem($opponentSquad);
+                $eventData['opponent'] = $opponent->full_name;
+                $eventData['opponent_name'] = $opponent->full_name;
+                $eventData['opponent_player_id'] = $opponent->id;
+            }
+
+            $events[] = array_merge([
                 'minute' => mt_rand(1, 90),
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $player->id,
                 'event_type' => $type,
                 'metadata' => null,
-            ];
+            ], $eventData);
         }
 
         return $events;
@@ -401,7 +466,7 @@ class MatchSimulationService
         return $squad->first();
     }
 
-    private function createPlayerStats(GameMatch $match, Collection $homePlayers, Collection $awayPlayers): void
+    private function createPlayerStats(GameMatch $match, Collection $homePlayers, Collection $awayPlayers): array
     {
         $goalEvents = $match->events()->where('event_type', 'goal')->get();
         $yellowEvents = $match->events()->where('event_type', 'yellow_card')->get();
@@ -438,22 +503,102 @@ class MatchSimulationService
                     'red_cards' => $red,
                     'shots' => max(0, $goals + mt_rand(0, 4)),
                     'passes_completed' => mt_rand(12, 74),
-                    'passes_failed' => mt_rand(2, 19),
-                    'tackles_won' => mt_rand(0, 8),
-                    'tackles_lost' => mt_rand(0, 5),
-                    'saves' => $this->isGoalkeeper($player) ? mt_rand(1, 8) : 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-            })->all();
+            })->toArray();
         };
 
-        DB::table('match_player_stats')->insert(array_merge(
+        return array_merge(
             $build($homePlayers, $match->home_club_id),
             $build($awayPlayers, $match->away_club_id)
-        ));
+        );
     }
 
+    private function createLiveTeamStats(GameMatch $match, array $playerStats): void
+    {
+        $homeStats = collect($playerStats)->where('club_id', $match->home_club_id);
+        $awayStats = collect($playerStats)->where('club_id', $match->away_club_id);
+
+        $teamStats = [];
+        foreach ([$homeStats, $awayStats] as $stats) {
+            $clubId = $stats->first()['club_id'];
+            $teamStats[] = [
+                'match_id' => $match->id,
+                'club_id' => $clubId,
+                'possession_seconds' => mt_rand(1200, 3200), // Placeholder
+                'actions_count' => mt_rand(200, 600),
+                'dangerous_attacks' => mt_rand(10, 50),
+                'pass_attempts' => $stats->sum('passes_completed') + mt_rand(20, 100),
+                'pass_completions' => $stats->sum('passes_completed'),
+                'tackle_attempts' => mt_rand(15, 45),
+                'tackle_won' => mt_rand(5, 40),
+                'fouls_committed' => mt_rand(5, 20),
+                'corners_won' => mt_rand(0, 12),
+                'shots' => $stats->sum('shots'),
+                'shots_on_target' => $stats->sum('goals') + mt_rand(0, 5),
+                'expected_goals' => mt_rand(50, 400) / 100, // 0.5 - 4.0
+                'yellow_cards' => $stats->sum('yellow_cards'),
+                'red_cards' => $stats->sum('red_cards'),
+                'substitutions_used' => 0,
+                'tactical_changes_count' => 0,
+                'last_tactical_change_minute' => null,
+                'last_substitution_minute' => null,
+                'tactical_style' => 'balanced',
+                'phase' => 'play',
+                'current_ball_carrier_player_id' => null,
+                'last_set_piece_taker_player_id' => null,
+                'last_set_piece_type' => null,
+                'last_set_piece_minute' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('match_live_team_states')->insert($teamStats);
+    }
+
+    private function createLiveActions(GameMatch $match, array $events): void
+    {
+        $actions = [];
+        $globalSequence = 1;
+
+        foreach ($events as $event) {
+            $type = $event['event_type'];
+            $clubId = $event['club_id'];
+            $isHome = $clubId === $match->home_club_id;
+
+            // Prepare metadata
+            $eventMetadata = $event['metadata'] ?? [];
+            if (!is_array($eventMetadata)) {
+                $eventMetadata = [];
+            }
+            $mergedMetadata = array_merge($eventMetadata, ['simulated' => true]);
+
+            // Create action for this event
+            $actions[] = [
+                'match_id' => $match->id,
+                'club_id' => $clubId,
+                'player_id' => $event['player_id'],
+                'opponent_player_id' => $event['opponent_player_id'] ?? null,
+                'action_type' => $type,
+                'minute' => $event['minute'],
+                'second' => $event['second'] ?? mt_rand(0, 59),
+                'sequence' => $globalSequence++,
+                'x_coord' => $isHome ? mt_rand(75, 95) : mt_rand(5, 25),
+                'y_coord' => mt_rand(10, 90),
+                'xg' => $eventMetadata['xg_bucket'] ?? null,
+                'narrative' => $event['narrative'] ?? null,
+                'metadata' => json_encode($mergedMetadata),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($actions)) {
+            DB::table('match_live_actions')->insert($actions);
+        }
+    }
     private function positionCodeForStat(Player $player): string
     {
         $slot = strtoupper(trim((string) ($player->pivot?->pitch_position ?? '')));

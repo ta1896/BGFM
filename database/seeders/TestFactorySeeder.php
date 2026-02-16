@@ -448,6 +448,7 @@ class TestFactorySeeder extends Seeder
             ->get();
 
         foreach ($matches as $index => $match) {
+            /** @var GameMatch $match */
             $home = $match->homeClub;
             $away = $match->awayClub;
 
@@ -464,8 +465,13 @@ class TestFactorySeeder extends Seeder
             ]);
 
             // Assign real players for attribution
-            $homeStarters = $match->lineups()->where('club_id', $home->id)->first()?->players()->wherePivot('is_bench', false)->get() ?: collect();
-            $awayStarters = $match->lineups()->where('club_id', $away->id)->first()?->players()->wherePivot('is_bench', false)->get() ?: collect();
+            /** @var \App\Models\Lineup|null $homeLineup */
+            $homeLineup = $match->lineups()->where('club_id', $home->id)->first();
+            $homeStarters = $homeLineup?->players()->wherePivot('is_bench', false)->get() ?: collect();
+
+            /** @var \App\Models\Lineup|null $awayLineup */
+            $awayLineup = $match->lineups()->where('club_id', $away->id)->first();
+            $awayStarters = $awayLineup?->players()->wherePivot('is_bench', false)->get() ?: collect();
 
             $mainAttackerHome = $homeStarters->sortByDesc('overall')->first();
             $mainAttackerAway = $awayStarters->sortByDesc('overall')->first();

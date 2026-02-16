@@ -226,7 +226,7 @@ class SimulationSettingsService
 
         try {
             /** @var array<string, mixed> $cached */
-            $cached = Cache::rememberForever(self::CACHE_KEY, fn (): array => $this->fetchSettingsFromDatabase());
+            $cached = Cache::rememberForever(self::CACHE_KEY, fn(): array => $this->fetchSettingsFromDatabase());
 
             return $cached;
         } catch (Throwable) {
@@ -288,7 +288,7 @@ class SimulationSettingsService
         $types = array_values(array_intersect(
             self::ALLOWED_MATCH_TYPES,
             array_map(
-                static fn (mixed $value): string => trim(strtolower((string) $value)),
+                static fn(mixed $value): string => trim(strtolower((string) $value)),
                 $values
             )
         ));

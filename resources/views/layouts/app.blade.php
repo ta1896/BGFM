@@ -82,6 +82,7 @@
                 ['route' => 'admin.players.index', 'label' => 'Spieler', 'active' => 'admin.players.*', 'icon' => 'identification'],
                 ['route' => 'admin.ticker-templates.index', 'label' => 'Ticker Vorlagen', 'active' => 'admin.ticker-templates.*', 'icon' => 'chat-bubble-bottom-center-text'],
                 ['route' => 'admin.match-engine.index', 'label' => 'Match Engine', 'active' => 'admin.match-engine.*', 'icon' => 'cpu-chip'],
+                ['route' => 'admin.monitoring.index', 'label' => 'Monitoring & Debug', 'active' => 'admin.monitoring.*', 'icon' => 'bug-ant'],
             ]
         ];
     }

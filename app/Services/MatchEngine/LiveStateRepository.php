@@ -88,8 +88,7 @@ class LiveStateRepository
         ?array $metadata,
         ?int $x_coord = null,
         ?int $y_coord = null,
-        ?float $xg = null,
-        ?int $momentum_value = null
+        ?float $xg = null
     ): void {
         MatchLiveAction::create([
             'match_id' => $match->id,
@@ -106,7 +105,6 @@ class LiveStateRepository
             'x_coord' => $x_coord,
             'y_coord' => $y_coord,
             'xg' => $xg,
-            'momentum_value' => $momentum_value,
         ]);
 
         // Create MatchEvent for significant events to persist them permanently

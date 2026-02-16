@@ -67,11 +67,14 @@ class MatchCenterController extends Controller
     ): RedirectResponse {
         abort_unless($this->canSimulate($request, $match), 403);
 
-        $simulationService->simulate($match);
+        if ($request->isMethod('POST')) {
+            $simulationService->simulate($match);
+            return redirect()
+                ->route('matches.show', $match)
+                ->with('status', 'Spiel wurde simuliert.');
+        }
 
-        return redirect()
-            ->route('matches.show', $match)
-            ->with('status', 'Spiel wurde simuliert.');
+        return redirect()->route('matches.show', $match);
     }
 
     public function liveStart(
@@ -234,12 +237,12 @@ class MatchCenterController extends Controller
 
     private function canSimulate(Request $request, GameMatch $match): bool
     {
-        if ($match->status === 'played') {
-            return false;
-        }
-
         if ($request->user()->isAdmin()) {
             return true;
+        }
+
+        if ($match->status === 'played') {
+            return false;
         }
 
         return $request->user()->clubs()->whereKey($match->home_club_id)->exists()
@@ -293,6 +296,7 @@ class MatchCenterController extends Controller
                         'assister_name' => $event->assister?->full_name,
                         'club_short_name' => $event->club?->short_name ?: $event->club?->name,
                         'narrative' => (string) ($event->narrative ?? ''),
+                        'metadata' => is_array($event->metadata) ? $event->metadata : [],
                     ];
                 })
                 ->all(),
@@ -396,6 +400,8 @@ class MatchCenterController extends Controller
                         'action_type' => (string) ($isAction ? $item->action_type : $item->event_type),
                         'outcome' => (string) ($item->outcome ?? ''),
                         'narrative' => (string) ($item->narrative ?? ''),
+                        'x_coord' => $isAction ? (float) $item->x_coord : null,
+                        'y_coord' => $isAction ? (float) $item->y_coord : null,
                         'metadata' => $metadata,
                     ];
                 })
@@ -478,6 +484,9 @@ class MatchCenterController extends Controller
                             'full_name' => $player->full_name,
                             'position_main' => $player->position_main,
                             'position' => $player->position,
+                            'position_second' => $player->position_second,
+                            'position_third' => $player->position_third,
+                            'overall' => $player->overall,
                             'photo_url' => $player->photo_url,
                             'pivot' => (object) [
                                 'pitch_position' => $slot,
@@ -496,6 +505,9 @@ class MatchCenterController extends Controller
                             'full_name' => $player->full_name,
                             'position_main' => $player->position_main,
                             'position' => $player->position,
+                            'position_second' => $player->position_second,
+                            'position_third' => $player->position_third,
+                            'overall' => $player->overall,
                             'photo_url' => $player->photo_url,
                             'pivot' => (object) [
                                 'pitch_position' => 'BANK-' . ($idx + 1),
@@ -531,6 +543,7 @@ class MatchCenterController extends Controller
                     'is_removed' => $isRemoved,
                     'bench_order' => $player->pivot->bench_order !== null ? (int) $player->pivot->bench_order : null,
                     'fit_factor' => round($fitFactor, 2),
+                    'overall' => (int) $player->overall,
                     'photo_url' => $player->photo_url,
                 ];
             });

@@ -24,7 +24,6 @@ class MatchLiveAction extends Model
         'x_coord',
         'y_coord',
         'xg',
-        'momentum_value',
         'metadata',
     ];
 
