@@ -37,20 +37,23 @@
                 </a>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <!-- Config Side -->
-                <div class="lg:col-span-1">
+            <!-- Main Layout Wrapper -->
+            <div class="flex flex-col lg:flex-row gap-8 items-start">
+
+                <!-- Config Side (Sticky on large screens) -->
+                <aside class="w-full lg:w-80 shrink-0 lg:sticky lg:top-8">
                     <div class="sim-card p-6">
                         <h3
-                            class="text-sm font-black text-white uppercase tracking-widest mb-6 pb-2 border-b border-white/5">
-                            Konfiguration</h3>
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-white/5">
+                            Konfiguration
+                        </h3>
                         <form id="lab-simulate-form" class="space-y-6">
                             @csrf
                             <div>
                                 <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Heimteam</label>
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Heimteam</label>
                                 <select name="home_club_id"
-                                    class="w-full bg-slate-900 border-slate-700 rounded-xl text-xs text-white p-2.5 focus:ring-emerald-500/50">
+                                    class="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition">
                                     @foreach($clubs as $club)
                                         <option value="{{ $club->id }}">{{ $club->name }}</option>
                                     @endforeach
@@ -58,9 +61,9 @@
                             </div>
                             <div>
                                 <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Gastteam</label>
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Gastteam</label>
                                 <select name="away_club_id"
-                                    class="w-full bg-slate-900 border-slate-700 rounded-xl text-xs text-white p-2.5 focus:ring-emerald-500/50">
+                                    class="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition">
                                     @foreach($clubs as $club)
                                         <option value="{{ $club->id }}" @if($loop->index == 1) selected @endif>
                                             {{ $club->name }}
@@ -69,92 +72,142 @@
                                 </select>
                             </div>
                             <button type="submit" id="simulate-btn"
-                                class="w-full py-4 bg-emerald-600 text-white font-black rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition text-xs uppercase tracking-widest">
+                                class="w-full py-4 bg-emerald-600 text-white font-black rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
                                 Simulation starten
                             </button>
                         </form>
                     </div>
-                </div>
+                </aside>
 
                 <!-- Results Main -->
-                <div class="lg:col-span-3 space-y-8">
+                <div class="flex-1 min-w-0 w-full space-y-8">
                     <!-- Placeholder / Start State -->
                     <div id="lab-placeholder"
-                        class="sim-card p-12 text-center border-2 border-dashed border-slate-800 bg-slate-900/40">
+                        class="sim-card p-16 text-center border-2 border-dashed border-white/5 bg-slate-900/20">
                         <div class="text-7xl mb-8 opacity-20 filter grayscale">🧪</div>
-                        <h3 class="text-2xl font-black text-white mb-4 tracking-tight">Experimentelle Sandbox</h3>
-                        <p class="text-slate-400 max-w-lg mx-auto leading-relaxed text-sm font-medium">
+                        <h3 class="text-3xl font-black text-white mb-4 tracking-tight">Experimentelle Sandbox</h3>
+                        <p class="text-slate-400 max-w-xl mx-auto leading-relaxed text-sm font-medium">
                             Hier können Simulationen durchgeführt werden, ohne Daten in die Datenbank zu schreiben.
                             Ideal zum Testen von Engine-Updates, Taktik-Einflüssen oder neuen Match-Events.
                         </p>
                     </div>
 
                     <!-- Results Area (Hidden by default) -->
-                    <div id="lab-results" class="hidden space-y-6">
+                    <div id="lab-results" class="hidden space-y-6 focus-within:outline-none" tabindex="-1">
                         <!-- Score Card (Broadcast Style) -->
-                        <div class="sim-card relative overflow-hidden bg-slate-900 shadow-2xl">
-                            <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-transparent to-blue-600/10 opacity-50"></div>
-                            <div class="relative p-8 flex items-center justify-between gap-4">
+                        <div class="sim-card relative overflow-hidden bg-slate-900 border-white/10 shadow-2xl">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-blue-500/10">
+                            </div>
+                            <div
+                                class="relative p-6 px-10 flex flex-col sm:flex-row items-center justify-between gap-8">
                                 <!-- Home Team -->
-                                <div class="flex-1 flex flex-col items-center gap-3">
-                                    <div class="w-16 h-16 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center text-3xl shadow-inner">🏠</div>
-                                    <h4 id="res-home-name" class="text-base font-black text-white uppercase tracking-tight text-center break-words max-w-[150px]">Heim</h4>
+                                <div class="flex flex-col items-center gap-4 text-center group">
+                                    <div
+                                        class="w-20 h-20 bg-slate-800 rounded-[2.5rem] border border-white/10 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                                        🏠</div>
+                                    <div class="space-y-1">
+                                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                            Heimteam</div>
+                                        <h4 id="res-home-name"
+                                            class="text-lg font-black text-white uppercase tracking-tighter leading-none">
+                                            Heim</h4>
+                                    </div>
                                 </div>
 
                                 <!-- Score Display -->
-                                <div class="flex flex-col items-center gap-2 px-8">
-                                    <div class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Live Simulation</div>
-                                    <div class="flex items-center gap-4">
-                                        <div class="bg-slate-950/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 shadow-2xl">
-                                            <span id="res-score" class="text-6xl font-black text-white tracking-tighter tabular-nums leading-none">0:0</span>
+                                <div class="flex flex-col items-center">
+                                    <div class="mb-4 flex flex-col items-center">
+                                        <div
+                                            class="text-[9px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-2 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                                            Live Simulation</div>
+                                        <div
+                                            class="bg-slate-950 px-8 py-5 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-inset ring-white/5">
+                                            <span id="res-score"
+                                                class="text-7xl font-black text-white tracking-tighter tabular-nums leading-none drop-shadow-lg">0:0</span>
                                         </div>
                                     </div>
-                                    <div id="res-match-status" class="mt-4 px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                                    <div id="res-match-status"
+                                        class="px-4 py-1.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-emerald-500/20 backdrop-blur-md">
                                         Abgeschlossen
                                     </div>
                                 </div>
 
                                 <!-- Away Team -->
-                                <div class="flex-1 flex flex-col items-center gap-3">
-                                    <div class="w-16 h-16 bg-slate-800 rounded-2xl border border-white/5 flex items-center justify-center text-3xl shadow-inner">🚌</div>
-                                    <h4 id="res-away-name" class="text-base font-black text-white uppercase tracking-tight text-center break-words max-w-[150px]">Gast</h4>
+                                <div class="flex flex-col items-center gap-4 text-center group">
+                                    <div
+                                        class="w-20 h-20 bg-slate-800 rounded-[2.5rem] border border-white/10 flex items-center justify-center text-4xl shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                                        🚌</div>
+                                    <div class="space-y-1">
+                                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                            Gastteam</div>
+                                        <h4 id="res-away-name"
+                                            class="text-lg font-black text-white uppercase tracking-tighter leading-none">
+                                            Gast</h4>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
                             <!-- Event List (Larger) -->
-                            <div class="md:col-span-2 space-y-4">
-                                <div class="sim-card p-6 h-full">
-                                    <h4 class="text-[10px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                                        Ereignis-Protokoll
-                                    </h4>
-                                    <div id="res-events" class="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div class="xl:col-span-2 space-y-4 order-2 xl:order-1">
+                                <div class="sim-card p-2">
+                                    <div class="p-6 pb-2">
+                                        <h4
+                                            class="text-[10px] font-black border-b border-white/5 pb-4 mb-4 uppercase text-slate-500 tracking-[0.2em] flex items-center gap-3">
+                                            <span class="relative flex h-2 w-2">
+                                                <span
+                                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                <span
+                                                    class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                            </span>
+                                            Ereignis-Protokoll
+                                        </h4>
+                                    </div>
+                                    <div id="res-events"
+                                        class="space-y-2 p-4 max-h-[700px] overflow-y-auto custom-scrollbar">
                                         <!-- Events will be injected here -->
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Sidebar Info -->
-                            <div class="space-y-6">
-                                <div class="sim-card p-6">
-                                    <h4 class="text-[10px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest">Wetter & Atmosphäre</h4>
-                                    <div class="space-y-3">
-                                        <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-white/5">
-                                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Wetter</span>
-                                            <span id="res-weather" class="text-xs font-black text-white capitalize">-</span>
+                            <div class="space-y-6 order-1 xl:order-2">
+                                <div class="sim-card p-6 overflow-hidden relative group">
+                                    <div
+                                        class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                        ☁️</div>
+                                    <h4
+                                        class="text-[10px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest relative">
+                                        Atmosphäre</h4>
+                                    <div class="space-y-3 relative">
+                                        <div
+                                            class="flex justify-between items-center bg-slate-950/30 p-4 rounded-2xl border border-white/5 hover:bg-slate-950/50 transition">
+                                            <span
+                                                class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Wetter</span>
+                                            <span id="res-weather"
+                                                class="text-xs font-black text-white capitalize">-</span>
                                         </div>
-                                        <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-white/5">
-                                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Zuschauer</span>
-                                            <span id="res-attendance" class="text-xs font-black text-white">-</span>
+                                        <div
+                                            class="flex justify-between items-center bg-slate-950/30 p-4 rounded-2xl border border-white/5 hover:bg-slate-950/50 transition">
+                                            <span
+                                                class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Zuschauer</span>
+                                            <span id="res-attendance"
+                                                class="text-xs font-black text-white italic">-</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="sim-card p-6">
-                                    <h4 class="text-[10px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest">Metadata</h4>
-                                    <div id="res-metadata" class="text-[9px] text-slate-400 font-mono space-y-2 leading-relaxed">
+                                <div class="sim-card p-6 relative group overflow-hidden">
+                                    <div
+                                        class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                        🧬</div>
+                                    <h4
+                                        class="text-[10px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest relative">
+                                        Engine Metadata</h4>
+                                    <div id="res-metadata"
+                                        class="text-[9px] text-slate-400 font-mono space-y-2 leading-relaxed relative">
                                         <!-- Metadata injected here -->
                                     </div>
                                 </div>
@@ -164,6 +217,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script>
@@ -201,58 +255,86 @@
 
                     // Update Metadata
                     document.getElementById('res-metadata').innerHTML = `
-                        <div class="flex justify-between border-b border-white/5 pb-1"><span>SEED:</span> <span class="text-white">${sim.seed}</span></div>
-                        <div class="flex justify-between border-b border-white/5 pb-1"><span>HOME:</span> <span class="text-white">${sim.home_players.length} P</span></div>
-                        <div class="flex justify-between border-b border-white/5 pb-1"><span>AWAY:</span> <span class="text-white">${sim.away_players.length} P</span></div>
-                        <div class="mt-2 text-emerald-500 font-bold uppercase tracking-tighter">SUCCESS</div>
+                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
+                            <span class="text-slate-500 uppercase tracking-tighter">Seed Code</span>
+                            <span class="text-white font-black">${sim.seed}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
+                            <span class="text-slate-500 uppercase tracking-tighter">Players Home</span>
+                            <span class="text-white font-black">${sim.home_players.length}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
+                            <span class="text-slate-500 uppercase tracking-tighter">Players Away</span>
+                            <span class="text-white font-black">${sim.away_players.length}</span>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-emerald-500/20">
+                            <div class="text-emerald-500 font-black uppercase tracking-widest text-[8px] animate-pulse">Simulation Engine v2.0 Live</div>
+                        </div>
                     `;
 
                     // Update Events
                     const eventsContainer = document.getElementById('res-events');
                     eventsContainer.innerHTML = '';
 
-                    sim.events.forEach(event => {
+                    sim.events.forEach((event, idx) => {
                         const div = document.createElement('div');
-                        div.className = 'flex items-start gap-4 bg-slate-900/40 p-4 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all duration-300 group';
+                        // Staggered animation effect
+                        div.style.animationDelay = `${idx * 0.05}s`;
+                        div.className = 'flex items-start gap-5 bg-slate-900/40 p-5 rounded-[1.5rem] border border-white/5 hover:border-emerald-500/30 hover:bg-slate-900/60 transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2';
 
                         let icon = '⚽';
-                        let colorClass = 'text-emerald-500';
-                        if (event.event_type === 'yellow_card') { icon = '🟨'; colorClass = 'text-yellow-500'; }
-                        if (event.event_type === 'red_card') { icon = '🟥'; colorClass = 'text-red-500'; }
-                        if (event.event_type === 'substitution') { icon = '🔄'; colorClass = 'text-blue-400'; }
-                        if (event.event_type === 'injury') { icon = '🚑'; colorClass = 'text-red-400'; }
-                        if (event.event_type === 'foul') { icon = '🚨'; colorClass = 'text-orange-400'; }
-                        if (event.event_type === 'chance') { icon = '🔥'; colorClass = 'text-amber-500'; }
-                        if (event.event_type === 'corner') { icon = '🚩'; colorClass = 'text-teal-400'; }
+                        let colorClass = 'text-emerald-400';
+                        let bgClass = 'bg-emerald-500/10';
+
+                        if (event.event_type === 'yellow_card') { icon = '🟨'; colorClass = 'text-yellow-400'; bgClass = 'bg-yellow-500/10'; }
+                        if (event.event_type === 'red_card') { icon = '🟥'; colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; }
+                        if (event.event_type === 'substitution') { icon = '🔄'; colorClass = 'text-blue-400'; bgClass = 'bg-blue-500/10'; }
+                        if (event.event_type === 'injury') { icon = '🚑'; colorClass = 'text-red-400'; bgClass = 'bg-red-500/10'; }
+                        if (event.event_type === 'foul') { icon = '🚨'; colorClass = 'text-orange-400'; bgClass = 'bg-orange-500/10'; }
+                        if (event.event_type === 'chance') { icon = '🔥'; colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10'; }
+                        if (event.event_type === 'corner') { icon = '🚩'; colorClass = 'text-teal-400'; bgClass = 'bg-teal-500/10'; }
 
                         div.innerHTML = `
-                            <div class="w-8 h-8 shrink-0 bg-slate-950 rounded-lg flex items-center justify-center text-[10px] border border-white/10 font-black ${colorClass} shadow-lg shadow-black/50">
+                            <div class="w-10 h-10 shrink-0 ${bgClass} rounded-xl flex items-center justify-center text-[11px] border border-white/10 font-black ${colorClass} shadow-lg ring-1 ring-inset ring-white/5">
                                 ${event.minute}'
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-2 mb-1.3">
-                                    <p class="text-[9px] font-black uppercase text-slate-400 flex items-center gap-1.5 truncate">
-                                        <span class="scale-110">${icon}</span>
-                                        <span class="truncate">${event.club_name || event.club_short_name || 'Club'}</span>
-                                    </p>
-                                    <span class="text-[9px] font-mono text-slate-600 bg-black/30 px-1.5 py-0.5 rounded border border-white/5">${event.score || ''}</span>
+                                <div class="flex items-center justify-between gap-3 mb-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="text-sm scale-110 drop-shadow">${icon}</span>
+                                        <h5 class="text-[10px] font-black uppercase text-slate-300 truncate tracking-wider">
+                                            ${event.club_name || event.club_short_name || 'Unbekannt'}
+                                        </h5>
+                                    </div>
+                                    <span class="text-[10px] font-mono font-black text-slate-500 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">${event.score || ''}</span>
                                 </div>
-                                <p class="text-xs text-slate-200 font-medium leading-relaxed tracking-tight">${event.narrative || 'Kein Text verfügbar.'}</p>
-                                <details class="mt-3 group/debug">
-                                    <summary class="text-[8px] text-slate-600 cursor-pointer hover:text-slate-400 uppercase tracking-widest font-bold list-none flex items-center gap-1">
-                                        <svg class="w-2 h-2 transition-transform group-open/debug:rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
-                                        Debug
+                                <p class="text-[13px] text-slate-200 font-medium leading-[1.6] tracking-tight antialiased">
+                                    ${event.narrative || 'Spielereignis ohne Kommentar.'}
+                                </p>
+                                <details class="mt-4 group/debug">
+                                    <summary class="text-[8px] text-slate-600 cursor-pointer hover:text-slate-400 uppercase tracking-[0.2em] font-black list-none flex items-center gap-2 transition-colors">
+                                        <div class="w-1 h-3 bg-slate-800 rounded-full transition-colors group-hover/debug:bg-emerald-500/50"></div>
+                                        <span>Raw Engine Data</span>
                                     </summary>
-                                    <pre class="mt-2 p-3 bg-black/60 rounded-lg border border-white/5 text-[9px] text-slate-500 overflow-x-auto font-mono ring-1 ring-white/5">${JSON.stringify(event, null, 2)}</pre>
+                                    <div class="mt-3 p-4 bg-black/80 rounded-[1.25rem] border border-white/10 text-[9px] text-emerald-500/70 overflow-x-auto font-mono leading-relaxed shadow-inner">
+                                        ${JSON.stringify(event, null, 2)}
+                                    </div>
                                 </details>
                             </div>
                         `;
                         eventsContainer.appendChild(div);
                     });
 
-                    // Show results
+                    // Show results with scroll and focus
                     placeholder.classList.add('hidden');
                     results.classList.remove('hidden');
+                    results.focus();
+
+                    // Smooth scroll to results
+                    window.scrollTo({
+                        top: results.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
 
                 } else {
                     alert('Fehler: ' + data.message);
@@ -269,7 +351,7 @@
 
     <style>
         .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
+            width: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -278,20 +360,39 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.1);
             border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: rgba(16, 185, 129, 0.3);
+            background-clip: content-box;
         }
 
         .sim-card {
-            @apply bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-3xl shadow-xl;
+            @apply bg-slate-900/40 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] shadow-2xl;
         }
 
         details summary::-webkit-details-marker {
             display: none;
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fade-in-up 0.5s ease-out forwards;
         }
     </style>
 </x-app-layout>
