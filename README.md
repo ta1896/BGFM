@@ -12,6 +12,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/aSNkPYgHDJ)
 
 </div>
 
@@ -20,6 +21,7 @@
 ## 📋 Inhaltsverzeichnis
 
 - [Features](#-features)
+- [Community & Support](#-community--support)
 - [Tech Stack](#-tech-stack)
 - [Schnellstart](#-schnellstart)
 - [Demo-Zugänge](#-demo-zugänge)
@@ -80,6 +82,18 @@
 </td>
 </tr>
 </table>
+
+---
+
+## 💬 Community & Support
+
+Tritt unserer wachsenden Community auf Discord bei! Hier kannst du dich mit anderen Managern austauschen, Feedback geben und Diskussionen rund um BGFM führen.
+
+<div align="center">
+  <a href="https://discord.gg/aSNkPYgHDJ">
+    <img src="https://img.shields.io/badge/Discord-Server%20beitreten-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="BGFM Discord Server">
+  </a>
+</div>
 
 ---
 
