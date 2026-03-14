@@ -12,11 +12,11 @@ import {
 const Card = ({ title, children, icon: Icon }) => (
     <div className="sim-card p-6 border-slate-800/50 relative overflow-hidden h-full">
         <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
-            {Icon && <Icon size={80} weight="fill" className="text-cyan-400" />}
+            {Icon && <Icon size={80} weight="fill" className="text-amber-500" />}
         </div>
         <div className="flex items-center gap-3 mb-6 relative z-10">
             <div className="p-2 bg-slate-800 rounded-lg">
-                {Icon && <Icon size={20} className="text-cyan-400" />}
+                {Icon && <Icon size={20} className="text-amber-500" />}
             </div>
             <h3 className="text-lg font-bold text-white uppercase tracking-wider">{title}</h3>
         </div>
@@ -155,7 +155,7 @@ export default function Form({ club, rolePlayers = [] }) {
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             accept="image/*"
                                         />
-                                        <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-xl p-4 transition-all group-hover:border-cyan-500/50 flex items-center gap-4">
+                                        <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-xl p-4 transition-all group-hover:border-amber-500/50 flex items-center gap-4">
                                             {isEdit && club.logo_path && !data.logo && (
                                                 <img src={club.logo_url} className="h-10 w-10 object-contain rounded-lg bg-slate-950 p-1" alt="Logo" />
                                             )}
@@ -331,7 +331,7 @@ export default function Form({ club, rolePlayers = [] }) {
                         <button 
                             type="submit" 
                             disabled={processing}
-                            className="bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-black py-4 px-12 rounded-xl shadow-[0_0_40px_rgba(8,145,178,0.2)] hover:scale-[1.05] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 uppercase tracking-widest text-sm"
+                            className="bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-4 px-12 rounded-xl shadow-[0_0_40px_rgba(217,177,92,0.2)] hover:scale-[1.05] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 uppercase tracking-widest text-sm"
                         >
                             {processing && <ArrowsClockwise size={20} className="animate-spin" />}
                             {isEdit ? 'Daten aktualisieren' : 'Verein gründen'}
@@ -342,17 +342,17 @@ export default function Form({ club, rolePlayers = [] }) {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-input-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700;
+                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700;
                 }
                 .sim-select-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 focus:bg-slate-900 transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
-                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
+                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d9b15c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
                     background-repeat: no-repeat;
                     background-position: right 1rem center;
                     background-size: 1.2rem;
                 }
                 .sim-textarea-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700 resize-none;
+                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700 resize-none;
                 }
             `}} />
         </AuthenticatedLayout>

@@ -32,9 +32,9 @@ const StatRing = ({ value, max = 99, label, color = "emerald" }) => {
 
     const colors = {
         emerald: "text-emerald-500",
-        cyan: "text-cyan-500",
-        indigo: "text-indigo-500",
-        amber: "text-amber-500"
+        amber: "text-amber-500",
+        gold: "text-[#d9b15c]",
+        bronze: "text-amber-800"
     };
 
     return (
@@ -62,7 +62,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
         onClick={onClick}
         className={`flex items-center gap-2.5 px-6 py-4 border-b-2 transition-all text-xs font-black uppercase tracking-widest ${
             active 
-                ? 'border-cyan-500 text-cyan-400 bg-cyan-500/5' 
+                ? 'border-amber-500 text-amber-500 bg-amber-500/5' 
                 : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
         }`}
     >
@@ -98,7 +98,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                 <div className="flex items-center justify-between">
                     <Link 
                         href={route('players.index')}
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-amber-500 transition-colors"
                     >
                         <ArrowLeft size={14} weight="bold" />
                         Zurück zum Kader
@@ -134,7 +134,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         className="w-full h-full object-cover rounded-full mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
                                     />
                                     {isOwner && (
-                                        <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-cyan-500 text-white flex items-center justify-center border-4 border-[#0c1222] shadow-xl">
+                                        <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-amber-500 text-black flex items-center justify-center border-4 border-[#0c1222] shadow-xl">
                                             <Crown size={20} weight="fill" />
                                         </div>
                                     )}
@@ -144,7 +144,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             {/* Player Identity */}
                             <div className="flex-1 text-center lg:text-left">
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-4">
-                                    <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black text-cyan-400 uppercase tracking-widest italic">
+                                    <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black text-amber-500 uppercase tracking-widest italic">
                                         {player.position}
                                     </span>
                                     <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -152,7 +152,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                     </span>
                                 </div>
                                 <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-none mb-6">
-                                    {player.first_name} <span className="text-cyan-500">{player.last_name}</span>
+                                    {player.first_name} <span className="text-amber-500">{player.last_name}</span>
                                 </h1>
                                 
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">
@@ -190,7 +190,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             {/* Main Metrics */}
                             <div className="flex gap-8 px-8 py-6 rounded-3xl bg-slate-900/50 border border-white/5 backdrop-blur-md self-center">
                                 <StatRing value={player.overall} max={99} label="Stärke" color="emerald" />
-                                <StatRing value={player.potential} max={99} label="Potenzial" color="cyan" />
+                                <StatRing value={player.potential} max={99} label="Potenzial" color="amber" />
                             </div>
                         </div>
                     </div>
@@ -226,10 +226,10 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </div>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
                                             {[
-                                                { label: 'Tempo', val: player.pace, icon: Lightning, color: 'text-amber-400' },
+                                                { label: 'Tempo', val: player.pace, icon: Lightning, color: 'text-amber-500' },
                                                 { label: 'Schuss', val: player.shooting, icon: Target, color: 'text-rose-400' },
-                                                { label: 'Passen', val: player.passing, icon: ChartBar, color: 'text-indigo-400' },
-                                                { label: 'Dribbling', val: player.dribbling || 70, icon: SoccerBall, color: 'text-cyan-400' },
+                                                { label: 'Passen', val: player.passing, icon: ChartBar, color: 'text-amber-600' },
+                                                { label: 'Dribbling', val: player.dribbling || 70, icon: SoccerBall, color: 'text-amber-500' },
                                                 { label: 'Defensive', val: player.defending, icon: ShieldCheck, color: 'text-emerald-400' },
                                                 { label: 'Physis', val: player.physical, icon: TrendUp, color: 'text-purple-400' },
                                             ].map(stat => (
@@ -260,8 +260,8 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                             <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Positionen</h3>
                                         </div>
                                         <div className="flex flex-wrap gap-4">
-                                            <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                                                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest block mb-2 text-center w-full">Hauptposition</span>
+                                            <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-center text-amber-500">
+                                                <span className="text-[10px] font-black uppercase tracking-widest block mb-2 text-center w-full opacity-60">Hauptposition</span>
                                                 <span className="text-3xl font-black text-white">{player.position}</span>
                                             </div>
                                             {player.position_second && (
@@ -305,13 +305,13 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                             <div>
                                                 <div className="flex justify-between mb-4 px-1">
                                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Moral</span>
-                                                    <span className="text-xs font-black text-cyan-400 italic">{player.morale}%</span>
+                                                    <span className="text-xs font-black text-amber-500 italic">{player.morale}%</span>
                                                 </div>
                                                 <div className="h-6 bg-slate-900 rounded-xl overflow-hidden p-1 border border-slate-800 shadow-inner">
                                                     <motion.div 
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${player.morale}%` }}
-                                                        className="h-full rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-lg"
+                                                        className="h-full rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 shadow-lg"
                                                     />
                                                 </div>
                                             </div>
@@ -375,7 +375,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                         </td>
                                                         <td className="px-8 py-5 text-center text-xs font-black text-white">{stat.appearances}</td>
                                                         <td className="px-8 py-5 text-center text-xs font-bold text-emerald-400 group-hover:scale-110 transition-transform">{stat.goals}</td>
-                                                        <td className="px-8 py-5 text-center text-xs font-bold text-cyan-400 group-hover:scale-110 transition-transform">{stat.assists}</td>
+                                                        <td className="px-8 py-5 text-center text-xs font-bold text-amber-500 group-hover:scale-110 transition-transform">{stat.assists}</td>
                                                         <td className="px-8 py-5 text-center">
                                                             <div className="flex items-center justify-center gap-2 text-xs font-bold">
                                                                 <span className="text-amber-500">{stat.yellow_cards}</span>
@@ -443,7 +443,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     <p className="text-xs font-black text-white italic">
                                                         <span className="text-emerald-400">{stat.goals}</span>
                                                         <span className="text-slate-700 mx-1">/</span>
-                                                        <span className="text-cyan-400">{stat.assists}</span>
+                                                        <span className="text-amber-500">{stat.assists}</span>
                                                     </p>
                                                 </div>
                                                 <div className="text-center">
@@ -584,10 +584,10 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-[0_10px_40px_rgba(34,211,238,0.2)] hover:shadow-[0_15px_50px_rgba(34,211,238,0.3)] transition-all rounded-2xl border-none;
+                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black shadow-[0_10px_40px_rgba(217,177,92,0.15)] hover:brightness-110 transition-all rounded-2xl border-none;
                 }
                 .sim-input-indigo {
-                    @apply bg-indigo-500/5 border border-indigo-500/20 rounded-2xl px-5 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all;
+                    @apply bg-amber-500/5 border border-amber-500/20 rounded-2xl px-5 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all;
                 }
             `}} />
         </AuthenticatedLayout>

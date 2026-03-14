@@ -88,17 +88,17 @@ export default function Finances({ clubs, activeClub, transactions }) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="sim-card p-6 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border-indigo-500/30 hidden lg:block"
+                        className="sim-card p-6 bg-gradient-to-br from-[#d9b15c]/10 to-[#8d6e32]/10 border-amber-500/30 hidden lg:block"
                     >
                         <div className="flex flex-col h-full justify-between">
                             <div>
-                                <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-1">Status</h3>
+                                <h3 className="text-sm font-bold text-amber-500 uppercase tracking-widest mb-1">Status</h3>
                                 <p className="text-white font-medium">Finanziell stabil</p>
                             </div>
                             <div className="mt-auto">
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Sponsor-Einnahmen lfd. Saison</p>
                                 <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                                    <div className="h-full bg-amber-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(217,177,92,0.5)]"></div>
                                 </div>
                             </div>
                         </div>
@@ -182,7 +182,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                         link.active 
-                                            ? 'bg-cyan-500 text-white shadow-[0_0_10px_rgba(34,211,238,0.3)]' 
+                                            ? 'bg-amber-600 text-black shadow-[0_0_10px_rgba(217,177,92,0.3)]' 
                                             : 'text-slate-500 hover:text-white hover:bg-slate-800'
                                     } ${!link.url && 'opacity-30 pointer-events-none'}`}
                                 />
@@ -203,7 +203,7 @@ const Card = ({ title, children, icon: Icon }) => (
     >
         <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/40 flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <Icon size={20} weight="duotone" className="text-cyan-400" />
+                <Icon size={20} weight="duotone" className="text-amber-500" />
                 <h2 className="text-lg font-black text-white tracking-tight uppercase">{title}</h2>
             </div>
         </div>

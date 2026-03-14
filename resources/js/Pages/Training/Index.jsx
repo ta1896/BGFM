@@ -40,7 +40,7 @@ const Card = ({ title, children, icon: Icon, className = "" }) => (
         {title && (
             <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/40 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Icon size={20} weight="duotone" className="text-cyan-400" />
+                    <Icon size={20} weight="duotone" className="text-amber-500" />
                     <h2 className="text-lg font-black text-white tracking-tight uppercase">{title}</h2>
                 </div>
             </div>
@@ -197,7 +197,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-cyan-400 border border-slate-700/50">
+                                                    <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-amber-500 border border-slate-700/50">
                                                         <Icon size={18} weight="duotone" />
                                                     </div>
                                                     <span className="text-sm font-black text-white uppercase tracking-tight">
@@ -227,7 +227,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                                 {!session.applied_at && (
                                                     <button 
                                                         onClick={() => post(route('training.apply', session.id))}
-                                                        className="text-[10px] font-black uppercase tracking-widest text-cyan-400 hover:text-white transition-colors border border-cyan-500/20 px-3 py-1.5 rounded-lg bg-cyan-500/5"
+                                                        className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-white transition-colors border border-amber-500/20 px-3 py-1.5 rounded-lg bg-amber-500/5"
                                                     >
                                                         Einheit durchführen
                                                     </button>
@@ -251,7 +251,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
             
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)];
+                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(217,177,92,0.15)];
                 }
             `}} />
         </AuthenticatedLayout>

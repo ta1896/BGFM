@@ -28,7 +28,7 @@ const MatchCard = ({ match, club }) => {
             whileHover={{ y: -5 }}
             className="sim-card group relative overflow-hidden flex flex-col h-full bg-[#0c1222]/80 backdrop-blur-xl border-slate-800/50"
         >
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             <div className="p-6 relative z-10 flex flex-col h-full">
                 {/* Meta */}
@@ -45,9 +45,9 @@ const MatchCard = ({ match, club }) => {
                 {/* Matchup */}
                 <div className="flex items-center justify-between gap-6 mb-8">
                     <div className="flex flex-col items-center gap-3 flex-1">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-cyan-500/30 transition-colors relative">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
                             <img src={match.home_club.logo_url} className="w-full h-full object-contain" />
-                            {isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-cyan-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(34,211,238,0.5)]" />}
+                            {isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
                         <span className="text-xs font-black text-white uppercase tracking-tighter text-center line-clamp-1">{match.home_club.short_name}</span>
                     </div>
@@ -55,9 +55,9 @@ const MatchCard = ({ match, club }) => {
                     <div className="text-xl font-black text-slate-700 italic">VS</div>
 
                     <div className="flex flex-col items-center gap-3 flex-1">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-cyan-500/30 transition-colors relative">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
                             <img src={match.away_club.logo_url} className="w-full h-full object-contain" />
-                            {!isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-cyan-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(34,211,238,0.5)]" />}
+                            {!isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
                         <span className="text-xs font-black text-white uppercase tracking-tighter text-center line-clamp-1">{match.away_club.short_name}</span>
                     </div>
@@ -83,7 +83,7 @@ const MatchCard = ({ match, club }) => {
                         className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
                             userLineup 
                                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                                : 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40'
+                                : 'bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40'
                         }`}
                     >
                         {userLineup ? 'BEARBEITEN' : 'ERSTELLEN'}
@@ -110,8 +110,8 @@ export default function Index({ club, matches, templates }) {
                             animate={{ opacity: 1, x: 0 }}
                             className="flex items-center gap-2 mb-2"
                         >
-                            <span className="h-px w-8 bg-cyan-500" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500">Matchcenter // Strategie</span>
+                            <span className="h-px w-8 bg-amber-500" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Matchcenter // Strategie</span>
                         </motion.div>
                         <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter uppercase italic leading-none">
                             Aufstellungen <span className="text-slate-600">&</span> Taktik
@@ -135,7 +135,7 @@ export default function Index({ club, matches, templates }) {
                 {/* Live Section */}
                 <section className="space-y-6">
                     <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
                             <Calendar size={24} weight="duotone" />
                         </div>
                         <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Anstehende Termine</h2>
@@ -177,10 +177,10 @@ export default function Index({ club, matches, templates }) {
                                     className="sim-card p-6 bg-slate-900/50 border-slate-800 group"
                                 >
                                     <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-black text-white uppercase tracking-tight group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                        <h3 className="font-black text-white uppercase tracking-tight group-hover:text-amber-500 transition-colors line-clamp-1">
                                             {template.name}
                                         </h3>
-                                        <div className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-black text-cyan-400 uppercase">
+                                        <div className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-black text-amber-500 uppercase">
                                             {template.formation}
                                         </div>
                                     </div>
@@ -214,7 +214,7 @@ export default function Index({ club, matches, templates }) {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-[0_0_30px_rgba(34,211,238,0.2)] hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] transition-all rounded-2xl;
+                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black shadow-[0_0_30px_rgba(217,177,92,0.15)] hover:shadow-[0_0_40px_rgba(217,177,92,0.25)] transition-all rounded-2xl;
                 }
             `}} />
         </AuthenticatedLayout>

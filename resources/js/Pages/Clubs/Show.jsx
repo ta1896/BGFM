@@ -52,7 +52,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                                     activeTab === tab 
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' 
+                                    ? 'bg-amber-600 text-black shadow-lg shadow-amber-900/40' 
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                 }`}
                             >
@@ -71,12 +71,12 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                                     <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex items-center justify-between">
                                         <h4 className="text-white text-[10px] font-black uppercase tracking-widest flex items-center">
-                                            <ChartBar size={14} weight="fill" className="mr-2 text-blue-500" /> Saison-Zusammenfassung
+                                            <ChartBar size={14} weight="fill" className="mr-2 text-amber-500" /> Saison-Zusammenfassung
                                         </h4>
                                         <select 
                                             value={activeSeason?.id} 
                                             onChange={handleSeasonChange}
-                                            className="bg-slate-900 border-none text-[10px] text-blue-500 font-black py-0 pl-0 pr-6 focus:ring-0 cursor-pointer uppercase"
+                                            className="bg-slate-900 border-none text-[10px] text-amber-500 font-black py-0 pl-0 pr-6 focus:ring-0 cursor-pointer uppercase"
                                         >
                                             {seasons.map(s => (
                                                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -84,7 +84,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                                         </select>
                                     </div>
                                     <div className="p-6 grid grid-cols-2 gap-4">
-                                        <StatBox label="Spiele" value={seasonStats?.played || 0} color="blue" />
+                                        <StatBox label="Spiele" value={seasonStats?.played || 0} color="amber" />
                                         <StatBox label="Punkte" value={seasonStats?.points || 0} color="green" />
                                         <StatBox label="Tore" value={seasonStats?.goals_for || 0} color="slate" />
                                         <StatBox label="Gegentore" value={seasonStats?.goals_against || 0} color="red" />
@@ -108,9 +108,9 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                             <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                                 <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex items-center justify-between">
                                     <h4 className="text-white text-[10px] font-black uppercase tracking-widest flex items-center">
-                                        <Users size={14} weight="fill" className="mr-2 text-blue-500" /> Schlüsselspieler
+                                        <Users size={14} weight="fill" className="mr-2 text-amber-500" /> Schlüsselspieler
                                     </h4>
-                                    <button onClick={() => setActiveTab('squad')} className="text-blue-500 text-[10px] font-black uppercase hover:underline">Gesamter Kader</button>
+                                    <button onClick={() => setActiveTab('squad')} className="text-amber-500 text-[10px] font-black uppercase hover:underline">Gesamter Kader</button>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
@@ -130,7 +130,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                                                             <div className="w-9 h-9 rounded bg-slate-800 border border-slate-700 overflow-hidden">
                                                                 <img src={player.photo_url} className="w-full h-full object-cover" alt="" />
                                                             </div>
-                                                            <span className="text-white font-bold text-sm group-hover:text-blue-400 transition-colors">{player.first_name} {player.last_name}</span>
+                                                            <span className="text-white font-bold text-sm group-hover:text-amber-500 transition-colors">{player.first_name} {player.last_name}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
@@ -138,7 +138,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-slate-300 text-sm font-bold">{player.age}</td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <span className="text-blue-500 font-black text-sm italic">{player.overall}</span>
+                                                        <span className="text-amber-500 font-black text-sm italic">{player.overall}</span>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -153,7 +153,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                     {activeTab !== 'overview' && (
                         <div className="py-20 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col items-center justify-center text-slate-500 animate-in fade-in transition-all">
                              <p className="font-bold uppercase tracking-widest text-sm mb-4">Bereich in Vorbereitung</p>
-                             <button onClick={() => setActiveTab('overview')} className="text-blue-500 underline text-xs font-bold uppercase">Zurück zur Übersicht</button>
+                             <button onClick={() => setActiveTab('overview')} className="text-amber-500 underline text-xs font-bold uppercase">Zurück zur Übersicht</button>
                         </div>
                     )}
 
@@ -165,7 +165,7 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
 
 function StatBox({ label, value, color }) {
     const colorMap = {
-        blue: 'text-blue-500',
+        amber: 'text-amber-500',
         green: 'text-green-500',
         red: 'text-red-500',
         slate: 'text-slate-300'

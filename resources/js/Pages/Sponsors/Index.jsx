@@ -23,18 +23,18 @@ const OfferCard = ({ offer, activeClub, onSign, disabled }) => {
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="sim-card p-6 flex flex-col h-full group border-slate-800/50 hover:border-cyan-500/30 transition-all"
+            className="sim-card p-6 flex flex-col h-full group border-slate-800/50 hover:border-amber-500/30 transition-all"
         >
             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h4 className="text-xl font-black text-white group-hover:text-cyan-400 transition-colors uppercase tracking-tighter">
+                    <h4 className="text-xl font-black text-white group-hover:text-amber-500 transition-colors uppercase tracking-tighter">
                         {offer.name}
                     </h4>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-slate-800 text-slate-500 border border-slate-700 mt-2">
                         {offer.tier}
                     </span>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-slate-800/50 flex items-center justify-center text-slate-500 group-hover:text-cyan-400 transition-colors border border-slate-700/50">
+                <div className="h-12 w-12 rounded-xl bg-slate-800/50 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors border border-slate-700/50">
                     <Handshake size={28} weight="duotone" />
                 </div>
             </div>
@@ -64,7 +64,7 @@ const OfferCard = ({ offer, activeClub, onSign, disabled }) => {
                             max="60" 
                             value={months}
                             onChange={(e) => setMonths(e.target.value)}
-                            className="w-full bg-slate-900 border-2 border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-center focus:border-cyan-500/50 focus:ring-0 transition-all disabled:opacity-50"
+                            className="w-full bg-slate-900 border-2 border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-center focus:border-amber-500/50 focus:ring-0 transition-all disabled:opacity-50"
                             disabled={disabled}
                         />
                         <span className="absolute right-3 top-3.5 text-[10px] font-black uppercase tracking-widest text-slate-600 pointer-events-none">Mte</span>
@@ -126,7 +126,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                 {/* Active Support Hero */}
                 <div className="relative rounded-[2rem] overflow-hidden border border-slate-800/50 bg-slate-900/40">
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent z-10" />
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                     
                     <div className="relative z-20 p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12">
                         <div className="flex-1">
@@ -135,8 +135,8 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                 animate={{ opacity: 1, x: 0 }}
                                 className="flex items-center gap-3 mb-6"
                             >
-                                <div className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] animate-pulse" />
-                                <span className="text-xs font-black uppercase tracking-[0.3em] text-cyan-400">Status: Sponsoring Live</span>
+                                <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.6)] animate-pulse" />
+                                <span className="text-xs font-black uppercase tracking-[0.3em] text-amber-500">Status: Sponsoring Live</span>
                             </motion.div>
                             
                             {activeContract ? (
@@ -231,7 +231,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                     history.map((contract) => (
                                         <div key={contract.id} className="p-4 hover:bg-white/[0.02] transition-colors flex justify-between items-center group">
                                             <div>
-                                                <p className="font-bold text-white group-hover:text-cyan-400 transition-colors">{contract.sponsor.name}</p>
+                                                <p className="font-bold text-white group-hover:text-amber-500 transition-colors">{contract.sponsor.name}</p>
                                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                                     {contract.starts_on_formatted} - {contract.ends_on_formatted}
                                                 </p>
@@ -239,7 +239,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                             <div className="text-right">
                                                 <p className="font-black text-emerald-400 font-mono italic">+{contract.weekly_amount.toLocaleString('de-DE')} €</p>
                                                 <p className={`text-[10px] font-black uppercase tracking-widest ${
-                                                    contract.status === 'active' ? 'text-cyan-400' : 'text-slate-600'
+                                                    contract.status === 'active' ? 'text-amber-500' : 'text-slate-600'
                                                 }`}>
                                                     {contract.status}
                                                 </p>
@@ -259,7 +259,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)];
+                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(217,177,92,0.15)];
                 }
             `}} />
         </AuthenticatedLayout>

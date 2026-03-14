@@ -90,7 +90,7 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: idx * 0.02 }}
-                                    className={`grid grid-cols-[3rem_3rem_1fr_repeat(8,_3.5rem)] gap-2 px-6 py-4 border-b border-white/5 hover:bg-white/[0.03] transition-all items-center ${isOwned ? 'bg-cyan-500/[0.03] border-l-2 border-l-cyan-500/30' : ''}`}
+                                    className={`grid grid-cols-[3rem_3rem_1fr_repeat(8,_3.5rem)] gap-2 px-6 py-4 border-b border-white/5 hover:bg-white/[0.03] transition-all items-center ${isOwned ? 'bg-amber-500/[0.03] border-l-2 border-l-amber-500/30' : ''}`}
                                 >
                                     {/* Pos */}
                                     <div className={`text-center text-sm font-black italic ${posStyle}`}>{pos}</div>
@@ -107,12 +107,12 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                     <div className="flex items-center gap-3 min-w-0">
                                         <Link
                                             href={route('clubs.show', row.club_id ?? row.club?.id)}
-                                            className={`text-sm font-black uppercase tracking-tight truncate hover:text-cyan-400 transition-colors ${isOwned ? 'text-white' : 'text-slate-300'}`}
+                                            className={`text-sm font-black uppercase tracking-tight truncate hover:text-amber-500 transition-colors ${isOwned ? 'text-white' : 'text-slate-300'}`}
                                         >
                                             {row.club?.name || row.club_name}
                                         </Link>
                                         {pos === 1 && <Crown size={14} weight="fill" className="text-amber-400 shrink-0" />}
-                                        {isOwned && <ShieldCheck size={14} weight="fill" className="text-cyan-500 shrink-0" />}
+                                        {isOwned && <ShieldCheck size={14} weight="fill" className="text-amber-500 shrink-0" />}
                                     </div>
 
                                     {/* Stats */}
@@ -126,7 +126,7 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                             ({row.goal_difference > 0 ? '+' : ''}{row.goal_difference})
                                         </span>
                                     </div>
-                                    <div className={`text-center text-base font-black italic ${isOwned ? 'text-cyan-400' : 'text-white'}`}>{row.points}</div>
+                                    <div className={`text-center text-base font-black italic ${isOwned ? 'text-amber-500' : 'text-white'}`}>{row.points}</div>
 
                                     {/* Form */}
                                     <div className="flex items-center justify-center gap-0.5">
@@ -150,7 +150,7 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                     <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Sieg</div>
                     <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Unentschieden</div>
                     <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Niederlage</div>
-                    <div className="flex items-center gap-2"><ShieldCheck size={12} weight="fill" className="text-cyan-500" /> Dein Verein</div>
+                    <div className="flex items-center gap-2"><ShieldCheck size={12} weight="fill" className="text-amber-500" /> Dein Verein</div>
                 </div>
             </div>
         </AuthenticatedLayout>

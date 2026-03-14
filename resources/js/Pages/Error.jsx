@@ -26,12 +26,12 @@ export default function Error({ status }) {
     }[status] || Warning;
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden relative">
+        <div className="min-h-screen bg-[#0a0b0d] flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden relative">
             <Head title={title} />
             
             {/* Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-amber-600/5 rounded-full blur-[100px] pointer-events-none" />
 
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -39,8 +39,8 @@ export default function Error({ status }) {
                 className="relative z-10 max-w-lg w-full"
             >
                 <div className="mb-8 inline-flex items-center justify-center p-6 rounded-3xl bg-slate-900/50 border border-slate-800 shadow-2xl relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
-                    <Icon size={80} weight="duotone" className="text-cyan-400 relative z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                    <Icon size={80} weight="duotone" className="text-amber-500 relative z-10" />
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter mb-4">
@@ -54,7 +54,7 @@ export default function Error({ status }) {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
                         href="/"
-                        className="sim-btn-primary px-8 py-3.5 w-full sm:w-auto flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20"
+                        className="sim-btn-primary px-8 py-3.5 w-full sm:w-auto flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest shadow-lg shadow-amber-900/40"
                     >
                         <House size={20} weight="bold" />
                         Zur Startseite

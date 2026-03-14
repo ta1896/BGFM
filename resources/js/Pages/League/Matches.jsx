@@ -33,7 +33,7 @@ const MatchCard = ({ match, ownedClubIds }) => {
         >
             <Link
                 href={route('matches.show', match.id)}
-                className={`flex items-center gap-6 px-6 py-5 transition-all border-b border-white/5 hover:bg-white/[0.03] group ${isOwned ? 'bg-cyan-500/[0.02]' : ''}`}
+                className={`flex items-center gap-6 px-6 py-5 transition-all border-b border-white/5 hover:bg-white/[0.03] group ${isOwned ? 'bg-amber-500/[0.02]' : ''}`}
             >
                 {/* Competition Badge */}
                 <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
@@ -76,7 +76,7 @@ const MatchCard = ({ match, ownedClubIds }) => {
                 </div>
 
                 {/* Arrow */}
-                <CaretRight size={16} className="text-slate-700 group-hover:text-cyan-500 transition-colors shrink-0" />
+                <CaretRight size={16} className="text-slate-700 group-hover:text-amber-500 transition-colors shrink-0" />
             </Link>
         </motion.div>
     );
@@ -151,7 +151,7 @@ export default function Matches({
                                 onClick={() => applyFilter('status', localFilters.status === s ? '' : s)}
                                 className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                                     localFilters.status === s
-                                        ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
+                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
                                         : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
                                 }`}
                             >
@@ -166,7 +166,7 @@ export default function Matches({
                                 onClick={() => applyFilter('scope', localFilters.scope === s ? '' : s)}
                                 className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                                     localFilters.scope === s
-                                        ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                                        ? 'bg-amber-600/20 border-amber-600/40 text-amber-600'
                                         : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
                                 }`}
                             >
@@ -195,8 +195,8 @@ export default function Matches({
                         <div key={groupKey} className="sim-card overflow-hidden p-0">
                             {/* Group Header */}
                             <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center">
-                                    <span className="text-[10px] font-black text-indigo-400">
+                                <div className="w-8 h-8 rounded-lg bg-amber-600/20 border border-amber-600/20 flex items-center justify-center">
+                                    <span className="text-[10px] font-black text-amber-600">
                                         {groupType === 'matchday' ? groupKey : groupKey?.split('-')[2]}
                                     </span>
                                 </div>

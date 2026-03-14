@@ -9,7 +9,7 @@ import {
     CaretRight, ArrowsClockwise
 } from '@phosphor-icons/react';
 
-const StatCard = ({ title, value, icon: Icon, color = 'cyan' }) => (
+const StatCard = ({ title, value, icon: Icon, color = 'amber' }) => (
     <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -30,7 +30,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'cyan' }) => (
 const SectionHeader = ({ title, icon: Icon }) => (
     <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/30">
-            <Icon size={20} className="text-cyan-400" />
+            <Icon size={20} className="text-amber-500" />
         </div>
         <h2 className="text-lg font-bold text-white tracking-tight leading-none uppercase italic">{title}</h2>
     </div>
@@ -54,12 +54,12 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <StatCard title="Total User" value={stats.users} icon={Users} />
-                    <StatCard title="Administratoren" value={stats.admins} icon={UserGear} color="indigo" />
+                    <StatCard title="Administratoren" value={stats.admins} icon={UserGear} color="amber" />
                     <StatCard title="Vereine Gesamt" value={stats.clubs} icon={BuildingOffice} />
                     <StatCard title="CPU Teams" value={stats.cpu_clubs} icon={Lightning} color="amber" />
                     <StatCard title="Total Spieler" value={stats.players} icon={UserCircle} />
                     <StatCard title="Aufstellungen" value={stats.lineups} icon={ListNumbers} />
-                    <StatCard title="Geplante Spiele" value={stats.scheduled_matches} icon={CalendarCheck} color="cyan" />
+                    <StatCard title="Geplante Spiele" value={stats.scheduled_matches} icon={CalendarCheck} color="amber" />
                     <StatCard title="Sponsoren" value={stats.active_sponsors} icon={Suitcase} />
                     <StatCard title="Stadionprojekte" value={stats.active_stadium_projects} icon={Warehouse} />
                     <StatCard title="Trainingslager" value={stats.active_training_camps} icon={Tent} />
@@ -68,7 +68,7 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Quick Actions & Simulation */}
                     <div className="space-y-8">
-                        <section className="sim-card p-6 border-cyan-500/10 shadow-[0_0_50px_rgba(34,211,238,0.03)]">
+                        <section className="sim-card p-6 border-amber-500/10 shadow-[0_0_50px_rgba(217,177,92,0.03)]">
                             <SectionHeader title="Simulation & Kontrolle" icon={Play} />
                             
                             <form onSubmit={runSimulation} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-2xl bg-slate-950/50 border border-slate-800/50">
@@ -121,7 +121,7 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                                             <p className="text-[10px] text-slate-500 font-medium truncate">{user.email}</p>
                                         </div>
                                         {user.is_admin && (
-                                            <span className="text-[9px] font-black bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 uppercase tracking-widest">Admin</span>
+                                            <span className="text-[9px] font-black bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest">Admin</span>
                                         )}
                                     </div>
                                 ))}
@@ -140,7 +140,7 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                                         </div>
                                         <Link 
                                             href={route('admin.clubs.edit', club.id)}
-                                            className="p-1.5 text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition"
+                                            className="p-1.5 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition"
                                         >
                                             <CaretRight size={16} weight="bold" />
                                         </Link>

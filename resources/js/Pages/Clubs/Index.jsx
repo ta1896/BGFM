@@ -22,7 +22,7 @@ export default function Index({ auth, clubs }) {
                         </div>
                         <Link
                             href={route('clubs.create')}
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2 transition-all shadow-lg shadow-blue-900/20"
+                            className="bg-gradient-to-r from-[#d9b15c] to-[#b69145] text-black px-4 py-2 rounded-lg text-sm font-black flex items-center space-x-2 transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98]"
                         >
                             <Plus size={12} weight="bold" />
                             <span>Verein gründen</span>
@@ -36,7 +36,7 @@ export default function Index({ auth, clubs }) {
                                 <Link 
                                     key={club.id} 
                                     href={route('clubs.show', club.id)}
-                                    className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-blue-500/50 transition-all duration-300 group shadow-sm flex flex-col"
+                                    className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-amber-500/50 transition-all duration-300 group shadow-sm flex flex-col"
                                 >
                                     <div className="p-6 flex-1">
                                         <div className="flex justify-between items-start mb-6">
@@ -47,12 +47,12 @@ export default function Index({ auth, clubs }) {
                                                     <Shield size={32} weight="fill" className="text-slate-700" />
                                                 )}
                                             </div>
-                                            <div className="bg-blue-600/10 text-blue-500 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">
+                                            <div className="bg-amber-600/10 text-amber-500 text-[10px] font-black px-3 py-1.5 rounded-lg border border-amber-500/20 uppercase tracking-[0.1em]">
                                                 Manager
                                             </div>
                                         </div>
 
-                                        <h3 className="text-white font-bold text-xl mb-1 group-hover:text-blue-400 transition-colors">
+                                        <h3 className="text-white font-black text-xl mb-1 group-hover:text-amber-500 transition-colors uppercase italic">
                                             {club.name}
                                         </h3>
                                         <p className="text-slate-500 text-xs font-medium uppercase tracking-widest mb-6">
@@ -77,7 +77,7 @@ export default function Index({ auth, clubs }) {
                                         </div>
                                     </div>
 
-                                    <div className="px-6 py-4 bg-slate-800/30 border-t border-slate-800 flex items-center justify-between text-blue-500 text-xs font-bold uppercase tracking-widest group-hover:bg-blue-600/5 transition-colors">
+                                    <div className="px-6 py-4 bg-slate-800/30 border-t border-slate-800 flex items-center justify-between text-amber-500 text-[10px] font-black uppercase tracking-[0.2em] group-hover:bg-amber-500/5 transition-colors">
                                         <span>Zum Vereinszentrum</span>
                                         <CaretRight size={12} weight="bold" />
                                     </div>
@@ -89,9 +89,10 @@ export default function Index({ auth, clubs }) {
                                 <p className="font-medium">Du leitest aktuell keinen Verein.</p>
                                 <Link 
                                     href={route('clubs.free')} 
-                                    className="mt-4 text-blue-500 hover:text-blue-400 font-bold underline"
+                                    className="mt-4 text-amber-500 hover:text-amber-400 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 group"
                                 >
-                                    Jetzt einen freien Verein suchen
+                                    <span>Jetzt einen freien Verein suchen</span>
+                                    <CaretRight size={10} className="group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
                         )}

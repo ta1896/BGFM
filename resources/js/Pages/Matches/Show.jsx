@@ -28,10 +28,10 @@ const ACTION_CONFIG = {
     // Injury
     injury:            { Icon: FirstAidKit,       color: 'text-rose-300',    bg: 'bg-rose-500/15 border-rose-500/20' },
     // Saves & Defense
-    save:              { Icon: ShieldCheck,       color: 'text-cyan-400',    bg: 'bg-cyan-500/20 border-cyan-500/30' },
-    block:             { Icon: HandFist,          color: 'text-cyan-300',    bg: 'bg-cyan-500/15 border-cyan-500/20' },
-    tackle:            { Icon: HandFist,          color: 'text-blue-400',    bg: 'bg-blue-500/15 border-blue-500/20' },
-    tackle_won:        { Icon: HandFist,          color: 'text-blue-400',    bg: 'bg-blue-500/15 border-blue-500/20' },
+    save:              { Icon: ShieldCheck,       color: 'text-amber-400',    bg: 'bg-amber-500/20 border-amber-500/30' },
+    block:             { Icon: HandFist,          color: 'text-amber-300',    bg: 'bg-amber-500/15 border-amber-500/20' },
+    tackle:            { Icon: HandFist,          color: 'text-amber-600',    bg: 'bg-amber-600/15 border-amber-600/20' },
+    tackle_won:        { Icon: HandFist,          color: 'text-amber-600',    bg: 'bg-amber-600/15 border-amber-600/20' },
     tackle_lost:       { Icon: HandFist,          color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/15' },
     clearance:         { Icon: Wind,              color: 'text-slate-400',   bg: 'bg-slate-800 border-slate-700' },
     interception:      { Icon: CornersOut,        color: 'text-teal-400',    bg: 'bg-teal-500/15 border-teal-500/20' },
@@ -59,7 +59,7 @@ const ACTION_CONFIG = {
     // Possession / Misc
     possession_loss:   { Icon: Timer,             color: 'text-slate-500',   bg: 'bg-slate-900 border-slate-800' },
     pressure:          { Icon: Wind,              color: 'text-slate-500',   bg: 'bg-slate-900 border-slate-800' },
-    assist:            { Icon: ArrowRight,         color: 'text-cyan-400',   bg: 'bg-cyan-500/15 border-cyan-500/20' },
+    assist:            { Icon: ArrowRight,         color: 'text-amber-500',   bg: 'bg-amber-500/15 border-amber-500/20' },
     // Fallback
     default:           { Icon: CaretRight,        color: 'text-slate-600',   bg: 'bg-transparent border-transparent' },
 };
@@ -85,8 +85,8 @@ const StatBar = ({ label, home, away }) => {
                 <span className="text-white">{away ?? 0}</span>
             </div>
             <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${homePct}%` }} className="h-full bg-cyan-500 rounded-full" />
-                <motion.div initial={{ width: 0 }} animate={{ width: `${awayPct}%` }} className="h-full bg-indigo-500 rounded-full" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${homePct}%` }} className="h-full bg-amber-500 rounded-full" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${awayPct}%` }} className="h-full bg-[#d4af37] rounded-full" />
             </div>
         </div>
     );
@@ -99,8 +99,8 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
 
     return (
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#080d1a] to-[#0e1628] border border-slate-800/50 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
-            <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-600/5 pointer-events-none" />
+            <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-64 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
 
             {/* Competition bar */}
             <div className="flex items-center justify-center gap-3 pt-8 pb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -323,7 +323,7 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
     });
     const sortedRows = Object.keys(rows).sort((a, b) => parseFloat(a) - parseFloat(b));
 
-    const bgColor = accent === 'cyan' ? '#001814' : '#0d0822';
+    const bgColor = accent === 'amber' ? '#0a0a0a' : '#0d0d0d';
 
     return (
         <div className="flex-1 min-w-0 space-y-3">
@@ -373,9 +373,9 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
 
 const LineupPitch = ({ homeClub, awayClub, homeLineup, awayLineup, livePlayerStates }) => (
     <div className="flex gap-8">
-        <HalfPitch club={homeClub} lineup={homeLineup} accent="cyan"   livePlayerStates={livePlayerStates} />
+        <HalfPitch club={homeClub} lineup={homeLineup} accent="amber"   livePlayerStates={livePlayerStates} />
         <div className="w-px bg-white/5 self-stretch shrink-0" />
-        <HalfPitch club={awayClub} lineup={awayLineup} accent="indigo" livePlayerStates={livePlayerStates} />
+        <HalfPitch club={awayClub} lineup={awayLineup} accent="gold" livePlayerStates={livePlayerStates} />
     </div>
 );
 
@@ -446,7 +446,7 @@ export default function Show({
 
             <div className="max-w-[1300px] mx-auto space-y-8">
                 {/* Back Link */}
-                <Link href={route('league.matches')} className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400 transition-colors w-fit">
+                <Link href={route('league.matches')} className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-amber-500 transition-colors w-fit">
                     <ArrowLeft size={14} weight="bold" />
                     Spielplan
                 </Link>
@@ -463,7 +463,7 @@ export default function Show({
                 {/* Admin Controls */}
                 {can_simulate && liveState.status !== 'played' && (
                     <div className="flex items-center gap-3">
-                        <button onClick={simulate} className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/30 transition-all">
+                        <button onClick={simulate} className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/30 transition-all font-mono">
                             <Lightning size={16} weight="fill" /> Simulieren
                         </button>
                         {liveState.status === 'scheduled' && (
@@ -498,7 +498,7 @@ export default function Show({
                             key={t.key}
                             onClick={() => setTab(t.key)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                tab === t.key ? 'bg-cyan-500 text-black shadow-lg' : 'text-slate-500 hover:text-slate-300'
+                                tab === t.key ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'
                             }`}
                         >
                             {t.label}
@@ -525,9 +525,9 @@ export default function Show({
                                 <div key={label} className="sim-card p-6">
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center mb-6">{label}</p>
                                     <div className="flex items-center justify-between text-sm font-black text-white mb-4">
-                                        <span className="text-cyan-400">{fmt(home || 0)}</span>
+                                        <span className="text-amber-500">{fmt(home || 0)}</span>
                                         <span className="text-slate-700">vs</span>
-                                        <span className="text-indigo-400">{fmt(away || 0)}</span>
+                                        <span className="text-[#d4af37]">{fmt(away || 0)}</span>
                                     </div>
                                     <StatBar label="" home={parseFloat(home || 0)} away={parseFloat(away || 0)} />
                                 </div>
@@ -540,7 +540,7 @@ export default function Show({
                         <motion.div key="ticker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <div className="sim-card overflow-hidden p-0">
                                 <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-3">
-                                    <SoccerBall size={18} weight="fill" className="text-cyan-400" />
+                                    <SoccerBall size={18} weight="fill" className="text-amber-500" />
                                     <h3 className="text-xs font-black text-white uppercase tracking-widest">Spielverlauf</h3>
                                     <span className="ml-auto text-[9px] font-black text-slate-600 uppercase tracking-widest">{allActions.length} Aktionen</span>
                                 </div>
@@ -621,7 +621,7 @@ export default function Show({
                                                     <span className="text-xs font-bold text-white truncate">{p.player_name}</span>
                                                     <span className="text-center text-[10px] text-slate-400">{p.minutes_played}'</span>
                                                     <span className="text-center text-[10px] text-emerald-400 font-black">{p.goals}</span>
-                                                    <span className="text-center text-[10px] text-cyan-400 font-black">{p.assists}</span>
+                                                    <span className="text-center text-[10px] text-amber-500 font-black">{p.assists}</span>
                                                     <span className="text-center text-[10px] text-slate-500">{p.shots}</span>
                                                     <span className={`text-center text-xs font-black italic ${p.rating >= 7 ? 'text-emerald-400' : 'text-slate-400'}`}>{parseFloat(p.rating).toFixed(1)}</span>
                                                 </div>

@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-base-900: #0f172a; /* slate-900 */
-  --color-base-800: #1e293b; /* slate-800 */
-  --color-primary: #aa3bff; /* NewGen Accent */
-  --color-primary-hover: #c084fc;
+  --color-base-900: #0a0b0d; /* Catalyst Dark */
+  --color-base-800: #0f1115; /* Catalyst Card */
+  --color-primary: #d9b15c; /* Catalyst Gold */
+  --color-primary-hover: #f59e0b;
 }
 
 @layer base {
   body {
-    @apply bg-[#0f172a] text-slate-100 font-sans antialiased;
+    @apply bg-[#0a0b0d] text-slate-100 font-sans antialiased;
   }
 }
 
@@ -39,12 +39,12 @@
 .prose h2 { @apply text-2xl border-b border-slate-800 pb-2; }
 .prose h3 { @apply text-xl; }
 .prose p { @apply my-4 leading-relaxed; }
-.prose a { @apply text-[#aa3bff] hover:text-[#c084fc] transition-colors decoration-transparent hover:underline; }
+.prose a { @apply text-[#d9b15c] hover:text-[#f59e0b] transition-colors decoration-transparent hover:underline; }
 .prose ul, .prose ol { @apply my-4 pl-6; }
 .prose ul { @apply list-disc; }
 .prose ol { @apply list-decimal text-slate-400; }
 .prose li { @apply my-1; }
-.prose code { @apply bg-slate-800/80 text-cyan-300 px-1.5 py-0.5 rounded text-sm font-mono whitespace-pre-wrap break-all; }
+.prose code { @apply bg-slate-800/80 text-amber-500 px-1.5 py-0.5 rounded text-sm font-mono whitespace-pre-wrap break-all; }
 .prose pre { @apply bg-slate-900 border border-slate-800 p-4 rounded-xl overflow-x-auto my-6; }
 .prose pre code { @apply bg-transparent text-slate-300 p-0 text-sm whitespace-pre; }
 .prose blockquote { @apply border-l-4 border-slate-700 pl-4 italic text-slate-400 my-6 bg-slate-800/30 py-2 pr-4 rounded-r-lg; }

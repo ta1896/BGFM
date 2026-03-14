@@ -41,7 +41,7 @@ const LevelMetric = ({ label, level, icon: Icon, delay }) => (
         className="flex items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800/50 group hover:bg-slate-800/30 transition-all"
     >
         <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-cyan-400 transition-colors">
+            <div className="h-10 w-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors">
                 <Icon size={24} weight="duotone" />
             </div>
             <div>
@@ -54,7 +54,7 @@ const LevelMetric = ({ label, level, icon: Icon, delay }) => (
                 <div 
                     key={i} 
                     className={`h-1.5 w-4 rounded-full transition-all duration-500 ${
-                        i < level ? 'bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.4)]' : 'bg-slate-800'
+                        i < level ? 'bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.4)]' : 'bg-slate-800'
                     }`}
                 />
             ))}
@@ -99,7 +99,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                     <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-2 shadow-xl shadow-black/50">
                                         <img src={activeClub.logo_url} className="w-full h-full object-contain" />
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500">Heimstätte // Infrastruktur</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Heimstätte // Infrastruktur</span>
                                 </motion.div>
                                 
                                 <motion.h1 
@@ -119,8 +119,8 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                 animate={{ opacity: 1, x: 0 }}
                                 className="grid sm:grid-cols-2 gap-4 min-w-[320px]"
                             >
-                                <MetricCard label="Kapazität" value={stadium.capacity} unit="Plätze" icon={Users} colorClass="text-indigo-400" />
-                                <MetricCard label="Ticketpreis" value={parseFloat(stadium.ticket_price)} unit="€" icon={Ticket} colorClass="text-emerald-400" />
+                                <MetricCard label="Kapazität" value={stadium.capacity} unit="Plätze" icon={Users} colorClass="text-amber-500" />
+                                <MetricCard label="Ticketpreis" value={parseFloat(stadium.ticket_price)} unit="€" icon={Ticket} colorClass="text-amber-400" />
                                 <div className="bg-slate-950/50 backdrop-blur-md rounded-2xl p-4 border border-slate-800/30 flex items-center justify-between">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Wartung</span>
                                     <span className="font-mono font-black text-rose-400">{stadium.maintenance_cost.toLocaleString('de-DE')} €</span>
@@ -139,7 +139,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                     <div className="space-y-8">
                         <div className="sim-card p-8 border-slate-800 shadow-2xl">
                             <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3 mb-6">
-                                <HardHat size={28} weight="duotone" className="text-cyan-400" />
+                                <HardHat size={28} weight="duotone" className="text-amber-500" />
                                 Bau-Zentrum
                             </h3>
                             
@@ -154,7 +154,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                                 onClick={() => setData('project_type', type)}
                                                 className={`px-3 py-4 rounded-xl text-left border-2 transition-all ${
                                                     data.project_type === type 
-                                                        ? 'bg-cyan-500/10 border-cyan-500/50 text-white' 
+                                                        ? 'bg-amber-500/10 border-amber-500/50 text-white' 
                                                         : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
                                                 }`}
                                             >
@@ -220,7 +220,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                             className="group hover:bg-white/[0.02] transition-colors"
                                         >
                                             <td className="px-6 py-4">
-                                                <span className="font-black text-white uppercase tracking-tighter group-hover:text-cyan-400 transition-colors">
+                                                <span className="font-black text-white uppercase tracking-tighter group-hover:text-amber-500 transition-colors">
                                                     {projectTypes[project.project_type] || project.project_type}
                                                 </span>
                                             </td>
@@ -228,7 +228,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs text-slate-500 font-bold">{project.level_from}</span>
                                                     <div className="h-px w-3 bg-slate-800" />
-                                                    <span className="text-xs text-cyan-400 font-black">{project.level_to}</span>
+                                                    <span className="text-xs text-amber-500 font-black">{project.level_to}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right font-mono font-black text-slate-300 italic ring-offset-2">
@@ -267,7 +267,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
             
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black py-2 rounded-xl border-none shadow-[0_0_30px_rgba(34,211,238,0.2)] hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] transition-all;
+                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-2 rounded-xl border-none shadow-[0_0_30px_rgba(217,177,92,0.15)] hover:brightness-110 transition-all;
                 }
             `}} />
         </AuthenticatedLayout>

@@ -16,13 +16,13 @@ const MenuGroup = ({ group, currentRoute }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
             >
-                <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-cyan-400 transition-colors">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors">
                     {group.label}
                 </span>
                 <CaretDown 
                     size={14} 
                     weight="bold"
-                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-slate-600'}`}
+                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
                 />
             </button>
             <AnimatePresence>
@@ -32,7 +32,7 @@ const MenuGroup = ({ group, currentRoute }) => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l-2 border-slate-800/30 overflow-hidden"
+                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
                     >
                         {group.items.map((item, idx) => {
                             const isActive = item.active.endsWith('.*') 
@@ -50,11 +50,11 @@ const MenuGroup = ({ group, currentRoute }) => {
                                     }`}
                                 >
                                     {isActive ? (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                                     ) : (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-slate-500 transition-colors" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-800 group-hover:bg-amber-800 transition-colors" />
                                     )}
-                                    {item.label}
+                                    {isActive ? item.label : item.label}
                                 </Link>
                             );
                         })}
@@ -109,21 +109,21 @@ export default function AdminLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans">
+        <div className="min-h-screen bg-[#0a0b0d] text-slate-100 font-sans">
             {/* Sidebar */}
             <aside className={`
                 fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-900/70 backdrop-blur-2xl border-r border-slate-800/30 transition-transform duration-300 ease-in-out lg:translate-x-0
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Branding */}
-                <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-800/30">
+                <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-800/40">
                     <Link href={route('admin.dashboard')} className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600">
-                            <span className="text-sm font-bold text-white">ACP</span>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#d9b15c] to-[#8d6e32] shadow-md shadow-amber-900/10">
+                            <span className="text-sm font-black text-black">ACP</span>
                         </div>
                         <div className="min-w-0">
-                            <p className="font-bold text-white leading-tight tracking-tight">Admin Area</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Control Panel</p>
+                            <p className="font-black text-white leading-tight tracking-[0.05em] uppercase truncate">Control Panel</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">System Admin</p>
                         </div>
                     </Link>
                 </div>
@@ -151,7 +151,7 @@ export default function AdminLayout({ header, children }) {
                     <div className="flex items-center gap-3">
                          <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
                              <img 
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0f172a&color=cbd5e1`} 
+                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                                 alt={auth.user.name}
                                 className="w-full h-full rounded-full"
                              />
@@ -176,8 +176,8 @@ export default function AdminLayout({ header, children }) {
                     <div className="px-6 py-4 flex items-center justify-between min-h-[4.5rem]">
                         {header ? header : (
                             <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80 mb-0.5">Administration</p>
-                                <h1 className="text-xl font-bold text-white tracking-tight">{activeMenuLabel}</h1>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mb-0.5">Control Panel Administration</p>
+                                <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
                             </div>
                         )}
                         

@@ -30,13 +30,13 @@ const MenuGroup = ({ group, currentRoute }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
             >
-                <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-cyan-400 transition-colors">
+                <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors">
                     {group.label}
                 </span>
                 <CaretDown 
                     size={14} 
                     weight="bold"
-                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-slate-600'}`}
+                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
                 />
             </button>
             <AnimatePresence>
@@ -46,7 +46,7 @@ const MenuGroup = ({ group, currentRoute }) => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l-2 border-slate-800/30 overflow-hidden"
+                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
                     >
                         {group.items.map((item, idx) => {
                             const isActive = item.active.endsWith('.*') 
@@ -64,9 +64,9 @@ const MenuGroup = ({ group, currentRoute }) => {
                                     }`}
                                 >
                                     {isActive ? (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                                     ) : (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-slate-500 transition-colors" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-800 group-hover:bg-amber-800 transition-colors" />
                                     )}
                                     {item.label}
                                 </Link>
@@ -174,12 +174,12 @@ export default function AuthenticatedLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans">
+        <div className="min-h-screen bg-[#0a0b0d] text-slate-100 font-sans">
             {/* Mobile Sidebar Toggle */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50">
                 <Link href={route('dashboard')} className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600">
-                        <span className="text-xs font-bold text-white">OW</span>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#d9b15c] to-[#8d6e32]">
+                        <span className="text-xs font-bold text-black">NW</span>
                     </div>
                     <span className="font-bold text-white tracking-tight">OpenWS</span>
                 </Link>
@@ -194,14 +194,14 @@ export default function AuthenticatedLayout({ header, children }) {
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Branding */}
-                <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-800/30">
-                    <Link href={route('dashboard')} className="flex items-center gap-3 group rounded-lg py-1 pr-2 -m-1 transition-colors hover:bg-slate-800/50">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600 shadow-md shadow-cyan-500/20 transition group-hover:shadow-cyan-500/30">
-                            <span className="text-sm font-bold text-white">OW</span>
+                <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-800/40">
+                    <Link href={route('dashboard')} className="flex items-center gap-3 group rounded-lg py-1 pr-2 -m-1 transition-colors hover:bg-white/5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#d9b15c] to-[#8d6e32] shadow-md shadow-amber-900/10 transition group-hover:shadow-amber-500/20">
+                            <span className="text-sm font-black text-black">NW</span>
                         </div>
                         <div className="min-w-0">
-                            <p className="font-bold text-white leading-tight tracking-tight truncate">OpenWS</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-400 transition-colors">Laravell</p>
+                            <p className="font-black text-white leading-tight tracking-[0.05em] uppercase truncate">NewGen</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-amber-500 transition-colors">Elite Suite</p>
                         </div>
                     </Link>
                 </div>
@@ -264,7 +264,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     </div>
                                                     <span className="truncate flex-1 text-left font-medium">{club.name}</span>
                                                     {activeClub?.id === club.id && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.6)]" />
                                                     )}
                                                 </button>
                                             ))}
@@ -278,7 +278,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-800/50 group">
                         <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
                              <img 
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0f172a&color=cbd5e1`} 
+                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                                 alt={auth.user.name}
                                 className="w-full h-full rounded-full"
                              />
@@ -293,7 +293,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             <Link 
                                 href={route('settings.index')} 
-                                className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg transition"
+                                className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
                                 title="Einstellungen"
                             >
                                 <Gear size={18} />
@@ -321,21 +321,21 @@ export default function AuthenticatedLayout({ header, children }) {
                         ) : (
                             <div className="flex items-center justify-between w-full">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80 mb-0.5">Aktuelle Ansicht</p>
-                                    <h1 className="text-xl font-bold text-white tracking-tight leading-none">{activeMenuLabel}</h1>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/90 mb-0.5">Scouting & Analysis</p>
+                                    <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
                                 </div>
                                 
                                 <div className="flex items-center gap-4">
-                                    <button className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-xl transition">
+                                    <button className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition">
                                         <Bell size={20} />
-                                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 border border-slate-900" />
+                                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500 border border-black" />
                                     </button>
                                 </div>
                             </div>
                         )}
                     </div>
                     {/* Progress indicator gradient line */}
-                    <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
                 </header>
 
                 <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">

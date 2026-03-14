@@ -2,26 +2,26 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-    --color-slate-950: #020617;
+    --font-sans: "Inter", "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --color-slate-950: #0a0b0d;
 }
 
 @layer base {
     :root {
-        --sim-shell-bg: #060a18;
-        --sim-shell-bg-image: radial-gradient(circle at top left, #1e293b 0%, #0f172a 35%, #020617 100%);
-        --sim-border-dark: rgba(30, 41, 59, 0.25);
-        --sim-card-bg: rgba(15, 23, 42, 0.75);
-        --sim-card-border: rgba(51, 65, 85, 0.6);
-        --sim-text-main: #f8fafc;
-        --sim-text-muted: #94a3b8;
-        --sim-accent-primary: #06b6d4;
-        --sim-accent-secondary: #6366f1;
-        --sim-accent-glow: rgba(6, 182, 212, 0.4);
-        --sim-radius-lg: 1rem;
-        --sim-radius-md: 0.75rem;
+        --sim-shell-bg: #090a0c;
+        --sim-shell-bg-image: radial-gradient(circle at top right, #1a1c20 0%, #0f1115 45%, #050608 100%);
+        --sim-border-dark: rgba(217, 177, 92, 0.12); /* Subtle Gold border */
+        --sim-card-bg: rgba(15, 17, 21, 0.85);
+        --sim-card-border: rgba(217, 177, 92, 0.2);
+        --sim-text-main: #f3f4f6;
+        --sim-text-muted: #9ca3af;
+        --sim-accent-primary: #d9b15c; /* Liquid Gold */
+        --sim-accent-secondary: #f59e0b; /* Amber */
+        --sim-accent-glow: rgba(217, 177, 92, 0.25);
+        --sim-radius-lg: 0.85rem;
+        --sim-radius-md: 0.65rem;
         --sim-radius-nav: 0.5rem;
-        --sim-transition: 150ms ease;
+        --sim-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     html {
@@ -48,10 +48,10 @@
         border-color: var(--sim-border-dark);
     }
 
-    /* Global dark scrollbar */
+    /* Professional gold scrollbar */
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
     }
 
     ::-webkit-scrollbar-track {
@@ -59,422 +59,175 @@
     }
 
     ::-webkit-scrollbar-thumb {
-        background: rgba(51, 65, 85, 0.4);
-        border-radius: 4px;
+        background: rgba(217, 177, 92, 0.15);
+        border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(71, 85, 105, 0.6);
+        background: rgba(217, 177, 92, 0.3);
     }
 
     * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(51, 65, 85, 0.4) transparent;
+        scrollbar-color: rgba(217, 177, 92, 0.15) transparent;
     }
 }
 
 @layer components {
 
-    /* Layout: Alle Trennlinien dunkel, keine weißen Ränder (Sidebar, Header, Footer) */
+    /* Layout: Precise Gold Accents */
     #app-layout aside,
-    #app-layout header,
-    #app-layout [class*="border-slate-950"],
-    #app-layout .border-t.border-slate-950,
-    #app-layout .border-b.border-slate-950,
-    #app-layout .border-r.border-slate-950,
-    #app-layout .border-l.border-slate-950 {
-        border-color: var(--sim-border-dark);
-    }
-
-    .sim-border-dark {
+    #app-layout header {
         border-color: var(--sim-border-dark);
     }
 
     .sim-shell {
-        @apply min-h-screen text-slate-100 antialiased;
+        @apply min-h-screen text-gray-100 antialiased font-sans;
         background: var(--sim-shell-bg-image);
         background-color: var(--sim-shell-bg);
     }
 
-    /* Sidebar: Scrollbar + Abstände */
+    /* Sidebar: Elite Dark Styling */
     .sim-sidebar {
         scrollbar-width: thin;
-        scrollbar-color: rgb(51 65 85) transparent;
-    }
-
-    .sim-sidebar::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .sim-sidebar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .sim-sidebar::-webkit-scrollbar-thumb {
-        background: rgb(51 65 85);
-        border-radius: 3px;
     }
 
     .sim-nav .sim-nav-item {
         border-radius: var(--sim-radius-nav);
     }
 
-    /* Glassmorphism Utilities */
+    /* Refined Glassmorphism (V2) */
     .sim-glass {
-        @apply backdrop-blur-md bg-slate-900/60;
+        @apply backdrop-blur-xl bg-black/40;
         border: 1px solid var(--sim-border-dark);
+        box-shadow: inset 0 0 20px rgba(217, 177, 92, 0.02);
     }
 
     .sim-glass-strong {
-        @apply backdrop-blur-xl bg-slate-900/80;
-        border: 1px solid var(--sim-border-dark);
+        @apply backdrop-blur-2xl bg-black/60;
+        border: 1px solid var(--sim-card-border);
     }
 
-    /* Cards */
+    /* Elite Cards - Sharper corners, gold hover */
     .sim-card {
-        @apply backdrop-blur-md bg-slate-900/60 rounded-2xl transition-all duration-300;
+        @apply backdrop-blur-xl bg-[#0f1115]/90 rounded-xl transition-all duration-300;
         border: 1px solid var(--sim-border-dark);
     }
 
     .sim-card:hover {
-        @apply border-slate-600/30;
-        box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(148, 163, 184, 0.04);
+        border-color: rgba(217, 177, 92, 0.4);
+        box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5), 0 0 15px rgba(217, 177, 92, 0.05);
     }
 
     .sim-card-soft {
-        @apply rounded-xl bg-slate-800/20 transition-colors;
-        border: 1px solid rgba(30, 41, 59, 0.3);
+        @apply rounded-lg bg-gray-900/40 transition-colors;
+        border: 1px solid rgba(217, 177, 92, 0.08);
     }
 
-    /* Text & Headings */
+    /* High-Contrast Typography */
     .sim-section-title {
-        @apply text-xs font-bold uppercase tracking-[0.15em] text-cyan-500/80 mb-3;
+        @apply text-[10px] font-black uppercase tracking-[0.25em] text-amber-500/90 mb-4;
     }
 
     .sim-heading {
-        @apply text-xl font-bold text-white tracking-tight;
+        @apply text-xl font-black text-white tracking-tight italic uppercase;
     }
 
     .sim-heading-muted {
-        @apply text-sm font-medium text-slate-400;
+        @apply text-sm font-bold text-gray-500 uppercase tracking-widest;
     }
 
-    .sim-label {
-        @apply block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5;
-    }
-
-    /* Inputs */
+    /* Inputs - Darker & Gold Focus */
     .sim-input,
     .sim-select,
     .sim-textarea {
-        @apply w-full rounded-xl border border-slate-800/40 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-700 transition-all duration-200 focus:border-cyan-500/40 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus-visible:ring-2 focus-visible:ring-cyan-500/20;
+        @apply w-full rounded-lg border border-gray-800/60 bg-black/40 px-4 py-3 text-sm text-gray-100 placeholder:text-gray-700 transition-all focus:border-amber-500/50 focus:bg-black/80 focus:outline-none focus:ring-1 focus:ring-amber-500/20 shadow-inner;
     }
 
-    /* Buttons */
+    /* Buttons - Luxury Gold Gradient */
     .sim-btn-primary {
-        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:brightness-110 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+        @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] px-6 py-3 text-sm font-black text-black shadow-lg shadow-amber-900/20 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+        text-shadow: 0 0.5px 0 rgba(255,255,255,0.2);
     }
 
     .sim-action-btn {
-        @apply flex items-center justify-center p-3 text-xs font-black uppercase tracking-widest rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-600 transition-all text-center;
+        @apply flex items-center justify-center p-3 text-[10px] font-black uppercase tracking-widest rounded-lg bg-gray-900/60 border border-gray-800/50 text-gray-400 hover:text-white hover:bg-gray-800 hover:border-amber-500/30 transition-all;
     }
 
     .sim-action-btn.primary {
-        @apply border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-500/50;
-    }
-
-    .sim-action-btn.highlight {
-        @apply border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50;
+        @apply border-amber-600/30 text-amber-500 hover:bg-amber-600/10 hover:border-amber-500/50;
     }
 
     .sim-btn-muted {
-        @apply inline-flex items-center justify-center rounded-lg border border-slate-700/60 bg-slate-800/40 px-5 py-2.5 text-sm font-semibold text-slate-300 transition-all duration-200 hover:bg-slate-800 hover:text-white hover:border-slate-600 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+        @apply inline-flex items-center justify-center rounded-lg border border-gray-800 bg-gray-900/60 px-6 py-3 text-sm font-bold text-gray-300 transition-all hover:bg-gray-800 hover:text-white hover:border-gray-600 active:scale-[0.98];
     }
 
     .sim-btn-danger {
-        @apply inline-flex items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-sm font-semibold text-rose-400 transition-all duration-200 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+        @apply inline-flex items-center justify-center rounded-lg border border-red-900/40 bg-red-950/20 px-6 py-3 text-sm font-bold text-red-500 transition-all hover:bg-red-900/30 hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/20;
     }
 
-    /* Navigation */
+    /* Navigation - Gold Indication */
     .sim-nav-item {
-        @apply flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800/60 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:ring-inset;
+        @apply flex items-center justify-between rounded-md px-4 py-3 text-sm font-bold text-gray-500 transition-all hover:bg-white/5 hover:text-white;
     }
 
     .sim-nav-item-active {
-        @apply bg-slate-800/80 text-cyan-400 font-semibold shadow-inner shadow-cyan-500/5 border-l-2 border-cyan-500;
+        @apply bg-amber-500/5 text-amber-500 font-black border-r-2 border-amber-500;
+        box-shadow: inset -10px 0 20px -10px rgba(217, 177, 92, 0.1);
     }
 
     /* Elements */
     .sim-pill {
-        @apply inline-flex items-center rounded-full border border-slate-700/50 bg-slate-800/40 px-2.5 py-0.5 text-xs font-semibold text-slate-300;
-    }
-
-    .sim-switch {
-        @apply inline-flex items-center gap-3 cursor-pointer select-none;
+        @apply inline-flex items-center rounded bg-gray-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-gray-500 border border-gray-800;
     }
 
     .sim-switch-track {
-        @apply relative w-11 h-6 bg-slate-800 rounded-full border border-slate-600 transition-colors duration-200;
-    }
-
-    .sim-switch-track::after {
-        content: "";
-        @apply absolute top-1 left-1 bg-slate-400 w-3.5 h-3.5 rounded-full transition-transform duration-200 shadow-sm;
+        @apply relative w-11 h-6 bg-gray-900 rounded-full border border-gray-800 transition-colors duration-200;
     }
 
     .sim-switch input:checked+.sim-switch-track {
-        @apply bg-cyan-900/50 border-cyan-500/50;
+        @apply bg-amber-900/30 border-amber-600/50;
     }
 
     .sim-switch input:checked+.sim-switch-track::after {
-        @apply translate-x-5 bg-cyan-400 shadow-lg shadow-cyan-400/40;
+        @apply translate-x-5 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)];
     }
 
-    /* Tables */
+    /* Tables - Luxury Dark */
     .sim-table th {
-        @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 border-b;
-        border-bottom-color: var(--sim-border-dark);
+        @apply px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 border-b border-gray-800/60 transition-colors;
     }
 
     .sim-table td {
-        @apply px-4 py-3 text-sm text-slate-300 border-b;
-        border-bottom-color: var(--sim-border-dark);
+        @apply px-5 py-4 text-sm font-medium text-gray-300 border-b border-gray-900/40 transition-colors;
     }
 
     .sim-table tr:hover td {
-        @apply bg-slate-800/30;
+        @apply bg-white/[0.02];
     }
 
-    .sim-table tbody tr:nth-child(even) td {
-        background-color: rgba(15, 23, 42, 0.2);
-    }
-
-    /* Pitch & Lineup Editor Styles */
+    /* Pitch - Pro Aesthetic */
     .sim-pitch {
         @apply relative overflow-hidden rounded-xl shadow-2xl;
-        border: 2px solid var(--sim-border-dark);
+        border: 1px solid rgba(217, 177, 92, 0.2);
         background:
-            /* Subtle vignette for depth */
-            radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.3) 100%),
-            /* ── Grass stripe pattern ── */
+            radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.6) 100%),
             repeating-linear-gradient(to bottom,
-                rgba(34, 120, 50, 0.95) 0,
-                rgba(34, 120, 50, 0.95) 10%,
-                rgba(28, 105, 42, 0.95) 10%,
-                rgba(28, 105, 42, 0.95) 20%);
+                #143a1c d0,
+                #143a1c 8%,
+                #113117 8%,
+                #113117 16%);
         aspect-ratio: 3/4;
     }
 
-    @media (min-width: 1024px) {
-        .sim-pitch {
-            aspect-ratio: 4/3;
-        }
-    }
-
-    .sim-pitch-canvas {
-        @apply absolute inset-0 w-full h-full;
-        z-index: 2;
-    }
-
-    .sim-pitch-slot {
-        @apply absolute flex flex-col items-center justify-center p-1 -translate-x-1/2 -translate-y-1/2 w-24 transition-all duration-300 z-10;
-    }
-
-    .sim-bench-slot {
-        @apply relative flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-slate-700/50 bg-slate-900/30 min-h-[100px] transition-all duration-200;
-    }
-
-    /* Slot Visualization */
-    .sim-slot-ring {
-        @apply relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500;
-        background: radial-gradient(circle, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .sim-slot-ring::before {
-        content: "";
-        @apply absolute inset-0 rounded-full border border-slate-700/40 transition-all duration-500;
-    }
-
-    /* States for the ring based on container classes */
-    .sim-slot-state-primary .sim-slot-ring::before {
-        @apply border-emerald-500/40;
-        box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.1);
-    }
-
-    .sim-slot-state-secondary .sim-slot-ring::before {
-        @apply border-amber-500/40;
-    }
-
-    .sim-slot-state-wrong .sim-slot-ring::before {
-        @apply border-rose-500/40;
-    }
-
-    .sim-pitch-slot:hover .sim-slot-ring {
-        @apply scale-110;
-        background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-    }
-
-    .sim-pitch-slot:hover .sim-slot-ring::before {
-        @apply border-cyan-500/40;
-    }
-
-    .sim-slot-player {
-        @apply relative w-full flex flex-col items-center cursor-grab active:cursor-grabbing z-20;
-    }
-
-    .sim-slot-jersey {
-        @apply w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-xs font-bold text-white shadow-lg transition-all;
-    }
-
-    .sim-slot-info {
-        @apply mt-1 text-center bg-slate-900/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-slate-200 shadow-sm border border-slate-700/50 truncate max-w-full;
-    }
-
-    /* Dragging States */
-    .sim-slot-drop-hover {
-        @apply border-cyan-500/50 bg-cyan-500/10 scale-105;
-    }
-
-    .sim-player-card-dragging {
-        @apply opacity-50 scale-95;
-    }
-
-    /* Match Fidelity */
-    .sim-slot-state-primary .sim-slot-jersey {
-        @apply border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-[0_0_10px_#10b98166];
-    }
-
-    .sim-slot-state-secondary .sim-slot-jersey {
-        @apply border-amber-500 bg-amber-500/20 text-amber-300;
-    }
-
-    .sim-slot-state-wrong .sim-slot-jersey {
-        @apply border-rose-500 bg-rose-500/20 text-rose-300;
-    }
-
-    .sim-pitch-slot-label {
-        @apply absolute -top-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider pointer-events-none;
-    }
-
-    /* Player Card in Pool */
-    .sim-player-card {
-        @apply cursor-grab active:cursor-grabbing hover:bg-slate-700/40 hover:border-slate-600/60;
-    }
-
-    .sim-player-card-active {
-        @apply opacity-50 bg-slate-900/20 border-slate-800/50 grayscale-[0.5];
-    }
-
-    /* Avatars */
-    .sim-avatar {
-        @apply inline-block h-8 w-8 rounded-full object-cover ring-2 ring-slate-800 bg-slate-800;
-    }
-
-    .sim-avatar-xs {
-        @apply h-6 w-6 ring-1 text-xs;
-    }
-
-    .sim-avatar-sm {
-        @apply h-8 w-8 ring-1 text-xs;
-    }
-
-    .sim-avatar-md {
-        @apply h-10 w-10 md:h-12 md:w-12 text-sm;
-    }
-
-    .sim-avatar-lg {
-        @apply h-10 w-10 md:h-12 md:w-12 ring-2 bg-slate-900 ring-slate-700/50 p-1 shadow-lg;
-    }
-
-    .sim-avatar-xl {
-        @apply h-14 w-14 md:h-16 md:w-16 ring-4 bg-slate-900 ring-slate-700/50 p-2 shadow-lg;
-    }
-
-    @keyframes flash {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .animate-flash {
-        animation: flash 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* Match Center – Scoreboard */
+    /* Scoreboard - High Gloss */
     .sim-score-glow {
-        text-shadow: 0 0 40px rgba(6, 182, 212, 0.3), 0 0 80px rgba(99, 102, 241, 0.15);
+        text-shadow: 0 0 30px rgba(217, 177, 92, 0.4);
     }
 
     .sim-live-dot {
-        @apply w-2 h-2 rounded-full bg-green-400;
-        box-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+        @apply w-2 h-2 rounded-full bg-amber-500;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
         animation: flash 1.5s ease-in-out infinite;
-    }
-
-    /* Match Center – Tabs */
-    .sim-tab {
-        @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer;
-    }
-
-    .sim-tab-active {
-        @apply bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 text-cyan-300;
-        box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.3);
-    }
-
-    .sim-tab-inactive {
-        @apply text-slate-500 hover:text-slate-200 hover:bg-slate-800/60;
-    }
-
-    /* Match Center – Ticker fade-in */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(12px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in-up {
-        animation: fadeInUp 0.4s ease-out both;
-    }
-
-    /* Match Center – Tab content transition */
-    .tab-content {
-        animation: fadeInUp 0.25s ease-out;
-    }
-
-    /* Match Center – Timeline */
-    .sim-timeline-bar {
-        @apply relative h-10 rounded-lg flex items-center px-4;
-        background: linear-gradient(90deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(99, 102, 241, 0.08) 100%);
-        border: 1px solid rgba(51, 65, 85, 0.3);
-    }
-
-    /* Match Center – Goal card glow animation */
-    @keyframes goalGlow {
-
-        0%,
-        100% {
-            box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
-        }
-
-        50% {
-            box-shadow: 0 0 20px 4px rgba(6, 182, 212, 0.15);
-        }
-    }
-
-    .sim-goal-card {
-        animation: goalGlow 3s ease-in-out infinite;
     }
 }

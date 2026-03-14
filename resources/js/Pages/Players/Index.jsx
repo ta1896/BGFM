@@ -23,12 +23,12 @@ const PlayerListItem = ({ player }) => {
     return (
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }}
-            className="sim-card-soft p-4 bg-slate-900/40 border-slate-800/50 hover:border-cyan-500/30 transition-all group relative overflow-hidden"
+            className="sim-card-soft p-4 bg-slate-900/40 border-slate-800/50 hover:border-amber-500/30 transition-all group relative overflow-hidden"
         >
             <div className="flex items-center gap-4 relative z-10">
                 <div className="relative shrink-0">
                     {player.photo_url ? (
-                        <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-slate-800 ring-4 ring-cyan-500/5">
+                        <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-slate-800 ring-4 ring-amber-500/5">
                             <img src={player.photo_url} className="w-full h-full object-cover" alt={player.full_name} />
                         </div>
                     ) : (
@@ -38,18 +38,18 @@ const PlayerListItem = ({ player }) => {
                             </span>
                         </div>
                     )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-black text-cyan-400 shadow-xl">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-black text-amber-500 shadow-xl">
                         {player.overall}
                     </div>
                 </div>
 
                 <div className="flex-1 min-w-0">
                     <Link href={route('players.show', player.id)} className="block">
-                        <h4 className="font-black text-white group-hover:text-cyan-400 transition-colors uppercase tracking-tight truncate leading-none mb-1">
+                        <h4 className="font-black text-white group-hover:text-amber-500 transition-colors uppercase tracking-tight truncate leading-none mb-1">
                             {player.last_name}
                         </h4>
                         <div className="flex items-center gap-2">
-                             <span className="text-[10px] font-black text-cyan-500/80 uppercase tracking-widest">{player.display_position}</span>
+                             <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{player.display_position}</span>
                              <span className="text-[10px] text-slate-500">•</span>
                              <span className="text-[10px] text-slate-400 font-bold">{player.age} JAHRE</span>
                         </div>
@@ -103,8 +103,8 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             animate={{ opacity: 1, x: 0 }}
                             className="flex items-center gap-2 mb-2"
                         >
-                            <span className="h-px w-8 bg-cyan-500" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500">Squad Management</span>
+                            <span className="h-px w-8 bg-amber-500" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Squad Management</span>
                         </motion.div>
                         <h1 className="text-6xl font-black text-white tracking-tighter uppercase italic leading-none">
                             Kader <span className="text-slate-600">&</span> Analyse
@@ -113,7 +113,7 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
 
                     <div className="flex items-center gap-4">
                         <div className="relative group">
-                            <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                            <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-amber-500 transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder="SPIELER SUCHEN..."
@@ -145,10 +145,10 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="sim-card p-6 bg-gradient-to-br from-[#0c1222] to-slate-900/50 border-cyan-500/20"
+                        className="sim-card p-6 bg-gradient-to-br from-[#0c1222] to-slate-900/50 border-amber-500/20"
                     >
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                                 <IdentificationBadge size={24} weight="duotone" />
                             </div>
                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kadergröße</span>
@@ -163,10 +163,10 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="sim-card p-6 bg-gradient-to-br from-[#0c1222] to-slate-900/50 border-indigo-500/20"
+                        className="sim-card p-6 bg-gradient-to-br from-[#0c1222] to-slate-900/50 border-amber-500/10"
                     >
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+                            <div className="p-2 rounded-xl bg-amber-500/5 text-amber-600">
                                 <ChartLineUp size={24} weight="duotone" />
                             </div>
                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Ø Stärke / Alter</span>
@@ -234,7 +234,7 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             <section key={group} className="space-y-6">
                                 <div className="flex items-center justify-between pb-4 border-b border-white/5">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-2 h-8 bg-cyan-500 rounded-full" />
+                                        <div className="w-2 h-8 bg-amber-500 rounded-full" />
                                         <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">
                                             {group} <span className="text-slate-600 ml-2">[{filteredPlayers.length}]</span>
                                         </h2>

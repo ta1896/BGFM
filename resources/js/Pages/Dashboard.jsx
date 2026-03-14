@@ -8,7 +8,7 @@ import {
     Smiley, SmileySad
 } from '@phosphor-icons/react';
 
-const StatCard = ({ label, value, subValue, icon: Icon, color = 'cyan', delay = 0 }) => (
+const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber', delay = 0 }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -44,16 +44,16 @@ const TimelineDay = ({ day, delay }) => {
             transition={{ delay }}
             className={`
                 relative flex flex-col justify-between rounded-2xl border p-4 transition-all hover:-translate-y-1 hover:shadow-2xl
-                ${isToday ? 'border-cyan-500/40 bg-cyan-500/5 shadow-lg shadow-cyan-500/10' : 'border-slate-800/50 bg-slate-900/30'}
-                ${hasMatch ? 'hover:border-indigo-500/40' : 'hover:border-cyan-400/40'}
+                ${isToday ? 'border-amber-500/40 bg-amber-500/5 shadow-lg shadow-amber-500/10' : 'border-slate-800/50 bg-slate-900/30'}
+                ${hasMatch ? 'hover:border-amber-600/40' : 'hover:border-amber-400/40'}
             `}
         >
             {isToday && (
-                <div className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)] z-10" />
+                <div className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-amber-500 shadow-[0_0_12px_rgba(217,177,92,0.8)] z-10" />
             )}
             
             <div>
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${isToday ? 'text-cyan-400' : 'text-slate-500'}`}>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${isToday ? 'text-amber-500' : 'text-slate-500'}`}>
                     {day.label}
                 </p>
                 <p className="mt-1 text-xl font-bold text-white">{day.date}</p>
@@ -61,15 +61,15 @@ const TimelineDay = ({ day, delay }) => {
 
             <div className="mt-6 flex flex-col gap-2">
                 {hasMatch && (
-                    <div className="flex items-center gap-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5">
-                        <Calendar size={14} weight="fill" className="text-indigo-400" />
-                        <span className="text-[10px] font-bold uppercase text-indigo-300">{day.match_count} Match</span>
+                    <div className="flex items-center gap-2 rounded-lg bg-amber-600/10 border border-amber-600/20 px-2.5 py-1.5">
+                        <Calendar size={14} weight="fill" className="text-amber-600" />
+                        <span className="text-[10px] font-bold uppercase text-amber-600">{day.match_count} Match</span>
                     </div>
                 )}
                 {hasTraining && (
-                    <div className="flex items-center gap-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1.5">
-                        <ChartBar size={14} weight="fill" className="text-cyan-400" />
-                        <span className="text-[10px] font-bold uppercase text-cyan-300">{day.training_count} Session</span>
+                    <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5">
+                        <ChartBar size={14} weight="fill" className="text-amber-500" />
+                        <span className="text-[10px] font-bold uppercase text-amber-500">{day.training_count} Session</span>
                     </div>
                 )}
                 {!hasMatch && !hasTraining && (
@@ -99,14 +99,14 @@ export default function Dashboard(props) {
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-slate-900/40 p-12 rounded-3xl border border-slate-800"
                     >
-                        <Trophy size={64} weight="duotone" className="mx-auto text-cyan-400 mb-6" />
+                        <Trophy size={64} weight="duotone" className="mx-auto text-amber-500 mb-6" />
                         <h1 className="text-4xl font-bold text-white mb-4">Start Your Career</h1>
                         <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
                             You don't have an active club yet. Take over a team today and lead them to glory.
                         </p>
                         <Link 
                             href={route('clubs.free')}
-                            className="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-indigo-600 px-8 py-4 rounded-xl font-bold text-white shadow-xl shadow-cyan-500/20 hover:scale-105 transition-all"
+                            className="inline-flex items-center gap-3 bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] px-8 py-4 rounded-xl font-bold text-black shadow-xl shadow-amber-900/40 hover:scale-105 transition-all uppercase tracking-widest text-sm"
                         >
                             View Available Clubs
                             <ArrowRight size={20} weight="bold" />
@@ -139,7 +139,7 @@ export default function Dashboard(props) {
                         value={clubRank ? `#${clubRank}` : 'N/A'} 
                         subValue={`${clubPoints || 0} Points`} 
                         icon={Trophy} 
-                        color="fuchsia"
+                        color="amber"
                         delay={0.2}
                     />
                     <StatCard 
@@ -147,7 +147,7 @@ export default function Dashboard(props) {
                         value={todayMatchesCount} 
                         subValue="Total" 
                         icon={Calendar} 
-                        color="cyan"
+                        color="amber"
                         delay={0.3}
                     />
                     <StatCard 
@@ -170,12 +170,12 @@ export default function Dashboard(props) {
                         <section>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Weekly Overview</h3>
-                                <div className="flex gap-4">
-                                     <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                        <span className="w-2 h-2 rounded-full bg-indigo-500" /> Match
+                                 <div className="flex gap-4">
+                                     <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                                        <span className="w-2 h-2 rounded-full bg-amber-600" /> Match
                                      </span>
-                                     <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                        <span className="w-2 h-2 rounded-full bg-cyan-400" /> Training
+                                     <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400" /> Training
                                      </span>
                                  </div>
                             </div>
@@ -193,37 +193,36 @@ export default function Dashboard(props) {
                             transition={{ delay: 0.5 }}
                             className="bg-slate-900/40 rounded-3xl border border-slate-800/50 p-8 shadow-2xl relative overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
                             
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-8">Next Fixture</h3>
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-500 mb-8">Next Fixture</h3>
                             
                             {nextMatch ? (
-                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-12 relative z-10">
-                                    <div className="text-center group">
-                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-indigo-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(99,102,241,0.4)]">
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-12 relative z-10">                                     <div className="text-center group">
+                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-amber-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.home_club.logo_url} alt={nextMatch.home_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-white mb-1">{nextMatch.home_club.name}</p>
-                                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Host</span>
+                                         <p className="text-xl font-bold text-white mb-1 uppercase tracking-tight italic">{nextMatch.home_club.name}</p>
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Host</span>
                                     </div>
 
                                     <div className="text-center flex flex-col items-center gap-4">
                                          <div className="px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700">
-                                             <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">{nextMatchTypeLabel}</span>
+                                             <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em]">{nextMatchTypeLabel}</span>
                                          </div>
-                                         <span className="text-5xl font-black text-slate-800/50">VS</span>
+                                         <span className="text-5xl font-black text-slate-800/50 italic italic italic italic">VS</span>
                                          <div className="text-center">
                                              <p className="text-sm font-bold text-white mb-1">{nextMatch.kickoff_at_formatted}</p>
                                              <p className="text-[10px] font-bold text-slate-500 uppercase">{nextMatch.stadium_name || 'Neutral Venue'}</p>
                                          </div>
                                     </div>
 
-                                    <div className="text-center group">
-                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-rose-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(244,63,94,0.4)]">
+                                     <div className="text-center group">
+                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-amber-600/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.away_club.logo_url} alt={nextMatch.away_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-white mb-1">{nextMatch.away_club.name}</p>
-                                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Guest</span>
+                                         <p className="text-xl font-bold text-white mb-1 uppercase tracking-tight italic">{nextMatch.away_club.name}</p>
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Guest</span>
                                     </div>
                                 </div>
                             ) : (
@@ -247,7 +246,7 @@ export default function Dashboard(props) {
                                     
                                     <Link 
                                         href={route('matches.show', nextMatch?.id)} 
-                                        className="sim-btn-primary px-8 py-3 shadow-xl shadow-cyan-500/20 w-full md:w-auto text-center"
+                                        className="sim-btn-primary px-10 py-3 shadow-xl shadow-amber-900/10 w-full md:w-auto text-center"
                                     >
                                         Match Center
                                     </Link>
@@ -264,10 +263,10 @@ export default function Dashboard(props) {
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Squad Strength</h3>
                             <div className="space-y-6">
                                 {[
-                                    { label: 'Attack', value: metrics?.attack || 0, color: 'indigo' },
-                                    { label: 'Midfield', value: metrics?.midfield || 0, color: 'cyan' },
-                                    { label: 'Defense', value: metrics?.defense || 0, color: 'fuchsia' },
-                                    { label: 'Chemistry', value: metrics?.chemistry || 0, color: 'emerald' },
+                                    { label: 'Attack', value: metrics?.attack || 0, color: 'amber' },
+                                    { label: 'Midfield', value: metrics?.midfield || 0, color: 'amber' },
+                                    { label: 'Defense', value: metrics?.defense || 0, color: 'amber' },
+                                    { label: 'Chemistry', value: metrics?.chemistry || 0, color: 'amber' },
                                 ].map((item, id) => (
                                     <div key={id}>
                                         <div className="flex justify-between items-end mb-2">
@@ -318,13 +317,13 @@ export default function Dashboard(props) {
                                     {assistantTasks.map((task, idx) => (
                                         <div key={idx} className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50">
                                             <div className="flex items-start gap-3">
-                                                <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.kind === 'warning' ? 'bg-rose-500' : 'bg-cyan-400'}`} />
+                                                <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.kind === 'warning' ? 'bg-rose-500' : 'bg-amber-500'}`} />
                                                 <div>
-                                                    <p className="text-sm font-bold text-white mb-1">{task.label}</p>
+                                                    <p className="text-sm font-bold text-white mb-1 text-white">{task.label}</p>
                                                     <p className="text-xs text-slate-400 leading-relaxed mb-3">{task.description}</p>
                                                     <Link 
                                                         href={task.url}
-                                                        className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1"
+                                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 hover:text-amber-400 transition-colors inline-flex items-center gap-1"
                                                     >
                                                         {task.cta} <ArrowRight size={12} weight="bold" />
                                                     </Link>
@@ -340,10 +339,8 @@ export default function Dashboard(props) {
             </div>
             
             <style dangerouslySetInnerHTML={{ __html: `
-                .bg-emerald-rgb { --emerald-rgb: 16, 185, 129; }
-                .bg-indigo-rgb { --indigo-rgb: 99, 102, 241; }
-                .bg-cyan-rgb { --cyan-rgb: 6, 182, 212; }
-                .bg-fuchsia-rgb { --fuchsia-rgb: 217, 70, 239; }
+                .bg-amber-rgb { --amber-rgb: 217, 177, 92; }
+                .bg-gold-rgb { --gold-rgb: 217, 177, 92; }
             `}} />
         </AuthenticatedLayout>
     );
