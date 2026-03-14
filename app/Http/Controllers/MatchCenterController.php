@@ -11,7 +11,6 @@ use App\Services\PlayerPositionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class MatchCenterController extends Controller
 {
@@ -19,24 +18,7 @@ class MatchCenterController extends Controller
     {
         $this->ensureReadable($request, $match);
 
-        $match->load([
-            'homeClub.stadium',
-            'awayClub',
-            'events.player',
-            'events.assister',
-            'events.club',
-            'playerStats.player',
-            'playerStats.club',
-            'liveTeamStates.club',
-            'livePlayerStates.player',
-            'liveActions.club',
-            'liveActions.player',
-            'liveActions.opponentPlayer',
-            'liveMinuteSnapshots',
-            'plannedSubstitutions.playerOut',
-            'plannedSubstitutions.playerIn',
-            'competitionSeason.competition',
-        ]);
+        $this->loadMatchStateRelations($match, true);
 
         $getComparisonMetrics = function(\App\Models\Club $club) {
             $players = $club->players()->where('status', 'active')->get(['market_value', 'age', 'overall']);
@@ -221,23 +203,7 @@ class MatchCenterController extends Controller
     {
         $this->ensureReadable($request, $match);
 
-        $match->load([
-            'homeClub',
-            'awayClub',
-            'events.player',
-            'events.assister',
-            'events.club',
-            'playerStats.player',
-            'playerStats.club',
-            'liveTeamStates.club',
-            'livePlayerStates.player',
-            'liveActions.club',
-            'liveActions.player',
-            'liveActions.opponentPlayer',
-            'liveMinuteSnapshots',
-            'plannedSubstitutions.playerOut',
-            'plannedSubstitutions.playerIn',
-        ]);
+        $this->loadMatchStateRelations($match, false);
 
         return response()->json($this->statePayload($request, $match));
     }
@@ -277,6 +243,38 @@ class MatchCenterController extends Controller
             ->whereIn('id', [$match->home_club_id, $match->away_club_id])
             ->pluck('id')
             ->all();
+    }
+
+    private function loadMatchStateRelations(GameMatch $match, bool $withCompetition): void
+    {
+        $relations = [
+            'homeClub:id,name,short_name,logo_path',
+            'homeClub.stadium:id,name',
+            'awayClub:id,name,short_name,logo_path',
+            'events:id,match_id,minute,second,event_type,club_id,player_id,assister_id,narrative,metadata',
+            'events.player:id,first_name,last_name,photo_path',
+            'events.assister:id,first_name,last_name',
+            'events.club:id,name,short_name,logo_path',
+            'playerStats:id,match_id,player_id,club_id,rating,goals,assists,minutes_played,shots',
+            'playerStats.player:id,first_name,last_name',
+            'liveTeamStates:id,match_id,club_id,tactical_style,phase,possession_seconds,actions_count,dangerous_attacks,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,corners_won,shots,shots_on_target,expected_goals,yellow_cards,red_cards,substitutions_used,tactical_changes_count,last_tactical_change_minute,last_substitution_minute',
+            'livePlayerStates:id,match_id,club_id,player_id,slot,is_on_pitch,is_sent_off,is_injured,fit_factor,minutes_played,ball_contacts,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,fouls_suffered,shots,shots_on_target,goals,assists,yellow_cards,red_cards,saves',
+            'livePlayerStates.player:id,first_name,last_name,photo_path',
+            'liveActions:id,match_id,club_id,player_id,opponent_player_id,minute,second,sequence,action_type,outcome,narrative,x_coord,y_coord,metadata',
+            'liveActions.club:id,name,short_name,logo_path',
+            'liveActions.player:id,first_name,last_name',
+            'liveActions.opponentPlayer:id,first_name,last_name',
+            'liveMinuteSnapshots:id,match_id,minute,home_score,away_score,home_phase,away_phase,home_tactical_style,away_tactical_style,pending_plans,executed_plans,skipped_plans,invalid_plans',
+            'plannedSubstitutions:id,match_id,club_id,player_out_id,player_in_id,planned_minute,score_condition,target_slot,status,executed_minute,metadata',
+            'plannedSubstitutions.playerOut:id,first_name,last_name',
+            'plannedSubstitutions.playerIn:id,first_name,last_name',
+        ];
+
+        if ($withCompetition) {
+            $relations[] = 'competitionSeason.competition:id,name';
+        }
+
+        $match->load($relations);
     }
 
     private function statePayload(Request $request, GameMatch $match): array
@@ -475,7 +473,7 @@ class MatchCenterController extends Controller
         foreach ($clubIds as $clubId) {
             /** @var Lineup|null $lineup */
             $lineup = Lineup::query()
-                ->with('players')
+                ->with(['players:id,first_name,last_name,position,position_main,position_second,position_third,overall,photo_path'])
                 ->where('match_id', $match->id)
                 ->where('club_id', $clubId)
                 ->first();
@@ -494,7 +492,10 @@ class MatchCenterController extends Controller
 
                 $formation = '4-4-2';
                 $allDraftPlayerIds = array_merge(array_values($selection['starters'] ?? []), array_values($selection['bench'] ?? []));
-                $allDraftPlayers = \App\Models\Player::whereIn('id', $allDraftPlayerIds)->get()->keyBy('id');
+                $allDraftPlayers = \App\Models\Player::query()
+                    ->whereIn('id', $allDraftPlayerIds)
+                    ->get(['id', 'first_name', 'last_name', 'position', 'position_main', 'position_second', 'position_third', 'overall', 'photo_path'])
+                    ->keyBy('id');
 
                 foreach ($selection['starters'] ?? [] as $slot => $playerId) {
                     $player = $allDraftPlayers->get($playerId);
@@ -594,65 +595,5 @@ class MatchCenterController extends Controller
         }
 
         return $lineups;
-    }
-
-    private function getTeamStates(GameMatch $match): array
-    {
-        $states = $match->liveTeamStates;
-
-        if ($states->isNotEmpty()) {
-            return $states->mapWithKeys(function ($state) {
-                return [
-                    (string) $state->club_id => [
-                        'club_id' => (int) $state->club_id,
-                        'tactical_style' => (string) $state->tactical_style,
-                        'phase' => (string) ($state->phase ?? ''),
-                        'possession_seconds' => (int) $state->possession_seconds,
-                        'actions_count' => (int) $state->actions_count,
-                        'dangerous_attacks' => (int) $state->dangerous_attacks,
-                        'pass_attempts' => (int) $state->pass_attempts,
-                        'pass_completions' => (int) $state->pass_completions,
-                        'tackle_attempts' => (int) $state->tackle_attempts,
-                        'tackle_won' => (int) $state->tackle_won,
-                        'fouls_committed' => (int) $state->fouls_committed,
-                        'corners_won' => (int) $state->corners_won,
-                        'shots' => (int) $state->shots,
-                        'shots_on_target' => (int) $state->shots_on_target,
-                        'expected_goals' => (float) $state->expected_goals,
-                        'yellow_cards' => (int) $state->yellow_cards,
-                        'red_cards' => (int) $state->red_cards,
-                        'substitutions_used' => (int) $state->substitutions_used,
-                        'tactical_changes_count' => (int) $state->tactical_changes_count,
-                        'last_tactical_change_minute' => $state->last_tactical_change_minute !== null ? (int) $state->last_tactical_change_minute : null,
-                        'last_substitution_minute' => $state->last_substitution_minute !== null ? (int) $state->last_substitution_minute : null,
-                    ],
-                ];
-            })->all();
-        }
-
-        // Fallback: Aggregate from Final Stats
-        return [
-            (string) $match->home_club_id => $this->aggregateTeamStats($match, $match->home_club_id),
-            (string) $match->away_club_id => $this->aggregateTeamStats($match, $match->away_club_id),
-        ];
-    }
-
-    private function aggregateTeamStats(GameMatch $match, int $clubId): array
-    {
-        $stats = $match->playerStats->where('club_id', $clubId);
-
-        return [
-            'club_id' => $clubId,
-            'possession_seconds' => 2700, // Fallback 50%
-            'shots' => (int) $stats->sum('shots'),
-            'pass_completions' => (int) $stats->sum('passes_completed'),
-            'pass_attempts' => (int) ($stats->sum('passes_completed') + $stats->sum('passes_failed')),
-            'fouls_committed' => 0, // Not in player stats
-            'yellow_cards' => (int) $stats->sum('yellow_cards'),
-            'red_cards' => (int) $stats->sum('red_cards'),
-            'corners_won' => 0,
-            'expected_goals' => 0.0,
-            // ... add others as 0
-        ];
     }
 }

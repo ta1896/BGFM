@@ -7,7 +7,6 @@ use App\Models\Player;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
 
 class PlayerController extends Controller
 {
@@ -130,24 +129,26 @@ class PlayerController extends Controller
     public function show(Request $request, Player $player): \Inertia\Response
     {
         $player->load([
-            'club.stadium',
-            'club.user',
-            'seasonCompetitionStatistics.season',
+            'club:id,user_id,season_id,name,logo_path',
+            'seasonCompetitionStatistics.season:id,name,start_date',
         ]);
 
-        $player->append('photo_url');
         
         // Add formatted value for easy display
         $player->market_value_formatted = number_format($player->market_value, 0, ',', '.') . ' €';
 
         $currentSeasonStats = $player->seasonCompetitionStatistics
             ->filter(fn($stat) => $stat->season_id === ($player->club->season_id ?? 0))
-            ->values();
+            ->values()
+            ->map(fn($stat) => $this->mapSeasonStat($stat))
+            ->all();
 
         // Use season stats for career history, sorted by season desc
         $careerStats = $player->seasonCompetitionStatistics
             ->sortByDesc(fn($stat) => $stat->season?->start_date ?? '')
-            ->values();
+            ->values()
+            ->map(fn($stat) => $this->mapSeasonStat($stat))
+            ->all();
 
         // Fetch recent matches
         $recentMatches = \App\Models\MatchPlayerStat::query()
@@ -160,15 +161,68 @@ class PlayerController extends Controller
             )
             ->take(10)
             ->get()
-            ->map(function($stat) {
-                if ($stat->match) {
-                    $stat->match->kickoff_date_formatted = $stat->match->kickoff_at?->format('d.m.y');
-                }
-                return $stat;
-            });
+            ->map(function ($stat) {
+                return [
+                    'minutes_played' => (int) $stat->minutes_played,
+                    'goals' => (int) $stat->goals,
+                    'assists' => (int) $stat->assists,
+                    'rating' => (float) $stat->rating,
+                    'match' => $stat->match ? [
+                        'home_club_id' => (int) $stat->match->home_club_id,
+                        'away_club_id' => (int) $stat->match->away_club_id,
+                        'home_score' => $stat->match->home_score,
+                        'away_score' => $stat->match->away_score,
+                        'kickoff_date_formatted' => $stat->match->kickoff_at?->format('d.m.y'),
+                        'competition_season' => [
+                            'competition' => [
+                                'code' => $stat->match->competitionSeason?->competition?->code,
+                            ],
+                        ],
+                        'home_club' => $stat->match->homeClub ? [
+                            'short_name' => $stat->match->homeClub->short_name,
+                            'logo_url' => $stat->match->homeClub->logo_url,
+                        ] : null,
+                        'away_club' => $stat->match->awayClub ? [
+                            'short_name' => $stat->match->awayClub->short_name,
+                            'logo_url' => $stat->match->awayClub->logo_url,
+                        ] : null,
+                    ] : null,
+                ];
+            })
+            ->values()
+            ->all();
 
         return \Inertia\Inertia::render('Players/Show', [
-            'player' => $player,
+            'player' => [
+                'id' => $player->id,
+                'club_id' => $player->club_id,
+                'first_name' => $player->first_name,
+                'last_name' => $player->last_name,
+                'full_name' => $player->full_name,
+                'photo_url' => $player->photo_url,
+                'position' => $player->position,
+                'position_second' => $player->position_second,
+                'position_third' => $player->position_third,
+                'age' => $player->age,
+                'overall' => $player->overall,
+                'potential' => $player->potential,
+                'pace' => $player->pace,
+                'shooting' => $player->shooting,
+                'passing' => $player->passing,
+                'dribbling' => $player->dribbling,
+                'defending' => $player->defending,
+                'physical' => $player->physical,
+                'stamina' => $player->stamina,
+                'morale' => $player->morale,
+                'salary' => $player->salary,
+                'market_value' => $player->market_value,
+                'market_value_formatted' => number_format($player->market_value, 0, ',', '.') . ' EUR',
+                'club' => $player->club ? [
+                    'id' => $player->club->id,
+                    'name' => $player->club->name,
+                    'logo_url' => $player->club->logo_url,
+                ] : null,
+            ],
             'currentSeasonStats' => $currentSeasonStats,
             'careerStats' => $careerStats,
             'recentMatches' => $recentMatches,
@@ -363,5 +417,21 @@ class PlayerController extends Controller
         }
 
         return $validated;
+    }
+
+    private function mapSeasonStat($stat): array
+    {
+        return [
+            'season' => $stat->season ? [
+                'name' => $stat->season->name,
+            ] : null,
+            'competition_context' => $stat->competition_context,
+            'appearances' => (int) $stat->appearances,
+            'goals' => (int) $stat->goals,
+            'assists' => (int) $stat->assists,
+            'yellow_cards' => (int) $stat->yellow_cards,
+            'red_cards' => (int) $stat->red_cards,
+            'average_rating' => (float) $stat->average_rating,
+        ];
     }
 }

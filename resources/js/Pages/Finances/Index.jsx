@@ -6,6 +6,7 @@ import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import PageHeader from '@/Components/PageHeader';
 import MetricCard from '@/Components/MetricCard';
 import SectionCard from '@/Components/SectionCard';
+import EmptyState from '@/Components/EmptyState';
 import {
     ArrowsLeftRight,
     TrendUp,
@@ -22,11 +23,12 @@ export default function Finances({ activeClub, transactions }) {
     if (!activeClub) {
         return (
             <AuthenticatedLayout>
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <WarningCircle size={64} weight="thin" className="text-slate-700 mb-6" />
-                    <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Kein Verein aktiv</h2>
-                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte waehle einen Verein aus der Liste oder erstelle einen neuen.</p>
-                </div>
+                <EmptyState
+                    icon={WarningCircle}
+                    title="Kein Verein aktiv"
+                    description="Es konnte kein aktiver Verein gefunden werden. Bitte waehle einen Verein aus der Liste oder erstelle einen neuen."
+                    className="py-20"
+                />
             </AuthenticatedLayout>
         );
     }
@@ -129,6 +131,13 @@ export default function Finances({ activeClub, transactions }) {
                                         </tr>
                                     );
                                 })}
+                                {transactions.data.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" className="px-6 py-12 text-center text-[var(--text-muted)] italic text-sm">
+                                            Noch keine Finanztransaktionen fuer diesen Verein vorhanden.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { PageReveal } from '@/Components/PageReveal';
 import PageHeader from '@/Components/PageHeader';
+import EmptyState from '@/Components/EmptyState';
 import {
     SoccerBall,
     PaperPlaneTilt,
@@ -80,9 +81,13 @@ export default function Index({ activeClub, opponents, outgoingRequests, incomin
                 {tab === 'matches' && (
                     <PageReveal className="space-y-4">
                         {friendlyMatches.length === 0 ? (
-                            <div className="sim-card border-[var(--border-pillar)] p-20 text-center border-dashed">
-                                <SoccerBall size={48} weight="thin" className="mx-auto mb-6 text-slate-700" />
-                                <p className="text-sm font-bold uppercase tracking-widest italic text-[var(--text-muted)]">Noch keine Testspiele geplant.</p>
+                            <div className="sim-card border-[var(--border-pillar)] border-dashed">
+                                <EmptyState
+                                    icon={SoccerBall}
+                                    title="Keine Testspiele"
+                                    description="Noch keine Freundschaftsspiele fuer den aktiven Verein geplant."
+                                    compact
+                                />
                             </div>
                         ) : (
                             friendlyMatches.map((match) => (
@@ -117,8 +122,12 @@ export default function Index({ activeClub, opponents, outgoingRequests, incomin
                 {tab === 'incoming' && (
                     <PageReveal className="space-y-4">
                         {incomingRequests.length === 0 ? (
-                            <div className="sim-card border-[var(--border-pillar)] p-20 text-center border-dashed">
-                                <p className="text-sm font-bold uppercase tracking-widest italic text-[var(--text-muted)]">Keine eingehenden Anfragen.</p>
+                            <div className="sim-card border-[var(--border-pillar)] border-dashed">
+                                <EmptyState
+                                    title="Keine eingehenden Anfragen"
+                                    description="Aktuell wartet keine neue Herausforderung in deinem Postfach."
+                                    compact
+                                />
                             </div>
                         ) : (
                             incomingRequests.map((request) => (
@@ -150,8 +159,12 @@ export default function Index({ activeClub, opponents, outgoingRequests, incomin
                 {tab === 'outgoing' && (
                     <PageReveal className="space-y-4">
                         {outgoingRequests.length === 0 ? (
-                            <div className="sim-card border-[var(--border-pillar)] p-20 text-center border-dashed">
-                                <p className="text-sm font-bold uppercase tracking-widest italic text-[var(--text-muted)]">Keine ausgehenden Anfragen.</p>
+                            <div className="sim-card border-[var(--border-pillar)] border-dashed">
+                                <EmptyState
+                                    title="Keine ausgehenden Anfragen"
+                                    description="Du hast derzeit keine offenen Freundschaftsspiel-Anfragen verschickt."
+                                    compact
+                                />
                             </div>
                         ) : (
                             outgoingRequests.map((request) => (

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { PageReveal } from '@/Components/PageReveal';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
+import EmptyState from '@/Components/EmptyState';
+import StatusMessage from '@/Components/StatusMessage';
 import {
     GraduationCap,
     Lightning,
@@ -30,18 +32,17 @@ const typeIcons = {
     friendly: Users,
 };
 
-export default function Training({ sessions, prefillClubId, prefillDate }) {
-    const { activeClub } = usePage().props;
+export default function Training({ sessions, club, prefillDate }) {
     const [showForm, setShowForm] = useState(false);
 
     const { data, setData, post, processing, reset } = useForm({
-        club_id: activeClub?.id || prefillClubId,
+        club_id: club?.id || '',
         type: 'technical',
         intensity: 'medium',
         focus_position: '',
         session_date: prefillDate,
         notes: '',
-        player_ids: activeClub?.players?.map((player) => player.id) || [],
+        player_ids: club?.players?.map((player) => player.id) || [],
     });
 
     const handleSubmit = (event) => {
@@ -54,14 +55,15 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
         });
     };
 
-    if (!activeClub) {
+    if (!club) {
         return (
             <AuthenticatedLayout>
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <WarningCircle size={64} weight="thin" className="text-slate-700 mb-6" />
-                    <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Kein Verein aktiv</h2>
-                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte waehle einen Verein aus der Liste.</p>
-                </div>
+                <EmptyState
+                    icon={WarningCircle}
+                    title="Kein Verein aktiv"
+                    description="Es konnte kein aktiver Verein gefunden werden. Bitte waehle einen Verein aus der Liste."
+                    className="py-20"
+                />
             </AuthenticatedLayout>
         );
     }
@@ -86,6 +88,11 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                     <PageReveal className="overflow-hidden transition-all duration-300" delay={90}>
                         <SectionCard title="Neue Trainingseinheit Planen" icon={Plus}>
                             <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="md:col-span-2 lg:col-span-4">
+                                    <StatusMessage variant="info">
+                                        {club.players.length} Spieler aus {club.name} werden fuer neue Einheiten vorausgewaehlt.
+                                    </StatusMessage>
+                                </div>
                                 <SelectField label="Typ" value={data.type} onChange={(event) => setData('type', event.target.value)}>
                                     <option value="technical">Technik</option>
                                     <option value="tactics">Taktik</option>
@@ -127,6 +134,7 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                                     <th className="px-6 py-4">Datum</th>
                                     <th className="px-6 py-4">Typ</th>
                                     <th className="px-6 py-4">Intensitaet</th>
+                                    <th className="px-6 py-4">Spieler</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4 text-right">Aktionen</th>
                                 </tr>
@@ -157,6 +165,9 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                                                     {session.intensity}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 text-sm font-bold text-[var(--text-muted)]">
+                                                {session.player_count}
+                                            </td>
                                             <td className="px-6 py-4">
                                                 {session.applied_at ? (
                                                     <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
@@ -185,7 +196,7 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                                 })}
                                 {sessions.data.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-12 text-center text-[var(--text-muted)] italic text-sm">
+                                        <td colSpan="6" className="px-6 py-12 text-center text-[var(--text-muted)] italic text-sm">
                                             Keine Trainingseinheiten fuer diesen Zeitraum geplant.
                                         </td>
                                     </tr>

@@ -11,12 +11,11 @@ class FinanceController extends Controller
     public function index(Request $request): \Inertia\Response
     {
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
-        $clubs = $request->user()->isAdmin()
-            ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
-            : $request->user()->clubs()->orderBy('name')->get();
 
-        if (!$activeClub && $clubs->isNotEmpty()) {
-            $activeClub = $clubs->first();
+        if (!$activeClub) {
+            $activeClub = $request->user()->isAdmin()
+                ? \App\Models\Club::query()->where('is_cpu', false)->orderBy('name')->first()
+                : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->first();
         }
 
         $transactions = collect();
@@ -41,7 +40,12 @@ class FinanceController extends Controller
         }
 
         return \Inertia\Inertia::render('Finances/Index', [
-            'activeClub' => $activeClub,
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'budget' => $activeClub->budget,
+                'coins' => $activeClub->coins,
+            ] : null,
             'transactions' => $transactions,
         ]);
     }

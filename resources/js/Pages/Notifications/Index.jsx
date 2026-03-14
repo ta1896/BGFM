@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import PaginationLink from '@/Components/PaginationLink';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import PageHeader from '@/Components/PageHeader';
+import EmptyState from '@/Components/EmptyState';
 import {
     Envelope,
     EnvelopeOpen,
@@ -48,14 +49,12 @@ export default function Notifications({ notifications }) {
 
                 <div className="sim-card min-h-[500px] overflow-hidden border-[var(--border-muted)] bg-[#0c1222]/80 p-0 shadow-2xl backdrop-blur-xl">
                     {notifications.data.length === 0 ? (
-                        <PageReveal className="flex flex-1 flex-col items-center justify-center p-20 text-center">
-                            <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-slate-700 shadow-inner">
-                                <Tray size={48} weight="thin" />
-                            </div>
-                            <h3 className="mb-2 text-2xl font-black uppercase tracking-tighter text-white">Postfach leer</h3>
-                            <p className="max-w-xs font-medium text-[var(--text-muted)]">
-                                Keine neuen Nachrichten vorhanden. Du bist auf dem neuesten Stand.
-                            </p>
+                        <PageReveal>
+                            <EmptyState
+                                icon={Tray}
+                                title="Postfach leer"
+                                description="Keine neuen Nachrichten vorhanden. Du bist auf dem neuesten Stand."
+                            />
                         </PageReveal>
                     ) : (
                         <StaggerGroup className="divide-y divide-slate-800/50">

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Club;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -37,26 +38,6 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $isAdmin = $user?->isAdmin() ?? false;
-        
-        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
-        
-        $userClubs = collect();
-        if ($user) {
-            if ($isAdmin) {
-                $userClubs = \App\Models\Club::where('is_cpu', false)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'logo_path']);
-            } else {
-                $userClubs = $user->clubs()
-                    ->where('is_cpu', false)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'logo_path']);
-            }
-        }
-
-        if (!$activeClub && $userClubs->isNotEmpty()) {
-            $activeClub = $userClubs->first();
-        }
 
         return [
             ...parent::share($request),
@@ -72,19 +53,61 @@ class HandleInertiaRequests extends Middleware
                 'isAdmin' => $isAdmin,
                 'theme' => $user?->theme ?? 'catalyst',
             ],
-            'activeClub' => $activeClub ? [
-                'id' => $activeClub->id,
-                'name' => $activeClub->name,
-                'logo_url' => $activeClub->logo_url,
-            ] : null,
-            'userClubs' => $userClubs->map(fn ($club) => [
-                'id' => $club->id,
-                'name' => $club->name,
-                'logo_url' => $club->logo_url,
-            ])->values(),
+            'activeClub' => fn () => $this->sharedActiveClub($request),
+            'userClubs' => fn () => $this->sharedUserClubs($request, $isAdmin),
             'flash' => [
                 'status' => session('status'),
             ],
+        ];
+    }
+
+    private function sharedActiveClub(Request $request): ?array
+    {
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+
+        if (!$activeClub) {
+            $clubs = $this->resolveUserClubs($request, $request->user()?->isAdmin() ?? false);
+            $activeClub = $clubs->first();
+        }
+
+        return $activeClub ? $this->formatClubForShare($activeClub) : null;
+    }
+
+    private function sharedUserClubs(Request $request, bool $isAdmin): array
+    {
+        return $this->resolveUserClubs($request, $isAdmin)
+            ->map(fn (Club $club) => $this->formatClubForShare($club))
+            ->values()
+            ->all();
+    }
+
+    private function resolveUserClubs(Request $request, bool $isAdmin)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return collect();
+        }
+
+        if ($isAdmin) {
+            return Club::query()
+                ->where('is_cpu', false)
+                ->orderBy('name')
+                ->get(['id', 'name', 'logo_path']);
+        }
+
+        return $user->clubs()
+            ->where('is_cpu', false)
+            ->orderBy('name')
+            ->get(['id', 'name', 'logo_path']);
+    }
+
+    private function formatClubForShare(Club $club): array
+    {
+        return [
+            'id' => $club->id,
+            'name' => $club->name,
+            'logo_url' => $club->logo_url,
         ];
     }
 }

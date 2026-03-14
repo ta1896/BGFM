@@ -13,7 +13,7 @@ class NotificationController extends Controller
     {
         $notifications = $request->user()
             ->gameNotifications()
-            ->with('club')
+            ->with('club:id,name,logo_path')
             ->latest()
             ->paginate(20)
             ->through(function ($n) {
@@ -24,9 +24,14 @@ class NotificationController extends Controller
                     'seen_at' => $n->seen_at,
                     'created_at_formatted' => $n->created_at->format('d.m.Y H:i'),
                     'action_url' => $n->action_url,
-                    'club' => $n->club,
+                    'club' => $n->club ? [
+                        'id' => $n->club->id,
+                        'name' => $n->club->name,
+                        'logo_url' => $n->club->logo_url,
+                    ] : null,
                 ];
-            });
+            })
+            ->withQueryString();
 
         return \Inertia\Inertia::render('Notifications/Index', [
             'notifications' => $notifications

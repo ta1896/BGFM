@@ -15,12 +15,15 @@ class TrainingController extends Controller
     public function index(Request $request): \Inertia\Response
     {
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
-        $clubs = $request->user()->isAdmin() 
-            ? Club::where('is_cpu', false)->orderBy('name')->get()
-            : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
 
-        if (!$activeClub && $clubs->isNotEmpty()) {
-            $activeClub = $clubs->first();
+        if (!$activeClub) {
+            $activeClub = $request->user()->isAdmin()
+                ? Club::query()->where('is_cpu', false)->orderBy('name')->first()
+                : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->first();
+        }
+
+        if ($activeClub) {
+            $activeClub->loadMissing(['players:id,club_id,name']);
         }
 
         $normalizeDate = static function (?string $value): ?string {
@@ -52,18 +55,33 @@ class TrainingController extends Controller
         }
 
         $sessions = TrainingSession::query()
-            ->with(['club', 'players'])
+            ->with('players:id')
             ->when($activeClub, fn($query) => $query->where('club_id', $activeClub->id))
             ->when($dateFrom, fn($query) => $query->whereDate('session_date', '>=', $dateFrom))
             ->when($dateTo, fn($query) => $query->whereDate('session_date', '<=', $dateTo))
             ->orderByDesc('session_date')
             ->latest('id')
             ->paginate(12)
+            ->through(fn (TrainingSession $session) => [
+                'id' => $session->id,
+                'session_date' => $session->session_date?->toDateString(),
+                'type' => $session->type,
+                'intensity' => $session->intensity,
+                'applied_at' => $session->applied_at,
+                'player_count' => $session->players->count(),
+            ])
             ->withQueryString();
 
         return \Inertia\Inertia::render('Training/Index', [
             'sessions' => $sessions,
-            'prefillClubId' => $activeClub?->id,
+            'club' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'players' => $activeClub->players->map(fn ($player) => [
+                    'id' => $player->id,
+                    'name' => $player->name,
+                ])->values()->all(),
+            ] : null,
             'prefillDate' => now()->toDateString(),
         ]);
     }

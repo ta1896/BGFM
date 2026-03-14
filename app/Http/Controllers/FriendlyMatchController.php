@@ -9,22 +9,15 @@ use App\Services\FriendlyMatchService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-
 class FriendlyMatchController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
-        $clubs = $request->user()->isAdmin()
-            ? Club::orderBy('name')->get()
-            : $request->user()->clubs()->orderBy('name')->get();
-
-        // Use middleware provided active club (bound to container)
-        $activeClub = app()->has('activeClub') ? app('activeClub') : ($clubs->first() ?? null);
-
-        // Fallback if not found (though middleware should have handled it)
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
         if (!$activeClub) {
-            $activeClub = $clubs->first();
+            $activeClub = $request->user()->isAdmin()
+                ? Club::query()->where('is_cpu', false)->orderBy('name')->first()
+                : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->first();
         }
 
         $outgoing = collect();
@@ -35,11 +28,12 @@ class FriendlyMatchController extends Controller
         if ($activeClub) {
             $opponents = Club::query()
                 ->whereKeyNot($activeClub->id)
+                ->where('is_cpu', false)
                 ->orderByDesc('is_cpu')
                 ->orderByDesc('reputation')
                 ->orderBy('name')
                 ->limit(50)
-                ->get();
+                ->get(['id', 'name']);
 
             $outgoing = FriendlyMatchRequest::query()
                 ->with(['challengerClub', 'challengedClub', 'acceptedMatch'])
@@ -68,15 +62,55 @@ class FriendlyMatchController extends Controller
         }
 
         return \Inertia\Inertia::render('Friendlies/Index', [
-            'activeClub' => $activeClub,
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+            ] : null,
             'opponents' => $opponents,
-            'outgoingRequests' => $outgoing,
-            'incomingRequests' => $incoming,
+            'outgoingRequests' => $outgoing->map(fn (FriendlyMatchRequest $request) => [
+                'id' => $request->id,
+                'status' => $request->status,
+                'message' => $request->message,
+                'challenged_club' => $request->challengedClub ? [
+                    'id' => $request->challengedClub->id,
+                    'name' => $request->challengedClub->name,
+                ] : null,
+                'accepted_match' => $request->acceptedMatch ? [
+                    'kickoff_at' => $request->acceptedMatch->kickoff_at?->format('d.m.Y H:i'),
+                ] : null,
+            ])->values(),
+            'incomingRequests' => $incoming->map(fn (FriendlyMatchRequest $request) => [
+                'id' => $request->id,
+                'status' => $request->status,
+                'message' => $request->message,
+                'challenger_club' => $request->challengerClub ? [
+                    'id' => $request->challengerClub->id,
+                    'name' => $request->challengerClub->name,
+                ] : null,
+                'accepted_match' => $request->acceptedMatch ? [
+                    'kickoff_at' => $request->acceptedMatch->kickoff_at?->format('d.m.Y H:i'),
+                ] : null,
+            ])->values(),
             'friendlyMatches' => $matches->map(function($m) use ($activeClub) {
-                $m->kickoff_formatted = $m->kickoff_at?->format('d.m.Y H:i');
-                $m->is_home = $m->home_club_id === $activeClub?->id;
-                return $m;
-            }),
+                return [
+                    'id' => $m->id,
+                    'status' => $m->status,
+                    'home_score' => $m->home_score,
+                    'away_score' => $m->away_score,
+                    'kickoff_formatted' => $m->kickoff_at?->format('d.m.Y H:i'),
+                    'is_home' => $m->home_club_id === $activeClub?->id,
+                    'home_club' => $m->homeClub ? [
+                        'name' => $m->homeClub->name,
+                        'short_name' => $m->homeClub->short_name,
+                        'logo_url' => $m->homeClub->logo_url,
+                    ] : null,
+                    'away_club' => $m->awayClub ? [
+                        'name' => $m->awayClub->name,
+                        'short_name' => $m->awayClub->short_name,
+                        'logo_url' => $m->awayClub->logo_url,
+                    ] : null,
+                ];
+            })->values(),
         ]);
     }
 

@@ -10,7 +10,6 @@ use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 
 class LineupsController extends Controller
 {
@@ -258,11 +257,55 @@ class LineupsController extends Controller
             });
 
         return \Inertia\Inertia::render('Lineups/Edit', [
-            'lineup' => $lineup,
-            'club' => $club,
-            'clubPlayers' => $clubPlayers,
-            'clubMatches' => $clubMatches,
-            'templates' => $templates,
+            'lineup' => [
+                'id' => $lineup->id,
+                'name' => $lineup->name,
+                'match_id' => $lineup->match_id,
+            ],
+            'club' => [
+                'id' => $club->id,
+                'name' => $club->name,
+            ],
+            'clubPlayers' => $clubPlayers->map(fn ($player) => [
+                'id' => $player->id,
+                'full_name' => $player->full_name,
+                'last_name' => $player->last_name,
+                'position' => $player->position,
+                'position_main' => $player->position_main,
+                'position_second' => $player->position_second,
+                'position_third' => $player->position_third,
+                'shirt_number' => $player->shirt_number,
+                'overall' => $player->overall,
+                'potential' => $player->potential,
+                'pace' => $player->pace,
+                'shooting' => $player->shooting,
+                'passing' => $player->passing,
+                'defending' => $player->defending,
+                'physical' => $player->physical,
+                'stamina' => $player->stamina,
+                'morale' => $player->morale,
+                'photo_url' => $player->photo_url,
+            ])->values()->all(),
+            'clubMatches' => $clubMatches->map(fn ($match) => [
+                'id' => $match->id,
+                'home_club_id' => $match->home_club_id,
+                'away_club_id' => $match->away_club_id,
+                'match_date' => $match->match_date,
+                'match_time' => $match->match_time,
+                'home_club' => $match->homeClub ? [
+                    'short_name' => $match->homeClub->short_name,
+                    'logo_url' => $match->homeClub->logo_url,
+                ] : null,
+                'away_club' => $match->awayClub ? [
+                    'short_name' => $match->awayClub->short_name,
+                    'logo_url' => $match->awayClub->logo_url,
+                ] : null,
+            ])->values()->all(),
+            'templates' => $templates->map(fn ($template) => [
+                'id' => $template->id,
+                'name' => $template->name,
+                'players_count' => $template->players_count,
+            ])->values()->all(),
             'formation' => $formation,
             'formations' => $planner->supportedFormations(),
             'slots' => $slots,

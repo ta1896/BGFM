@@ -11,9 +11,6 @@ use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\View\View;
-
 class DashboardController extends Controller
 {
     public function index(Request $request, TeamStrengthCalculator $calculator): \Inertia\Response
@@ -237,11 +234,6 @@ class DashboardController extends Controller
                 });
         }
 
-        $notifications = $request->user()
-            ->gameNotifications()
-            ->latest()
-            ->limit(5)
-            ->get();
         $unreadNotificationsCount = $request->user()
             ->gameNotifications()
             ->whereNull('seen_at')
@@ -298,15 +290,32 @@ class DashboardController extends Controller
         }
 
         return \Inertia\Inertia::render('Dashboard', [
-            'activeClub' => $activeClub,
-            'activeLineup' => $activeLineup,
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'budget' => $activeClub->budget,
+                'fan_mood' => $activeClub->fan_mood,
+                'logo_url' => $activeClub->logo_url,
+            ] : null,
             'metrics' => $metrics,
-            'nextMatch' => $nextMatch,
+            'nextMatch' => $nextMatch ? [
+                'id' => $nextMatch->id,
+                'kickoff_at_formatted' => $nextMatch->kickoff_at?->format('d.m.Y H:i'),
+                'stadium_name' => $nextMatch->stadium_name,
+                'home_club' => $nextMatch->homeClub ? [
+                    'id' => $nextMatch->homeClub->id,
+                    'name' => $nextMatch->homeClub->name,
+                    'logo_url' => $nextMatch->homeClub->logo_url,
+                ] : null,
+                'away_club' => $nextMatch->awayClub ? [
+                    'id' => $nextMatch->awayClub->id,
+                    'name' => $nextMatch->awayClub->name,
+                    'logo_url' => $nextMatch->awayClub->logo_url,
+                ] : null,
+            ] : null,
             'nextMatchTypeLabel' => $nextMatchTypeLabel,
             'activeClubReadyForNextMatch' => $activeClubReadyForNextMatch,
             'opponentReadyForNextMatch' => $opponentReadyForNextMatch,
-            'notifications' => $notifications,
-            'unreadNotificationsCount' => $unreadNotificationsCount,
             'todayMatchesCount' => $todayMatchesCount,
             'clubRank' => $clubRank,
             'clubPoints' => $clubPoints,
@@ -316,15 +325,6 @@ class DashboardController extends Controller
             'trainingGroupBCount' => $trainingGroupBCount,
             'trainingPlanComplete' => $trainingPlanComplete,
             'assistantTasks' => $assistantTasks,
-            'selectedCompetitionSeasonId' => $selectedCompetitionSeasonId,
-            'activeSponsorContract' => $activeClub?->activeSponsorContract,
-            'stadium' => $activeClub?->stadium,
-            'dashboardVariant' => $dashboardVariant,
-            'dashboardVariants' => [
-                'modern' => 'Modern',
-                'compact' => 'Kompakt',
-                'classic' => 'Klassisch',
-            ],
         ]);
     }
 }
