@@ -37,7 +37,7 @@ const MenuGroup = React.memo(({ group, currentRoute }) => {
                     >
                         {group.items.map((item, idx) => {
                             const isActive = item.active.endsWith('.*') 
-                                ? currentRoute.startsWith(item.active.replace('.*', ''))
+                                ? (currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false)
                                 : currentRoute === item.active;
                             
                             return (

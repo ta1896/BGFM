@@ -168,6 +168,7 @@ export default function Edit({
 
         const entries = starterIds.map(([slotKey, pId]) => {
             const p = getPlayer(pId);
+            if (!p) return null; // player not found in pool — skip
             const slot = slots.find(s => s.slot === slotKey);
             const slotGroup = slot ? slot.group : null;
             
@@ -186,7 +187,7 @@ export default function Edit({
             else if (pGroup === 'GK' || sGroup === 'GK') fit = positionFit.foreign_gk;
 
             return { player: p, group: sGroup, fit };
-        });
+        }).filter(Boolean); // remove any null entries (player not found in pool)
 
         const calculateScore = (players, type) => {
             if (players.length === 0) return 0;
@@ -337,17 +338,18 @@ export default function Edit({
             <div className="max-w-[1600px] mx-auto">
                 <form onSubmit={handleSave} className="space-y-8">
                     {/* Header */}
-                    <div className="flex items-center justify-between gap-6 border-b border-white/5 pb-8">
-                        <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 border-b border-white/5 pb-8">
+                        <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
                             <Link 
                                 href={route('lineups.index')}
-                                className="w-12 h-12 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center text-[var(--text-muted)] hover:text-amber-500 hover:border-amber-500/30 transition-all"
+                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center shrink-0 text-[var(--text-muted)] hover:text-amber-500 hover:border-amber-500/30 transition-all"
                             >
-                                <ArrowLeft size={24} weight="bold" />
+                                <ArrowLeft size={20} weight="bold" className="sm:hidden" />
+                                <ArrowLeft size={24} weight="bold" className="hidden sm:block" />
                             </Link>
-                            <div>
+                            <div className="flex-1 min-w-0">
                                 <input 
-                                    className="bg-transparent border-none p-0 text-3xl font-black text-white uppercase italic tracking-tighter focus:ring-0 w-full lg:w-96"
+                                    className="bg-transparent border-none p-0 text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tighter focus:ring-0 w-full lg:w-96 truncate"
                                     value={data.name}
                                     onChange={e => setData('name', e.target.value)}
                                 />
@@ -381,29 +383,29 @@ export default function Edit({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <button 
                                 type="button"
                                 onClick={handleAutoFill}
-                                className="sim-btn-muted px-6 py-3 flex items-center gap-2 group"
+                                className="sim-btn-muted flex-1 sm:flex-none justify-center px-4 sm:px-6 py-3 flex items-center gap-2 group"
                             >
-                                <MagicWand size={18} weight="bold" className="group-hover:text-amber-500 transition-colors" />
-                                <span className="text-xs font-black uppercase tracking-widest">Auto-Fill</span>
+                                <MagicWand size={18} weight="bold" className="group-hover:text-amber-500 transition-colors shrink-0" />
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">Auto</span>
                             </button>
                             <button 
                                 type="submit"
                                 disabled={processing}
-                                className="sim-btn-primary px-10 py-3 flex items-center gap-2"
+                                className="sim-btn-primary flex-[2] sm:flex-none justify-center px-6 sm:px-10 py-3 flex items-center gap-2"
                             >
-                                <FloppyDisk size={18} weight="bold" />
-                                <span className="text-xs font-black uppercase tracking-widest">Speichern</span>
+                                <FloppyDisk size={18} weight="bold" className="shrink-0" />
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">Speichern</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-[320px_1fr_320px] gap-8">
+                    <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr_320px] gap-8">
                         {/* Left Sidebar: Tactics */}
-                        <aside className="space-y-6">
+                        <aside className="space-y-6 order-3 lg:order-1">
                             <div className="sim-card p-6 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]">
                                 <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <Strategy size={16} weight="bold" />
@@ -516,9 +518,9 @@ export default function Edit({
                         </aside>
 
                         {/* Center: The Pitch */}
-                        <main className="space-y-8">
+                        <main className="space-y-8 order-1 lg:order-2">
                             {/* Metrics Bar */}
-                            <div className="flex items-center justify-between gap-4 p-4 rounded-3xl bg-[var(--bg-pillar)]/60 border border-white/5">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-3xl bg-[var(--bg-pillar)]/60 border border-white/5">
                                 <div className="flex items-center gap-6 px-4">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">STÄRKE</span>
@@ -650,8 +652,8 @@ export default function Edit({
                         </main>
 
                         {/* Right Sidebar: Player Pool */}
-                        <aside className="space-y-6 flex flex-col h-full overflow-hidden min-h-[800px]">
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)] flex flex-col h-full">
+                        <aside className="space-y-6 flex flex-col h-[500px] lg:h-full overflow-hidden min-h-[500px] lg:min-h-[800px] order-2 lg:order-3">
+                            <div className="sim-card p-4 sm:p-6 bg-[#0c1222]/80 border-[var(--border-muted)] flex flex-col h-full">
                                 <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest mb-4">SPIELER-POOL</h3>
                                 
                                 <div className="relative mb-6">

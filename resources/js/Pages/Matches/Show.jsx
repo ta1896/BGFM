@@ -110,25 +110,25 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
             </div>
 
             {/* Main Score */}
-            <div className="flex items-center justify-between px-12 pb-8 gap-6">
+            <div className="flex items-center justify-between px-4 sm:px-12 pb-6 sm:pb-8 gap-2 sm:gap-6">
                 {/* Home */}
-                <div className="flex flex-col items-center gap-4 flex-1">
-                    <div className="w-24 h-24 rounded-full p-3 bg-white/5 border border-white/10 shadow-2xl">
+                <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1">
+                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full p-2 sm:p-3 bg-white/5 border border-white/10 shadow-2xl">
                         <img loading="lazy" src={home_club?.logo_url} alt={home_club?.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="text-center">
-                        <p className="text-xl font-black text-white uppercase tracking-tighter italic">{home_club?.short_name || home_club?.name}</p>
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Heim</p>
+                        <p className="text-sm sm:text-xl font-black text-white uppercase tracking-tighter italic">{home_club?.short_name || home_club?.name}</p>
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest">Heim</p>
                     </div>
                 </div>
 
                 {/* Score Center */}
-                <div className="flex flex-col items-center gap-3 shrink-0">
+                <div className="flex flex-col items-center gap-2 sm:gap-3 shrink-0">
                     {isLive || isPlayed ? (
-                        <div className="flex items-center gap-6">
-                            <span className="text-7xl md:text-8xl font-black text-white italic tabular-nums leading-none">{home_score ?? 0}</span>
-                            <span className="text-4xl font-black text-slate-700 italic">:</span>
-                            <span className="text-7xl md:text-8xl font-black text-white italic tabular-nums leading-none">{away_score ?? 0}</span>
+                        <div className="flex items-center gap-3 sm:gap-6">
+                            <span className="text-5xl sm:text-7xl md:text-8xl font-black text-white italic tabular-nums leading-none">{home_score ?? 0}</span>
+                            <span className="text-2xl sm:text-4xl font-black text-slate-700 italic">:</span>
+                            <span className="text-5xl sm:text-7xl md:text-8xl font-black text-white italic tabular-nums leading-none">{away_score ?? 0}</span>
                         </div>
                     ) : (
                         <div className="text-center">
@@ -149,13 +149,13 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
                 </div>
 
                 {/* Away */}
-                <div className="flex flex-col items-center gap-4 flex-1">
-                    <div className="w-24 h-24 rounded-full p-3 bg-white/5 border border-white/10 shadow-2xl">
+                <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1">
+                    <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full p-2 sm:p-3 bg-white/5 border border-white/10 shadow-2xl">
                         <img loading="lazy" src={away_club?.logo_url} alt={away_club?.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="text-center">
-                        <p className="text-xl font-black text-white uppercase tracking-tighter italic">{away_club?.short_name || away_club?.name}</p>
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Gast</p>
+                        <p className="text-sm sm:text-xl font-black text-white uppercase tracking-tighter italic">{away_club?.short_name || away_club?.name}</p>
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest">Gast</p>
                     </div>
                 </div>
             </div>
@@ -372,9 +372,9 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
 };
 
 const LineupPitch = ({ homeClub, awayClub, homeLineup, awayLineup, livePlayerStates }) => (
-    <div className="flex gap-8">
+    <div className="flex flex-col lg:flex-row gap-8">
         <HalfPitch club={homeClub} lineup={homeLineup} accent="amber"   livePlayerStates={livePlayerStates} />
-        <div className="w-px bg-white/5 self-stretch shrink-0" />
+        <div className="hidden lg:block w-px bg-white/5 self-stretch shrink-0" />
         <HalfPitch club={awayClub} lineup={awayLineup} accent="gold" livePlayerStates={livePlayerStates} />
     </div>
 );
@@ -613,17 +613,17 @@ export default function Show({
                                             <p className="text-xs font-black text-white uppercase tracking-tighter">{club?.name}</p>
                                         </div>
                                         <div>
-                                            <div className="grid grid-cols-[1fr_3.5rem_3.5rem_3.5rem_3.5rem_3.5rem] px-4 py-2 text-[9px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
-                                                <span>Spieler</span><span className="text-center">Min</span><span className="text-center">T</span><span className="text-center">V</span><span className="text-center">Schu</span><span className="text-center">Note</span>
+                                            <div className="grid grid-cols-[1fr_2rem_2rem_2rem_2rem_2rem] sm:grid-cols-[1fr_3.5rem_3.5rem_3.5rem_3.5rem_3.5rem] px-4 py-2 text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
+                                                <span>Spieler</span><span className="text-center">Min</span><span className="text-center">T</span><span className="text-center">V</span><span className="text-center hidden sm:block">Schu</span><span className="text-center sm:hidden">S</span><span className="text-center">Note</span>
                                             </div>
                                             {players.map(p => (
-                                                <div key={p.player_id} className="grid grid-cols-[1fr_3.5rem_3.5rem_3.5rem_3.5rem_3.5rem] px-4 py-3 border-b border-white/5 items-center hover:bg-white/[0.02]">
-                                                    <span className="text-xs font-bold text-white truncate">{p.player_name}</span>
-                                                    <span className="text-center text-[10px] text-[var(--text-muted)]">{p.minutes_played}'</span>
-                                                    <span className="text-center text-[10px] text-emerald-400 font-black">{p.goals}</span>
-                                                    <span className="text-center text-[10px] text-amber-500 font-black">{p.assists}</span>
-                                                    <span className="text-center text-[10px] text-[var(--text-muted)]">{p.shots}</span>
-                                                    <span className={`text-center text-xs font-black italic ${p.rating >= 7 ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>{parseFloat(p.rating).toFixed(1)}</span>
+                                                <div key={p.player_id} className="grid grid-cols-[1fr_2rem_2rem_2rem_2rem_2rem] sm:grid-cols-[1fr_3.5rem_3.5rem_3.5rem_3.5rem_3.5rem] px-4 py-3 border-b border-white/5 items-center hover:bg-white/[0.02]">
+                                                    <span className="text-[10px] sm:text-xs font-bold text-white truncate pr-2">{p.player_name}</span>
+                                                    <span className="text-center text-[9px] sm:text-[10px] text-[var(--text-muted)]">{p.minutes_played}'</span>
+                                                    <span className="text-center text-[9px] sm:text-[10px] text-emerald-400 font-black">{p.goals}</span>
+                                                    <span className="text-center text-[9px] sm:text-[10px] text-amber-500 font-black">{p.assists}</span>
+                                                    <span className="text-center text-[9px] sm:text-[10px] text-[var(--text-muted)]">{p.shots}</span>
+                                                    <span className={`text-center text-[10px] sm:text-xs font-black italic ${p.rating >= 7 ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>{parseFloat(p.rating).toFixed(1)}</span>
                                                 </div>
                                             ))}
                                         </div>

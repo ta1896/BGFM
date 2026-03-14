@@ -64,7 +64,7 @@ class LineupsController extends Controller
         $templates = $club->lineups()
             ->whereNull('match_id')
             ->where('is_template', true)
-            ->with('players')
+            ->withCount('players')
             ->orderBy('name')
             ->get();
 
@@ -203,7 +203,7 @@ class LineupsController extends Controller
         $templates = $club->lineups()
             ->whereNull('match_id')
             ->where('is_template', true)
-            ->with('players')
+            ->withCount('players')
             ->orderBy('name')
             ->get();
 
@@ -213,6 +213,8 @@ class LineupsController extends Controller
         if ($templateId > 0) {
             $template = $templates->firstWhere('id', $templateId);
             if ($template) {
+                // Ensure players are loaded for the specific template used as draft source
+                $template->load('players');
                 $sourceLineup = $template;
             }
         }

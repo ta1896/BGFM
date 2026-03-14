@@ -32,8 +32,6 @@ class DashboardController extends Controller
 
         $clubs = $request->user()
             ->clubs()
-            ->with(['stadium'])
-            ->withCount(['players', 'lineups'])
             ->orderBy('name')
             ->get();
 
@@ -73,16 +71,21 @@ class DashboardController extends Controller
         $selectedCompetitionSeasonId = null;
 
         if ($activeClub) {
-            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor', 'lineups' => function($q) {
-                $q->with('players');
-            }]);
+            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
 
-            $activeLineup = $activeClub->lineups
+            $activeLineup = Lineup::query()
+                ->where('club_id', $activeClub->id)
+                ->with('players')
                 ->where('is_active', true)
-                ->first() ?? $activeClub->lineups->first();
+                ->first() ?? Lineup::query()
+                                ->where('club_id', $activeClub->id)
+                                ->with('players')
+                                ->first();
 
             if ($activeLineup) {
                 $metrics = $calculator->calculate($activeLineup);
+                // Unset players relation to prevent sending full player objects via Inertia
+                $activeLineup->unsetRelation('players');
                 $activeClubReadyForNextMatch = true;
             }
 
@@ -298,7 +301,7 @@ class DashboardController extends Controller
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'activeLineup' => $activeLineup,
-            'metrics' => \Inertia\Inertia::lazy(fn() => $metrics),
+            'metrics' => $metrics,
             'nextMatch' => $nextMatch,
             'nextMatchTypeLabel' => $nextMatchTypeLabel,
             'activeClubReadyForNextMatch' => $activeClubReadyForNextMatch,
@@ -306,7 +309,7 @@ class DashboardController extends Controller
             'notifications' => $notifications,
             'unreadNotificationsCount' => $unreadNotificationsCount,
             'todayMatchesCount' => $todayMatchesCount,
-            'clubRank' => \Inertia\Inertia::lazy(fn() => $clubRank),
+            'clubRank' => $clubRank,
             'clubPoints' => $clubPoints,
             'recentForm' => $recentForm,
             'weekDays' => $weekDays,

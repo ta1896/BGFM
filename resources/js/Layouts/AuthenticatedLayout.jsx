@@ -18,7 +18,7 @@ const MenuGroup = React.memo(({ group, currentRoute }) => {
         const hasActive = group.items.some(item => {
             if (item.active.endsWith('.*')) {
                 const base = item.active.replace('.*', '');
-                return currentRoute.startsWith(base);
+                return currentRoute ? currentRoute.startsWith(base) : false;
             }
             return currentRoute === item.active;
         });
@@ -51,7 +51,7 @@ const MenuGroup = React.memo(({ group, currentRoute }) => {
                     >
                         {group.items.map((item, idx) => {
                             const isActive = item.active.endsWith('.*')
-                                ? currentRoute.startsWith(item.active.replace('.*', ''))
+                                ? (currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false)
                                 : currentRoute === item.active;
 
                             return (
@@ -316,7 +316,7 @@ export default function AuthenticatedLayout({ header, children }) {
             </div>
         </aside>
 
-        <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80">
+        <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80 pt-14 lg:pt-0">
             <div className="sim-content-floating lg:h-[calc(100vh-2rem)] flex flex-col relative">
                 {/* Header */}
                 <header className="bg-[var(--bg-pillar)]/60 backdrop-blur-xl border-b border-[var(--border-muted)] shrink-0">

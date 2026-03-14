@@ -460,7 +460,6 @@ class MatchCenterController extends Controller
                         'executed_plans' => (int) $snapshot->executed_plans,
                         'skipped_plans' => (int) $snapshot->skipped_plans,
                         'invalid_plans' => (int) $snapshot->invalid_plans,
-                        'payload' => $snapshot->payload,
                     ];
                 })
                 ->all(),
