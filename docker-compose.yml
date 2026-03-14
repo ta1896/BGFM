@@ -146,7 +146,7 @@ services:
       - redis
 
   analytics:
-    image: allinone/goaccess
+    image: allinurl/goaccess
     container_name: newgen_analytics
     restart: unless-stopped
     user: root
