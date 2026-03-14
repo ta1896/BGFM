@@ -141,19 +141,7 @@ export default function AuthenticatedLayout({ header, children }) {
         }
 
         if (auth.isAdmin) {
-            groups.bg_admin = {
-                label: 'Administration',
-                items: [
-                    { route: 'admin.dashboard', label: 'ACP Übersicht', active: 'admin.dashboard', icon: Gear },
-                    { route: 'admin.competitions.index', label: 'Wettbewerbe', active: 'admin.competitions.*', icon: Trophy },
-                    { route: 'admin.seasons.index', label: 'Saisons', active: 'admin.seasons.*', icon: Calendar },
-                    { route: 'admin.clubs.index', label: 'Vereine', active: 'admin.clubs.*', icon: BuildingOffice },
-                    { route: 'admin.players.index', label: 'Spieler', active: 'admin.players.*', icon: Users },
-                    { route: 'admin.ticker-templates.index', label: 'Ticker Vorlagen', active: 'admin.ticker-templates.*', icon: FileText },
-                    { route: 'admin.match-engine.index', label: 'Match Engine', active: 'admin.match-engine.*', icon: Gear },
-                    { route: 'admin.monitoring.index', label: 'Monitoring & Debug', active: 'admin.monitoring.*', icon: Gear },
-                ]
-            };
+            // Admin links are now ONLY in the Admin Panel
         }
 
         return groups;
@@ -174,7 +162,7 @@ export default function AuthenticatedLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#0a0b0d] text-slate-100 font-sans">
+        <div className="min-h-screen bg-[#07080a] text-slate-100 font-sans lg:p-4 flex gap-4 transition-all duration-500">
             {/* Mobile Sidebar Toggle */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50">
                 <Link href={route('dashboard')} className="flex items-center gap-2">
@@ -190,8 +178,8 @@ export default function AuthenticatedLayout({ header, children }) {
 
             {/* Sidebar */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-900/70 backdrop-blur-2xl border-r border-slate-800/30 transition-transform duration-300 ease-in-out lg:translate-x-0
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:translate-x-0 sim-sidebar-floating shadow-2xl
             `}>
                 {/* Branding */}
                 <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-800/40">
@@ -275,51 +263,64 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
                     )}
 
-                    <div className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-800/50 group">
-                        <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
-                             <img 
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
-                                alt={auth.user.name}
-                                className="w-full h-full rounded-full"
-                             />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
-                            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                {auth.isAdmin ? 'Administrator' : 'Manager'}
-                            </p>
-                        </div>
+                {/* ACP Switcher for Admins */}
+                {auth.isAdmin && (
+                    <div className="px-4 mb-2">
+                        <Link 
+                            href={route('admin.dashboard')}
+                            className="flex w-full items-center justify-center gap-2 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:bg-amber-500 hover:text-black transition-all shadow-lg"
+                        >
+                            <Gear size={16} weight="bold" />
+                            Admin Control Panel
+                        </Link>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-slate-800/50 group border border-transparent hover:border-slate-700/30">
+                    <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
+                         <img 
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
+                            alt={auth.user.name}
+                            className="w-full h-full rounded-full"
+                         />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
+                        <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500 text-left">
+                            {auth.isAdmin ? 'Administrator' : 'Manager'}
+                        </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <Link 
+                            href={route('profile.edit')} 
+                            className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
+                            title="Profil"
+                        >
+                            <Users size={18} />
+                        </Link>
                         
-                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                            <Link 
-                                href={route('settings.index')} 
-                                className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
-                                title="Einstellungen"
-                            >
-                                <Gear size={18} />
-                            </Link>
-                            
-                            <button 
-                                onClick={() => router.post(route('logout'))}
-                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
-                                title="Logout"
-                            >
-                                <SignOut size={18} />
-                            </button>
-                        </div>
+                        <button 
+                            onClick={() => router.post(route('logout'))}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
+                            title="Logout"
+                        >
+                            <SignOut size={18} />
+                        </button>
                     </div>
                 </div>
-            </aside>
+            </div>
+        </aside>
 
-            {/* Main Content Area */}
-            <div className="flex min-h-screen flex-1 flex-col lg:pl-72 transition-all">
+        <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80">
+            <div className="sim-content-floating lg:h-[calc(100vh-2rem)] flex flex-col relative">
                 {/* Header */}
-                <header className="sticky top-0 z-40 bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30">
+                <header className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30 shrink-0">
                     <div className="px-6 py-4 min-h-[4.5rem] flex items-center justify-between">
                         {header ? (
                             header
                         ) : (
-                            <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center justify-between w-full text-left">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/90 mb-0.5">Scouting & Analysis</p>
                                     <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
@@ -338,12 +339,12 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="h-px w-full bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
                 </header>
 
-                <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+                <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full custom-scrollbar">
                     {flash.status && (
                         <motion.div 
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5"
+                            className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5 text-left"
                         >
                             {flash.status}
                         </motion.div>
@@ -352,6 +353,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     {children}
                 </main>
             </div>
+        </div>
 
             {/* Backdrop for mobile */}
             <AnimatePresence>

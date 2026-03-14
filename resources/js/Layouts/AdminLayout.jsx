@@ -109,11 +109,11 @@ export default function AdminLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#0a0b0d] text-slate-100 font-sans">
+        <div className="min-h-screen bg-[#07080a] text-slate-100 font-sans lg:p-4 flex gap-4 transition-all duration-500">
             {/* Sidebar */}
             <aside className={`
-                fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-900/70 backdrop-blur-2xl border-r border-slate-800/30 transition-transform duration-300 ease-in-out lg:translate-x-0
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:translate-x-0 sim-sidebar-floating shadow-2xl
             `}>
                 {/* Branding */}
                 <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-800/40">
@@ -132,10 +132,10 @@ export default function AdminLayout({ header, children }) {
                 <div className="px-5 py-6">
                     <Link 
                         href={route('dashboard')}
-                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/30 text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition group"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500 border border-amber-500/20 text-xs font-bold uppercase tracking-widest text-amber-500 hover:text-black transition-all group shadow-[0_0_15px_rgba(217,177,92,0.05)]"
                     >
                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        Zurück zum Manager
+                        Manager Modus
                     </Link>
                 </div>
 
@@ -171,11 +171,12 @@ export default function AdminLayout({ header, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex min-h-screen flex-1 flex-col lg:pl-72">
-                <header className="sticky top-0 z-40 bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30">
+            <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80">
+                <div className="sim-content-floating lg:h-[calc(100vh-2rem)] flex flex-col relative">
+                <header className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30 shrink-0">
                     <div className="px-6 py-4 flex items-center justify-between min-h-[4.5rem]">
                         {header ? header : (
-                            <div>
+                            <div className="text-left">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mb-0.5">Control Panel Administration</p>
                                 <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
                             </div>
@@ -189,14 +190,15 @@ export default function AdminLayout({ header, children }) {
                     </div>
                 </header>
 
-                <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
-                    {flash.status && (
-                        <div className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5">
-                            {flash.status}
-                        </div>
-                    )}
-                    {children}
-                </main>
+                    <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full custom-scrollbar">
+                        {flash.status && (
+                            <div className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5 text-left">
+                                {flash.status}
+                            </div>
+                        )}
+                        {children}
+                    </main>
+                </div>
             </div>
         </div>
     );

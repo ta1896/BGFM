@@ -96,6 +96,46 @@
         border-radius: var(--sim-radius-nav);
     }
 
+    /* Floating Sidebar (Option 3) */
+    /* Responsive Floating Sidebar */
+    .sim-sidebar-floating {
+        @apply fixed z-50 transition-all duration-300 ease-in-out;
+    }
+
+    @media (min-width: 1024px) {
+        .sim-sidebar-floating {
+            @apply inset-y-4 left-4 w-72 rounded-[2.5rem] border border-slate-800/40 bg-slate-900/60 backdrop-blur-2xl shadow-2xl overflow-hidden;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.7),
+                inset 0 0 30px rgba(217, 177, 92, 0.03),
+                0 0 20px rgba(217, 177, 92, 0.05);
+        }
+    }
+
+    @media (max-width: 1023px) {
+        .sim-sidebar-floating {
+            @apply inset-y-0 left-0 w-72 bg-slate-900 border-r border-slate-800 shadow-2xl;
+        }
+    }
+
+    .sim-sidebar-floating:hover {
+        @apply border-amber-500/20;
+    }
+
+    /* Responsive Floating Content */
+    .sim-content-floating {
+        @apply flex flex-col transition-all duration-300;
+    }
+
+    @media (min-width: 1024px) {
+        .sim-content-floating {
+            @apply bg-[#0d0e12]/80 backdrop-blur-md border border-slate-800/40 rounded-[2.5rem] shadow-2xl overflow-hidden relative;
+            box-shadow: 
+                0 20px 40px -15px rgba(0, 0, 0, 0.8),
+                inset 0 0 40px rgba(217, 177, 92, 0.02);
+        }
+    }
+
     /* Refined Glassmorphism (V2) */
     .sim-glass {
         @apply backdrop-blur-xl bg-black/40;
