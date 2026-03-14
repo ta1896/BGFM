@@ -75,7 +75,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            Schiedsrichter: Unbekannt
+                            Schiedsrichter: {{ $match->referee ?? 'Unbekannt' }}
                         </span>
                         <span class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -231,13 +231,12 @@
                     </div>
                     <div class="flex items-center gap-4">
                         <span class="flex items-center gap-1"><span class="w-4 text-center">☁️</span>
-                            {{ ucfirst($match->weather) }}</span>
-                        <span class="flex items-center gap-1"><span class="w-4 text-center">🌱</span> Hybridrasen <span
-                                class="bg-yellow-600/20 text-yellow-500 px-1 rounded">Gut</span></span>
+                            {{ ucfirst($match->weather ?? 'Klar') }}</span>
+                        <span class="flex items-center gap-1"><span class="w-4 text-center">🌱</span> {{ $match->pitch_type ?? 'Hybridrasen' }} <span
+                                class="bg-yellow-600/20 text-yellow-500 px-1 rounded">{{ $match->pitch_condition ?? 'Gut' }}</span></span>
                         <span class="flex items-center gap-1"><span class="w-4 text-center">🏠</span> Kabinen <span
-                                class="bg-yellow-600/20 text-yellow-500 px-1 rounded">Gut</span></span>
-                        <span class="flex items-center gap-1"><span class="w-4 text-center">⚖️</span> Alejandro Muñiz
-                            Ruiz</span>
+                                class="bg-yellow-600/20 text-yellow-500 px-1 rounded">{{ $match->facilities_condition ?? 'Gut' }}</span></span>
+                        <span class="flex items-center gap-1"><span class="w-4 text-center">⚖️</span> {{ $match->referee ?? 'Alejandro Muñiz Ruiz' }}</span>
                     </div>
                 </div>
 
