@@ -141,6 +141,10 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::get('/match-engine', [App\Http\Controllers\Admin\GeneralSimulationSettingsController::class, 'index'])->name('match-engine.index');
 
         // Monitoring & Debug Center
+        Route::get('/test/react', function () {
+            return inertia('Test');
+        })->name('test.react');
+
         Route::prefix('monitoring')->name('monitoring.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\MonitoringController::class, 'index'])->name('index');
             Route::get('/logs', [App\Http\Controllers\Admin\MonitoringController::class, 'logs'])->name('logs');
