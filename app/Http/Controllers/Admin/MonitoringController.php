@@ -200,11 +200,19 @@ class MonitoringController extends Controller
 
     public function runLabSimulation(Request $request): \Illuminate\Http\JsonResponse
     {
-        $validated = $request->validate([
-            'home_club_id' => ['required', 'integer', 'exists:clubs,id'],
-            'away_club_id' => ['required', 'integer', 'exists:clubs,id', 'different:home_club_id'],
+        $mode = $request->input('mode', 'single');
+
+        $rules = [
             'stadium_id' => ['nullable', 'exists:stadia,id'],
-        ]);
+        ];
+
+        // Season mode simulates the whole league, so specific clubs are not required
+        if ($mode !== 'season') {
+            $rules['home_club_id'] = ['required', 'integer', 'exists:clubs,id'];
+            $rules['away_club_id'] = ['required', 'integer', 'exists:clubs,id', 'different:home_club_id'];
+        }
+
+        $validated = $request->validate($rules);
 
         try {
             // ... inside try block of runLabSimulation ...
@@ -228,6 +236,20 @@ class MonitoringController extends Controller
                 return response()->json([
                     'success' => true,
                     'data' => $this->runNarrativeHeatmap($validated)
+                ]);
+            }
+
+            if ($mode === 'season') {
+                return response()->json([
+                    'success' => true,
+                    'data' => $this->runSeasonSimulation()
+                ]);
+            }
+
+            if ($mode === 'tactics') {
+                return response()->json([
+                    'success' => true,
+                    'data' => $this->runTacticsMatrix($validated)
                 ]);
             }
 
@@ -602,5 +624,160 @@ class MonitoringController extends Controller
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    private function runSeasonSimulation(): array
+    {
+        set_time_limit(120); // Allow 2 minutes
+        ini_set('memory_limit', '512M');
+
+        // Limit to 18 to ensure it runs within timeout (Bundesliga size)
+        $clubs = \App\Models\Club::where('is_cpu', false)->orWhere('is_cpu', true)->limit(18)->get();
+
+        if ($clubs->count() < 2) {
+            return ['error' => 'Not enough clubs'];
+        }
+
+        $standings = [];
+        foreach ($clubs as $club) {
+            $standings[$club->id] = [
+                'club' => $club->short_name ?? $club->name,
+                'p' => 0,
+                'w' => 0,
+                'd' => 0,
+                'l' => 0,
+                'gf' => 0,
+                'ga' => 0,
+                'gd' => 0,
+                'pts' => 0
+            ];
+        }
+
+        $schedule = [];
+        foreach ($clubs as $home) {
+            foreach ($clubs as $away) {
+                if ($home->id === $away->id)
+                    continue;
+                $schedule[] = ['home' => $home, 'away' => $away];
+            }
+        }
+
+        // Run Simulation
+        $startTime = microtime(true);
+        foreach ($schedule as $fixture) {
+            $match = new \App\Models\GameMatch();
+            $match->home_club_id = $fixture['home']->id;
+            $match->away_club_id = $fixture['away']->id;
+            $match->status = 'scheduled';
+            $match->setRelation('homeClub', $fixture['home']);
+            $match->setRelation('awayClub', $fixture['away']);
+
+            // Quiet mode is essential
+            $res = $this->simulationService->calculateSimulation($match, ['is_sandbox' => true, 'quiet' => true]);
+
+            // Update Home
+            $h = &$standings[$fixture['home']->id];
+            $h['p']++;
+            $h['gf'] += $res['home_score'];
+            $h['ga'] += $res['away_score'];
+            $h['gd'] = $h['gf'] - $h['ga'];
+
+            // Update Away
+            $a = &$standings[$fixture['away']->id];
+            $a['p']++;
+            $a['gf'] += $res['away_score'];
+            $a['ga'] += $res['home_score'];
+            $a['gd'] = $a['gf'] - $a['ga'];
+
+            if ($res['home_score'] > $res['away_score']) {
+                $h['w']++;
+                $h['pts'] += 3;
+                $a['l']++;
+            } elseif ($res['away_score'] > $res['home_score']) {
+                $a['w']++;
+                $a['pts'] += 3;
+                $h['l']++;
+            } else {
+                $h['d']++;
+                $h['pts'] += 1;
+                $a['d']++;
+                $a['pts'] += 1;
+            }
+        }
+
+        // Sort Standings
+        uasort($standings, function ($a, $b) {
+            if ($a['pts'] !== $b['pts'])
+                return $b['pts'] <=> $a['pts'];
+            if ($a['gd'] !== $b['gd'])
+                return $b['gd'] <=> $a['gd'];
+            return $b['gf'] <=> $a['gf'];
+        });
+
+        return [
+            'clubs_count' => $clubs->count(),
+            'total_matches' => count($schedule),
+            'duration' => round(microtime(true) - $startTime, 2),
+            'standings' => array_values($standings)
+        ];
+    }
+
+    private function runTacticsMatrix(array $validated): array
+    {
+        set_time_limit(120); // Allow 2 minutes
+        ini_set('memory_limit', '512M');
+
+        $formations = ['4-4-2', '4-3-3', '3-5-2', '5-4-1', '3-4-3'];
+        $matrix = [];
+        $iterations = 10; // 10 matches per pairing
+
+        $homeClub = \App\Models\Club::find($validated['home_club_id']);
+        $awayClub = \App\Models\Club::find($validated['away_club_id']);
+
+        $startTime = microtime(true);
+
+        foreach ($formations as $fHome) {
+            foreach ($formations as $fAway) {
+                $stats = ['w' => 0, 'd' => 0, 'l' => 0, 'g_scored' => 0];
+
+                for ($i = 0; $i < $iterations; $i++) {
+                    $match = new \App\Models\GameMatch();
+                    $match->home_club_id = $homeClub->id;
+                    $match->away_club_id = $awayClub->id;
+                    $match->status = 'scheduled';
+                    $match->setRelation('homeClub', $homeClub);
+                    $match->setRelation('awayClub', $awayClub);
+
+                    $res = $this->simulationService->calculateSimulation($match, [
+                        'is_sandbox' => true,
+                        'quiet' => true,
+                        'force_home_formation' => $fHome,
+                        'force_away_formation' => $fAway
+                    ]);
+
+                    $stats['g_scored'] += $res['home_score'];
+                    if ($res['home_score'] > $res['away_score'])
+                        $stats['w']++;
+                    elseif ($res['home_score'] < $res['away_score'])
+                        $stats['l']++;
+                    else
+                        $stats['d']++;
+                }
+
+                $matrix[$fHome][$fAway] = [
+                    'win_rate' => round(($stats['w'] / $iterations) * 100),
+                    'avg_goals' => round($stats['g_scored'] / $iterations, 2)
+                ];
+            }
+        }
+
+        return [
+            'formations' => $formations,
+            'matrix' => $matrix,
+            'duration' => round(microtime(true) - $startTime, 2),
+            'home_team' => $homeClub->name,
+            'away_team' => $awayClub->name,
+            'iterations_per_pairing' => $iterations
+        ];
     }
 }

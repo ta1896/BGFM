@@ -90,6 +90,14 @@ class MatchSimulationService
         $homeLineup = $this->resolveLineup($match->homeClub, $match);
         $awayLineup = $this->resolveLineup($match->awayClub, $match);
 
+        // Override Formations (for Tactics Lab)
+        if (isset($options['force_home_formation']) && $homeLineup) {
+            $homeLineup->formation = $options['force_home_formation'];
+        }
+        if (isset($options['force_away_formation']) && $awayLineup) {
+            $awayLineup->formation = $options['force_away_formation'];
+        }
+
         $homePlayers = $this->extractPlayers($homeLineup, $match->homeClub);
         $awayPlayers = $this->extractPlayers($awayLineup, $match->awayClub);
 
@@ -148,6 +156,7 @@ class MatchSimulationService
             'home_players' => $homePlayers,
             'away_players' => $awayPlayers,
             'duration_ms' => $duration,
+            'memory_usage_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
         ];
     }
 
@@ -219,7 +228,7 @@ class MatchSimulationService
 
     private function buildGoalEvents(GameMatch $match, int $clubId, int $goalCount, Collection $squad): array
     {
-        if ($goalCount < 1) {
+        if ($goalCount < 1 || $squad->isEmpty()) {
             return [];
         }
 
@@ -269,6 +278,10 @@ class MatchSimulationService
 
     private function buildCardAndChanceEvents(GameMatch $match, int $clubId, Collection $squad): array
     {
+        if ($squad->isEmpty()) {
+            return [];
+        }
+
         $events = [];
 
         $yellowCount = mt_rand(0, 3);
@@ -329,7 +342,7 @@ class MatchSimulationService
 
     private function buildInjuryEvents(GameMatch $match, int $clubId, Collection $squad): array
     {
-        if (mt_rand(1, 100) > 12) { // 12% chance for an injury per team
+        if ($squad->isEmpty() || mt_rand(1, 100) > 12) { // 12% chance for an injury per team
             return [];
         }
 
@@ -361,6 +374,10 @@ class MatchSimulationService
 
     private function buildSubstitutionEvents(GameMatch $match, int $clubId, Collection $squad): array
     {
+        if ($squad->isEmpty()) {
+            return [];
+        }
+
         $events = [];
         $count = mt_rand(1, 3); // Simulating 1-3 subs per match
 
@@ -396,6 +413,10 @@ class MatchSimulationService
 
     private function buildGenericEvents(GameMatch $match, int $clubId, Collection $squad, Collection $opponentSquad): array
     {
+        if ($squad->isEmpty()) {
+            return [];
+        }
+
         $events = [];
         // Increased frequency: generate 8-15 generic events per team
         $count = mt_rand(8, 15);
@@ -434,8 +455,14 @@ class MatchSimulationService
             ];
 
             if (in_array($type, ['foul', 'free_kick', 'turnover'])) {
+                if ($opponentSquad->isEmpty()) {
+                    continue; // Skip events requiring an opponent if none exist
+                }
                 /** @var Player $opponent */
                 $opponent = $this->randomCollectionItem($opponentSquad);
+                if (!$opponent)
+                    continue;
+
                 $eventData['opponent'] = $opponent->full_name;
                 $eventData['opponent_name'] = $opponent->full_name;
                 $eventData['opponent_player_id'] = $opponent->id;
@@ -658,12 +685,12 @@ class MatchSimulationService
         return $keys[$index];
     }
 
-    private function randomCollectionItem(Collection $collection): Player
+    private function randomCollectionItem(Collection $collection): ?Player
     {
         /** @var Player|null $fallback */
         $fallback = $collection->first();
         if (!$fallback) {
-            throw new \RuntimeException('Cannot pick random item from empty collection.');
+            return null;
         }
 
         $items = $collection->values();

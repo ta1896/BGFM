@@ -1,0 +1,39 @@
+name: Deploy to OVH VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS using SSH via appleboy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/NewGen
+            
+            # Pull latest changes from Git
+            git reset --hard
+            git pull origin main
+            
+            # Rebuild and start container
+            docker compose up -d --build
+            
+            # Install PHP dependencies without dev packages
+            docker compose exec -T app composer install --optimize-autoloader --no-dev
+            
+            # Run database migrations
+            docker compose exec -T app php artisan migrate --force
+            
+            # Clear and cache Laravel configs
+            docker compose exec -T app php artisan config:cache
+            docker compose exec -T app php artisan route:cache
+            docker compose exec -T app php artisan view:cache

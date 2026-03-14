@@ -65,6 +65,16 @@
                                 id="tab-ab">
                                 A/B
                             </button>
+                            <button type="button" onclick="switchLabMode('season')"
+                                class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg text-slate-500 hover:text-slate-300 transition-all"
+                                id="tab-season">
+                                Season
+                            </button>
+                            <button type="button" onclick="switchLabMode('tactics')"
+                                class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg text-slate-500 hover:text-slate-300 transition-all"
+                                id="tab-tactics">
+                                Tactics
+                            </button>
                         </div>
 
                         <!-- 1. Single Simulation Form -->
@@ -192,6 +202,64 @@
                             <button type="submit" id="simulate-btn-ab"
                                 class="w-full py-4 bg-pink-600 text-white font-black rounded-xl shadow-lg shadow-pink-500/20 hover:bg-pink-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
                                 A/B Vergleich Starten
+                            </button>
+                        </form>
+
+                        <!-- 4. Season Simulation Form -->
+                        <form id="lab-simulate-form-season" class="space-y-6 mode-form hidden">
+                            @csrf
+                            <input type="hidden" name="mode" value="season">
+                            <div class="p-4 bg-slate-900/50 rounded-xl border border-white/5 text-center">
+                                <div class="text-4xl mb-4">🏆</div>
+                                <h4 class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">
+                                    Saison-Simulation</h4>
+                                <p class="text-[10px] text-slate-400 leading-relaxed">
+                                    Simuliert eine komplette Saison (Hin- & Rückrunde) für 18 Teams.
+                                    Dauer: ca. 5-10 Sekunden.
+                                </p>
+                            </div>
+                            <button type="submit" id="simulate-btn-season"
+                                class="w-full py-4 bg-amber-600 text-white font-black rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-500 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
+                                Saison Starten
+                            </button>
+                        </form>
+
+                        <!-- 5. Tactics Meta Form -->
+                        <form id="lab-simulate-form-tactics" class="space-y-6 mode-form hidden">
+                            @csrf
+                            <input type="hidden" name="mode" value="tactics">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Test-Teams</label>
+                                <div class="flex gap-2">
+                                    <select name="home_club_id"
+                                        class="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-2 focus:ring-pink-500/50 transition truncate">
+                                        @foreach($clubs as $club)
+                                            <option value="{{ $club->id }}">{{ $club->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="away_club_id"
+                                        class="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-2 focus:ring-pink-500/50 transition truncate">
+                                        @foreach($clubs as $club)
+                                            <option value="{{ $club->id }}" @if($loop->index == 1) selected @endif>
+                                                {{ $club->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-900/50 rounded-xl border border-white/5 text-center">
+                                <div class="text-4xl mb-4">🧠</div>
+                                <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">
+                                    Taktik-Analyse</h4>
+                                <p class="text-[10px] text-slate-400 leading-relaxed">
+                                    Simuliert alle Formations-Kombinationen (z.B. 4-4-2 vs 4-3-3).
+                                    Dauer: ca. 10 Sekunden.
+                                </p>
+                            </div>
+                            <button type="submit" id="simulate-btn-tactics"
+                                class="w-full py-4 bg-indigo-500 text-white font-black rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-400 hover:-translate-y-0.5 active:translate-y-0 transition-all text-xs uppercase tracking-widest">
+                                Meta-Report Generieren
                             </button>
                         </form>
                     </div>
@@ -415,6 +483,10 @@
                 renderABResult(data);
             } else if (mode === 'heatmap') {
                 renderHeatmapResult(data);
+            } else if (mode === 'season') {
+                renderSeasonResult(data);
+            } else if (mode === 'tactics') {
+                renderTacticsResult(data);
             }
 
             placeholder.classList.add('hidden');
@@ -425,6 +497,140 @@
                 top: results.offsetTop - 100,
                 behavior: 'smooth'
             });
+        }
+
+        function renderTacticsResult(data) {
+            const container = document.getElementById('res-events');
+
+            // Build Matrix Header
+            let headers = data.formations.map(f => `<th class="py-3 px-3 text-center text-[10px] uppercase font-bold text-slate-500">${f} <span class="block text-[9px] font-normal opacity-50">Away</span></th>`).join('');
+
+            // Build Matrix Rows
+            let rows = data.formations.map(homeF => {
+                let cells = data.formations.map(awayF => {
+                    let res = data.matrix[homeF][awayF];
+                    let bgClass = 'bg-slate-800/50';
+                    let textClass = 'text-slate-400';
+
+                    if (res.win_rate > 55) { bgClass = 'bg-emerald-500/10'; textClass = 'text-emerald-400 font-bold'; }
+                    else if (res.win_rate < 25) { bgClass = 'bg-red-500/10'; textClass = 'text-red-400 font-bold'; }
+                    else if (res.win_rate >= 40 && res.win_rate <= 55) { bgClass = 'bg-amber-500/10'; textClass = 'text-amber-400'; }
+
+                    return `
+                        <td class="p-2 text-center border border-white/5 ${bgClass} transition hover:bg-white/5 cursor-help" title="${homeF} vs ${awayF}: ${res.win_rate}% Win Rate, ${res.avg_goals} Goals Ø">
+                            <div class="${textClass} text-sm">${res.win_rate}%</div>
+                            <div class="text-[9px] text-slate-500">Ø ${res.avg_goals}</div>
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr>
+                         <th class="py-3 px-3 text-right text-[10px] uppercase font-bold text-slate-500 border-r border-white/5">${homeF} <span class="block text-[9px] font-normal opacity-50">Home</span></th>
+                         ${cells}
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                    <div class="text-center space-y-2">
+                         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Tactics Meta Report</div>
+                        <h2 class="text-2xl font-black text-white">Formation Advantage Matrix</h2>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-white/5 text-[10px] text-slate-400">
+                            <span>${data.iterations_per_pairing} Iterationen p. Paar</span>
+                            <span>•</span>
+                            <span>${data.home_team} vs ${data.away_team}</span>
+                        </div>
+                    </div>
+
+                    <div class="sim-card p-6 overflow-hidden bg-slate-900/50 flex justify-center">
+                         <div class="overflow-x-auto">
+                            <table class="border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="p-3"></th> <!-- Corner -->
+                                        ${headers}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rows}
+                                </tbody>
+                            </table>
+                         </div>
+                    </div>
+                    
+                    <div class="flex justify-center gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 bg-emerald-500/20 rounded border border-emerald-500/50"></div> Advantage (>55%)</div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 bg-amber-500/20 rounded border border-amber-500/50"></div> Balanced</div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 bg-red-500/20 rounded border border-red-500/50"></div> Disadvantage (<25%)</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSeasonResult(data) {
+            const container = document.getElementById('res-events');
+
+            let tableRows = data.standings.map((team, index) => {
+                let rankClass = '';
+                let rankIcon = '';
+                if (index < 4) { rankClass = 'text-emerald-400'; rankIcon = '🟢'; }
+                else if (index >= data.standings.length - 3) { rankClass = 'text-red-400'; rankIcon = '🔴'; }
+
+                return `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                        <td class="py-3 px-4 font-mono text-slate-500">${index + 1}</td>
+                        <td class="py-3 px-4 font-bold text-white flex items-center gap-2">
+                            <span class="text-[10px]">${rankIcon}</span> ${team.club}
+                        </td>
+                        <td class="py-3 px-4 text-center text-slate-400">${team.p}</td>
+                        <td class="py-3 px-4 text-center text-emerald-500/80">${team.w}</td>
+                        <td class="py-3 px-4 text-center text-slate-500">${team.d}</td>
+                        <td class="py-3 px-4 text-center text-red-500/80">${team.l}</td>
+                        <td class="py-3 px-4 text-center text-slate-300 font-mono text-xs">${team.gf}:${team.ga}</td>
+                        <td class="py-3 px-4 text-center font-bold ${team.gd > 0 ? 'text-emerald-500' : (team.gd < 0 ? 'text-red-500' : 'text-slate-500')}">${team.gd > 0 ? '+' : ''}${team.gd}</td>
+                        <td class="py-3 px-4 text-center font-black text-white text-lg">${team.pts}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                    <div class="text-center space-y-2">
+                        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">Season Simulation Report</div>
+                        <h2 class="text-2xl font-black text-white">Virtual League Table</h2>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-white/5 text-[10px] text-slate-400">
+                            <span>${data.total_matches} Spiele</span>
+                            <span>•</span>
+                            <span>${data.duration}s Berechnungszeit</span>
+                        </div>
+                    </div>
+
+                    <div class="sim-card overflow-hidden bg-slate-900/50">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-black/20 text-[9px] uppercase tracking-widest text-slate-500 font-black">
+                                    <tr>
+                                        <th class="py-3 px-4">#</th>
+                                        <th class="py-3 px-4">Club</th>
+                                        <th class="py-3 px-4 text-center">Sp</th>
+                                        <th class="py-3 px-4 text-center">S</th>
+                                        <th class="py-3 px-4 text-center">U</th>
+                                        <th class="py-3 px-4 text-center">N</th>
+                                        <th class="py-3 px-4 text-center">Tore</th>
+                                        <th class="py-3 px-4 text-center">Diff</th>
+                                        <th class="py-3 px-4 text-center">Punkte</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    ${tableRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function renderSingleResult(sim) {
@@ -443,7 +649,7 @@
             document.getElementById('res-metadata').innerHTML = `
                 <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
                     <span class="text-slate-500 uppercase tracking-tighter">Engine Performance</span>
-                    <span class="text-white font-black">${sim.duration_ms}ms</span>
+                    <span class="text-white font-black">${sim.duration_ms}ms <span class="text-slate-600 text-[10px] lowercase font-normal ml-1">(${sim.memory_usage_mb} mb)</span></span>
                 </div>
                  <div class="flex justify-between border-b border-white/5 pb-2 mb-2">
                     <span class="text-slate-500 uppercase tracking-tighter">Event Integrity</span>
