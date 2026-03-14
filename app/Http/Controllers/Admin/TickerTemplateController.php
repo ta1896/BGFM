@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MatchTickerTemplate;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TickerTemplateController extends Controller
 {
@@ -35,63 +36,68 @@ class TickerTemplateController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        $eventTypes = MatchTickerTemplate::EVENT_TYPES;
-        $moods = MatchTickerTemplate::MOODS;
-        $styles = MatchTickerTemplate::STYLES;
-
-        return view('admin.ticker-templates.index', compact('templates', 'eventTypes', 'moods', 'styles'));
+        return Inertia::render('Admin/TickerTemplates/Index', [
+            'templates'  => $templates,
+            'eventTypes' => MatchTickerTemplate::EVENT_TYPES,
+            'moods'      => MatchTickerTemplate::MOODS,
+            'styles'     => MatchTickerTemplate::STYLES,
+            'filters'    => $request->only(['search', 'event_types', 'mood', 'commentator_style']),
+        ]);
     }
 
     public function create()
     {
-        $eventTypes = MatchTickerTemplate::EVENT_TYPES;
-        $moods = MatchTickerTemplate::MOODS;
-        $styles = MatchTickerTemplate::STYLES;
-        return view('admin.ticker-templates.create', compact('eventTypes', 'moods', 'styles'));
+        return Inertia::render('Admin/TickerTemplates/Form', [
+            'eventTypes' => MatchTickerTemplate::EVENT_TYPES,
+            'moods'      => MatchTickerTemplate::MOODS,
+            'styles'     => MatchTickerTemplate::STYLES,
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'event_type' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
-            'text' => 'required|string',
-            'priority' => 'required|string|in:low,normal,high',
-            'mood' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
+            'event_type'        => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
+            'text'              => 'required|string',
+            'priority'          => 'required|string|in:low,normal,high',
+            'mood'              => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
             'commentator_style' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::STYLES)),
-            'locale' => 'required|string|size:2',
+            'locale'            => 'required|string|size:2',
         ]);
 
         $this->validatePlaceholders($validated['text']);
 
         MatchTickerTemplate::create($validated);
 
-        return redirect()->route('admin.ticker-templates.index')->with('success', 'Vorlage erfolgreich erstellt.');
+        return redirect()->route('admin.ticker-templates.index')->with('status', 'Vorlage erfolgreich erstellt.');
     }
 
     public function edit(MatchTickerTemplate $tickerTemplate)
     {
-        $eventTypes = MatchTickerTemplate::EVENT_TYPES;
-        $moods = MatchTickerTemplate::MOODS;
-        $styles = MatchTickerTemplate::STYLES;
-        return view('admin.ticker-templates.edit', compact('tickerTemplate', 'eventTypes', 'moods', 'styles'));
+        return Inertia::render('Admin/TickerTemplates/Form', [
+            'tickerTemplate' => $tickerTemplate,
+            'eventTypes'     => MatchTickerTemplate::EVENT_TYPES,
+            'moods'          => MatchTickerTemplate::MOODS,
+            'styles'         => MatchTickerTemplate::STYLES,
+        ]);
     }
 
     public function update(Request $request, MatchTickerTemplate $tickerTemplate)
     {
         $validated = $request->validate([
-            'event_type' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
-            'text' => 'required|string',
-            'priority' => 'required|string|in:low,normal,high',
-            'mood' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
+            'event_type'        => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::EVENT_TYPES)),
+            'text'              => 'required|string',
+            'priority'          => 'required|string|in:low,normal,high',
+            'mood'              => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::MOODS)),
             'commentator_style' => 'required|string|in:' . implode(',', array_keys(MatchTickerTemplate::STYLES)),
-            'locale' => 'required|string|size:2',
+            'locale'            => 'required|string|size:2',
         ]);
 
         $this->validatePlaceholders($validated['text']);
 
         $tickerTemplate->update($validated);
 
-        return redirect()->route('admin.ticker-templates.index')->with('success', 'Vorlage erfolgreich aktualisiert.');
+        return redirect()->route('admin.ticker-templates.index')->with('status', 'Vorlage erfolgreich aktualisiert.');
     }
 
     private function validatePlaceholders(string $text): void
@@ -112,6 +118,6 @@ class TickerTemplateController extends Controller
     {
         $tickerTemplate->delete();
 
-        return redirect()->route('admin.ticker-templates.index')->with('success', 'Vorlage erfolgreich gelöscht.');
+        return redirect()->route('admin.ticker-templates.index')->with('status', 'Vorlage erfolgreich gelöscht.');
     }
 }

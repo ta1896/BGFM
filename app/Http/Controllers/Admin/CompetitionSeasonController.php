@@ -7,30 +7,33 @@ use App\Models\CompetitionSeason;
 use App\Models\Club;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CompetitionSeasonController extends Controller
 {
-    public function edit(CompetitionSeason $competitionSeason): View
+    public function edit(CompetitionSeason $competitionSeason): Response
     {
         $competitionSeason->load(['competition', 'season']);
-        $clubs = Club::orderBy('name')->get();
+        $clubs = Club::orderBy('name')->get(['id', 'name']);
 
-        return view('admin.competition_seasons.edit', compact('competitionSeason', 'clubs'));
+        return Inertia::render('Admin/CompetitionSeasons/Edit', [
+            'competitionSeason' => $competitionSeason,
+            'clubs'             => $clubs,
+        ]);
     }
 
     public function update(Request $request, CompetitionSeason $competitionSeason): RedirectResponse
     {
         $validated = $request->validate([
-            'league_winner_club_id' => 'nullable|exists:clubs,id',
+            'league_winner_club_id'       => 'nullable|exists:clubs,id',
             'national_cup_winner_club_id' => 'nullable|exists:clubs,id',
-            'intl_cup_winner_club_id' => 'nullable|exists:clubs,id',
-            'is_finished' => 'boolean',
+            'intl_cup_winner_club_id'     => 'nullable|exists:clubs,id',
+            'is_finished'                 => 'boolean',
         ]);
 
         $competitionSeason->update($validated);
 
-        // If finished, record achievements and ranks
         if ($request->boolean('is_finished')) {
             $this->recordAchievements($competitionSeason);
             $this->assignFinalRanks($competitionSeason);
@@ -43,36 +46,24 @@ class CompetitionSeasonController extends Controller
 
     private function recordAchievements(CompetitionSeason $compSeason): void
     {
-        // League Winner
         if ($compSeason->league_winner_club_id) {
             $compSeason->achievements()->updateOrCreate(
                 ['club_id' => $compSeason->league_winner_club_id, 'type' => 'league_winner'],
-                [
-                    'title' => 'Meister ' . $compSeason->competition->name . ' (' . $compSeason->season->name . ')',
-                    'achieved_at' => now(),
-                ]
+                ['title' => 'Meister ' . $compSeason->competition->name . ' (' . $compSeason->season->name . ')', 'achieved_at' => now()]
             );
         }
 
-        // National Cup
         if ($compSeason->national_cup_winner_club_id) {
             $compSeason->achievements()->updateOrCreate(
                 ['club_id' => $compSeason->national_cup_winner_club_id, 'type' => 'cup_winner_national'],
-                [
-                    'title' => 'Nationaler Pokalsieger (' . $compSeason->season->name . ')',
-                    'achieved_at' => now(),
-                ]
+                ['title' => 'Nationaler Pokalsieger (' . $compSeason->season->name . ')', 'achieved_at' => now()]
             );
         }
 
-        // Intl Cup
         if ($compSeason->intl_cup_winner_club_id) {
             $compSeason->achievements()->updateOrCreate(
                 ['club_id' => $compSeason->intl_cup_winner_club_id, 'type' => 'cup_winner_intl'],
-                [
-                    'title' => 'Internationaler Pokalsieger (' . $compSeason->season->name . ')',
-                    'achieved_at' => now(),
-                ]
+                ['title' => 'Internationaler Pokalsieger (' . $compSeason->season->name . ')', 'achieved_at' => now()]
             );
         }
     }
@@ -92,14 +83,10 @@ class CompetitionSeasonController extends Controller
         foreach ($stats as $index => $stat) {
             $stat->update(['rank' => $index + 1]);
 
-            // Auto-achievement for Rank 1 if not manually set
             if ($index === 0 && !$compSeason->league_winner_club_id) {
                 $compSeason->achievements()->updateOrCreate(
                     ['club_id' => $stat->club_id, 'type' => 'league_winner'],
-                    [
-                        'title' => 'Meister ' . $compSeason->competition->name . ' (' . $compSeason->season->name . ')',
-                        'achieved_at' => now(),
-                    ]
+                    ['title' => 'Meister ' . $compSeason->competition->name . ' (' . $compSeason->season->name . ')', 'achieved_at' => now()]
                 );
             }
         }
