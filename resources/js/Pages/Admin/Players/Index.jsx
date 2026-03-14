@@ -1,0 +1,223 @@
+import React, { useState } from 'react';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { Head, Link, router } from '@inertiajs/react';
+import { 
+    Users, UserPlus, MagnifyingGlass, Funnel, 
+    ChartBar, TrendUp, Warning, FirstAid,
+    IdentificationBadge, CaretDown, CaretUp 
+} from '@phosphor-icons/react';
+
+const StatCard = ({ title, value, subtext, color = 'cyan' }) => (
+    <div className={`sim-card p-4 border-l-4 border-l-${color}-500/50`}>
+        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p>
+        <p className="text-xl font-black text-white mt-1 leading-none">{value}</p>
+        {subtext && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{subtext}</p>}
+    </div>
+);
+
+export default function Index({ players, groupedPlayers, squadStats, clubs, activeClubId }) {
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const handleClubChange = (e) => {
+        router.get(route('admin.players.index'), { club: e.target.value });
+    };
+
+    return (
+        <AdminLayout>
+            <Head title="Spielerverwaltung" />
+
+            <div className="space-y-8 pb-20">
+                <div className="flex flex-wrap items-end justify-between gap-6">
+                    <div>
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Dashboard Spieler</h2>
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Globale Kader- und Talentverwaltung</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                            <select 
+                                className="sim-select pl-10 pr-8 py-2.5 text-xs font-bold w-64 appearance-none"
+                                value={activeClubId || ''}
+                                onChange={handleClubChange}
+                            >
+                                <option value="">Alle Vereine (Global)</option>
+                                {clubs.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} ({c.user?.name || 'CPU'})
+                                    </option>
+                                ))}
+                            </select>
+                            <Funnel size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                        </div>
+
+                        <Link 
+                            href={route('admin.players.create')}
+                            className="sim-btn-primary px-6 py-2.5 flex items-center gap-2"
+                        >
+                            <UserPlus size={18} weight="bold" />
+                            Spieler erstellen
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Squad Analysis */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard 
+                        title=" Ø Stärke / Alter" 
+                        value={`${squadStats.avg_rating} / 99`} 
+                        subtext={`Alter: ${squadStats.avg_age} Jahre`}
+                        color="cyan"
+                    />
+                     <StatCard 
+                        title="Gesamtmarktwert" 
+                        value={`${new Intl.NumberFormat('de-DE').format(squadStats.total_value)} €`} 
+                        subtext={`Ø ${new Intl.NumberFormat('de-DE').format(squadStats.avg_value)} €`}
+                        color="emerald"
+                    />
+                    <StatCard 
+                        title="Verfügbarkeit" 
+                        value={`${squadStats.count} Spieler`} 
+                        subtext={`${squadStats.injured_count} Verletzt / ${squadStats.suspended_count} Gesperrt`}
+                        color="amber"
+                    />
+                </div>
+
+                {groupedPlayers ? (
+                    <div className="space-y-8">
+                        {Object.entries(groupedPlayers).map(([group, groupPlayers]) => (
+                            <div key={group} className="space-y-4">
+                                <div className="flex items-center gap-3 px-2">
+                                    <div className="h-0.5 flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent"></div>
+                                    <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em]">{group} ({groupPlayers.length})</h3>
+                                    <div className="h-0.5 flex-1 bg-gradient-to-l from-cyan-500/50 to-transparent"></div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {groupPlayers.map(player => (
+                                        <Link 
+                                            key={player.id}
+                                            href={route('admin.players.edit', player.id)}
+                                            className="sim-card p-3 relative group hover:border-cyan-500/30 transition-all overflow-hidden"
+                                        >
+                                             <div className="absolute -bottom-2 -right-2 text-4xl font-black text-white/[0.03] italic transition-colors group-hover:text-cyan-500/10 active:opacity-0 pointer-events-none">
+                                                {player.position}
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <img src={player.photo_url} className="h-10 w-10 rounded-xl object-cover border border-slate-800 bg-slate-900" alt="" />
+                                                    <div className="absolute -bottom-1 -right-1 bg-slate-950 px-1 rounded border border-slate-800 text-[8px] font-black text-cyan-400 uppercase">
+                                                        {player.position}
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-white text-sm truncate group-hover:text-cyan-400 transition-colors uppercase italic">{player.last_name}</p>
+                                                    <p className="text-[9px] text-slate-500 font-bold uppercase truncate">{player.first_name}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xl font-black text-white leading-none">{player.overall}</p>
+                                                    <p className="text-[8px] text-slate-600 font-black uppercase mt-0.5 tracking-tighter">Rating</p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="sim-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-slate-800 bg-slate-900/50">
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Spieler</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Verein</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Pos</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">OVR</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Alter</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Wert</th>
+                                        <th className="px-6 py-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {players.data.map((player) => (
+                                        <tr key={player.id} className="hover:bg-slate-800/20 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-slate-700 bg-slate-900" alt="" />
+                                                    <span className="font-bold text-white group-hover:text-cyan-400 transition-colors">{player.full_name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {player.club ? (
+                                                     <div className="flex items-center gap-2">
+                                                        <img src={player.club.logo_url} className="h-5 w-5 object-contain" alt="" />
+                                                        <span className="text-xs text-slate-400 hover:text-white transition-colors cursor-default">{player.club.name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Vereinslos</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-black text-cyan-400 border border-slate-700">{player.position}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center font-black text-white">{player.overall}</td>
+                                            <td className="px-6 py-4 text-center text-xs text-slate-400">{player.age}</td>
+                                            <td className="px-6 py-4 text-right font-black text-emerald-400 text-xs tabular-nums">
+                                                {new Intl.NumberFormat('de-DE').format(player.market_value)} €
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Link 
+                                                    href={route('admin.players.edit', player.id)}
+                                                    className="p-2 text-slate-600 hover:text-cyan-400 transition-colors"
+                                                >
+                                                    <IdentificationBadge size={18} weight="bold" />
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination for Global View */}
+                        <div className="flex items-center justify-between px-6 py-4 bg-slate-900/50 border-t border-slate-800">
+                             <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                                Zeige {players.from}-{players.to} von {players.total}
+                            </div>
+                            <div className="flex gap-2">
+                                {players.links.map((link, idx) => (
+                                    link.url ? (
+                                        <Link
+                                            key={idx}
+                                            href={link.url}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                                link.active 
+                                                ? 'bg-cyan-500 border-cyan-400 text-white' 
+                                                : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-white'
+                                            }`}
+                                        />
+                                    ) : (
+                                        <span
+                                            key={idx}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                            className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-slate-900 border-slate-800 text-slate-700 cursor-default opacity-50"
+                                        />
+                                    )
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <style dangerouslySetInnerHTML={{ __html: `
+                .sim-btn-primary {
+                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(34,211,238,0.2)];
+                }
+            `}} />
+        </AdminLayout>
+    );
+}

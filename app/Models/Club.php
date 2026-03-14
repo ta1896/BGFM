@@ -178,10 +178,6 @@ class Club extends Model
         return $this->hasMany(TeamOfTheDayPlayer::class);
     }
 
-    public function randomEventOccurrences(): HasMany
-    {
-        return $this->hasMany(RandomEventOccurrence::class);
-    }
 
     public function friendlyRequestsAsChallenger(): HasMany
     {

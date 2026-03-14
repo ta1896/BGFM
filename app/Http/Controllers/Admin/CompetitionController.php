@@ -14,7 +14,7 @@ use Illuminate\View\View;
 
 class CompetitionController extends Controller
 {
-    public function index(): View
+    public function index(): \Inertia\Response
     {
         $competitions = Competition::query()
             ->with('country')
@@ -23,15 +23,17 @@ class CompetitionController extends Controller
             ->orderBy('name')
             ->paginate(20);
 
-        return view('admin.competitions.index', [
+        return \Inertia\Inertia::render('Admin/Competitions/Index', [
             'competitions' => $competitions,
         ]);
     }
 
-    public function create(): View
+    public function create(): \Inertia\Response
     {
-        return view('admin.competitions.create', [
+        return \Inertia\Inertia::render('Admin/Competitions/Form', [
             'countries' => Country::orderBy('name')->get(),
+            'competition' => null,
+            'availableSeasons' => [],
         ]);
     }
 
@@ -51,12 +53,12 @@ class CompetitionController extends Controller
         return redirect()->route('admin.competitions.edit', $competition);
     }
 
-    public function edit(Competition $competition): View
+    public function edit(Competition $competition): \Inertia\Response
     {
         $competition->load('competitionSeasons.season');
         $availableSeasons = Season::orderByDesc('start_date')->get();
 
-        return view('admin.competitions.edit', [
+        return \Inertia\Inertia::render('Admin/Competitions/Form', [
             'competition' => $competition,
             'countries' => Country::orderBy('name')->get(),
             'availableSeasons' => $availableSeasons,

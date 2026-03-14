@@ -172,7 +172,19 @@
 
     /* Buttons */
     .sim-btn-primary {
-        @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:brightness-110 hover:shadow-cyan-500/40 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:brightness-110 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+    }
+
+    .sim-action-btn {
+        @apply flex items-center justify-center p-3 text-xs font-black uppercase tracking-widest rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-600 transition-all text-center;
+    }
+
+    .sim-action-btn.primary {
+        @apply border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-500/50;
+    }
+
+    .sim-action-btn.highlight {
+        @apply border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50;
     }
 
     .sim-btn-muted {

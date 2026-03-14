@@ -14,10 +14,11 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): View
+    public function edit(Request $request): \Inertia\Response
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
+        return \Inertia\Inertia::render('Profile/Edit', [
+            'mustVerifyEmail' => $request->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
+            'status' => session('status'),
         ]);
     }
 

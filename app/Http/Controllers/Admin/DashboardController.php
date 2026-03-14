@@ -17,9 +17,9 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(SimulationSettingsService $simulationSettings): View
+    public function index(SimulationSettingsService $simulationSettings): \Inertia\Response
     {
-        return view('admin.dashboard', [
+        return \Inertia\Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'users' => User::count(),
                 'admins' => User::where('is_admin', true)->count(),
@@ -39,7 +39,13 @@ class DashboardController extends Controller
                 ->where('is_finished', false)
                 ->whereHas('competition', fn ($q) => $q->where('type', 'league'))
                 ->orderBy('id')
-                ->get(),
+                ->get()
+                ->map(function($cs) {
+                    return [
+                        'id' => $cs->id,
+                        'label' => ($cs->competition?->name ?? 'Unbekannt') . ' - ' . ($cs->season?->name ?? 'Unbekannt'),
+                    ];
+                }),
             'simulationSettings' => $simulationSettings->adminSettings(),
         ]);
     }

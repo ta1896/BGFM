@@ -18,7 +18,7 @@ class ClubController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(): \Inertia\Response
     {
         $clubs = Club::query()
             ->with('user')
@@ -26,17 +26,21 @@ class ClubController extends Controller
             ->latest()
             ->paginate(20);
 
-        return view('admin.clubs.index', ['clubs' => $clubs]);
+        return \Inertia\Inertia::render('Admin/Clubs/Index', [
+            'clubs' => $clubs,
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(): \Inertia\Response
     {
-        return view('admin.clubs.create', [
+        return \Inertia\Inertia::render('Admin/Clubs/Form', [
             'users' => User::orderBy('name')->get(),
             'clubs' => Club::orderBy('name')->get(),
+            'club' => null,
+            'rolePlayers' => [],
         ]);
     }
 
@@ -98,12 +102,15 @@ class ClubController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Club $club): View
+    public function edit(Club $club): \Inertia\Response
     {
-        return view('admin.clubs.edit', [
+        $rolePlayers = $club->players()->orderByDesc('overall')->limit(40)->get();
+
+        return \Inertia\Inertia::render('Admin/Clubs/Form', [
             'club' => $club,
             'users' => User::orderBy('name')->get(),
             'clubs' => Club::where('id', '!=', $club->id)->orderBy('name')->get(),
+            'rolePlayers' => $rolePlayers,
         ]);
     }
 

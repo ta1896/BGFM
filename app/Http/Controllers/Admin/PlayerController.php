@@ -15,7 +15,7 @@ class PlayerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
         $clubId = (int) $request->query('club');
 
@@ -31,20 +31,20 @@ class PlayerController extends Controller
             $players = $query->paginate(20)->withQueryString();
         }
 
-        // Stats calculation (using Collection if paginated, but better logic for squad view)
+        // Stats calculation
         $statsPlayers = ($players instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $players->getCollection() : $players;
 
         $squadStats = [
             'count' => $statsPlayers->count(),
             'avg_age' => $statsPlayers->isNotEmpty() ? round($statsPlayers->avg('age'), 1) : 0,
             'avg_rating' => $statsPlayers->isNotEmpty() ? round($statsPlayers->avg('overall'), 1) : 0,
-            'total_value' => $statsPlayers->sum('market_value'),
-            'avg_value' => $statsPlayers->isNotEmpty() ? $statsPlayers->avg('market_value') : 0,
+            'total_value' => (float) $statsPlayers->sum('market_value'),
+            'avg_value' => $statsPlayers->isNotEmpty() ? (float) $statsPlayers->avg('market_value') : 0,
             'injured_count' => $statsPlayers->where('is_injured', true)->count(),
             'suspended_count' => $statsPlayers->where('is_suspended', true)->count(),
         ];
 
-        // Group only if club selected or we want to show it grouped anyway
+        // Group only if club selected
         $groupedPlayers = null;
         if ($clubId > 0) {
             $groupedPlayers = $statsPlayers->groupBy(fn($player) => match (true) {
@@ -58,10 +58,10 @@ class PlayerController extends Controller
                     'Mittelfeld' => 3,
                     'Sturm' => 4,
                     default => 99,
-                });
+                })->map(fn($group) => $group->values()); // Reset keys for JSON
         }
 
-        return view('admin.players.index', [
+        return \Inertia\Inertia::render('Admin/Players/Index', [
             'players' => $players,
             'groupedPlayers' => $groupedPlayers,
             'squadStats' => $squadStats,
@@ -73,11 +73,12 @@ class PlayerController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(): \Inertia\Response
     {
-        return view('admin.players.create', [
+        return \Inertia\Inertia::render('Admin/Players/Form', [
             'clubs' => Club::with('user')->orderBy('name')->get(),
             'positions' => $this->positions(),
+            'player' => null,
         ]);
     }
 
@@ -106,9 +107,9 @@ class PlayerController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Player $player): View
+    public function edit(Player $player): \Inertia\Response
     {
-        return view('admin.players.edit', [
+        return \Inertia\Inertia::render('Admin/Players/Form', [
             'player' => $player,
             'clubs' => Club::with('user')->orderBy('name')->get(),
             'positions' => $this->positions(),

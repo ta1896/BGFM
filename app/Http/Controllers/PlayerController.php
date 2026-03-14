@@ -79,11 +79,14 @@ class PlayerController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request): View
+    public function create(Request $request): \Inertia\Response
     {
-        return view('players.create', [
-            'clubs' => $request->user()->clubs()->orderBy('name')->get(),
+        return \Inertia\Inertia::render('Players/Form', [
+            'clubs' => $request->user()->isAdmin()
+                ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
+                : $request->user()->clubs()->orderBy('name')->get(),
             'positions' => $this->positions(),
+            'player' => null,
         ]);
     }
 
@@ -177,13 +180,15 @@ class PlayerController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, Player $player): View
+    public function edit(Request $request, Player $player): \Inertia\Response
     {
         $this->ensureOwnership($request, $player);
 
-        return view('players.edit', [
-            'player' => $player,
-            'clubs' => $request->user()->clubs()->orderBy('name')->get(),
+        return \Inertia\Inertia::render('Players/Form', [
+            'player' => $player->append('photo_url'),
+            'clubs' => $request->user()->isAdmin()
+                ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
+                : $request->user()->clubs()->orderBy('name')->get(),
             'positions' => $this->positions(),
         ]);
     }

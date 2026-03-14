@@ -10,15 +10,19 @@ use Illuminate\View\View;
 
 class SeasonController extends Controller
 {
-    public function index(): View
+    public function index(): \Inertia\Response
     {
         $seasons = Season::orderByDesc('start_date')->get();
-        return view('admin.seasons.index', compact('seasons'));
+        return \Inertia\Inertia::render('Admin/Seasons/Index', [
+            'seasons' => $seasons,
+        ]);
     }
 
-    public function create(): View
+    public function create(): \Inertia\Response
     {
-        return view('admin.seasons.create');
+        return \Inertia\Inertia::render('Admin/Seasons/Form', [
+            'season' => null,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -39,9 +43,11 @@ class SeasonController extends Controller
         return redirect()->route('admin.seasons.index')->with('status', 'Saison erstellt.');
     }
 
-    public function edit(Season $season): View
+    public function edit(Season $season): \Inertia\Response
     {
-        return view('admin.seasons.edit', compact('season'));
+        return \Inertia\Inertia::render('Admin/Seasons/Form', [
+            'season' => $season,
+        ]);
     }
 
     public function update(Request $request, Season $season): RedirectResponse

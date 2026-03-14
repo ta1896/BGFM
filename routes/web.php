@@ -18,7 +18,6 @@ use App\Http\Controllers\MatchCenterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RandomEventController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
@@ -89,9 +88,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
             Route::get('/team-of-the-day', [TeamOfTheDayController::class, 'index'])->name('team-of-the-day.index');
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');
-            Route::get('/random-events', [RandomEventController::class, 'index'])->name('random-events.index');
-            Route::post('/random-events/trigger', [RandomEventController::class, 'trigger'])->name('random-events.trigger');
-            Route::post('/random-events/{occurrence}/apply', [RandomEventController::class, 'apply'])->name('random-events.apply');
         }
     );
 });

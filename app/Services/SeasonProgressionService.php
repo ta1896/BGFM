@@ -27,8 +27,7 @@ class SeasonProgressionService
         private readonly SponsorService $sponsorService,
         private readonly PlayerAvailabilityService $playerAvailabilityService,
         private readonly CupQualificationService $cupQualificationService,
-        private readonly TeamOfTheDayService $teamOfTheDayService,
-        private readonly RandomEventService $randomEventService
+        private readonly TeamOfTheDayService $teamOfTheDayService
     ) {
     }
 
@@ -46,8 +45,7 @@ class SeasonProgressionService
      *   training_camps_completed:int,
      *   sponsor_contracts_expired:int,
      *   team_of_the_day_generated:int,
-     *   random_events_generated:int,
-     *   random_events_applied:int
+     *   team_of_the_day_generated:int
      * }
      */
     public function processNextMatchday(?CompetitionSeason $targetCompetitionSeason = null): array
@@ -65,8 +63,7 @@ class SeasonProgressionService
             'training_camps_completed' => 0,
             'sponsor_contracts_expired' => 0,
             'team_of_the_day_generated' => 0,
-            'random_events_generated' => 0,
-            'random_events_applied' => 0,
+            'team_of_the_day_generated' => 0,
         ];
 
         $competitionSeasons = $this->competitionSeasonsForRun($targetCompetitionSeason);
@@ -134,9 +131,7 @@ class SeasonProgressionService
         $summary['sponsor_contracts_expired'] = $this->sponsorService->expireEndedContracts();
         $summary['loans_completed'] = $this->loanService->completeExpiredLoans();
 
-        $randomEventSummary = $this->randomEventService->triggerAutomatedEvents();
-        $summary['random_events_generated'] = $randomEventSummary['generated'];
-        $summary['random_events_applied'] = $randomEventSummary['applied'];
+        $summary['loans_completed'] = $this->loanService->completeExpiredLoans();
 
         return $summary;
     }

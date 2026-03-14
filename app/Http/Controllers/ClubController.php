@@ -42,9 +42,12 @@ class ClubController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(): Response
     {
-        return view('clubs.create');
+        return Inertia::render('Clubs/Form', [
+            'club' => null,
+            'rolePlayers' => [],
+        ]);
     }
 
     /**
@@ -154,11 +157,27 @@ class ClubController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, Club $club): View
+    public function edit(Request $request, Club $club): Response
     {
         $this->ensureOwnership($request, $club);
 
-        return view('clubs.edit', ['club' => $club]);
+        $rolePlayers = $club->players()
+            ->orderByDesc('overall')
+            ->limit(40)
+            ->get()
+            ->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'full_name' => $p->full_name,
+                    'position' => $p->position_main ?: $p->position,
+                    'overall' => $p->overall,
+                ];
+            });
+
+        return Inertia::render('Clubs/Form', [
+            'club' => $club,
+            'rolePlayers' => $rolePlayers,
+        ]);
     }
 
     /**

@@ -103,10 +103,6 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         return $this->hasMany(TeamOfTheDay::class, 'generated_by_user_id');
     }
 
-    public function randomEventsTriggered(): HasMany
-    {
-        return $this->hasMany(RandomEventOccurrence::class, 'triggered_by_user_id');
-    }
 
     public function friendlyRequests(): HasMany
     {

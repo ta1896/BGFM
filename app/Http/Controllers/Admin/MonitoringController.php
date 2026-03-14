@@ -9,7 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class MonitoringController extends Controller
 {
@@ -23,7 +24,7 @@ class MonitoringController extends Controller
     /**
      * Display the system monitoring dashboard.
      */
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $health = $this->getSystemHealth();
         $logStats = $this->logService->getLogStats();
@@ -41,15 +42,15 @@ class MonitoringController extends Controller
             'goaccess' => $request->getSchemeAndHttpHost() . ':7817',
         ];
 
-        return view('admin.monitoring.index', compact(
-            'health', 
-            'logStats', 
-            'recentLogs', 
-            'diagnostics', 
-            'dataTimestamp', 
-            'liveStatus',
-            'monitoringLinks'
-        ));
+        return Inertia::render('Admin/Monitoring/Index', [
+            'health' => $health,
+            'logStats' => $logStats,
+            'recentLogs' => $recentLogs,
+            'diagnostics' => $diagnostics,
+            'dataTimestamp' => $dataTimestamp,
+            'liveStatus' => $liveStatus,
+            'monitoringLinks' => $monitoringLinks
+        ]);
     }
 
     public function getSystemStatus(): array
@@ -80,7 +81,7 @@ class MonitoringController extends Controller
         ];
     }
 
-    public function analysis(Request $request): View
+    public function analysis(Request $request): Response
     {
         $matchId = $request->input('match_id');
         $match = null;
@@ -92,16 +93,21 @@ class MonitoringController extends Controller
             }
         }
 
-        return view('admin.monitoring.analysis', compact('match', 'matchDiagnostics'));
+        return Inertia::render('Admin/Monitoring/Analysis', [
+            'match' => $match,
+            'matchDiagnostics' => $matchDiagnostics
+        ]);
     }
 
-    public function lab(): View
+    public function lab(): Response
     {
         $clubs = \App\Models\Club::orderBy('name')->get();
-        return view('admin.monitoring.lab', compact('clubs'));
+        return Inertia::render('Admin/Monitoring/Lab', [
+            'clubs' => $clubs
+        ]);
     }
 
-    public function internals(): View
+    public function internals(): Response
     {
         $stats = [
             'cache_driver' => config('cache.default'),
@@ -112,17 +118,21 @@ class MonitoringController extends Controller
             'log_size' => \Illuminate\Support\Facades\File::exists(storage_path('logs/laravel.log')) ? \Illuminate\Support\Facades\File::size(storage_path('logs/laravel.log')) : 0,
         ];
 
-        return view('admin.monitoring.internals', compact('stats'));
+        return Inertia::render('Admin/Monitoring/Internals', [
+            'stats' => $stats
+        ]);
     }
 
-    public function scheduler(): View
+    public function scheduler(): Response
     {
         $runs = \DB::table('simulation_scheduler_runs')
             ->orderBy('started_at', 'desc')
             ->limit(20)
             ->get();
 
-        return view('admin.monitoring.scheduler', compact('runs'));
+        return Inertia::render('Admin/Monitoring/Scheduler', [
+            'runs' => $runs
+        ]);
     }
 
     public function clearCache(): RedirectResponse
@@ -145,10 +155,12 @@ class MonitoringController extends Controller
     /**
      * Get detailed logs.
      */
-    public function logs(Request $request): View
+    public function logs(Request $request): Response
     {
         $logs = $this->logService->getRecentLogs(200);
-        return view('admin.monitoring.logs', compact('logs'));
+        return Inertia::render('Admin/Monitoring/Logs', [
+            'logs' => $logs
+        ]);
     }
 
     /**
