@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     House, Tray, Bank, Briefcase, BuildingOffice, UsersThree, 
     Users, GraduationCap, Tent, Calendar, Trophy, HandPeace, 
-    Star, Globe, ArrowsLeftRight, ArrowClockwise, FileText, 
+    Star, FileText, 
     MagnifyingGlass, Gear, CaretDown, SignOut, List, X,
     CaretRight, Bell
 } from '@phosphor-icons/react';
@@ -119,15 +119,12 @@ export default function AuthenticatedLayout({ header, children }) {
                     { route: 'league.table', label: 'Tabelle', active: 'league.table', icon: Trophy },
                     { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*', icon: HandPeace },
                     { route: 'team-of-the-day.index', label: 'Team der Woche', active: 'team-of-the-day.*', icon: Star },
-                    { route: 'national-teams.index', label: 'Nationalteams', active: 'national-teams.*', icon: Globe },
                 ]
             };
 
             groups.bg_markt = {
                 label: 'Markt',
                 items: [
-                    { route: 'transfers.index', label: 'Transfermarkt', active: 'transfers.*', icon: ArrowsLeftRight },
-                    { route: 'loans.index', label: 'Leihmarkt', active: 'loans.*', icon: ArrowClockwise },
                     { route: 'contracts.index', label: 'Verträge', active: 'contracts.*', icon: FileText },
                     { route: 'clubs.index', label: 'Vereins-Suche', active: 'clubs.*', icon: MagnifyingGlass },
                 ]

@@ -19,11 +19,15 @@ class LeagueController extends Controller
     {
         $competitionSeason = $this->resolveCompetitionSeason($request);
         $isAdmin = $request->user()->isAdmin();
-        $userClubs = $request->user()->clubs()->orderBy('name')->get(['id', 'name']);
+        if ($isAdmin) {
+            $userClubs = \App\Models\Club::orderBy('name')->get(['id', 'name']);
+        } else {
+            $userClubs = $request->user()->clubs()->orderBy('name')->get(['id', 'name']);
+        }
         $clubFilterOptions = $userClubs;
 
         $ownedClubIds = $isAdmin
-            ? collect()
+            ? $userClubs->pluck('id')
             : $userClubs->pluck('id');
 
         $selectedClubId = (int) $request->query('club');

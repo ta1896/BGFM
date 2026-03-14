@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class FreeClubController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $freeClubs = Club::query()
             ->whereNull('user_id')
@@ -17,9 +18,21 @@ class FreeClubController extends Controller
             ->withCount('players')
             ->orderByDesc('reputation')
             ->orderBy('name')
-            ->paginate(12);
+            ->paginate(12)
+            ->through(function ($club) {
+                return [
+                    'id' => $club->id,
+                    'name' => $club->name,
+                    'short_name' => $club->short_name,
+                    'logo_url' => $club->logo_path ? asset('storage/' . str_replace('public/', '', $club->logo_path)) : null,
+                    'country' => $club->country,
+                    'league' => $club->league,
+                    'reputation' => $club->reputation,
+                    'players_count' => $club->players_count,
+                ];
+            });
 
-        return view('clubs.free', [
+        return Inertia::render('Clubs/Free', [
             'freeClubs' => $freeClubs,
             'hasOwnedClub' => $request->user()->clubs()->exists(),
         ]);

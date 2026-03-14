@@ -13,21 +13,30 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ClubController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
-        $clubs = $request->user()
-            ->clubs()
-            ->withCount(['players', 'lineups'])
-            ->latest()
-            ->get();
+        $user = $request->user();
+        $query = Club::query()->withCount(['players', 'lineups']);
 
-        return view('clubs.index', ['clubs' => $clubs]);
+        if (!$user->isAdmin()) {
+            $query->where('user_id', $user->id);
+        } else {
+            // Admins see all clubs, but maybe prioritize their default one or non-cpu ones
+            $query->orderByRaw("FIELD(id, ?) DESC", [$user->default_club_id])
+                  ->orderByDesc('id');
+        }
+
+        $clubs = $query->latest()->get();
+
+        return Inertia::render('Clubs/Index', ['clubs' => $clubs]);
     }
 
     /**
@@ -104,10 +113,8 @@ class ClubController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Club $club, StatisticsAggregationService $statisticsAggregationService): View
+    public function show(Request $request, Club $club, StatisticsAggregationService $statisticsAggregationService): Response
     {
-        // Removed ensureOwnership to allow scouting other clubs
-
         $club->load([
             'players' => fn($query) => $query->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")->orderByDesc('overall'),
             'user',
@@ -124,63 +131,23 @@ class ClubController extends Controller
             ? $seasons->firstWhere('id', $seasonId)
             : $seasons->first();
 
-        // --- Statistics for Overview Tab ---
+        // --- Statistics ---
         $overallStats = $statisticsAggregationService->clubSummaryForClub($club, null);
         $seasonStats = $statisticsAggregationService->clubSummaryForClub($club, $activeSeason?->id);
-        $overallStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, null);
-        $seasonStatsByContext = $statisticsAggregationService->clubSummaryByContextForClub($club, $activeSeason?->id);
-        $seasonHistory = $statisticsAggregationService->clubSeasonHistoryForClub($club, 5);
+        
+        $players = $club->players->map(function($p) {
+            $p->append('photo_url');
+            return $p;
+        });
 
-        // --- Data for Squad Tab ---
-        $players = $club->players;
-        $squadStats = [
-            'count' => $players->count(),
-            'avg_age' => $players->isNotEmpty() ? round($players->avg('age'), 1) : 0,
-            'avg_rating' => $players->isNotEmpty() ? round($players->avg('overall'), 1) : 0,
-            'total_value' => $players->sum('market_value'),
-            'avg_value' => $players->isNotEmpty() ? $players->avg('market_value') : 0,
-            'injured_count' => $players->where('is_injured', true)->count(),
-            'suspended_count' => $players->where('is_suspended', true)->count(),
-        ];
-
-        $groupedPlayers = $players->groupBy(fn($player) => match (true) {
-            in_array($player->position, ['GK', 'TW']) => 'Torhüter',
-            in_array($player->position, ['LB', 'CB', 'RB', 'LWB', 'RWB', 'LV', 'IV', 'RV']) => 'Abwehr',
-            in_array($player->position, ['CDM', 'CM', 'CAM', 'LM', 'RM', 'DM', 'ZM', 'OM']) => 'Mittelfeld',
-            default => 'Sturm',
-        })->sortBy(fn($group, $key) => match ($key) {
-                'Torhüter' => 1,
-                'Abwehr' => 2,
-                'Mittelfeld' => 3,
-                'Sturm' => 4,
-                default => 99,
-            });
-
-        // --- Data for Matches Tab ---
-        $matches = GameMatch::query()
-            ->where(function ($query) use ($club) {
-                $query->where('home_club_id', $club->id)
-                    ->orWhere('away_club_id', $club->id);
-            })
-            ->with(['homeClub', 'awayClub'])
-            ->orderBy('kickoff_at')
-            ->get();
-
-        $latestMatches = $matches->where('status', 'played')->sortByDesc('played_at')->take(5);
-
-        return view('clubs.show', [
+        return Inertia::render('Clubs/Show', [
             'club' => $club,
             'seasons' => $seasons,
             'activeSeason' => $activeSeason,
             'overallStats' => $overallStats,
             'seasonStats' => $seasonStats,
-            'overallStatsByContext' => $overallStatsByContext,
-            'seasonStatsByContext' => $seasonStatsByContext,
-            'seasonHistory' => $seasonHistory,
-            'latestMatches' => $latestMatches,
-            'squadStats' => $squadStats,
-            'groupedPlayers' => $groupedPlayers,
-            'allMatches' => $matches,
+            'players' => $players,
+            'isOwner' => $club->user_id === $request->user()->id,
         ]);
     }
 

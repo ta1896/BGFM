@@ -285,7 +285,7 @@ class DashboardController extends Controller
                 $assistantTasks[] = [
                     'kind' => 'info',
                     'label' => $unreadNotificationsCount . ' ungelesene Hinweise',
-                    'description' => 'Transfer-, Match- und Verwaltungsupdates warten in der Inbox.',
+                    'description' => 'Match- und Verwaltungsupdates warten in der Inbox.',
                     'url' => route('notifications.index'),
                     'cta' => 'Inbox oeffnen',
                 ];

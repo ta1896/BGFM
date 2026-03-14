@@ -12,7 +12,7 @@ use Illuminate\View\View;
 
 class TeamOfTheDayController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $teams = TeamOfTheDay::query()
             ->with(['competitionSeason.competition', 'competitionSeason.season'])
@@ -29,10 +29,16 @@ class TeamOfTheDayController extends Controller
             $entries = $activeTeam->players()
                 ->with(['player.club'])
                 ->orderBy('position_code')
-                ->get();
+                ->get()
+                ->map(function ($entry) {
+                    if ($entry->player) {
+                        $entry->player->append('photo_url');
+                    }
+                    return $entry;
+                });
         }
 
-        return view('team-of-the-day.index', [
+        return Inertia::render('TeamOfTheDay/Index', [
             'teams' => $teams,
             'activeTeam' => $activeTeam,
             'entries' => $entries,

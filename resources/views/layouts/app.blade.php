@@ -43,19 +43,16 @@
         $menuGroups['bg_wettbewerb'] = [
             'label' => 'Wettbewerb',
             'items' => [
-                ['route' => 'league.matches', 'label' => 'Spiele', 'active' => 'league.matches', 'icon' => 'calendar'],
+                ['route' => 'league.matches', 'params' => ['club' => $currentActiveClub?->id], 'label' => 'Spiele', 'active' => 'league.matches', 'icon' => 'calendar'],
                 ['route' => 'league.table', 'label' => 'Tabelle', 'active' => 'league.table', 'icon' => 'trophy'],
                 ['route' => 'friendlies.index', 'label' => 'Freundschaft', 'active' => 'friendlies.*', 'icon' => 'hand-raised'],
                 ['route' => 'team-of-the-day.index', 'label' => 'Team der Woche', 'active' => 'team-of-the-day.*', 'icon' => 'star'],
-                ['route' => 'national-teams.index', 'label' => 'Nationalteams', 'active' => 'national-teams.*', 'icon' => 'globe-alt'],
             ]
         ];
 
          $menuGroups['bg_markt'] = [
             'label' => 'Markt',
             'items' => [
-                ['route' => 'transfers.index', 'label' => 'Transfermarkt', 'active' => 'transfers.*', 'icon' => 'arrows-right-left'],
-                ['route' => 'loans.index', 'label' => 'Leihmarkt', 'active' => 'loans.*', 'icon' => 'arrow-path'],
                 ['route' => 'contracts.index', 'label' => 'Verträge', 'active' => 'contracts.*', 'icon' => 'document-text'],
                 ['route' => 'clubs.index', 'label' => 'Vereins-Suche', 'active' => 'clubs.*', 'icon' => 'magnifying-glass'],
             ]

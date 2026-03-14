@@ -14,9 +14,7 @@ use App\Http\Controllers\FreeClubController;
 use App\Http\Controllers\FriendlyMatchController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LineupsController;
-use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MatchCenterController;
-use App\Http\Controllers\NationalTeamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
@@ -26,7 +24,6 @@ use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\TrainingCampController;
-use App\Http\Controllers\TransferMarketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/freie-vereine', [FreeClubController::class, 'index'])->name('clubs.free');
     Route::post('/freie-vereine/{club}/uebernehmen', [FreeClubController::class, 'claim'])->name('clubs.claim');
+    Route::resource('clubs', ClubController::class)->only(['create', 'store']);
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -51,7 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('has.club.or.admin')->group(
         function () {
-            Route::resource('clubs', ClubController::class)->only(['index', 'show']);
+            Route::resource('clubs', ClubController::class)->except(['create', 'store']);
             Route::resource('players', PlayerController::class)->only(['index', 'show', 'update']);
             Route::resource('lineups', LineupsController::class);
             Route::post('/lineups/{lineup}/activate', [LineupsController::class, 'activate'])->name('lineups.activate');
@@ -73,18 +71,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/friendlies/{friendlyRequest}/accept', [FriendlyMatchController::class, 'accept'])->name('friendlies.accept');
             Route::post('/friendlies/{friendlyRequest}/reject', [FriendlyMatchController::class, 'reject'])->name('friendlies.reject');
             Route::get('/table', [LeagueController::class, 'table'])->name('league.table');
-            Route::get('/transfers', [TransferMarketController::class, 'index'])->name('transfers.index');
-            Route::post('/transfers/listings', [TransferMarketController::class, 'storeListing'])->name('transfers.listings.store');
-            Route::post('/transfers/listings/{listing}/bids', [TransferMarketController::class, 'placeBid'])->name('transfers.bids.store');
-            Route::post('/transfers/listings/{listing}/accept/{bid}', [TransferMarketController::class, 'acceptBid'])->name('transfers.bids.accept');
-            Route::post('/transfers/listings/{listing}/close', [TransferMarketController::class, 'closeListing'])->name('transfers.listings.close');
-            Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
-            Route::post('/loans/listings', [LoanController::class, 'storeListing'])->name('loans.listings.store');
-            Route::post('/loans/listings/{listing}/bids', [LoanController::class, 'placeBid'])->name('loans.bids.store');
-            Route::post('/loans/listings/{listing}/accept/{bid}', [LoanController::class, 'acceptBid'])->name('loans.bids.accept');
-            Route::post('/loans/listings/{listing}/close', [LoanController::class, 'closeListing'])->name('loans.listings.close');
-            Route::post('/loans/{loan}/option/exercise', [LoanController::class, 'exerciseOption'])->name('loans.option.exercise');
-            Route::post('/loans/{loan}/option/decline', [LoanController::class, 'declineOption'])->name('loans.option.decline');
             Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
             Route::post('/contracts/{player}/renew', [ContractController::class, 'renew'])->name('contracts.renew');
             Route::get('/sponsors', [SponsorController::class, 'index'])->name('sponsors.index');
@@ -101,8 +87,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
             Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
-            Route::get('/national-teams', [NationalTeamController::class, 'index'])->name('national-teams.index');
-            Route::post('/national-teams/{nationalTeam}/refresh', [NationalTeamController::class, 'refresh'])->name('national-teams.refresh');
             Route::get('/team-of-the-day', [TeamOfTheDayController::class, 'index'])->name('team-of-the-day.index');
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');
             Route::get('/random-events', [RandomEventController::class, 'index'])->name('random-events.index');
