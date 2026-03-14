@@ -22,7 +22,8 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache \
 
 # PHP-FPM Healthcheck Script installieren
 RUN curl -o /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/master/php-fpm-healthcheck \
-    && chmod +x /usr/local/bin/php-fpm-healthcheck
+    && chmod +x /usr/local/bin/php-fpm-healthcheck \
+    && echo "pm.status_path = /status" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # OPcache für maximale Performance in Production konfigurieren
 RUN echo "opcache.enable=1\n\
