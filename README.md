@@ -11,6 +11,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)](https://php.net)
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![Redis](https://img.shields.io/badge/Redis-In--Memory-DC382D?logo=redis&logoColor=white)](https://redis.io)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Discord](https://img.shields.io/badge/Discord-Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/aSNkPYgHDJ)
 
@@ -101,11 +102,11 @@ Tritt unserer wachsenden Community auf Discord bei! Hier kannst du dich mit ande
 
 | Komponente | Technologie |
 |:-----------|:------------|
-| **Backend** | Laravel 12 · PHP 8.5 |
-| **Datenbank** | MySQL 8.4 |
+| **Backend** | Laravel 12 · PHP 8.4 |
+| **Datenbank** | MySQL 8.0 · Redis |
 | **Frontend** | Blade · Tailwind CSS · Vite |
 | **Auth** | Laravel Breeze |
-| **Infrastruktur** | Docker Compose · Laravel Sail |
+| **Infrastruktur** | Docker Compose · Nginx · Laravel Horizon · Laravel Reverb |
 
 ---
 
@@ -123,17 +124,22 @@ Tritt unserer wachsenden Community auf Discord bei! Hier kannst du dich mit ande
 git clone https://github.com/ta1896/BGFM.git
 cd BGFM
 
-# 2. Container starten
+# 2. Lokale Entwicklung (Laravel Sail)
 ./vendor/bin/sail up -d
-
-# 3. Datenbank einrichten (Migrationen + Seed-Daten)
 ./vendor/bin/sail artisan migrate:fresh --seed
-
-# 4. Frontend bauen
 npm install && npm run build
 
-# 5. App öffnen
-open http://localhost
+## 🌍 Production Deployment (VPS)
+
+Das Projekt ist vollständig für den produktiven Betrieb auf einem Linux VPS vorstrukturiert.
+
+1.  **Git Push:** Push auf den `main`-Branch triggert die GitHub Action `.github/workflows/deploy.yml`.
+2.  **Auto-Deploy:** Der Server pullt den Code und baut die `docker-compose.yml` (App, Nginx, MySQL, Redis, Horizon, Reverb).
+3.  **Features:** 
+    - **OPcache & Redis** für maximale Performance.
+    - **Laravel Horizon** für Queue-Monitoring (`/horizon`).
+    - **Reverb Websockets** auf Port 8080 für Echtzeit-Match-Events.
+    - Vollautomatisiertes **Datenbank-Backup** (täglich um 03:00 Uhr).
 ```
 
 ---
@@ -245,6 +251,19 @@ sail artisan game:backfill-player-club-model --dry-run
 sail artisan game:backfill-player-club-model --chunk=500
 ```
 
+### Server & Wartung
+
+```bash
+# Datenbank manuell sichern (VPS)
+docker compose exec app php artisan game:backup-db
+
+# Horizon Dashboard Status (VPS)
+docker compose exec app php artisan horizon:status
+
+# Redis Cache leeren (VPS)
+docker compose exec redis redis-cli flushall
+```
+
 ---
 
 ## 🏗 Architektur
@@ -256,6 +275,10 @@ app/
 │   ├── Club.php           # Verein: Budget, Reputation, Fan-Stimmung
 │   ├── Player.php         # Kaderdaten + Leistungswerte
 │   └── Lineup.php         # Formation + aktive Aufstellung
+├── Providers/
+│   ├── AppServiceProvider.php       # Globales Rate-Limiting & Simulation-Boot
+│   ├── HorizonServiceProvider.php   # Zugriffsschutz für Horizon Admin
+│   └── TelescopeServiceProvider.php # Filter für Debug-Daten
 ├── Services/
 │   ├── MatchEngine/                  # Neue modulare Match-Engine
 │   │   ├── LiveMatchTickerService.php # Orchestrator für Live-Matches
