@@ -148,8 +148,8 @@ Das Projekt ist vollständig für den produktiven Betrieb auf einem Linux VPS vo
 
 | Rolle | E-Mail | Passwort |
 |:------|:-------|:---------|
-| 👤 User | `test@example.com` | `password` |
-| 🛡️ Admin | `admin@example.com` | `password` |
+| 👤 User | `test.manager@openws.local` | `password` |
+| 🛡️ Admin | `test.admin@openws.local` | `password` |
 
 ---
 
