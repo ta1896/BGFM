@@ -157,7 +157,7 @@ services:
       - "7817:7817"
     volumes:
       - nginx-logs:/opt/goaccess/logs
-    command: /opt/goaccess/logs/access.log --log-format=COMBINED --real-time-html --ws-url=localhost:7817 --output=/var/www/html/index.html --port=7817
+    command: /opt/goaccess/logs/access.log --log-format=COMBINED --real-time-html --output=/opt/goaccess/index.html --port=7817
     depends_on:
       - web
 
