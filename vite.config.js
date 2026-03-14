@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
@@ -19,9 +20,19 @@ export default defineConfig({
             avif: { lossy: true, quality: 70 },
         }),
     ],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, 'resources/js'),
+        },
+    },
     build: {
         rollupOptions: {
             output: {},
         },
+    },
+    test: {
+        environment: 'jsdom',
+        globals: true,
+        setupFiles: './vitest.setup.js',
     },
 });

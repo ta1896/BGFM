@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { CaretDown } from '@phosphor-icons/react';
+import { routeMatches } from '@/Layouts/navigation';
 
 export default function SidebarMenuGroup({
     group,
@@ -11,13 +12,7 @@ export default function SidebarMenuGroup({
     labelClassName,
     borderClassName = 'border-amber-500/10',
 }) {
-    const hasActiveItem = group.items.some(item => {
-        if (item.active.endsWith('.*')) {
-            return currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false;
-        }
-
-        return currentRoute === item.active;
-    });
+    const hasActiveItem = group.items.some(item => routeMatches(item.active, currentRoute));
 
     const [isOpen, setIsOpen] = useState(() => (autoOpenActive ? hasActiveItem : false));
 
@@ -47,9 +42,7 @@ export default function SidebarMenuGroup({
             {isOpen && (
                 <div className={`space-y-0.5 mt-1 pl-3 ml-2 border-l overflow-hidden ${borderClassName}`}>
                     {group.items.map((item, idx) => {
-                        const isActive = item.active.endsWith('.*')
-                            ? (currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false)
-                            : currentRoute === item.active;
+                        const isActive = routeMatches(item.active, currentRoute);
 
                         return (
                             <Link
