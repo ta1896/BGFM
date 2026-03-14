@@ -105,10 +105,6 @@ services:
     volumes:
       - redis-data:/data
 
-volumes:
-  db-data:
-  redis-data:
-
   reverb:
     image: newgen-app
     container_name: newgen_reverb
@@ -130,3 +126,7 @@ volumes:
       - app
       - mysql
       - redis
+
+volumes:
+  db-data:
+  redis-data:
