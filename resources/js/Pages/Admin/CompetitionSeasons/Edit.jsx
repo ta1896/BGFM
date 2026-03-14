@@ -23,7 +23,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
         <AdminLayout
             header={
                 <div className="flex items-center gap-4">
-                    <Link href={route('admin.competitions.edit', cs.competition_id)} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition">
+                    <Link href={route('admin.competitions.edit', cs.competition_id)} className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-slate-700 rounded-lg transition">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
@@ -46,7 +46,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
                     <div className="space-y-5">
                         {competition?.type === 'league' && (
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Liga-Meister</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Liga-Meister</label>
                                 <select className="sim-select w-full" value={data.league_winner_club_id}
                                     onChange={e => setData('league_winner_club_id', e.target.value || null)}>
                                     <option value="">— Automatisch (aus Tabelle) —</option>
@@ -59,7 +59,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
                         {competition?.type === 'cup' && (
                             <>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Nationaler Pokalsieger</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Nationaler Pokalsieger</label>
                                     <select className="sim-select w-full" value={data.national_cup_winner_club_id}
                                         onChange={e => setData('national_cup_winner_club_id', e.target.value || null)}>
                                         <option value="">— Keiner —</option>
@@ -67,7 +67,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Internationaler Pokalsieger</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Internationaler Pokalsieger</label>
                                     <select className="sim-select w-full" value={data.intl_cup_winner_club_id}
                                         onChange={e => setData('intl_cup_winner_club_id', e.target.value || null)}>
                                         <option value="">— Keiner —</option>
@@ -81,7 +81,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
 
                 {/* Finish Season */}
                 <div className={`sim-card p-6 border-l-4 ${data.is_finished ? 'border-l-emerald-500' : 'border-l-slate-700'}`}>
-                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Saison abschließen</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-4">Saison abschließen</h3>
                     <label className="flex items-start gap-4 cursor-pointer">
                         <div onClick={() => setData('is_finished', !data.is_finished)}
                             className={`mt-0.5 w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${data.is_finished ? 'bg-emerald-500' : 'bg-slate-700'}`}>
@@ -89,7 +89,7 @@ export default function Edit({ competitionSeason: cs, clubs }) {
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white">Saison als abgeschlossen markieren</p>
-                            <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                            <p className="text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
                                 Setzt `is_finished = true`, vergibt finale Tabellenränge und schreibt Achievements für alle Gewinner. Diese Aktion kann nicht rückgängig gemacht werden.
                             </p>
                         </div>

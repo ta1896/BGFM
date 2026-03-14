@@ -50,7 +50,7 @@ export default function Form({ lineup, players, clubs }) {
         <AdminLayout
             header={
                 <div className="flex items-center gap-4">
-                    <Link href={route('admin.lineups.index')} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition">
+                    <Link href={route('admin.lineups.index')} className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-slate-700 rounded-lg transition">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
@@ -69,7 +69,7 @@ export default function Form({ lineup, players, clubs }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         {!isEdit && (
                             <div className="md:col-span-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Verein *</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Verein *</label>
                                 <select className={`sim-select w-full ${errors.club_id ? 'border-red-500' : ''}`}
                                     value={data.club_id} onChange={e => setData('club_id', e.target.value)}>
                                     <option value="">— Verein wählen —</option>
@@ -82,21 +82,21 @@ export default function Form({ lineup, players, clubs }) {
                         )}
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Name *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Name *</label>
                             <input type="text" className={`sim-input w-full ${errors.name ? 'border-red-500' : ''}`}
                                 value={data.name} onChange={e => setData('name', e.target.value)} placeholder="z.B. Standardaufstellung" />
                             {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Formation *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Formation *</label>
                             <select className="sim-select w-full" value={data.formation} onChange={e => setData('formation', e.target.value)}>
                                 {FORMATIONS.map(f => <option key={f} value={f}>{f}</option>)}
                             </select>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Notizen</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Notizen</label>
                             <textarea rows={2} className="sim-input w-full" value={data.notes} onChange={e => setData('notes', e.target.value)}
                                 placeholder="Optionale Anmerkungen..." />
                         </div>
@@ -127,13 +127,13 @@ export default function Form({ lineup, players, clubs }) {
                             {players.map(player => {
                                 const isSelected = data.selected_players.includes(player.id);
                                 return (
-                                    <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isSelected ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-slate-800/20 border-slate-800/50 hover:bg-slate-800/40'}`}>
+                                    <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isSelected ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-[var(--bg-content)]/20 border-[var(--border-muted)] hover:bg-[var(--bg-content)]/40'}`}>
                                         <input type="checkbox" checked={isSelected} onChange={() => togglePlayer(player.id)}
                                             className="w-4 h-4 accent-cyan-500 rounded cursor-pointer" />
-                                        <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-slate-700 bg-slate-900" alt="" />
+                                        <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-[var(--border-pillar)] bg-[var(--bg-pillar)]" alt="" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-white truncate">{player.full_name}</p>
-                                            <p className="text-[10px] text-slate-500">{player.position} · OVR {player.overall}</p>
+                                            <p className="text-[10px] text-[var(--text-muted)]">{player.position} · OVR {player.overall}</p>
                                         </div>
                                         {isSelected && (
                                             <input

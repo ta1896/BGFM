@@ -11,12 +11,12 @@ import {
 } from '@phosphor-icons/react';
 
 const Card = ({ title, children, icon: Icon }) => (
-    <div className="sim-card p-6 border-slate-800/50 relative overflow-hidden h-full">
+    <div className="sim-card p-6 border-[var(--border-muted)] relative overflow-hidden h-full">
         <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
             {Icon && <Icon size={80} weight="fill" className="text-amber-500" />}
         </div>
         <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-2 bg-slate-800 rounded-lg">
+            <div className="p-2 bg-[var(--bg-content)] rounded-lg">
                 {Icon && <Icon size={20} className="text-amber-500" />}
             </div>
             <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">{title}</h3>
@@ -29,7 +29,7 @@ const Card = ({ title, children, icon: Icon }) => (
 
 const InputGroup = ({ label, error, children }) => (
     <div className="space-y-1">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{label}</label>
+        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-1">{label}</label>
         {children}
         {error && <p className="text-rose-500 text-[10px] font-bold mt-1 px-1 uppercase tracking-widest">{error}</p>}
     </div>
@@ -39,7 +39,7 @@ const AttributeInput = ({ label, value, onChange, error, icon: Icon, min=1, max=
     <InputGroup label={label} error={error}>
         <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                {Icon && <Icon size={16} className="text-slate-500 group-focus-within:text-amber-500 transition-colors" />}
+                {Icon && <Icon size={16} className="text-[var(--text-muted)] group-focus-within:text-amber-500 transition-colors" />}
             </div>
             <input 
                 type="number" 
@@ -98,7 +98,7 @@ export default function Form({ player, clubs, positions }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={isEdit ? route('players.show', player.id) : route('players.index')}
-                            className="p-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:text-white hover:border-slate-700 transition-all"
+                            className="p-2 bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[var(--text-muted)] rounded-xl hover:text-white hover:border-[var(--border-pillar)] transition-all"
                         >
                             <CaretLeft size={24} weight="bold" />
                         </Link>
@@ -209,7 +209,7 @@ export default function Form({ player, clubs, positions }) {
                             <Card title="Spielerprofil" icon={Camera}>
                                 <div className="flex flex-col items-center gap-6 mb-6">
                                     <div className="relative group">
-                                        <div className="h-32 w-32 rounded-3xl bg-slate-900 border-2 border-slate-800 overflow-hidden group-hover:border-amber-500/50 transition-all flex items-center justify-center p-1 shadow-2xl">
+                                        <div className="h-32 w-32 rounded-3xl bg-[var(--bg-pillar)] border-2 border-[var(--border-pillar)] overflow-hidden group-hover:border-amber-500/50 transition-all flex items-center justify-center p-1 shadow-2xl">
                                             {data.photo ? (
                                                 <img 
                                                     src={URL.createObjectURL(data.photo)} 
@@ -236,12 +236,12 @@ export default function Form({ player, clubs, positions }) {
                                             <Camera size={16} className="text-black" weight="bold" />
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center px-4">
+                                    <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest text-center px-4">
                                         Lade ein Quadratisches Bild (PNG/JPG) für die beste Darstellung hoch.
                                     </p>
                                 </div>
 
-                                <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                                <div className="space-y-4 pt-4 border-t border-[var(--border-muted)]">
                                     <InputGroup label="Marktwert (€)" error={errors.market_value}>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -321,10 +321,10 @@ export default function Form({ player, clubs, positions }) {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between pt-8 border-t border-slate-800/50">
+                    <div className="flex items-center justify-between pt-8 border-t border-[var(--border-muted)]">
                         <Link 
                             href={isEdit ? route('players.show', player.id) : route('players.index')}
-                            className="text-slate-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] px-4 transition-all"
+                            className="text-[var(--text-muted)] hover:text-white font-bold uppercase text-xs tracking-[0.2em] px-4 transition-all"
                         >
                             Abbrechen
                         </Link>
@@ -342,10 +342,10 @@ export default function Form({ player, clubs, positions }) {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-input-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700;
+                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-medium text-sm placeholder:text-slate-700;
                 }
                 .sim-select-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
+                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
                     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d9b15c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
                     background-repeat: no-repeat;
                     background-position: right 1rem center;

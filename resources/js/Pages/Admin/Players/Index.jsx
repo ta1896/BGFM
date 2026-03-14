@@ -9,9 +9,9 @@ import {
 
 const StatCard = ({ title, value, subtext, color = 'cyan' }) => (
     <div className={`sim-card p-4 border-l-4 border-l-${color}-500/50`}>
-        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{title}</p>
+        <p className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">{title}</p>
         <p className="text-xl font-black text-white mt-1 leading-none">{value}</p>
-        {subtext && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{subtext}</p>}
+        {subtext && <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1.5">{subtext}</p>}
     </div>
 );
 
@@ -30,7 +30,7 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                 <div className="flex flex-wrap items-end justify-between gap-6">
                     <div>
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Dashboard Spieler</h2>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Globale Kader- und Talentverwaltung</p>
+                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Globale Kader- und Talentverwaltung</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -47,7 +47,7 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                                     </option>
                                 ))}
                             </select>
-                            <Funnel size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <Funnel size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                         </div>
 
                         <Link 
@@ -105,14 +105,14 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
 
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
-                                                    <img src={player.photo_url} className="h-10 w-10 rounded-xl object-cover border border-slate-800 bg-slate-900" alt="" />
-                                                    <div className="absolute -bottom-1 -right-1 bg-slate-950 px-1 rounded border border-slate-800 text-[8px] font-black text-cyan-400 uppercase">
+                                                    <img src={player.photo_url} className="h-10 w-10 rounded-xl object-cover border border-[var(--border-pillar)] bg-[var(--bg-pillar)]" alt="" />
+                                                    <div className="absolute -bottom-1 -right-1 bg-[var(--sim-shell-bg)] px-1 rounded border border-[var(--border-pillar)] text-[8px] font-black text-cyan-400 uppercase">
                                                         {player.position}
                                                     </div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bold text-white text-sm truncate group-hover:text-cyan-400 transition-colors uppercase italic">{player.last_name}</p>
-                                                    <p className="text-[9px] text-slate-500 font-bold uppercase truncate">{player.first_name}</p>
+                                                    <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase truncate">{player.first_name}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-xl font-black text-white leading-none">{player.overall}</p>
@@ -130,22 +130,22 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-800 bg-slate-900/50">
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Spieler</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Verein</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Pos</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">OVR</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Alter</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Wert</th>
+                                    <tr className="border-b border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50">
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Spieler</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Verein</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">Pos</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">OVR</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">Alter</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right">Wert</th>
                                         <th className="px-6 py-4"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/50">
                                     {players.data.map((player) => (
-                                        <tr key={player.id} className="hover:bg-slate-800/20 transition-colors group">
+                                        <tr key={player.id} className="hover:bg-[var(--bg-content)]/20 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-slate-700 bg-slate-900" alt="" />
+                                                    <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-[var(--border-pillar)] bg-[var(--bg-pillar)]" alt="" />
                                                     <span className="font-bold text-white group-hover:text-cyan-400 transition-colors">{player.full_name}</span>
                                                 </div>
                                             </td>
@@ -153,17 +153,17 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                                                 {player.club ? (
                                                      <div className="flex items-center gap-2">
                                                         <img src={player.club.logo_url} className="h-5 w-5 object-contain" alt="" />
-                                                        <span className="text-xs text-slate-400 hover:text-white transition-colors cursor-default">{player.club.name}</span>
+                                                        <span className="text-xs text-[var(--text-muted)] hover:text-white transition-colors cursor-default">{player.club.name}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Vereinslos</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-black text-cyan-400 border border-slate-700">{player.position}</span>
+                                                <span className="bg-[var(--bg-content)] px-1.5 py-0.5 rounded text-[10px] font-black text-cyan-400 border border-[var(--border-pillar)]">{player.position}</span>
                                             </td>
                                             <td className="px-6 py-4 text-center font-black text-white">{player.overall}</td>
-                                            <td className="px-6 py-4 text-center text-xs text-slate-400">{player.age}</td>
+                                            <td className="px-6 py-4 text-center text-xs text-[var(--text-muted)]">{player.age}</td>
                                             <td className="px-6 py-4 text-right font-black text-emerald-400 text-xs tabular-nums">
                                                 {new Intl.NumberFormat('de-DE').format(player.market_value)} €
                                             </td>
@@ -182,7 +182,7 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                         </div>
 
                         {/* Pagination for Global View */}
-                        <div className="flex items-center justify-between px-6 py-4 bg-slate-900/50 border-t border-slate-800">
+                        <div className="flex items-center justify-between px-6 py-4 bg-[var(--bg-pillar)]/50 border-t border-[var(--border-pillar)]">
                              <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                                 Zeige {players.from}-{players.to} von {players.total}
                             </div>
@@ -196,14 +196,14 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                                             className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
                                                 link.active 
                                                 ? 'bg-cyan-500 border-cyan-400 text-white' 
-                                                : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-white'
+                                                : 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-white'
                                             }`}
                                         />
                                     ) : (
                                         <span
                                             key={idx}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-slate-900 border-slate-800 text-slate-700 cursor-default opacity-50"
+                                            className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-slate-700 cursor-default opacity-50"
                                         />
                                     )
                                 ))}

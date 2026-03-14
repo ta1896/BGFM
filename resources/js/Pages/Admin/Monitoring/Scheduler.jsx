@@ -65,7 +65,7 @@ export default function Scheduler({ runs }) {
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 border-indigo-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -76,12 +76,12 @@ export default function Scheduler({ runs }) {
 
                 {/* Table Card */}
                 <div className="sim-card overflow-hidden">
-                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-800/20">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[var(--bg-content)]/20">
                         <h3 className="text-lg font-black text-white flex items-center gap-3">
                             <Heartbeat size={24} className="text-indigo-400" />
                             Letzte 20 Simulation-Runs
                         </h3>
-                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-2">
+                        <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest flex items-center gap-2">
                             <Clock size={14} />
                             Live Refreshed: {new Date().toLocaleTimeString()}
                         </div>
@@ -90,7 +90,7 @@ export default function Scheduler({ runs }) {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-900/50 text-slate-500 uppercase text-[10px] tracking-widest font-black border-b border-white/5">
+                                <tr className="bg-[var(--bg-pillar)]/50 text-[var(--text-muted)] uppercase text-[10px] tracking-widest font-black border-b border-white/5">
                                     <th className="py-4 px-6 md:px-8">Run ID</th>
                                     <th className="py-4 px-6 md:px-8">Startzeit</th>
                                     <th className="py-4 px-6 md:px-8">Endzeit</th>
@@ -102,9 +102,9 @@ export default function Scheduler({ runs }) {
                             <tbody className="divide-y divide-white/5">
                                 {runs.map((run) => (
                                     <tr key={run.id} className="hover:bg-white/5 transition-colors group">
-                                        <td className="py-4 px-6 md:px-8 font-mono text-slate-500 text-xs tabular-nums font-bold">#{run.id}</td>
+                                        <td className="py-4 px-6 md:px-8 font-mono text-[var(--text-muted)] text-xs tabular-nums font-bold">#{run.id}</td>
                                         <td className="py-4 px-6 md:px-8 text-slate-300 text-xs tabular-nums">{run.started_at}</td>
-                                        <td className="py-4 px-6 md:px-8 text-slate-400 text-xs tabular-nums">{run.finished_at || '-'}</td>
+                                        <td className="py-4 px-6 md:px-8 text-[var(--text-muted)] text-xs tabular-nums">{run.finished_at || '-'}</td>
                                         <td className="py-4 px-6 md:px-8 text-center">
                                             <span className="font-black text-cyan-400 text-sm tabular-nums">{run.matches_processed || 0}</span>
                                         </td>
@@ -126,7 +126,7 @@ export default function Scheduler({ runs }) {
                                     <tr>
                                         <td colSpan="6" className="py-20 text-center">
                                             <div className="text-6xl mb-6 opacity-10">⏳</div>
-                                            <p className="text-slate-500 italic text-[10px] uppercase tracking-widest font-black">Noch keine Scheduler-Runs aufgezeichnet.</p>
+                                            <p className="text-[var(--text-muted)] italic text-[10px] uppercase tracking-widest font-black">Noch keine Scheduler-Runs aufgezeichnet.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -170,7 +170,7 @@ function StatBox({ label, value, desc, color }) {
 
     return (
         <div className={`sim-card p-6 border-l-4 ${colors[color]} bg-gradient-to-br from-slate-900 to-slate-950`}>
-            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</div>
+            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2">{label}</div>
             <div className="text-4xl font-black text-white tracking-tight tabular-nums">{value}</div>
             <div className="text-[9px] mt-4 font-black text-slate-600 uppercase tracking-tighter italic flex items-center gap-2">
                 <Info size={12} />

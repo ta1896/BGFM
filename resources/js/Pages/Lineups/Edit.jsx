@@ -48,15 +48,15 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
             layout
             draggable
             onDragStart={(e) => onDragStart(e, player.id)}
-            className={`sim-card-soft p-2.5 flex items-center justify-between gap-3 border-slate-700/30 group transition-all cursor-grab active:cursor-grabbing ${isSelected ? 'opacity-40 grayscale-[0.5]' : 'hover:border-amber-500/40 hover:bg-slate-800/50'}`}
+            className={`sim-card-soft p-2.5 flex items-center justify-between gap-3 border-[var(--border-pillar)]/30 group transition-all cursor-grab active:cursor-grabbing ${isSelected ? 'opacity-40 grayscale-[0.5]' : 'hover:border-amber-500/40 hover:bg-[var(--bg-content)]/50'}`}
         >
             <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center shrink-0">
                     <span className="text-[10px] font-black text-amber-500">{player.overall}</span>
                 </div>
                 <div className="overflow-hidden">
                     <p className="text-[11px] font-black text-white truncate">{player.last_name}</p>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase">{player.position_main}</p>
+                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{player.position_main}</p>
                 </div>
             </div>
 
@@ -65,13 +65,13 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                     <>
                         <button 
                             onClick={() => onAddPitch(player.id)}
-                            className="w-6 h-6 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-amber-500 hover:border-amber-500/30 transition-all flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-amber-500 hover:border-amber-500/30 transition-all flex items-center justify-center"
                         >
                             <Plus size={12} weight="bold" />
                         </button>
                         <button 
                             onClick={() => onAddBench(player.id)}
-                            className="w-6 h-6 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-amber-600 hover:border-amber-600/30 transition-all flex items-center justify-center"
+                            className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-amber-600 hover:border-amber-600/30 transition-all flex items-center justify-center"
                         >
                             <span className="text-[10px] font-black">B</span>
                         </button>
@@ -79,7 +79,7 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                 ) : (
                     <button 
                         onClick={() => onRemove(player.id)}
-                        className="w-6 h-6 rounded bg-slate-800 border border-slate-700 text-rose-500 hover:text-rose-400 transition-all flex items-center justify-center"
+                        className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-rose-500 hover:text-rose-400 transition-all flex items-center justify-center"
                     >
                         <Trash size={12} />
                     </button>
@@ -341,7 +341,7 @@ export default function Edit({
                         <div className="flex items-center gap-6">
                             <Link 
                                 href={route('lineups.index')}
-                                className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:border-amber-500/30 transition-all"
+                                className="w-12 h-12 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center text-[var(--text-muted)] hover:text-amber-500 hover:border-amber-500/30 transition-all"
                             >
                                 <ArrowLeft size={24} weight="bold" />
                             </Link>
@@ -351,7 +351,7 @@ export default function Edit({
                                     value={data.name}
                                     onChange={e => setData('name', e.target.value)}
                                 />
-                                <div className="flex items-center gap-4 text-[10px] font-black tracking-widest text-slate-500 uppercase mt-1">
+                                <div className="flex items-center gap-4 text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase mt-1">
                                     <div className="flex items-center gap-2">
                                         <Strategy size={12} weight="bold" className="text-amber-500" />
                                         Taktik-Editor // {club.name}
@@ -365,10 +365,10 @@ export default function Edit({
                                                 <select 
                                                     value={lineup.match_id} 
                                                     onChange={(e) => router.get(route('lineups.match', e.target.value))}
-                                                    className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer hover:text-white transition-colors focus:ring-0"
+                                                    className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] cursor-pointer hover:text-white transition-colors focus:ring-0"
                                                 >
                                                     {clubMatches.map(m => (
-                                                        <option key={m.id} value={m.id} className="bg-slate-900 border-none">
+                                                        <option key={m.id} value={m.id} className="bg-[var(--bg-pillar)] border-none">
                                                             {m.match_date} vs {m.home_club_id === club.id ? m.away_club.short_name : m.home_club.short_name}
                                                         </option>
                                                     ))}
@@ -404,7 +404,7 @@ export default function Edit({
                     <div className="grid lg:grid-cols-[320px_1fr_320px] gap-8">
                         {/* Left Sidebar: Tactics */}
                         <aside className="space-y-6">
-                            <div className="sim-card p-6 bg-[#0c1222]/80 backdrop-blur-xl border-slate-800/50">
+                            <div className="sim-card p-6 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]">
                                 <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <Strategy size={16} weight="bold" />
                                     STRATEGIE
@@ -412,7 +412,7 @@ export default function Edit({
                                 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Formation</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Formation</label>
                                         <select 
                                             value={data.formation}
                                             onChange={e => setData('formation', e.target.value)}
@@ -423,7 +423,7 @@ export default function Edit({
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Mentalität</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Mentalität</label>
                                         <select 
                                             value={data.mentality}
                                             onChange={e => setData('mentality', e.target.value)}
@@ -438,7 +438,7 @@ export default function Edit({
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Aggressivität</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Aggressivität</label>
                                         <select 
                                             value={data.aggression}
                                             onChange={e => setData('aggression', e.target.value)}
@@ -458,10 +458,10 @@ export default function Edit({
                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all duration-200 group ${
                                                 data.offside_trap
                                                     ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_12px_rgba(217,177,92,0.08)]'
-                                                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                                                    : 'bg-[var(--bg-pillar)]/60 border-[var(--border-pillar)] hover:border-[var(--border-pillar)]'
                                             }`}
                                         >
-                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.offside_trap ? 'text-amber-500' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.offside_trap ? 'text-amber-500' : 'text-[var(--text-muted)] group-hover:text-slate-300'}`}>
                                                 Abseitsfalle
                                             </span>
                                             <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${data.offside_trap ? 'bg-amber-500' : 'bg-slate-700'}`}>
@@ -476,10 +476,10 @@ export default function Edit({
                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all duration-200 group ${
                                                 data.time_wasting
                                                     ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.08)]'
-                                                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                                                    : 'bg-[var(--bg-pillar)]/60 border-[var(--border-pillar)] hover:border-[var(--border-pillar)]'
                                             }`}
                                         >
-                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.time_wasting ? 'text-amber-300' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.time_wasting ? 'text-amber-300' : 'text-[var(--text-muted)] group-hover:text-slate-300'}`}>
                                                 Zeitspiel
                                             </span>
                                             <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${data.time_wasting ? 'bg-amber-500' : 'bg-slate-700'}`}>
@@ -490,7 +490,7 @@ export default function Edit({
                                 </div>
                             </div>
 
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-slate-800/50">
+                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)]">
                                 <h3 className="text-xs font-black text-amber-600 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <Target size={16} weight="bold" />
                                     ROLLEN
@@ -498,7 +498,7 @@ export default function Edit({
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Kapitän</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Kapitän</label>
                                         <select 
                                             value={data.captain_player_id}
                                             onChange={e => setData('captain_player_id', e.target.value)}
@@ -518,24 +518,24 @@ export default function Edit({
                         {/* Center: The Pitch */}
                         <main className="space-y-8">
                             {/* Metrics Bar */}
-                            <div className="flex items-center justify-between gap-4 p-4 rounded-3xl bg-slate-900/60 border border-white/5">
+                            <div className="flex items-center justify-between gap-4 p-4 rounded-3xl bg-[var(--bg-pillar)]/60 border border-white/5">
                                 <div className="flex items-center gap-6 px-4">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">STÄRKE</span>
                                         <span className="text-2xl font-black text-white italic leading-none">{calculatedMetrics.overall}</span>
                                     </div>
-                                    <div className="h-8 w-px bg-slate-800" />
+                                    <div className="h-8 w-px bg-[var(--bg-content)]" />
                                     <div className="flex gap-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ANGRIFF</span>
+                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">ANGRIFF</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.attack}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">MITTE</span>
+                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">MITTE</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.midfield}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ABWEHR</span>
+                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">ABWEHR</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.defense}</span>
                                         </div>
                                     </div>
@@ -573,7 +573,7 @@ export default function Edit({
                                                 style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                                             >
                                                 <div className={`w-14 h-14 rounded-full border-2 transition-all duration-300 flex items-center justify-center relative ${
-                                                    p ? 'bg-slate-900 border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
+                                                    p ? 'bg-[var(--bg-pillar)] border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
                                                       : 'bg-black/20 border-white/10 hover:border-white/30 hover:bg-white/5 border-dashed'
                                                 }`}>
                                                     {p ? (
@@ -609,9 +609,9 @@ export default function Edit({
                             </div>
 
                             {/* Bench */}
-                            <div className="sim-card p-6 bg-slate-900/40 border-slate-800/40">
+                            <div className="sim-card p-6 bg-[var(--bg-pillar)]/40 border-[var(--border-pillar)]/40">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Auswechselbank</h3>
+                                    <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Auswechselbank</h3>
                                     <span className="text-[9px] font-bold text-slate-600">Max. {maxBenchPlayers}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-4">
@@ -623,14 +623,14 @@ export default function Edit({
                                                 onDragOver={e => e.preventDefault()}
                                                 onDrop={e => handleDrop(e, idx, true)}
                                                 className={`w-16 h-16 rounded-2xl border-2 transition-all flex flex-col items-center justify-center group/bench relative ${
-                                                    p ? 'bg-slate-900 border-amber-600/40' 
+                                                    p ? 'bg-[var(--bg-pillar)] border-amber-600/40' 
                                                       : 'bg-black/20 border-white/5 border-dashed hover:border-white/10'
                                                 }`}
                                             >
                                                 {p ? (
                                                     <>
                                                         <span className="text-xs font-black text-white leading-none mb-1">{p.shirt_number}</span>
-                                                        <span className="text-[8px] font-black text-slate-400 uppercase truncate max-w-[50px]">{p.last_name}</span>
+                                                        <span className="text-[8px] font-black text-[var(--text-muted)] uppercase truncate max-w-[50px]">{p.last_name}</span>
                                                         <button 
                                                             type="button"
                                                             onClick={() => removePlayer(p.id)}
@@ -651,11 +651,11 @@ export default function Edit({
 
                         {/* Right Sidebar: Player Pool */}
                         <aside className="space-y-6 flex flex-col h-full overflow-hidden min-h-[800px]">
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-slate-800/50 flex flex-col h-full">
+                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)] flex flex-col h-full">
                                 <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest mb-4">SPIELER-POOL</h3>
                                 
                                 <div className="relative mb-6">
-                                    <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                     <input 
                                         type="text" 
                                         placeholder="Suchen..."
@@ -700,7 +700,7 @@ export default function Edit({
                     @apply bg-transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    @apply bg-slate-800 rounded-full;
+                    @apply bg-[var(--bg-content)] rounded-full;
                 }
             `}} />
         </AuthenticatedLayout>

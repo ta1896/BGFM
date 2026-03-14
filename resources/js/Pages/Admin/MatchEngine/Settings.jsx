@@ -13,7 +13,7 @@ function SettingSlider({ label, desc, name, value, min, max, step = 0.01, onChan
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     {Icon && <Icon size={16} className="text-cyan-400" />}
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</label>
                 </div>
                 <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">{value}</span>
             </div>
@@ -63,7 +63,7 @@ export default function Settings({ settings }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Match Engine</h2>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Kern-Simulation & Wahrscheinlichkeiten</p>
+                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Kern-Simulation & Wahrscheinlichkeiten</p>
                     </div>
                     <button
                         type="submit"

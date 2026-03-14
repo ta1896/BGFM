@@ -38,7 +38,7 @@ export default function Error({ status }) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="relative z-10 max-w-lg w-full"
             >
-                <div className="mb-8 inline-flex items-center justify-center p-6 rounded-3xl bg-slate-900/50 border border-slate-800 shadow-2xl relative group">
+                <div className="mb-8 inline-flex items-center justify-center p-6 rounded-3xl bg-[var(--bg-pillar)]/50 border border-[var(--border-pillar)] shadow-2xl relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
                     <Icon size={80} weight="duotone" className="text-amber-500 relative z-10" />
                 </div>
@@ -47,7 +47,7 @@ export default function Error({ status }) {
                     {title}
                 </h1>
                 
-                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">
+                <p className="text-[var(--text-muted)] text-lg mb-10 leading-relaxed font-medium">
                     {description}
                 </p>
 
@@ -62,7 +62,7 @@ export default function Error({ status }) {
                     
                     <button
                         onClick={() => window.history.back()}
-                        className="sim-btn-muted px-8 py-3.5 w-full sm:w-auto flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest border border-slate-800 bg-slate-900/40 hover:bg-slate-800"
+                        className="sim-btn-muted px-8 py-3.5 w-full sm:w-auto flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 hover:bg-[var(--bg-content)]"
                     >
                         <ArrowLeft size={20} weight="bold" />
                         Zurück

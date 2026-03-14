@@ -19,9 +19,9 @@ import {
 } from '@phosphor-icons/react';
 
 const MetricCard = ({ label, value, unit, icon: Icon, colorClass }) => (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-800/50 group hover:border-slate-700/50 transition-all">
+    <div className="bg-[var(--bg-pillar)]/50 backdrop-blur-sm rounded-2xl p-5 border border-[var(--border-muted)] group hover:border-[var(--border-muted)] transition-all">
         <div className="flex justify-between items-start mb-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</p>
             <Icon size={20} className={colorClass} weight="duotone" />
         </div>
         <div className="flex items-baseline gap-1">
@@ -38,15 +38,15 @@ const LevelMetric = ({ label, level, icon: Icon, delay }) => (
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay }}
-        className="flex items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800/50 group hover:bg-slate-800/30 transition-all"
+        className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-pillar)]/80 border border-[var(--border-muted)] group hover:bg-[var(--bg-content)]/30 transition-all"
     >
         <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors">
+            <div className="h-10 w-10 rounded-lg bg-[var(--sim-shell-bg)] border border-[var(--border-pillar)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-amber-500 transition-colors">
                 <Icon size={24} weight="duotone" />
             </div>
             <div>
                 <p className="text-sm font-black text-white uppercase tracking-tighter">{label}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Stufe {level}</p>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Stufe {level}</p>
             </div>
         </div>
         <div className="flex gap-1">
@@ -54,7 +54,7 @@ const LevelMetric = ({ label, level, icon: Icon, delay }) => (
                 <div 
                     key={i} 
                     className={`h-1.5 w-4 rounded-full transition-all duration-500 ${
-                        i < level ? 'bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.4)]' : 'bg-slate-800'
+                        i < level ? 'bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.4)]' : 'bg-[var(--bg-content)]'
                     }`}
                 />
             ))}
@@ -84,7 +84,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
 
             <div className="max-w-[1400px] mx-auto space-y-10">
                 {/* Hero section */}
-                <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-800/50 bg-[#0c1222]">
+                <div className="relative rounded-[2.5rem] overflow-hidden border border-[var(--border-muted)] bg-[#0c1222]">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-transparent to-slate-950/40 z-10" />
                     <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_0%,_#1e293b_0%,#000_100%)]" />
                     
@@ -96,7 +96,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                     animate={{ opacity: 1, y: 0 }}
                                     className="flex items-center gap-3 mb-6"
                                 >
-                                    <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-2 shadow-xl shadow-black/50">
+                                    <div className="w-10 h-10 rounded-xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] p-2 shadow-xl shadow-black/50">
                                         <img loading="lazy" src={activeClub.logo_url} className="w-full h-full object-contain" />
                                     </div>
                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Heimstätte // Infrastruktur</span>
@@ -109,7 +109,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                 >
                                     {stadium.name}
                                 </motion.h1>
-                                <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+                                <p className="text-xl text-[var(--text-muted)] font-medium max-w-2xl leading-relaxed">
                                     Modernste Spielstätte und Trainingszentrum der <span className="text-white font-bold">{activeClub.name}</span>. Investiere in den Ausbau für höhere Einnahmen und bessere Performance.
                                 </p>
                             </div>
@@ -121,12 +121,12 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                             >
                                 <MetricCard label="Kapazität" value={stadium.capacity} unit="Plätze" icon={Users} colorClass="text-amber-500" />
                                 <MetricCard label="Ticketpreis" value={parseFloat(stadium.ticket_price)} unit="€" icon={Ticket} colorClass="text-amber-400" />
-                                <div className="bg-slate-950/50 backdrop-blur-md rounded-2xl p-4 border border-slate-800/30 flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Wartung</span>
+                                <div className="bg-[var(--sim-shell-bg)]/50 backdrop-blur-md rounded-2xl p-4 border border-[var(--border-pillar)]/30 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Wartung</span>
                                     <span className="font-mono font-black text-rose-400">{stadium.maintenance_cost.toLocaleString('de-DE')} €</span>
                                 </div>
-                                <div className="bg-slate-950/50 backdrop-blur-md rounded-2xl p-4 border border-slate-800/30 flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rasen</span>
+                                <div className="bg-[var(--sim-shell-bg)]/50 backdrop-blur-md rounded-2xl p-4 border border-[var(--border-pillar)]/30 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Rasen</span>
                                     <span className="font-mono font-black text-emerald-400">{stadium.pitch_quality}/10</span>
                                 </div>
                             </motion.div>
@@ -137,7 +137,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Left: Project Creation */}
                     <div className="space-y-8">
-                        <div className="sim-card p-8 border-slate-800 shadow-2xl">
+                        <div className="sim-card p-8 border-[var(--border-pillar)] shadow-2xl">
                             <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3 mb-6">
                                 <HardHat size={28} weight="duotone" className="text-amber-500" />
                                 Bau-Zentrum
@@ -145,7 +145,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                             
                             <form onSubmit={submitProject} className="space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">Projekt-Kategorie</label>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2 block">Projekt-Kategorie</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {Object.entries(projectTypes).map(([type, label]) => (
                                             <button
@@ -155,7 +155,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                                 className={`px-3 py-4 rounded-xl text-left border-2 transition-all ${
                                                     data.project_type === type 
                                                         ? 'bg-amber-500/10 border-amber-500/50 text-white' 
-                                                        : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
+                                                        : 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:border-[var(--border-pillar)]'
                                                 }`}
                                             >
                                                 <p className="text-[10px] font-black uppercase tracking-widest">{label}</p>
@@ -175,8 +175,8 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                             </form>
                         </div>
 
-                        <div className="sim-card p-6 bg-slate-950/50">
-                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-800 pb-4 flex items-center gap-2">
+                        <div className="sim-card p-6 bg-[var(--sim-shell-bg)]/50">
+                            <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 border-b border-[var(--border-pillar)] pb-4 flex items-center gap-2">
                                 <NavigationArrow size={16} /> Aktuelle Infrastruktur
                             </h4>
                             <div className="space-y-3">
@@ -191,18 +191,18 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                                <Hammer size={24} weight="duotone" className="text-slate-500" />
+                                <Hammer size={24} weight="duotone" className="text-[var(--text-muted)]" />
                                 Baustellen-Protokoll
                             </h3>
-                            <div className="px-3 py-1 rounded-full bg-slate-900 text-[10px] font-black text-slate-500">
+                            <div className="px-3 py-1 rounded-full bg-[var(--bg-pillar)] text-[10px] font-black text-[var(--text-muted)]">
                                 {projects.length} Einträge
                             </div>
                         </div>
 
-                        <div className="sim-card p-0 border-slate-800 overflow-hidden">
+                        <div className="sim-card p-0 border-[var(--border-pillar)] overflow-hidden">
                             <table className="w-full text-left">
-                                <thead className="bg-[#0c1222] border-b border-slate-800">
-                                    <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                <thead className="bg-[#0c1222] border-b border-[var(--border-pillar)]">
+                                    <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                                         <th className="px-6 py-5">Projekt</th>
                                         <th className="px-6 py-5">Level</th>
                                         <th className="px-6 py-5 text-right">Investment</th>
@@ -226,8 +226,8 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-slate-500 font-bold">{project.level_from}</span>
-                                                    <div className="h-px w-3 bg-slate-800" />
+                                                    <span className="text-xs text-[var(--text-muted)] font-bold">{project.level_from}</span>
+                                                    <div className="h-px w-3 bg-[var(--bg-content)]" />
                                                     <span className="text-xs text-amber-500 font-black">{project.level_to}</span>
                                                 </div>
                                             </td>
@@ -235,7 +235,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                                 {project.cost.toLocaleString('de-DE')} €
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <p className="text-xs text-slate-400 font-bold">{project.started_on_formatted}</p>
+                                                <p className="text-xs text-[var(--text-muted)] font-bold">{project.started_on_formatted}</p>
                                                 <p className="text-[10px] text-slate-600 font-black uppercase tracking-tighter">bis {project.completes_on_formatted}</p>
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -244,7 +244,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
                                                         : project.status === 'in_progress'
                                                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
-                                                            : 'bg-slate-800 text-slate-500 border-slate-700'
+                                                            : 'bg-[var(--bg-content)] text-[var(--text-muted)] border-[var(--border-pillar)]'
                                                 }`}>
                                                     {project.status === 'in_progress' && <Wrench size={10} className="mr-1.5 animate-bounce" weight="bold" />}
                                                     {project.status}

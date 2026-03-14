@@ -9,7 +9,7 @@ import {
 const Card = ({ title, children, icon: Icon }) => (
     <div className="sim-card p-8">
         <div className="flex items-center gap-3 mb-8">
-            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/30">
+            <div className="p-2.5 rounded-xl bg-[var(--bg-content)]/50 border border-[var(--border-pillar)]/30">
                 <Icon size={24} className="text-cyan-400" />
             </div>
             <h3 className="text-xl font-bold text-white tracking-tight leading-none uppercase italic">{title}</h3>
@@ -46,7 +46,7 @@ export default function Form({ season }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={route('admin.seasons.index')}
-                            className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white transition"
+                            className="p-2 rounded-xl bg-[var(--bg-content)]/50 text-[var(--text-muted)] hover:text-white transition"
                         >
                             <ArrowLeft size={20} weight="bold" />
                         </Link>
@@ -54,7 +54,7 @@ export default function Form({ season }) {
                             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">
                                 {isEdit ? 'Saison bearbeiten' : 'Neue Saison'}
                             </h2>
-                            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">
+                            <p className="text-[var(--text-muted)] text-sm font-bold uppercase tracking-widest mt-1">
                                 {isEdit ? `Konfiguration für ${season.name}` : 'Einen neuen Spielzeitraum definieren'}
                             </p>
                         </div>
@@ -65,7 +65,7 @@ export default function Form({ season }) {
                     <Card title="Saison Details" icon={Calendar}>
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Anzeigename (z.B. 2025/26)</label>
+                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Anzeigename (z.B. 2025/26)</label>
                                 <input 
                                     type="text"
                                     className="sim-input w-full text-lg font-bold"
@@ -79,7 +79,7 @@ export default function Form({ season }) {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Clock size={12} />
                                         Startdatum
                                     </label>
@@ -94,7 +94,7 @@ export default function Form({ season }) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Clock size={12} />
                                         Enddatum
                                     </label>
@@ -110,7 +110,7 @@ export default function Form({ season }) {
                             </div>
 
                             <div className="pt-6">
-                                <label className="flex items-center gap-4 cursor-pointer group p-4 rounded-2xl bg-slate-900/50 border border-slate-800/50 hover:bg-slate-900 transition-colors">
+                                <label className="flex items-center gap-4 cursor-pointer group p-4 rounded-2xl bg-[var(--bg-pillar)]/50 border border-[var(--border-muted)] hover:bg-[var(--bg-pillar)] transition-colors">
                                     <div className={`w-12 h-7 rounded-full p-1 transition-colors ${data.is_current ? 'bg-cyan-500' : 'bg-slate-700'}`}>
                                         <div className={`w-5 h-5 bg-white rounded-full transition-transform ${data.is_current ? 'translate-x-5' : 'translate-x-0'}`} />
                                     </div>
@@ -122,16 +122,16 @@ export default function Form({ season }) {
                                     />
                                     <div>
                                         <span className="text-sm font-black uppercase tracking-widest text-white group-hover:text-cyan-400 transition-colors">Aktuelle Hauptsaison</span>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Andere Saisons werden automatisch als inaktiv markiert</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">Andere Saisons werden automatisch als inaktiv markiert</p>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        <div className="mt-10 pt-8 border-t border-slate-800/50 flex items-center justify-between">
+                        <div className="mt-10 pt-8 border-t border-[var(--border-muted)] flex items-center justify-between">
                             <Link 
                                 href={route('admin.seasons.index')}
-                                className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors"
+                                className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-white transition-colors"
                             >
                                 Abbrechen
                             </Link>

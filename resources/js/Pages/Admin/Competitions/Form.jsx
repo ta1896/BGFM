@@ -11,7 +11,7 @@ import {
 const Card = ({ title, children, icon: Icon }) => (
     <div className="sim-card p-6">
         <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/30">
+            <div className="p-2 rounded-lg bg-[var(--bg-content)]/50 border border-[var(--border-pillar)]/30">
                 <Icon size={20} className="text-cyan-400" />
             </div>
             <h3 className="text-lg font-bold text-white tracking-tight leading-none uppercase italic">{title}</h3>
@@ -79,7 +79,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={route('admin.competitions.index')}
-                            className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white transition"
+                            className="p-2 rounded-xl bg-[var(--bg-content)]/50 text-[var(--text-muted)] hover:text-white transition"
                         >
                             <ArrowLeft size={20} weight="bold" />
                         </Link>
@@ -87,7 +87,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">
                                 {isEdit ? 'Wettbewerb bearbeiten' : 'Neuer Wettbewerb'}
                             </h2>
-                            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">
+                            <p className="text-[var(--text-muted)] text-sm font-bold uppercase tracking-widest mt-1">
                                 {isEdit ? competition.name : 'Konfiguration eines neuen Ligen/Pokalsystems'}
                             </p>
                         </div>
@@ -100,7 +100,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                             <Card title="Basis-Konfiguration" icon={Trophy}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Land (Optional)</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Land (Optional)</label>
                                         <select 
                                             className="sim-select w-full"
                                             value={data.country_id}
@@ -115,7 +115,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Vollständiger Name</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Vollständiger Name</label>
                                         <input 
                                             type="text"
                                             className="sim-input w-full"
@@ -127,7 +127,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kurzform (z.B. BL1)</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Kurzform (z.B. BL1)</label>
                                         <input 
                                             type="text"
                                             className="sim-input w-full"
@@ -138,7 +138,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Typ</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Typ</label>
                                         <select 
                                             className="sim-select w-full"
                                             value={data.type}
@@ -152,7 +152,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Wettbewerbsebene</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Wettbewerbsebene</label>
                                         <select 
                                             className="sim-select w-full"
                                             value={data.scope}
@@ -166,7 +166,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Stufe (Tier)</label>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Stufe (Tier)</label>
                                         <input 
                                             type="number"
                                             min="1"
@@ -179,8 +179,8 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
 
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Logo Upload</label>
-                                        <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-950/50 border-2 border-dashed border-slate-800 hover:border-slate-700 transition group relative">
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Logo Upload</label>
+                                        <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--sim-shell-bg)]/50 border-2 border-dashed border-[var(--border-pillar)] hover:border-[var(--border-pillar)] transition group relative">
                                             <input 
                                                 type="file"
                                                 className="absolute inset-0 opacity-0 cursor-pointer"
@@ -189,7 +189,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                             {isEdit && competition.logo_url && !data.logo && (
                                                 <img src={competition.logo_url} className="h-12 w-12 object-contain" />
                                             )}
-                                            <div className="text-sm text-slate-500">
+                                            <div className="text-sm text-[var(--text-muted)]">
                                                 {data.logo ? data.logo.name : 'Datei hierher ziehen oder klicken'}
                                             </div>
                                         </div>
@@ -197,7 +197,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     </div>
                                 </div>
 
-                                <div className="mt-8 pt-6 border-t border-slate-800/50 flex items-center justify-between">
+                                <div className="mt-8 pt-6 border-t border-[var(--border-muted)] flex items-center justify-between">
                                     <label className="flex items-center gap-3 cursor-pointer group">
                                         <div className={`w-10 h-6 rounded-full p-1 transition-colors ${data.is_active ? 'bg-cyan-500' : 'bg-slate-700'}`}>
                                             <div className={`w-4 h-4 bg-white rounded-full transition-transform ${data.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -208,7 +208,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                             checked={data.is_active}
                                             onChange={e => setData('is_active', e.target.checked)}
                                         />
-                                        <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Wettbewerb Aktiv</span>
+                                        <span className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors">Wettbewerb Aktiv</span>
                                     </label>
 
                                     <button 
@@ -251,20 +251,20 @@ export default function Form({ competition, countries, availableSeasons }) {
                             <Card title="Saisons" icon={CalendarPlus}>
                                 <div className="space-y-3 mb-6">
                                     {competition.competition_seasons.map(cs => (
-                                        <div key={cs.id} className="p-4 rounded-xl bg-slate-800/20 border border-slate-800/50 group">
+                                        <div key={cs.id} className="p-4 rounded-xl bg-[var(--bg-content)]/20 border border-[var(--border-muted)] group">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="font-black text-cyan-400 uppercase tracking-tighter text-lg leading-none">{cs.season.name}</span>
                                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Link 
                                                         href={route('admin.competition-seasons.edit', cs.id)}
-                                                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition"
+                                                        className="p-1.5 text-[var(--text-muted)] hover:text-white hover:bg-slate-700 rounded-lg transition"
                                                     >
                                                         <PencilSimple size={14} />
                                                     </Link>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{cs.format}</span>
+                                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{cs.format}</span>
                                                 <button 
                                                     onClick={() => router.post(route('admin.competition-seasons.generate-fixtures', cs.id))}
                                                     className="text-[9px] font-black text-cyan-500 hover:text-cyan-400 uppercase tracking-widest border border-cyan-500/20 px-2 py-1 rounded bg-cyan-500/5 transition"
@@ -279,7 +279,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                     )}
                                 </div>
 
-                                <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800/50 border-dashed">
+                                <div className="p-4 rounded-xl bg-[var(--sim-shell-bg)]/50 border border-[var(--border-muted)] border-dashed">
                                     <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-4">Saison zuordnen</h4>
                                     <form onSubmit={addSeason} className="space-y-4">
                                         <div className="space-y-2">
@@ -308,7 +308,7 @@ export default function Form({ competition, countries, availableSeasons }) {
                                         <button 
                                             type="submit" 
                                             disabled={seasonForm.processing}
-                                            className="w-full bg-slate-800 hover:bg-slate-700 text-cyan-400 font-black py-2 rounded-lg text-[10px] uppercase tracking-widest transition"
+                                            className="w-full bg-[var(--bg-content)] hover:bg-slate-700 text-cyan-400 font-black py-2 rounded-lg text-[10px] uppercase tracking-widest transition"
                                         >
                                             Zuordnen
                                         </button>
@@ -319,13 +319,13 @@ export default function Form({ competition, countries, availableSeasons }) {
 
                         <Card title="Infos & Hilfe" icon={ListChecks}>
                             <div className="space-y-4">
-                                <p className="text-xs text-slate-400 leading-relaxed">
+                                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                                     Ligen werden automatisch der nationalen Ebene zugeordnet, wenn ein Land gewählt wurde. 
                                     Internationale Pokale hingegen benötigen kein Land.
                                 </p>
                                 <div className="p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
                                     <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pro-Tipp</p>
-                                    <p className="text-[11px] text-slate-400">Verwende einheitliche Kurznamen für eine bessere Übersicht im System.</p>
+                                    <p className="text-[11px] text-[var(--text-muted)]">Verwende einheitliche Kurznamen für eine bessere Übersicht im System.</p>
                                 </div>
                             </div>
                         </Card>

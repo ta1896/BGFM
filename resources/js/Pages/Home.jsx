@@ -20,11 +20,11 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
         viewport={{ once: true }}
         class="sim-card p-8 group hover:border-cyan-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-500/10"
     >
-        <div class="bg-slate-800/50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-slate-700/50 group-hover:bg-cyan-500/20 group-hover:border-cyan-500/30 transition-all">
-            <Icon size={32} weight="duotone" class="text-slate-400 group-hover:text-cyan-400" />
+        <div class="bg-[var(--bg-content)]/50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-[var(--border-muted)] group-hover:bg-cyan-500/20 group-hover:border-cyan-500/30 transition-all">
+            <Icon size={32} weight="duotone" class="text-[var(--text-muted)] group-hover:text-cyan-400" />
         </div>
         <h3 class="text-xl font-bold text-white mb-3 tracking-tight">{title}</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">{description}</p>
+        <p class="text-[var(--text-muted)] text-sm leading-relaxed">{description}</p>
     </motion.div>
 );
 
@@ -43,7 +43,7 @@ export default function Home() {
                         <span class="font-black text-2xl tracking-tighter">OpenWS</span>
                     </div>
                     <div class="flex items-center gap-6">
-                        <Link href="/login" class="text-sm font-bold text-slate-400 hover:text-white transition">Login</Link>
+                        <Link href="/login" class="text-sm font-bold text-[var(--text-muted)] hover:text-white transition">Login</Link>
                         <Link href="/register" class="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold px-6 py-2.5 rounded-full transition shadow-lg shadow-cyan-600/20">
                             Get Started
                         </Link>
@@ -72,7 +72,7 @@ export default function Home() {
                                 BUILD YOUR <br />
                                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-500">LEGACY.</span>
                             </h1>
-                            <p class="text-xl text-slate-400 leading-relaxed mb-12 max-w-xl">
+                            <p class="text-xl text-[var(--text-muted)] leading-relaxed mb-12 max-w-xl">
                                 Erlebe das ultimative Fussball-Management. Taktik, Transfers, Finanzen – alles in Echtzeit. Werde zur Manager-Legende.
                             </p>
                             <div class="flex flex-wrap gap-4">
@@ -108,7 +108,7 @@ export default function Home() {
             </section>
 
             {/* Stats Section */}
-            <section class="py-24 border-y border-white/5 bg-slate-900/30">
+            <section class="py-24 border-y border-white/5 bg-[var(--bg-pillar)]/30">
                 <div class="max-w-7xl mx-auto px-6">
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
                         {[
@@ -136,7 +136,7 @@ export default function Home() {
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-20">
                         <h2 class="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tighter">TOTAL CONTROL.</h2>
-                        <p class="text-slate-400 max-w-2xl mx-auto">
+                        <p class="text-[var(--text-muted)] max-w-2xl mx-auto">
                             Jedes Detail zählt. Von der präzisen Spielerrolle bis zum internationalen Leihgeschäft.
                         </p>
                     </div>
@@ -185,7 +185,7 @@ export default function Home() {
             {/* Mockup Section */}
             <section class="py-32 bg-gradient-to-b from-[#0f172a] to-slate-900 border-t border-white/5">
                 <div class="max-w-7xl mx-auto px-6">
-                    <div class="sim-card p-6 lg:p-12 border-slate-700/50 relative overflow-hidden">
+                    <div class="sim-card p-6 lg:p-12 border-[var(--border-muted)] relative overflow-hidden">
                         <div class="absolute inset-0 bg-cyan-500/5 blur-3xl rounded-full translate-y-1/2"></div>
                         <div class="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                             <div>
@@ -224,12 +224,12 @@ export default function Home() {
             <footer class="py-20 border-t border-white/5">
                 <div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="h-10 w-10 rounded-xl bg-slate-800 flex items-center justify-center text-white font-black border border-white/10">
+                        <div class="h-10 w-10 rounded-xl bg-[var(--bg-content)] flex items-center justify-center text-white font-black border border-white/10">
                             OW
                         </div>
                         <span class="font-black text-2xl tracking-tighter">OpenWS</span>
                     </div>
-                    <p class="text-slate-500 text-sm font-bold uppercase tracking-widest text-center">
+                    <p class="text-[var(--text-muted)] text-sm font-bold uppercase tracking-widest text-center">
                         &copy; 2026 OpenWS Laravell. Simulating Greatness.
                     </p>
                 </div>

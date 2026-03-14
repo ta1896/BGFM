@@ -26,7 +26,7 @@ function SettingSlider({ label, desc, name, value, min, max, step = 0.01, onChan
 
 function Toggle({ label, desc, checked, onChange }) {
     return (
-        <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-700/40 bg-slate-800/20 hover:bg-slate-800/40 cursor-pointer transition">
+        <label className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border-pillar)]/40 bg-[var(--bg-content)]/20 hover:bg-[var(--bg-content)]/40 cursor-pointer transition">
             <div className="pt-0.5 flex-shrink-0">
                 <div
                     onClick={onChange}
@@ -37,7 +37,7 @@ function Toggle({ label, desc, checked, onChange }) {
             </div>
             <div>
                 <span className="block text-sm font-bold text-slate-200">{label}</span>
-                {desc && <span className="block text-[10px] text-slate-500 mt-0.5 leading-snug">{desc}</span>}
+                {desc && <span className="block text-[10px] text-[var(--text-muted)] mt-0.5 leading-snug">{desc}</span>}
             </div>
         </label>
     );
@@ -120,7 +120,7 @@ export default function Index({ simulationSettings: s }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Simulation Setup</h2>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Engine-Konfiguration</p>
+                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Engine-Konfiguration</p>
                     </div>
                     <button
                         type="submit"
@@ -137,7 +137,7 @@ export default function Index({ simulationSettings: s }) {
                     <h3 className="text-xs font-black uppercase tracking-widest text-cyan-400 mb-5 flex items-center gap-2">
                         <Timer size={14} /> Scheduler Konfiguration
                     </h3>
-                    <p className="text-xs text-slate-500 mb-6">Steuert die automatische Berechnung von Spielen im Hintergrund.</p>
+                    <p className="text-xs text-[var(--text-muted)] mb-6">Steuert die automatische Berechnung von Spielen im Hintergrund.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
                             { key: 'interval_minutes', label: 'Intervall (Min)', min: 1, max: 60, step: 1, desc: 'Wie oft der Scheduler läuft' },
@@ -146,7 +146,7 @@ export default function Index({ simulationSettings: s }) {
                             { key: 'max_concurrency', label: 'Max. Worker', min: 1, max: 50, step: 1, desc: 'Parallele Worker-Prozesse' },
                         ].map(f => (
                             <div key={f.key}>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{f.label}</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">{f.label}</label>
                                 <input
                                     type="number" min={f.min} max={f.max} step={f.step}
                                     value={sc[f.key]}
@@ -158,8 +158,8 @@ export default function Index({ simulationSettings: s }) {
                         ))}
                     </div>
 
-                    <div className="mt-6 pt-5 border-t border-slate-800">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Automatische Match-Typen</label>
+                    <div className="mt-6 pt-5 border-t border-[var(--border-pillar)]">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">Automatische Match-Typen</label>
                         <div className="flex flex-wrap gap-3">
                             {[['friendly', 'Freundschaftsspiele'], ['league', 'Ligaspiele'], ['cup', 'Pokalspiele']].map(([t, l]) => (
                                 <button
@@ -168,7 +168,7 @@ export default function Index({ simulationSettings: s }) {
                                     className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
                                         sc.default_types.includes(t)
                                             ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
-                                            : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-white'
+                                            : 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-white'
                                     }`}
                                 >{l}</button>
                             ))}
@@ -181,7 +181,7 @@ export default function Index({ simulationSettings: s }) {
                     <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-5 flex items-center gap-2">
                         <ChartBar size={14} /> Position Fit Multipliers
                     </h3>
-                    <p className="text-xs text-slate-500 mb-6">Einfluss der Positionstreue auf die Spielstärke (1.0 = 100%).</p>
+                    <p className="text-xs text-[var(--text-muted)] mb-6">Einfluss der Positionstreue auf die Spielstärke (1.0 = 100%).</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[
                             { key: 'main', label: 'Hauptposition', desc: 'Perfekter Fit', min: 0.50, max: 1.20 },
@@ -209,7 +209,7 @@ export default function Index({ simulationSettings: s }) {
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Geplante Wechsel (Max/Club)</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Geplante Wechsel (Max/Club)</label>
                                 <input type="number" min={1} max={5}
                                     value={lc.max_per_club}
                                     onChange={e => setNested('simulation.live_changes.planned_substitutions.max_per_club', parseInt(e.target.value))}
@@ -218,7 +218,7 @@ export default function Index({ simulationSettings: s }) {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Vorlauf (Min)</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Vorlauf (Min)</label>
                                     <input type="number" min={1} max={30}
                                         value={lc.min_minutes_ahead}
                                         onChange={e => setNested('simulation.live_changes.planned_substitutions.min_minutes_ahead', parseInt(e.target.value))}
@@ -226,7 +226,7 @@ export default function Index({ simulationSettings: s }) {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Intervall (Min)</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Intervall (Min)</label>
                                     <input type="number" min={1} max={30}
                                         value={lc.min_interval_minutes}
                                         onChange={e => setNested('simulation.live_changes.planned_substitutions.min_interval_minutes', parseInt(e.target.value))}
@@ -242,7 +242,7 @@ export default function Index({ simulationSettings: s }) {
                             <Users size={14} /> Lineup Limits
                         </h3>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Maximale Bankspieler</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Maximale Bankspieler</label>
                             <input type="number" min={1} max={10}
                                 value={data.simulation.lineup.max_bench_players}
                                 onChange={e => setNested('simulation.lineup.max_bench_players', parseInt(e.target.value))}
@@ -260,7 +260,7 @@ export default function Index({ simulationSettings: s }) {
                             <h3 className="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
                                 <Gear size={14} /> Post-Match Pipeline (Observers)
                             </h3>
-                            <p className="text-xs text-slate-500 mt-1">Aktionen, die nach jedem Spiel automatisch ausgeführt werden.</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-1">Aktionen, die nach jedem Spiel automatisch ausgeführt werden.</p>
                         </div>
                         <button
                             type="button"
@@ -268,7 +268,7 @@ export default function Index({ simulationSettings: s }) {
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all ${
                                 ob.enabled
                                     ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                                    : 'bg-slate-800 border-slate-700 text-slate-500'
+                                    : 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)]'
                             }`}
                         >
                             {ob.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}

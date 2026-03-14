@@ -79,7 +79,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 border-indigo-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -92,12 +92,12 @@ export default function Analysis({ match, matchDiagnostics }) {
                 <div className="sim-card p-6 border-b-4 border-b-cyan-500">
                     <form onSubmit={handleSearch} className="flex gap-4 items-end">
                         <div className="flex-1">
-                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Match ID suchen</label>
+                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Match ID suchen</label>
                             <input 
                                 type="number" 
                                 value={data.match_id}
                                 onChange={e => setData('match_id', e.target.value)}
-                                className="w-full bg-slate-900/50 border-slate-700 rounded-xl text-white focus:ring-cyan-500/50 focus:border-cyan-500 text-sm p-3" 
+                                className="w-full bg-[var(--bg-pillar)]/50 border-[var(--border-pillar)] rounded-xl text-white focus:ring-cyan-500/50 focus:border-cyan-500 text-sm p-3" 
                                 placeholder="z.B. 546"
                             />
                         </div>
@@ -112,7 +112,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                             <button 
                                 type="button"
                                 onClick={handleClear}
-                                className="px-4 py-3 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition border border-slate-700 flex items-center gap-2"
+                                className="px-4 py-3 bg-[var(--bg-content)] text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition border border-[var(--border-pillar)] flex items-center gap-2"
                             >
                                 <X size={16} />
                                 Leeren
@@ -132,19 +132,19 @@ export default function Analysis({ match, matchDiagnostics }) {
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-black text-white uppercase tracking-tight">Match-Probleme erkannt</h3>
-                                        <p className="text-xs text-slate-400 italic">Gezielte Diagnose fand {matchDiagnostics.length} Probleme mit diesem Eintrag.</p>
+                                        <p className="text-xs text-[var(--text-muted)] italic">Gezielte Diagnose fand {matchDiagnostics.length} Probleme mit diesem Eintrag.</p>
                                     </div>
                                 </div>
                                 <div className="grid gap-3">
                                     {matchDiagnostics.map((diag, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-4 bg-slate-900/60 rounded-2xl border border-white/5 hover:border-red-500/20 transition-colors">
+                                        <div key={idx} className="flex items-center justify-between p-4 bg-[var(--bg-pillar)]/60 rounded-2xl border border-white/5 hover:border-red-500/20 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <span className={`flex h-2 w-2 rounded-full ${diag.severity === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></span>
                                                 <p className="text-sm text-slate-200 font-bold">{diag.description}</p>
                                             </div>
                                             <button 
                                                 onClick={() => handleRepair(diag.action_type, match.id)}
-                                                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-slate-700 transition active:scale-95"
+                                                className="px-5 py-2 bg-[var(--bg-content)] hover:bg-slate-700 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-[var(--border-pillar)] transition active:scale-95"
                                             >
                                                 {diag.action_label}
                                             </button>
@@ -158,27 +158,27 @@ export default function Analysis({ match, matchDiagnostics }) {
                             <div className="lg:col-span-1 space-y-6">
                                 {/* Score Card */}
                                 <div className="sim-card p-6 border-l-4 border-l-cyan-500 bg-gradient-to-br from-slate-900 to-slate-950">
-                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-white/5">Spielergebnis</h3>
+                                    <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 pb-2 border-b border-white/5">Spielergebnis</h3>
                                     <div className="flex justify-between items-center bg-black/40 p-6 rounded-[2rem] mb-6 border border-white/5 shadow-inner">
                                         <div className="text-center w-5/12">
-                                            <div className="text-[9px] text-slate-500 uppercase font-black mb-1">Heim</div>
+                                            <div className="text-[9px] text-[var(--text-muted)] uppercase font-black mb-1">Heim</div>
                                             <div className="font-black text-xs text-white uppercase truncate">{match.home_club.name}</div>
                                         </div>
                                         <div className="text-3xl font-black text-cyan-400 tabular-nums">{match.home_score} : {match.away_score}</div>
                                         <div className="text-center w-5/12">
-                                            <div className="text-[9px] text-slate-500 uppercase font-black mb-1">Gast</div>
+                                            <div className="text-[9px] text-[var(--text-muted)] uppercase font-black mb-1">Gast</div>
                                             <div className="font-black text-xs text-white uppercase truncate">{match.away_club.name}</div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5 relative overflow-hidden group">
+                                        <div className="bg-[var(--bg-pillar)]/50 p-4 rounded-2xl border border-white/5 relative overflow-hidden group">
                                             <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <span className="text-[9px] text-slate-500 block mb-1 uppercase tracking-widest font-black">Status</span> 
+                                            <span className="text-[9px] text-[var(--text-muted)] block mb-1 uppercase tracking-widest font-black">Status</span> 
                                             <span className="font-black text-cyan-400 uppercase text-xs tracking-wider">{match.status}</span>
                                         </div>
-                                        <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5 relative overflow-hidden group">
+                                        <div className="bg-[var(--bg-pillar)]/50 p-4 rounded-2xl border border-white/5 relative overflow-hidden group">
                                             <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <span className="text-[9px] text-slate-500 block mb-1 uppercase tracking-widest font-black">Minute</span> 
+                                            <span className="text-[9px] text-[var(--text-muted)] block mb-1 uppercase tracking-widest font-black">Minute</span> 
                                             <span className="font-black text-white text-xs tabular-nums">{match.live_minute}'</span>
                                         </div>
                                     </div>
@@ -196,17 +196,17 @@ export default function Analysis({ match, matchDiagnostics }) {
                                 </div>
 
                                 <div className="sim-card p-6 bg-gradient-to-br from-slate-900 to-slate-950">
-                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-white/5 flex items-center gap-2">
+                                    <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 pb-2 border-b border-white/5 flex items-center gap-2">
                                         <ChartBar size={16} />
                                         Simulation Insights
                                     </h3>
                                     <div className="space-y-6">
                                         <div>
                                             <div className="flex justify-between text-xs mb-2 items-end">
-                                                <span className="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Events</span>
+                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-tighter">Events</span>
                                                 <span className="font-black text-cyan-400 text-lg tabular-nums">{match.events?.length || 0}</span>
                                             </div>
-                                            <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-2 bg-[var(--sim-shell-bg)] rounded-full overflow-hidden border border-white/5">
                                                 <motion.div 
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${Math.min(100, (match.events?.length || 0) * 4)}%` }}
@@ -217,10 +217,10 @@ export default function Analysis({ match, matchDiagnostics }) {
                                         </div>
                                         <div>
                                             <div className="flex justify-between text-xs mb-2 items-end">
-                                                <span className="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Live Actions</span>
+                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-tighter">Live Actions</span>
                                                 <span className="font-black text-indigo-400 text-lg tabular-nums">{match.live_actions?.length || 0}</span>
                                             </div>
-                                            <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-2 bg-[var(--sim-shell-bg)] rounded-full overflow-hidden border border-white/5">
                                                 <motion.div 
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${Math.min(100, (match.live_actions?.length || 0) / 1.5)}%` }}
@@ -234,13 +234,13 @@ export default function Analysis({ match, matchDiagnostics }) {
                             </div>
 
                             <div className="lg:col-span-2 space-y-6">
-                                <section className="sim-card overflow-hidden bg-slate-900/50">
-                                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-800/20">
+                                <section className="sim-card overflow-hidden bg-[var(--bg-pillar)]/50">
+                                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[var(--bg-content)]/20">
                                         <h3 className="text-lg font-black text-white flex items-center gap-3 capitalize">
                                             <Target size={24} className="text-indigo-400" />
                                             Event Timeline (Detail)
                                         </h3>
-                                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                                        <div className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest flex items-center gap-2">
                                             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                                             Expert Mode Active
                                         </div>
@@ -248,7 +248,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                                     <div className="overflow-x-auto custom-scrollbar max-h-[800px]">
                                         <table className="w-full text-left">
                                             <thead className="sticky top-0 z-10">
-                                                <tr className="bg-slate-900 text-slate-500 uppercase text-[10px] font-black tracking-widest border-b border-white/5">
+                                                <tr className="bg-[var(--bg-pillar)] text-[var(--text-muted)] uppercase text-[10px] font-black tracking-widest border-b border-white/5">
                                                     <th className="py-4 px-6">Min</th>
                                                     <th className="py-4 px-6">Team</th>
                                                     <th className="py-4 px-6">Typ</th>
@@ -258,7 +258,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                                             <tbody className="divide-y divide-white/5">
                                                 {(match.live_actions || []).sort((a,b) => a.minute - b.minute).map((action, idx) => (
                                                     <tr key={idx} className="hover:bg-white/5 transition-colors group">
-                                                        <td className="py-4 px-6 font-mono font-black text-slate-400 tabular-nums">{action.minute}'</td>
+                                                        <td className="py-4 px-6 font-mono font-black text-[var(--text-muted)] tabular-nums">{action.minute}'</td>
                                                         <td className="py-4 px-6">
                                                             {action.club_id == match.home_club_id ? (
                                                                 <span className="text-cyan-400 font-black text-[10px] tracking-widest uppercase bg-cyan-500/10 px-2 py-1 rounded">Heim</span>
@@ -275,7 +275,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                                                             ) : action.outcome === 'fail' ? (
                                                                 <span className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/20 rounded-full text-[9px] font-black uppercase tracking-tighter">Fehler</span>
                                                             ) : (
-                                                                <span className="px-3 py-1 bg-slate-800 text-slate-400 rounded-full text-[9px] font-black uppercase group-hover:bg-slate-700 transition tracking-tighter">
+                                                                <span className="px-3 py-1 bg-[var(--bg-content)] text-[var(--text-muted)] rounded-full text-[9px] font-black uppercase group-hover:bg-slate-700 transition tracking-tighter">
                                                                     {action.outcome || '-'}
                                                                 </span>
                                                             )}
@@ -286,7 +286,7 @@ export default function Analysis({ match, matchDiagnostics }) {
                                                     <tr>
                                                         <td colSpan="4" className="py-40 text-center">
                                                             <div className="text-6xl mb-6 opacity-10 filter grayscale">📭</div>
-                                                            <p className="text-slate-500 italic text-[10px] uppercase tracking-widest font-black">Keine Live Actions für dieses Match vorhanden.</p>
+                                                            <p className="text-[var(--text-muted)] italic text-[10px] uppercase tracking-widest font-black">Keine Live Actions für dieses Match vorhanden.</p>
                                                         </td>
                                                     </tr>
                                                 )}
@@ -298,10 +298,10 @@ export default function Analysis({ match, matchDiagnostics }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="sim-card p-32 text-center border-2 border-dashed border-white/5 bg-slate-900/10 rounded-[3rem] group">
+                    <div className="sim-card p-32 text-center border-2 border-dashed border-white/5 bg-[var(--bg-pillar)]/10 rounded-[3rem] group">
                         <div className="text-8xl mb-10 opacity-10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none grayscale group-hover:grayscale-0">🔍</div>
                         <h3 className="text-2xl font-black text-white tracking-tight mb-4 uppercase">Simulations-Protokoll Diagnostics</h3>
-                        <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed text-sm">
+                        <p className="text-[var(--text-muted)] font-medium max-w-sm mx-auto leading-relaxed text-sm">
                             Geben Sie oben eine Match ID ein, um das Simulationsprotokoll zu diagnostizieren und Fehler zu beheben.
                         </p>
                     </div>

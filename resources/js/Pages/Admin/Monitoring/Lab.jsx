@@ -138,7 +138,7 @@ export default function Lab({ clubs }) {
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 border-emerald-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -151,20 +151,20 @@ export default function Lab({ clubs }) {
                     {/* Config Side */}
                     <aside className="w-full lg:w-80 shrink-0">
                         <div className="sim-card p-6 lg:sticky lg:top-8">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 pb-2 border-b border-white/5">
+                            <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 pb-2 border-b border-white/5">
                                 Konfiguration
                             </h3>
 
                             {/* Mode Switcher */}
-                            <div className="flex p-1 bg-slate-950/50 rounded-xl mb-6">
+                            <div className="flex p-1 bg-[var(--sim-shell-bg)]/50 rounded-xl mb-6">
                                 {modes.map(m => (
                                     <button
                                         key={m.id}
                                         onClick={() => setMode(m.id)}
                                         className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
                                             mode === m.id 
-                                            ? 'bg-slate-800 text-white shadow-lg ring-1 ring-white/10' 
-                                            : 'text-slate-500 hover:text-slate-300'
+                                            ? 'bg-[var(--bg-content)] text-white shadow-lg ring-1 ring-white/10' 
+                                            : 'text-[var(--text-muted)] hover:text-slate-300'
                                         }`}
                                     >
                                         {m.label}
@@ -176,21 +176,21 @@ export default function Lab({ clubs }) {
                                 {mode === 'single' && (
                                     <>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Heimteam</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Heimteam</label>
                                             <select 
                                                 value={forms.single.home_club_id}
                                                 onChange={e => handleFormChange('single', 'home_club_id', e.target.value)}
-                                                className="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition"
+                                                className="w-full bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition"
                                             >
                                                 {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Gastteam</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Gastteam</label>
                                             <select 
                                                 value={forms.single.away_club_id}
                                                 onChange={e => handleFormChange('single', 'away_club_id', e.target.value)}
-                                                className="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition"
+                                                className="w-full bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-emerald-500/50 transition"
                                             >
                                                 {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                             </select>
@@ -201,33 +201,33 @@ export default function Lab({ clubs }) {
                                 {mode === 'batch' && (
                                     <>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Team A</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Team A</label>
                                             <select 
                                                 value={forms.batch.home_club_id}
                                                 onChange={e => handleFormChange('batch', 'home_club_id', e.target.value)}
-                                                className="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition"
+                                                className="w-full bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition"
                                             >
                                                 {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Team B</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Team B</label>
                                             <select 
                                                 value={forms.batch.away_club_id}
                                                 onChange={e => handleFormChange('batch', 'away_club_id', e.target.value)}
-                                                className="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition"
+                                                className="w-full bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition"
                                             >
                                                 {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Iterationen</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Iterationen</label>
                                             <input 
                                                 type="number"
                                                 value={forms.batch.iterations}
                                                 onChange={e => handleFormChange('batch', 'iterations', e.target.value)}
                                                 min="10" max="250"
-                                                className="w-full bg-slate-950/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition text-center font-mono"
+                                                className="w-full bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-xs text-white p-3 focus:ring-indigo-500/50 transition text-center font-mono"
                                             />
                                         </div>
                                     </>
@@ -236,42 +236,42 @@ export default function Lab({ clubs }) {
                                 {mode === 'ab' && (
                                     <>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Test-Paarung</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Test-Paarung</label>
                                             <div className="flex gap-2">
                                                 <select 
                                                     value={forms.ab.home_club_id}
                                                     onChange={e => handleFormChange('ab', 'home_club_id', e.target.value)}
-                                                    className="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-pink-500/50 transition truncate"
+                                                    className="w-1/2 bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-pink-500/50 transition truncate"
                                                 >
                                                     {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                                 </select>
                                                 <select 
                                                     value={forms.ab.away_club_id}
                                                     onChange={e => handleFormChange('ab', 'away_club_id', e.target.value)}
-                                                    className="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-pink-500/50 transition truncate"
+                                                    className="w-1/2 bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-pink-500/50 transition truncate"
                                                 >
                                                     {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                                        <div className="p-3 bg-[var(--bg-pillar)]/50 rounded-xl border border-white/5">
                                             <h4 className="text-[9px] font-black text-white uppercase tracking-wider mb-2">Variante A (Kontrolle)</h4>
                                             <select 
                                                 value={forms.ab.config_a.aggression}
                                                 onChange={e => handleNestedChange('ab', 'config_a', 'aggression', e.target.value)}
-                                                className="w-full bg-slate-950 border-white/10 rounded-lg text-xs text-slate-400 p-2"
+                                                className="w-full bg-[var(--sim-shell-bg)] border-white/10 rounded-lg text-xs text-[var(--text-muted)] p-2"
                                             >
                                                 <option value="normal">Aggression: Normal</option>
                                                 <option value="high">Aggression: Hoch</option>
                                                 <option value="low">Aggression: Niedrig</option>
                                             </select>
                                         </div>
-                                        <div className="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                                        <div className="p-3 bg-[var(--bg-pillar)]/50 rounded-xl border border-white/5">
                                             <h4 className="text-[9px] font-black text-pink-400 uppercase tracking-wider mb-2">Variante B (Test)</h4>
                                             <select 
                                                 value={forms.ab.config_b.aggression}
                                                 onChange={e => handleNestedChange('ab', 'config_b', 'aggression', e.target.value)}
-                                                className="w-full bg-slate-950 border-white/10 rounded-lg text-xs text-pink-300 p-2 focus:ring-pink-500"
+                                                className="w-full bg-[var(--sim-shell-bg)] border-white/10 rounded-lg text-xs text-pink-300 p-2 focus:ring-pink-500"
                                             >
                                                 <option value="normal">Aggression: Normal</option>
                                                 <option value="high">Aggression: Hoch</option>
@@ -282,38 +282,38 @@ export default function Lab({ clubs }) {
                                 )}
 
                                 {mode === 'season' && (
-                                    <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 text-center">
+                                    <div className="p-4 bg-[var(--bg-pillar)]/50 rounded-xl border border-white/5 text-center">
                                         <div className="text-4xl mb-4">🏆</div>
                                         <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Saison-Simulation</h4>
-                                        <p className="text-[10px] text-slate-400 leading-relaxed">Simuliert eine komplette Saison (Hin- & Rückrunde) für 18 Teams. Dauer: ca. 5-10 Sekunden.</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Simuliert eine komplette Saison (Hin- & Rückrunde) für 18 Teams. Dauer: ca. 5-10 Sekunden.</p>
                                     </div>
                                 )}
 
                                 {mode === 'tactics' && (
                                     <>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Test-Teams</label>
+                                            <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase mb-2 tracking-widest">Test-Teams</label>
                                             <div className="flex gap-2">
                                                 <select 
                                                     value={forms.tactics.home_club_id}
                                                     onChange={e => handleFormChange('tactics', 'home_club_id', e.target.value)}
-                                                    className="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-indigo-500/50 transition truncate"
+                                                    className="w-1/2 bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-indigo-500/50 transition truncate"
                                                 >
                                                     {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                                 </select>
                                                 <select 
                                                     value={forms.tactics.away_club_id}
                                                     onChange={e => handleFormChange('tactics', 'away_club_id', e.target.value)}
-                                                    className="w-1/2 bg-slate-950/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-indigo-500/50 transition truncate"
+                                                    className="w-1/2 bg-[var(--sim-shell-bg)]/50 border-white/10 rounded-xl text-[10px] text-white p-2 focus:ring-indigo-500/50 transition truncate"
                                                 >
                                                     {clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 text-center">
+                                        <div className="p-4 bg-[var(--bg-pillar)]/50 rounded-xl border border-white/5 text-center">
                                             <div className="text-4xl mb-4">🧠</div>
                                             <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Taktik-Analyse</h4>
-                                            <p className="text-[10px] text-slate-400 leading-relaxed">Simuliert alle Formations-Kombinationen. Dauer: ca. 10 Sekunden.</p>
+                                            <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Simuliert alle Formations-Kombinationen. Dauer: ca. 10 Sekunden.</p>
                                         </div>
                                     </>
                                 )}
@@ -323,7 +323,7 @@ export default function Lab({ clubs }) {
                                     disabled={loading}
                                     className={`w-full py-4 font-black rounded-xl shadow-lg transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 ${
                                         loading 
-                                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
+                                        ? 'bg-slate-700 text-[var(--text-muted)] cursor-not-allowed' 
                                         : `bg-${modes.find(m => m.id === mode).color}-600 text-white hover:bg-${modes.find(m => m.id === mode).color}-500 hover:-translate-y-0.5 shadow-${modes.find(m => m.id === mode).color}-500/20`
                                     }`}
                                 >
@@ -349,10 +349,10 @@ export default function Lab({ clubs }) {
                     {/* Results Area */}
                     <main className="flex-1 min-w-0 w-full space-y-8" ref={resultsRef}>
                         {!result && !loading && (
-                            <div className="sim-card p-16 text-center border-2 border-dashed border-white/5 bg-slate-900/20 rounded-[3rem]">
+                            <div className="sim-card p-16 text-center border-2 border-dashed border-white/5 bg-[var(--bg-pillar)]/20 rounded-[3rem]">
                                 <div className="text-8xl mb-10 opacity-10 filter grayscale transform -rotate-12">🧪</div>
                                 <h3 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">Experimentelle Sandbox</h3>
-                                <p className="text-slate-500 max-w-xl mx-auto leading-relaxed text-sm font-medium">
+                                <p className="text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed text-sm font-medium">
                                     Hier können Simulationen durchgeführt werden, ohne Daten in die Datenbank zu schreiben.
                                     Ideal zum Testen von Engine-Updates, Taktik-Einflüssen oder neuen Match-Events.
                                 </p>
@@ -368,7 +368,7 @@ export default function Lab({ clubs }) {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="text-xl font-black text-white uppercase tracking-widest">Simulation läuft</h3>
-                                    <p className="text-xs text-slate-500 mt-2 font-mono">Engine is processing tactical algorithms...</p>
+                                    <p className="text-xs text-[var(--text-muted)] mt-2 font-mono">Engine is processing tactical algorithms...</p>
                                 </div>
                             </div>
                         )}
@@ -400,13 +400,13 @@ function SingleResult({ data }) {
     return (
         <div className="space-y-6">
             {/* Score Card */}
-            <div className="sim-card relative overflow-hidden bg-slate-900 border-white/10 shadow-2xl rounded-[2.5rem]">
+            <div className="sim-card relative overflow-hidden bg-[var(--bg-pillar)] border-white/10 shadow-2xl rounded-[2.5rem]">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-blue-500/10"></div>
                 <div className="relative p-8 px-10 flex flex-col sm:flex-row items-center justify-between gap-12">
                     <div className="flex flex-col items-center gap-4 text-center group">
-                        <div className="w-24 h-24 bg-slate-800 rounded-[3rem] border border-white/10 flex items-center justify-center text-5xl shadow-2xl transition-all group-hover:scale-110 group-hover:rotate-6 duration-500">🏠</div>
+                        <div className="w-24 h-24 bg-[var(--bg-content)] rounded-[3rem] border border-white/10 flex items-center justify-center text-5xl shadow-2xl transition-all group-hover:scale-110 group-hover:rotate-6 duration-500">🏠</div>
                         <div className="space-y-2">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Heimteam</div>
+                            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Heimteam</div>
                             <h4 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{data.home_club.name}</h4>
                         </div>
                     </div>
@@ -414,7 +414,7 @@ function SingleResult({ data }) {
                     <div className="flex flex-col items-center">
                         <div className="mb-6 flex flex-col items-center">
                             <div className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.5em] mb-4 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">Live Simulation</div>
-                            <div className="bg-slate-950 px-10 py-6 rounded-[3rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.7)] ring-1 ring-inset ring-white/5">
+                            <div className="bg-[var(--sim-shell-bg)] px-10 py-6 rounded-[3rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.7)] ring-1 ring-inset ring-white/5">
                                 <span className="text-8xl font-black text-white tracking-tighter tabular-nums leading-none drop-shadow-2xl">
                                     {data.home_score}:{data.away_score}
                                 </span>
@@ -426,9 +426,9 @@ function SingleResult({ data }) {
                     </div>
 
                     <div className="flex flex-col items-center gap-4 text-center group">
-                        <div className="w-24 h-24 bg-slate-800 rounded-[3rem] border border-white/10 flex items-center justify-center text-5xl shadow-2xl transition-all group-hover:scale-110 group-hover:-rotate-6 duration-500">🚌</div>
+                        <div className="w-24 h-24 bg-[var(--bg-content)] rounded-[3rem] border border-white/10 flex items-center justify-center text-5xl shadow-2xl transition-all group-hover:scale-110 group-hover:-rotate-6 duration-500">🚌</div>
                         <div className="space-y-2">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gastteam</div>
+                            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Gastteam</div>
                             <h4 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{data.away_club.name}</h4>
                         </div>
                     </div>
@@ -440,7 +440,7 @@ function SingleResult({ data }) {
                 <div className="xl:col-span-2 space-y-4">
                     <div className="sim-card p-4 rounded-[2rem]">
                         <div className="p-6 pb-2">
-                            <h4 className="text-[11px] font-black border-b border-white/5 pb-5 mb-5 uppercase text-slate-500 tracking-[0.3em] flex items-center gap-3">
+                            <h4 className="text-[11px] font-black border-b border-white/5 pb-5 mb-5 uppercase text-[var(--text-muted)] tracking-[0.3em] flex items-center gap-3">
                                 <span className="relative flex h-3 w-3">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -458,7 +458,7 @@ function SingleResult({ data }) {
                                     className={`flex items-start gap-6 p-6 rounded-[2rem] border transition-all duration-300 group ${
                                         (!event.narrative || event.narrative.includes('[') || event.narrative.includes(']')) 
                                         ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10' 
-                                        : 'bg-slate-900/40 border-white/5 hover:border-emerald-500/30 hover:bg-slate-900/60'
+                                        : 'bg-[var(--bg-pillar)]/40 border-white/5 hover:border-emerald-500/30 hover:bg-[var(--bg-pillar)]/60'
                                     }`}
                                 >
                                     <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-xs border border-white/10 font-black shadow-lg ring-1 ring-inset ring-white/5 ${
@@ -474,7 +474,7 @@ function SingleResult({ data }) {
                                                     {event.club_name || 'Unbekannt'}
                                                 </h5>
                                             </div>
-                                            <span className="text-xs font-mono font-black text-slate-500 bg-black/40 px-3 py-1 rounded-xl border border-white/5 tabular-nums">{event.score || ''}</span>
+                                            <span className="text-xs font-mono font-black text-[var(--text-muted)] bg-black/40 px-3 py-1 rounded-xl border border-white/5 tabular-nums">{event.score || ''}</span>
                                         </div>
                                         <p className={`text-sm ${
                                             (!event.narrative || event.narrative.includes('[') || event.narrative.includes(']')) ? 'text-red-400/90' : 'text-slate-200'
@@ -494,7 +494,7 @@ function SingleResult({ data }) {
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                             <Cloud size={80} weight="fill" />
                         </div>
-                        <h4 className="text-[11px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest relative">Atmosphäre</h4>
+                        <h4 className="text-[11px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-[var(--text-muted)] tracking-widest relative">Atmosphäre</h4>
                         <div className="space-y-4 relative">
                             <AtmosphereItem label="Wetter" value={data.weather} icon={<Cloud size={16} />} />
                             <AtmosphereItem label="Zuschauer" value={data.attendance} icon={<Users size={16} />} />
@@ -505,12 +505,12 @@ function SingleResult({ data }) {
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                             <Brain size={80} weight="fill" />
                         </div>
-                        <h4 className="text-[11px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-slate-500 tracking-widest relative">Engine Metadata</h4>
-                        <div className="text-[11px] text-slate-400 font-mono space-y-3 leading-relaxed relative">
+                        <h4 className="text-[11px] font-black border-b border-white/5 pb-4 mb-6 uppercase text-[var(--text-muted)] tracking-widest relative">Engine Metadata</h4>
+                        <div className="text-[11px] text-[var(--text-muted)] font-mono space-y-3 leading-relaxed relative">
                             <MetadataItem label="Performance" value={`${data.duration_ms}ms`} sub={`${data.memory_usage_mb}mb`} />
                             <MetadataItem label="Integrity" value={data.health.is_stable ? 'PERFECT' : 'AUDIT REQUIRED'} color={data.health.is_stable ? 'emerald' : 'amber'} />
                              <div className="mt-6 pt-6 border-t border-white/10">
-                                <h5 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Deep Simulation Audit</h5>
+                                <h5 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-4">Deep Simulation Audit</h5>
                                 <div className="space-y-2">
                                     <AuditRow label="Score Validation" status={data.health.audit.score_validated} />
                                     <AuditRow label="Timeline Integrity" status={data.health.audit.timeline_validated} />
@@ -549,7 +549,7 @@ function BatchResult({ data }) {
             <div className="text-center space-y-3">
                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400">Batch Simulation Report</div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Stress Test Analysis</h2>
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-800/80 rounded-full border border-white/10 text-xs font-bold text-slate-400 backdrop-blur-md">
+                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[var(--bg-content)]/80 rounded-full border border-white/10 text-xs font-bold text-[var(--text-muted)] backdrop-blur-md">
                     <Heartbeat size={16} />
                     <span>{data.iterations} Iterationen</span>
                     <span className="opacity-20">|</span>
@@ -565,7 +565,7 @@ function BatchResult({ data }) {
 
             <div className="sim-card p-8 bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] border border-white/5">
                 <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-3">
+                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] flex items-center gap-3">
                         <ChartBar size={20} className="text-indigo-400" />
                         Tore pro Spiel (Durchschnitt)
                     </h4>
@@ -584,7 +584,7 @@ function ABResult({ data }) {
             <div className="text-center space-y-3">
                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-pink-500">A/B Engine Comparison</div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Variant Analysis</h2>
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-800/80 rounded-full border border-white/10 text-xs font-bold text-slate-400 backdrop-blur-md">
+                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[var(--bg-content)]/80 rounded-full border border-white/10 text-xs font-bold text-[var(--text-muted)] backdrop-blur-md">
                     <Atom size={16} />
                     <span>250 Simulationen p. Variante</span>
                 </div>
@@ -597,7 +597,7 @@ function ABResult({ data }) {
             </div>
 
             <div className="sim-card p-8 rounded-[3rem] bg-gradient-to-br from-slate-900 to-black border border-white/5">
-                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 mb-8 border-b border-white/5 pb-4">Statistischer Delta (Impact)</h4>
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-8 border-b border-white/5 pb-4">Statistischer Delta (Impact)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                     <DeltaBox 
                         label="Ø Tore" 
@@ -626,7 +626,7 @@ function SeasonResult({ data }) {
             <div className="text-center space-y-3">
                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-500">Season Simulation Report</div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Virtual League Table</h2>
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-800/80 rounded-full border border-white/10 text-xs font-bold text-slate-400 backdrop-blur-md">
+                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[var(--bg-content)]/80 rounded-full border border-white/10 text-xs font-bold text-[var(--text-muted)] backdrop-blur-md">
                     <Trophy size={16} className="text-amber-400" />
                     <span>{data.total_matches} Spiele</span>
                     <span className="opacity-20">|</span>
@@ -634,10 +634,10 @@ function SeasonResult({ data }) {
                 </div>
             </div>
 
-            <div className="sim-card overflow-hidden bg-slate-900/50 rounded-[3rem] border border-white/5 shadow-2xl">
+            <div className="sim-card overflow-hidden bg-[var(--bg-pillar)]/50 rounded-[3rem] border border-white/5 shadow-2xl">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left text-xs tabular-nums">
-                        <thead className="bg-black/40 text-[10px] uppercase tracking-widest text-slate-500 font-bold border-b border-white/10">
+                        <thead className="bg-black/40 text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold border-b border-white/10">
                             <tr>
                                 <th className="py-6 px-6">#</th>
                                 <th className="py-6 px-6">Club</th>
@@ -653,19 +653,19 @@ function SeasonResult({ data }) {
                         <tbody className="divide-y divide-white/5">
                             {data.standings.map((team, index) => (
                                 <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition group">
-                                    <td className="py-5 px-6 font-mono text-slate-500 font-bold">
+                                    <td className="py-5 px-6 font-mono text-[var(--text-muted)] font-bold">
                                         {index < 4 ? <span className="text-emerald-400">0{index + 1}</span> : index < 9 ? `0${index + 1}` : index + 1}
                                     </td>
                                     <td className="py-5 px-6 font-black text-white uppercase tracking-tight flex items-center gap-3">
                                         <div className={`w-2 h-2 rounded-full ${index < 4 ? 'bg-emerald-500 animate-pulse' : index >= data.standings.length - 3 ? 'bg-red-500' : 'bg-slate-700'}`}></div>
                                         {team.club}
                                     </td>
-                                    <td className="py-5 px-6 text-center text-slate-400 font-bold">{team.p}</td>
+                                    <td className="py-5 px-6 text-center text-[var(--text-muted)] font-bold">{team.p}</td>
                                     <td className="py-5 px-6 text-center text-emerald-500/80 font-black">{team.w}</td>
-                                    <td className="py-5 px-6 text-center text-slate-500 font-bold">{team.d}</td>
+                                    <td className="py-5 px-6 text-center text-[var(--text-muted)] font-bold">{team.d}</td>
                                     <td className="py-5 px-6 text-center text-red-500/80 font-black">{team.l}</td>
                                     <td className="py-5 px-6 text-center text-slate-300 font-mono text-xs">{team.gf}:{team.ga}</td>
-                                    <td className={`py-5 px-6 text-center font-black ${team.gd > 0 ? 'text-emerald-500' : (team.gd < 0 ? 'text-red-500' : 'text-slate-500')}`}>
+                                    <td className={`py-5 px-6 text-center font-black ${team.gd > 0 ? 'text-emerald-500' : (team.gd < 0 ? 'text-red-500' : 'text-[var(--text-muted)]')}`}>
                                         {team.gd > 0 ? '+' : ''}{team.gd}
                                     </td>
                                     <td className="py-5 px-6 text-center font-black text-white text-xl tabular-nums">{team.pts}</td>
@@ -685,7 +685,7 @@ function TacticsResult({ data }) {
             <div className="text-center space-y-3">
                 <div className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400">Tactics Meta Report</div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Formation Advantage Matrix</h2>
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-slate-800/80 rounded-full border border-white/10 text-xs font-bold text-slate-400 backdrop-blur-md">
+                <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[var(--bg-content)]/80 rounded-full border border-white/10 text-xs font-bold text-[var(--text-muted)] backdrop-blur-md">
                     <Brain size={16} />
                     <span>{data.iterations_per_pairing} Iterationen p. Paar</span>
                     <span className="opacity-20">|</span>
@@ -693,14 +693,14 @@ function TacticsResult({ data }) {
                 </div>
             </div>
 
-            <div className="sim-card p-10 overflow-hidden bg-slate-900/50 rounded-[3rem] border border-white/5 shadow-2xl">
+            <div className="sim-card p-10 overflow-hidden bg-[var(--bg-pillar)]/50 rounded-[3rem] border border-white/5 shadow-2xl">
                  <div className="overflow-x-auto custom-scrollbar">
                     <table className="border-collapse mx-auto tabular-nums">
                         <thead>
                             <tr>
                                 <th className="p-4"></th>
                                 {data.formations.map(f => (
-                                    <th key={f} className="py-4 px-6 text-center text-[10px] uppercase font-black text-slate-500 tracking-widest min-w-[100px]">
+                                    <th key={f} className="py-4 px-6 text-center text-[10px] uppercase font-black text-[var(--text-muted)] tracking-widest min-w-[100px]">
                                         {f} <span className="block text-[8px] font-bold opacity-30 mt-1">Away</span>
                                     </th>
                                 ))}
@@ -709,14 +709,14 @@ function TacticsResult({ data }) {
                         <tbody>
                             {data.formations.map(homeF => (
                                 <tr key={homeF}>
-                                    <th className="py-6 px-6 text-right text-[10px] uppercase font-black text-slate-500 border-r border-white/10 tracking-widest min-w-[100px]">
+                                    <th className="py-6 px-6 text-right text-[10px] uppercase font-black text-[var(--text-muted)] border-r border-white/10 tracking-widest min-w-[100px]">
                                         {homeF} <span className="block text-[8px] font-bold opacity-30 mt-1">Home</span>
                                     </th>
                                     {data.formations.map(awayF => {
                                         const res = data.matrix[homeF][awayF];
-                                        let bgClass = 'bg-slate-800/20';
+                                        let bgClass = 'bg-[var(--bg-content)]/20';
                                         let borderClass = 'border-white/5';
-                                        let textClass = 'text-slate-400';
+                                        let textClass = 'text-[var(--text-muted)]';
 
                                         if (res.win_rate > 55) { 
                                             bgClass = 'bg-emerald-500/10'; 
@@ -737,7 +737,7 @@ function TacticsResult({ data }) {
                                         return (
                                             <td key={awayF} className={`p-4 text-center border ${borderClass} ${bgClass} transition-all hover:scale-110 hover:z-10 hover:shadow-2xl cursor-help group`} title={`${homeF} vs ${awayF}`}>
                                                 <div className={`${textClass} text-base`}>{res.win_rate}%</div>
-                                                <div className="text-[9px] text-slate-500 font-bold opacity-50 uppercase group-hover:opacity-100 italic transition-opacity">Ø {res.avg_goals}</div>
+                                                <div className="text-[9px] text-[var(--text-muted)] font-bold opacity-50 uppercase group-hover:opacity-100 italic transition-opacity">Ø {res.avg_goals}</div>
                                             </td>
                                         );
                                     })}
@@ -748,7 +748,7 @@ function TacticsResult({ data }) {
                  </div>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 pt-4">
+            <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] pt-4">
                 <LegendItem color="emerald" label="Advantage (>55%)" />
                 <LegendItem color="amber" label="Balanced" />
                 <LegendItem color="red" label="Disadvantage (<25%)" />
@@ -760,10 +760,10 @@ function TacticsResult({ data }) {
 // Helper Components
 function AtmosphereItem({ label, value, icon }) {
     return (
-        <div className="flex justify-between items-center bg-slate-950/40 p-4 rounded-2xl border border-white/5 hover:bg-slate-950/60 transition group">
+        <div className="flex justify-between items-center bg-[var(--sim-shell-bg)]/40 p-4 rounded-2xl border border-white/5 hover:bg-[var(--sim-shell-bg)]/60 transition group">
             <div className="flex items-center gap-3">
-                <span className="text-slate-500 group-hover:text-emerald-400 transition-colors">{icon}</span>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+                <span className="text-[var(--text-muted)] group-hover:text-emerald-400 transition-colors">{icon}</span>
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{label}</span>
             </div>
             <span className="text-xs font-black text-white capitalize">{value}</span>
         </div>
@@ -778,7 +778,7 @@ function MetadataItem({ label, value, sub, color = 'white' }) {
     };
     return (
         <div className="flex justify-between items-center bg-black/40 p-4 rounded-2xl border border-white/5">
-            <span className="text-slate-500 uppercase tracking-tighter text-[10px] font-bold">{label}</span>
+            <span className="text-[var(--text-muted)] uppercase tracking-tighter text-[10px] font-bold">{label}</span>
             <span className={`font-black ${colors[color]}`}>
                 {value} {sub && <span className="text-slate-600 text-[10px] lowercase font-normal ml-1">({sub})</span>}
             </span>
@@ -789,7 +789,7 @@ function MetadataItem({ label, value, sub, color = 'white' }) {
 function AuditRow({ label, status }) {
     return (
         <div className="flex items-center justify-between text-[10px]">
-            <span className="text-slate-500 font-bold">{label}</span>
+            <span className="text-[var(--text-muted)] font-bold">{label}</span>
             <div className="flex items-center gap-2">
                 <span className={`font-black tracking-tighter ${status ? 'text-emerald-500' : 'text-red-500'}`}>
                     {status ? 'PASSED' : 'FAILED'}
@@ -803,12 +803,12 @@ function AuditRow({ label, status }) {
 function StatCard({ label, value, color }) {
     const colors = {
         emerald: 'border-l-emerald-500 text-emerald-400',
-        slate: 'border-l-slate-700 text-slate-400',
+        slate: 'border-l-slate-700 text-[var(--text-muted)]',
         blue: 'border-l-blue-500 text-blue-400',
     };
     return (
-        <div className={`sim-card p-6 flex flex-col items-center justify-center bg-slate-900/50 border-l-4 ${colors[color]} rounded-2xl`}>
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 font-black">{label}</span>
+        <div className={`sim-card p-6 flex flex-col items-center justify-center bg-[var(--bg-pillar)]/50 border-l-4 ${colors[color]} rounded-2xl`}>
+            <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] mb-2 font-black">{label}</span>
             <span className="text-4xl font-black tabular-nums tracking-tighter">{value}</span>
         </div>
     );
@@ -816,7 +816,7 @@ function StatCard({ label, value, color }) {
 
 function ABVariantCard({ title, sub, stats, color, config }) {
     const colors = {
-        slate: 'border-l-slate-600 text-slate-400 shadow-slate-900/40',
+        slate: 'border-l-slate-600 text-[var(--text-muted)] shadow-slate-900/40',
         pink: 'border-l-pink-500 text-pink-400 shadow-pink-900/20',
     };
     return (
@@ -826,17 +826,17 @@ function ABVariantCard({ title, sub, stats, color, config }) {
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">{sub}</div>
                     <h4 className="text-2xl font-black text-white">{title}</h4>
                 </div>
-                <div className="bg-black/60 px-4 py-2 rounded-2xl border border-white/5 text-[10px] font-bold text-slate-500">
+                <div className="bg-black/60 px-4 py-2 rounded-2xl border border-white/5 text-[10px] font-bold text-[var(--text-muted)]">
                     Aggression: <span className="text-white uppercase px-1">{config.aggression}</span>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-8">
                 <div>
-                    <span className="text-[10px] text-slate-500 block mb-1 uppercase font-black">Win Rate</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block mb-1 uppercase font-black">Win Rate</span>
                     <span className="text-3xl font-black text-white">{stats.win_rate_home}%</span>
                 </div>
                 <div>
-                     <span className="text-[10px] text-slate-500 block mb-1 uppercase font-black">Avg Goals</span>
+                     <span className="text-[10px] text-[var(--text-muted)] block mb-1 uppercase font-black">Avg Goals</span>
                      <span className="text-3xl font-black text-white">{stats.avg_home_goals.toFixed(2)}</span>
                 </div>
             </div>

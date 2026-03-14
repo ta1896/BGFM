@@ -15,7 +15,7 @@ const MenuGroup = React.memo(({ group, currentRoute }) => {
         <div className="mb-2">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition-colors group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
+                className="flex w-full items-center justify-between px-3 py-2 text-[var(--text-muted)] hover:text-white transition-colors group/btn rounded-lg hover:bg-[var(--bg-content)]/50 focus:outline-none"
             >
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors">
                     {group.label}
@@ -46,8 +46,8 @@ const MenuGroup = React.memo(({ group, currentRoute }) => {
                                     href={route(item.route)}
                                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-[color,background-color] rounded-lg group ${
                                         isActive 
-                                            ? 'text-white bg-slate-800/50' 
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                                            ? 'text-white bg-[var(--bg-content)]/50' 
+                                            : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]/30'
                                     }`}
                                 >
                                     {isActive ? (
@@ -150,7 +150,7 @@ export default function AdminLayout({ header, children }) {
                 {/* User Info */}
                 <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                     <div className="flex items-center gap-3">
-                         <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
+                         <div className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5">
                              <img loading="lazy" 
                                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                                 alt={auth.user.name}
@@ -159,11 +159,11 @@ export default function AdminLayout({ header, children }) {
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
-                            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500">System Admin</p>
+                            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">System Admin</p>
                         </div>
                         <button 
                             onClick={() => router.post(route('logout'))}
-                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
+                            className="p-1.5 text-[var(--text-muted)] hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
                         >
                             <SignOut size={18} />
                         </button>
@@ -185,7 +185,7 @@ export default function AdminLayout({ header, children }) {
                         
                         <div className="flex items-center gap-4">
                             <ThemeSwitcher />
-                            <button className="lg:hidden p-2 text-slate-400" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                            <button className="lg:hidden p-2 text-[var(--text-muted)]" onClick={() => setSidebarOpen(!sidebarOpen)}>
                                 {sidebarOpen ? <X size={24} /> : <List size={24} />}
                             </button>
                         </div>

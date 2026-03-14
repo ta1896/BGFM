@@ -12,7 +12,7 @@ const Card = ({ title, description, children, icon: Icon, variant = 'default' })
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`sim-card p-8 border-slate-800/50 relative overflow-hidden ${
+        className={`sim-card p-8 border-[var(--border-muted)] relative overflow-hidden ${
             variant === 'danger' ? 'border-rose-500/20 shadow-[0_0_30px_rgba(244,63,94,0.05)]' : ''
         }`}
     >
@@ -21,7 +21,7 @@ const Card = ({ title, description, children, icon: Icon, variant = 'default' })
         </div>
         <div className="mb-8 relative z-10">
             <h3 className={`text-xl font-bold mb-2 ${variant === 'danger' ? 'text-rose-400' : 'text-white'}`}>{title}</h3>
-            {description && <p className="text-slate-400 text-sm max-w-lg">{description}</p>}
+            {description && <p className="text-[var(--text-muted)] text-sm max-w-lg">{description}</p>}
         </div>
         <div className="relative z-10">
             {children}
@@ -32,7 +32,7 @@ const Card = ({ title, description, children, icon: Icon, variant = 'default' })
 const SectionHeader = ({ title, subtitle }) => (
     <div className="mb-8 pl-4 border-l-4 border-cyan-500/50">
         <h2 className="text-3xl font-black text-white tracking-tight leading-none uppercase italic">{title}</h2>
-        {subtitle && <p className="text-slate-500 text-sm mt-2 font-bold uppercase tracking-widest">{subtitle}</p>}
+        {subtitle && <p className="text-[var(--text-muted)] text-sm mt-2 font-bold uppercase tracking-widest">{subtitle}</p>}
     </div>
 );
 
@@ -98,16 +98,16 @@ export default function Edit({ mustVerifyEmail, status }) {
                     <form onSubmit={submitProfile} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Manager-Name</label>
+                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Manager-Name</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User size={18} className="text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                                        <User size={18} className="text-[var(--text-muted)] group-focus-within:text-cyan-400 transition-colors" />
                                     </div>
                                     <input 
                                         type="text"
                                         value={profileForm.data.name}
                                         onChange={e => profileForm.setData('name', e.target.value)}
-                                        className="w-full bg-slate-900/50 border-2 border-slate-800 rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                                        className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
                                         required
                                         autoComplete="name"
                                     />
@@ -116,16 +116,16 @@ export default function Edit({ mustVerifyEmail, status }) {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">E-Mail Adresse</label>
+                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">E-Mail Adresse</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Envelope size={18} className="text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                                        <Envelope size={18} className="text-[var(--text-muted)] group-focus-within:text-cyan-400 transition-colors" />
                                     </div>
                                     <input 
                                         type="email"
                                         value={profileForm.data.email}
                                         onChange={e => profileForm.setData('email', e.target.value)}
-                                        className="w-full bg-slate-900/50 border-2 border-slate-800 rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                                        className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
                                         required
                                         autoComplete="username"
                                     />
@@ -148,7 +148,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                             </div>
                         )}
 
-                        <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
+                        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-muted)]">
                             <button 
                                 type="submit" 
                                 disabled={profileForm.processing}
@@ -184,43 +184,43 @@ export default function Edit({ mustVerifyEmail, status }) {
                     <form onSubmit={submitPassword} className="space-y-6">
                         <div className="space-y-4 max-w-md">
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Aktuelles Passwort</label>
+                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Aktuelles Passwort</label>
                                 <input 
                                     type="password"
                                     value={passwordForm.data.current_password}
                                     onChange={e => passwordForm.setData('current_password', e.target.value)}
-                                    className="w-full bg-slate-900/50 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
                                     autoComplete="current-password"
                                 />
                                 {passwordForm.errors.current_password && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.current_password}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Neues Passwort</label>
+                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Neues Passwort</label>
                                 <input 
                                     type="password"
                                     value={passwordForm.data.password}
                                     onChange={e => passwordForm.setData('password', e.target.value)}
-                                    className="w-full bg-slate-900/50 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
                                     autoComplete="new-password"
                                 />
                                 {passwordForm.errors.password && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.password}</p>}
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Passwort bestätigen</label>
+                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Passwort bestätigen</label>
                                 <input 
                                     type="password"
                                     value={passwordForm.data.password_confirmation}
                                     onChange={e => passwordForm.setData('password_confirmation', e.target.value)}
-                                    className="w-full bg-slate-900/50 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
                                     autoComplete="new-password"
                                 />
                                 {passwordForm.errors.password_confirmation && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.password_confirmation}</p>}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
+                        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-muted)]">
                             <button 
                                 type="submit" 
                                 disabled={passwordForm.processing}
@@ -267,7 +267,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                             <motion.div 
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
-                                className="w-full bg-slate-900/50 border-2 border-rose-500/20 rounded-2xl p-6 space-y-6"
+                                className="w-full bg-[var(--bg-pillar)]/50 border-2 border-rose-500/20 rounded-2xl p-6 space-y-6"
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="p-3 bg-rose-500/10 rounded-xl">
@@ -275,7 +275,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                                     </div>
                                     <div>
                                         <h4 className="text-white font-bold text-lg">Bist du dir absolut sicher?</h4>
-                                        <p className="text-slate-400 text-sm">Bitte gib dein Passwort ein, um die endgültige Löschung deines Kontos zu bestätigen.</p>
+                                        <p className="text-[var(--text-muted)] text-sm">Bitte gib dein Passwort ein, um die endgültige Löschung deines Kontos zu bestätigen.</p>
                                     </div>
                                 </div>
 
@@ -286,7 +286,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                                             placeholder="Dein Passwort zur Bestätigung"
                                             value={deleteForm.data.password}
                                             onChange={e => deleteForm.setData('password', e.target.value)}
-                                            className="w-full bg-slate-950 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-rose-500/50 transition-all outline-none"
+                                            className="w-full bg-[var(--sim-shell-bg)] border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-rose-500/50 transition-all outline-none"
                                             required
                                         />
                                         {deleteForm.errors.password && <p className="text-rose-500 text-xs mt-1 font-bold">{deleteForm.errors.password}</p>}
@@ -303,7 +303,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                                         <button 
                                             type="button" 
                                             onClick={() => setConfirmingUserDeletion(false)}
-                                            className="text-slate-500 font-bold hover:text-white transition-colors uppercase text-sm tracking-widest px-4"
+                                            className="text-[var(--text-muted)] font-bold hover:text-white transition-colors uppercase text-sm tracking-widest px-4"
                                         >
                                             Abbrechen
                                         </button>
@@ -320,7 +320,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                     @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(34,211,238,0.2)] disabled:opacity-50 disabled:scale-100;
                 }
                 .sim-btn-secondary {
-                    @apply bg-slate-800 border-2 border-slate-700/50 text-white font-black py-3 rounded-xl hover:bg-slate-700 hover:border-slate-600 transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100;
+                    @apply bg-[var(--bg-content)] border-2 border-[var(--border-muted)] text-white font-black py-3 rounded-xl hover:bg-slate-700 hover:border-slate-600 transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100;
                 }
             `}} />
         </AuthenticatedLayout>

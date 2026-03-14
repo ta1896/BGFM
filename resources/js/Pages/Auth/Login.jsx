@@ -37,10 +37,10 @@ export default function Login({ status, canResetPassword }) {
                         </div>
                     </Link>
                     <h1 class="text-4xl font-black text-white tracking-tighter">WELCOME BACK.</h1>
-                    <p class="text-slate-400 mt-2 font-medium">Logge dich ein um deinen Kader zu steuern.</p>
+                    <p class="text-[var(--text-muted)] mt-2 font-medium">Logge dich ein um deinen Kader zu steuern.</p>
                 </div>
 
-                <div class="sim-card p-10 border-white/5 backdrop-blur-2xl bg-slate-900/40 shadow-2xl shadow-indigo-500/5">
+                <div class="sim-card p-10 border-white/5 backdrop-blur-2xl bg-[var(--bg-pillar)]/40 shadow-2xl shadow-indigo-500/5">
                     {status && (
                         <div class="mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm font-bold">
                             {status}
@@ -49,9 +49,9 @@ export default function Login({ status, canResetPassword }) {
 
                     <form onSubmit={submit} class="space-y-6">
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Email Adresse</label>
+                            <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Email Adresse</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <User size={20} weight="duotone" />
                                 </div>
                                 <input
@@ -59,7 +59,7 @@ export default function Login({ status, canResetPassword }) {
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     placeholder="manager@openws.de"
-                                    class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                    class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -72,7 +72,7 @@ export default function Login({ status, canResetPassword }) {
 
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-xs font-black uppercase tracking-widest text-slate-500">Passwort</label>
+                                <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Passwort</label>
                                 {canResetPassword && (
                                     <Link href={route('password.request')} class="text-[10px] font-black uppercase tracking-widest text-cyan-400 hover:text-cyan-300">
                                         Forgot?
@@ -80,7 +80,7 @@ export default function Login({ status, canResetPassword }) {
                                 )}
                             </div>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <Lock size={20} weight="duotone" />
                                 </div>
                                 <input
@@ -88,7 +88,7 @@ export default function Login({ status, canResetPassword }) {
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     placeholder="••••••••"
-                                    class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                    class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -104,9 +104,9 @@ export default function Login({ status, canResetPassword }) {
                                 type="checkbox"
                                 checked={data.remember}
                                 onChange={(e) => setData('remember', e.target.checked)}
-                                class="w-5 h-5 rounded border-white/10 bg-slate-800 text-cyan-500 focus:ring-cyan-500/50"
+                                class="w-5 h-5 rounded border-white/10 bg-[var(--bg-content)] text-cyan-500 focus:ring-cyan-500/50"
                             />
-                            <span class="text-sm font-bold text-slate-400">Angemeldet bleiben</span>
+                            <span class="text-sm font-bold text-[var(--text-muted)]">Angemeldet bleiben</span>
                         </div>
 
                         <button 
@@ -119,7 +119,7 @@ export default function Login({ status, canResetPassword }) {
                     </form>
                 </div>
 
-                <div class="mt-8 text-center text-slate-500">
+                <div class="mt-8 text-center text-[var(--text-muted)]">
                     <p class="text-sm font-bold">
                         Noch keinen Account? <Link href="/register" class="text-cyan-400 hover:text-cyan-300 ml-1">Kostenlos registrieren</Link>
                     </p>

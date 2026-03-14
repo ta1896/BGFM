@@ -31,7 +31,7 @@ export default function Test() {
                     </div>
                     <div>
                         <h1 class="text-3xl font-black text-white tracking-tight">Tech Stack <span class="text-indigo-400">Deployed</span></h1>
-                        <p class="text-slate-400 text-sm font-medium">Laravel + React + Framer Motion + Phosphor Icons</p>
+                        <p class="text-[var(--text-muted)] text-sm font-medium">Laravel + React + Framer Motion + Phosphor Icons</p>
                     </div>
                 </div>
 
@@ -45,7 +45,7 @@ export default function Test() {
                         <CheckCircle size={24} class="text-emerald-400 mt-0.5 shrink-0" weight="fill" />
                         <div>
                             <p class="text-white font-bold">Inertia.js V2 Bridge</p>
-                            <p class="text-slate-400 text-xs">Nahtlose Verbindung zwischen Laravel PHP und React UI Komponenten.</p>
+                            <p class="text-[var(--text-muted)] text-xs">Nahtlose Verbindung zwischen Laravel PHP und React UI Komponenten.</p>
                         </div>
                     </motion.div>
 
@@ -58,7 +58,7 @@ export default function Test() {
                         <Sparkle size={24} class="text-cyan-400 mt-0.5 shrink-0" weight="fill" />
                         <div>
                             <p class="text-white font-bold">Animations & Icons</p>
-                            <p class="text-slate-400 text-xs">Premium Micro-Interactions mit Framer Motion und Phosphor Icon Library.</p>
+                            <p class="text-[var(--text-muted)] text-xs">Premium Micro-Interactions mit Framer Motion und Phosphor Icon Library.</p>
                         </div>
                     </motion.div>
                 </div>

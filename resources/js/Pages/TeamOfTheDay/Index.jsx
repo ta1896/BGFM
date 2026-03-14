@@ -31,23 +31,23 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                     
                     {/* Header & Filter */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+                    <div className="bg-[var(--bg-pillar)] border border-[var(--border-pillar)] rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
                         <div className="flex items-center space-x-4">
                             <div className="p-3 bg-yellow-600/20 rounded-lg text-yellow-500">
                                 <Trophy size={24} weight="fill" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-white uppercase tracking-tight">Ehrung der Besten</h3>
-                                <p className="text-slate-400 text-sm">Die herausragenden Leistungen des Spieltags auf einen Blick.</p>
+                                <p className="text-[var(--text-muted)] text-sm">Die herausragenden Leistungen des Spieltags auf einen Blick.</p>
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-3">
-                            <Funnel className="text-slate-500" size={16} weight="fill" />
+                            <Funnel className="text-[var(--text-muted)]" size={16} weight="fill" />
                             <select 
                                 value={selectedTeam}
                                 onChange={handleTeamChange}
-                                className="bg-slate-800 border-slate-700 text-white rounded-lg text-sm focus:ring-yellow-500 focus:border-yellow-500 min-w-[240px]"
+                                className="bg-[var(--bg-content)] border-[var(--border-pillar)] text-white rounded-lg text-sm focus:ring-yellow-500 focus:border-yellow-500 min-w-[240px]"
                             >
                                 {teams.map(team => (
                                     <option key={team.id} value={team.id}>
@@ -63,7 +63,7 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                         
                         {/* Pitch View */}
                         <div className="xl:col-span-2">
-                            <div className="bg-green-900/20 border border-slate-800 rounded-2xl overflow-hidden relative aspect-[4/3] max-h-[600px] shadow-2xl">
+                            <div className="bg-green-900/20 border border-[var(--border-pillar)] rounded-2xl overflow-hidden relative aspect-[4/3] max-h-[600px] shadow-2xl">
                                 {/* Pitch Background Pattern */}
                                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                                     {[...Array(10)].map((_, i) => (
@@ -106,8 +106,8 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
 
                         {/* Summary List */}
                         <div className="space-y-6">
-                            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                                <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex items-center justify-between">
+                            <div className="bg-[var(--bg-pillar)] border border-[var(--border-pillar)] rounded-xl overflow-hidden">
+                                <div className="p-4 bg-[var(--bg-content)]/50 border-b border-[var(--border-pillar)] flex items-center justify-between">
                                     <h4 className="text-white font-bold uppercase text-xs tracking-widest flex items-center">
                                         <Star className="text-yellow-500 mr-2" weight="fill" size={14} /> Details
                                     </h4>
@@ -119,11 +119,11 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                                     {entries.map(entry => (
                                         <div 
                                             key={entry.id} 
-                                            className="p-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors cursor-pointer group"
+                                            className="p-4 flex items-center justify-between hover:bg-[var(--bg-content)]/30 transition-colors cursor-pointer group"
                                             onClick={() => router.get(route('players.show', entry.player.id))}
                                         >
                                             <div className="flex items-center space-x-3">
-                                                <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-slate-700">
+                                                <div className="w-10 h-10 rounded-lg bg-[var(--bg-content)] overflow-hidden border border-[var(--border-pillar)]">
                                                     <img loading="lazy" 
                                                         src={entry.player?.photo_url} 
                                                         className="w-full h-full object-cover"
@@ -134,7 +134,7 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                                                     <p className="text-white font-medium text-sm group-hover:text-yellow-500 transition-colors">
                                                         {entry.player?.last_name}
                                                     </p>
-                                                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-tighter">
+                                                    <p className="text-[var(--text-muted)] text-[10px] uppercase font-bold tracking-tighter">
                                                         {entry.player?.position} • {entry.player?.club?.name}
                                                     </p>
                                                 </div>
@@ -143,7 +143,7 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                                                 <div className="text-yellow-500 text-sm font-black italic">
                                                     {entry.player?.overall}
                                                 </div>
-                                                <div className="text-slate-500 text-[10px] uppercase font-bold">
+                                                <div className="text-[var(--text-muted)] text-[10px] uppercase font-bold">
                                                     OVR
                                                 </div>
                                             </div>
@@ -157,7 +157,7 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                                 <h5 className="text-yellow-500 font-bold mb-2 flex items-center text-sm">
                                     <Calendar className="mr-2" weight="fill" size={16} /> Wie wird gewählt?
                                 </h5>
-                                <p className="text-slate-400 text-xs leading-relaxed">
+                                <p className="text-[var(--text-muted)] text-xs leading-relaxed">
                                     Das "Team der Woche" wird basierend auf den Match-Ratings, Toren, Assists und Clean Sheets des aktuellen Spieltags automatisch berechnet.
                                 </p>
                             </div>
@@ -174,14 +174,14 @@ function PitchPlayer({ entry }) {
     return (
         <div className="flex flex-col items-center group cursor-pointer" onClick={() => router.get(route('players.show', entry.player.id))}>
             <div className="relative mb-2">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-yellow-500 overflow-hidden bg-slate-800 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-yellow-500 overflow-hidden bg-[var(--bg-content)] shadow-xl group-hover:scale-110 transition-transform duration-300">
                     <img loading="lazy" src={entry.player.photo_url} className="w-full h-full object-cover" alt="" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-slate-900 text-xs font-black px-1.5 py-0.5 rounded border border-slate-900 shadow-lg">
                     {entry.player.overall}
                 </div>
             </div>
-            <div className="bg-slate-900/90 backdrop-blur-sm border border-slate-700 px-3 py-1 rounded-full shadow-md">
+            <div className="bg-[var(--bg-pillar)]/90 backdrop-blur-sm border border-[var(--border-pillar)] px-3 py-1 rounded-full shadow-md">
                 <span className="text-white font-black text-[10px] uppercase tracking-tighter whitespace-nowrap">
                     {entry.player.last_name}
                 </span>

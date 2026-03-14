@@ -38,10 +38,10 @@ export default function Register() {
                         </div>
                     </Link>
                     <h1 class="text-4xl font-black text-white tracking-tighter uppercase italic">Start Your Legacy.</h1>
-                    <p class="text-slate-400 mt-2 font-medium">Erstelle dein Managerkonto in weniger als 30 Sekunden.</p>
+                    <p class="text-[var(--text-muted)] mt-2 font-medium">Erstelle dein Managerkonto in weniger als 30 Sekunden.</p>
                 </div>
 
-                <div class="sim-card p-10 border-white/5 backdrop-blur-2xl bg-slate-900/40 shadow-2xl shadow-indigo-500/5 relative">
+                <div class="sim-card p-10 border-white/5 backdrop-blur-2xl bg-[var(--bg-pillar)]/40 shadow-2xl shadow-indigo-500/5 relative">
                     <div class="absolute -top-3 -right-3">
                         <div class="bg-cyan-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg shadow-cyan-500/20 flex items-center gap-2">
                              FREE ACCESS
@@ -51,9 +51,9 @@ export default function Register() {
                     <form onSubmit={submit} class="space-y-6">
                         <div class="grid md:grid-cols-2 gap-6">
                              <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Manager Name</label>
+                                <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Manager Name</label>
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                         <User size={20} weight="duotone" />
                                     </div>
                                     <input
@@ -61,7 +61,7 @@ export default function Register() {
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                         placeholder="Alex Mueller"
-                                        class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                        class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                         required
                                     />
                                 </div>
@@ -73,9 +73,9 @@ export default function Register() {
                             </div>
 
                             <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Email</label>
+                                <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Email</label>
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                         <Envelope size={20} weight="duotone" />
                                     </div>
                                     <input
@@ -83,7 +83,7 @@ export default function Register() {
                                         value={data.email}
                                         onChange={(e) => setData('email', e.target.value)}
                                         placeholder="alex@manager.de"
-                                        class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                        class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                         required
                                     />
                                 </div>
@@ -96,9 +96,9 @@ export default function Register() {
                         </div>
 
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Passwort wählen</label>
+                            <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Passwort wählen</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <Lock size={20} weight="duotone" />
                                 </div>
                                 <input
@@ -106,7 +106,7 @@ export default function Register() {
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     placeholder="••••••••"
-                                    class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                    class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -118,9 +118,9 @@ export default function Register() {
                         </div>
 
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Passwort bestätigen</label>
+                            <label class="block text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Passwort bestätigen</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--text-muted)]">
                                     <Lock size={20} weight="duotone" />
                                 </div>
                                 <input
@@ -128,7 +128,7 @@ export default function Register() {
                                     value={data.password_confirmation}
                                     onChange={(e) => setData('password_confirmation', e.target.value)}
                                     placeholder="••••••••"
-                                    class="w-full bg-slate-800/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
+                                    class="w-full bg-[var(--bg-content)]/50 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -144,7 +144,7 @@ export default function Register() {
                     </form>
                 </div>
 
-                <div class="mt-8 text-center text-slate-500">
+                <div class="mt-8 text-center text-[var(--text-muted)]">
                     <p class="text-sm font-bold">
                         Bereits Manager? <Link href="/login" class="text-indigo-400 hover:text-indigo-300 ml-1">Hier einloggen</Link>
                     </p>

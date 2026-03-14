@@ -34,7 +34,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
         <AdminLayout
             header={
                 <div className="flex items-center gap-4">
-                    <Link href={route('admin.ticker-templates.index')} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition">
+                    <Link href={route('admin.ticker-templates.index')} className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-slate-700 rounded-lg transition">
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
@@ -55,7 +55,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Event-Typ *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Event-Typ *</label>
                             <select
                                 className={`sim-select w-full ${errors.event_type ? 'border-red-500' : ''}`}
                                 value={data.event_type}
@@ -70,7 +70,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Priorität *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Priorität *</label>
                             <div className="flex gap-2">
                                 {['low', 'normal', 'high'].map(p => (
                                     <button
@@ -81,7 +81,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                                                 ? p === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
                                                   p === 'low'  ? 'bg-slate-700 text-slate-300 border-slate-600' :
                                                                  'bg-indigo-500/20 text-indigo-400 border-indigo-500/40'
-                                                : 'bg-slate-800 text-slate-600 border-slate-700 hover:text-white'
+                                                : 'bg-[var(--bg-content)] text-slate-600 border-[var(--border-pillar)] hover:text-white'
                                         }`}
                                     >{p}</button>
                                 ))}
@@ -89,7 +89,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Stimmung *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Stimmung *</label>
                             <select
                                 className="sim-select w-full"
                                 value={data.mood}
@@ -102,7 +102,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Kommentatorstil *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Kommentatorstil *</label>
                             <select
                                 className="sim-select w-full"
                                 value={data.commentator_style}
@@ -115,7 +115,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Sprache *</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Sprache *</label>
                             <select
                                 className="sim-select w-full"
                                 value={data.locale}
@@ -135,7 +135,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                     </h3>
 
                     <div className="mb-3">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
                             Platzhalter einfügen
                         </label>
                         <div className="flex gap-2 flex-wrap">
@@ -143,7 +143,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                                 <button
                                     key={p} type="button"
                                     onClick={() => insertPlaceholder(p)}
-                                    className="px-3 py-1 rounded-lg text-[10px] font-mono font-black bg-slate-800 border border-slate-700 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition"
+                                    className="px-3 py-1 rounded-lg text-[10px] font-mono font-black bg-[var(--bg-content)] border border-[var(--border-pillar)] text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition"
                                 >
                                     {p}
                                 </button>
@@ -160,7 +160,7 @@ export default function Form({ tickerTemplate, eventTypes, moods, styles }) {
                     />
                     {errors.text && <p className="text-red-400 text-xs mt-1">{errors.text}</p>}
                     <p className="text-[10px] text-slate-600 mt-2">
-                        Erlaubte Platzhalter: <span className="font-mono text-slate-500">{'{player}'}, {'{opponent}'}, {'{club}'}, {'{score}'}</span>
+                        Erlaubte Platzhalter: <span className="font-mono text-[var(--text-muted)]">{'{player}'}, {'{opponent}'}, {'{club}'}, {'{score}'}</span>
                     </p>
                 </div>
 

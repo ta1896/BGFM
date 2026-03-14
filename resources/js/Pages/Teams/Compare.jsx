@@ -52,12 +52,12 @@ export default function Compare({ auth, activeClub, unreadCount, clubs, club1Id,
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Selectors */}
-                    <div className="bg-slate-900 border border-slate-800 shadow-xl sm:rounded-2xl p-6">
+                    <div className="bg-[var(--bg-pillar)] border border-[var(--border-pillar)] shadow-xl sm:rounded-2xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-2 uppercase tracking-widest font-black">Team 1</label>
+                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2 uppercase tracking-widest font-black">Team 1</label>
                                 <select 
-                                    className="w-full bg-slate-950 border-slate-800 rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500"
+                                    className="w-full bg-[var(--sim-shell-bg)] border-[var(--border-pillar)] rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500"
                                     value={selectedClub1}
                                     onChange={(e) => setSelectedClub1(e.target.value)}
                                 >
@@ -79,9 +79,9 @@ export default function Compare({ auth, activeClub, unreadCount, clubs, club1Id,
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-2 uppercase tracking-widest font-black">Team 2</label>
+                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2 uppercase tracking-widest font-black">Team 2</label>
                                 <select 
-                                    className="w-full bg-slate-950 border-slate-800 rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500"
+                                    className="w-full bg-[var(--sim-shell-bg)] border-[var(--border-pillar)] rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500"
                                     value={selectedClub2}
                                     onChange={(e) => setSelectedClub2(e.target.value)}
                                 >
@@ -96,20 +96,20 @@ export default function Compare({ auth, activeClub, unreadCount, clubs, club1Id,
 
                     {/* Comparison Results */}
                     {comparisonData && (
-                        <div className="bg-slate-900 border border-slate-800 shadow-xl sm:rounded-2xl overflow-hidden">
+                        <div className="bg-[var(--bg-pillar)] border border-[var(--border-pillar)] shadow-xl sm:rounded-2xl overflow-hidden">
                             {/* Headers */}
-                            <div className="grid grid-cols-3 bg-slate-950/50 p-6 border-b border-slate-800">
+                            <div className="grid grid-cols-3 bg-[var(--sim-shell-bg)]/50 p-6 border-b border-[var(--border-pillar)]">
                                 <div className="flex flex-col items-center gap-4">
-                                    <div className="w-24 h-24 p-3 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
+                                    <div className="w-24 h-24 p-3 bg-[var(--bg-pillar)] rounded-2xl border border-[var(--border-pillar)] shadow-xl">
                                         <img loading="lazy" src={comparisonData.club1.logo_url} className="w-full h-full object-contain" alt={comparisonData.club1.name} />
                                     </div>
                                     <div className="text-xl font-black uppercase tracking-tighter text-center">{comparisonData.club1.name}</div>
                                 </div>
                                 <div className="flex items-center justify-center">
-                                    <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-400 font-black italic">VS</div>
+                                    <div className="w-12 h-12 rounded-full bg-[var(--bg-content)] border-2 border-[var(--border-pillar)] flex items-center justify-center text-[var(--text-muted)] font-black italic">VS</div>
                                 </div>
                                 <div className="flex flex-col items-center gap-4">
-                                    <div className="w-24 h-24 p-3 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
+                                    <div className="w-24 h-24 p-3 bg-[var(--bg-pillar)] rounded-2xl border border-[var(--border-pillar)] shadow-xl">
                                         <img loading="lazy" src={comparisonData.club2.logo_url} className="w-full h-full object-contain" alt={comparisonData.club2.name} />
                                     </div>
                                     <div className="text-xl font-black uppercase tracking-tighter text-center">{comparisonData.club2.name}</div>
@@ -123,7 +123,7 @@ export default function Compare({ auth, activeClub, unreadCount, clubs, club1Id,
                                         <div className={`text-center font-bold text-lg ${getWinnerClass(comparisonData.club1[stat.key], comparisonData.club2[stat.key], stat.key)}`}>
                                             {stat.prefix}{stat.format ? stat.format(comparisonData.club1[stat.key]) : comparisonData.club1[stat.key]}{stat.suffix}
                                         </div>
-                                        <div className="text-center text-xs font-black uppercase tracking-widest text-slate-500 py-1">
+                                        <div className="text-center text-xs font-black uppercase tracking-widest text-[var(--text-muted)] py-1">
                                             {stat.label}
                                         </div>
                                         <div className={`text-center font-bold text-lg ${getWinnerClass(comparisonData.club2[stat.key], comparisonData.club1[stat.key], stat.key)}`}>

@@ -23,31 +23,31 @@ const OfferCard = ({ offer, activeClub, onSign, disabled }) => {
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="sim-card p-6 flex flex-col h-full group border-slate-800/50 hover:border-amber-500/30 transition-all"
+            className="sim-card p-6 flex flex-col h-full group border-[var(--border-muted)] hover:border-amber-500/30 transition-all"
         >
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <h4 className="text-xl font-black text-white group-hover:text-amber-500 transition-colors uppercase tracking-tighter">
                         {offer.name}
                     </h4>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-slate-800 text-slate-500 border border-slate-700 mt-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-[var(--bg-content)] text-[var(--text-muted)] border border-[var(--border-pillar)] mt-2">
                         {offer.tier}
                     </span>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-slate-800/50 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors border border-slate-700/50">
+                <div className="h-12 w-12 rounded-xl bg-[var(--bg-content)]/50 flex items-center justify-center text-[var(--text-muted)] group-hover:text-amber-500 transition-colors border border-[var(--border-muted)]">
                     <Handshake size={28} weight="duotone" />
                 </div>
             </div>
 
             <div className="space-y-4 mb-8 flex-1">
                 <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Basisbetrag</span>
+                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-[10px]">Basisbetrag</span>
                     <span className="font-black text-emerald-400 font-mono">
                         {offer.base_weekly_amount.toLocaleString('de-DE')} €
                     </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Reputation-Anforderung</span>
+                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-[10px]">Reputation-Anforderung</span>
                     <div className="flex items-center gap-1">
                         <Star size={14} weight="fill" className="text-amber-400" />
                         <span className="font-black text-white font-mono">{offer.reputation_min}</span>
@@ -64,7 +64,7 @@ const OfferCard = ({ offer, activeClub, onSign, disabled }) => {
                             max="60" 
                             value={months}
                             onChange={(e) => setMonths(e.target.value)}
-                            className="w-full bg-slate-900 border-2 border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-center focus:border-amber-500/50 focus:ring-0 transition-all disabled:opacity-50"
+                            className="w-full bg-[var(--bg-pillar)] border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white font-bold text-center focus:border-amber-500/50 focus:ring-0 transition-all disabled:opacity-50"
                             disabled={disabled}
                         />
                         <span className="absolute right-3 top-3.5 text-[10px] font-black uppercase tracking-widest text-slate-600 pointer-events-none">Mte</span>
@@ -112,7 +112,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
             <AuthenticatedLayout>
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                     <h2 className="text-2xl font-bold text-white mb-2">Kein Verein aktiv</h2>
-                    <p className="text-slate-400 max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste oder erstelle einen neuen.</p>
+                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste oder erstelle einen neuen.</p>
                 </div>
             </AuthenticatedLayout>
         );
@@ -124,7 +124,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
 
             <div className="max-w-[1400px] mx-auto space-y-10">
                 {/* Active Support Hero */}
-                <div className="relative rounded-[2rem] overflow-hidden border border-slate-800/50 bg-slate-900/40">
+                <div className="relative rounded-[2rem] overflow-hidden border border-[var(--border-muted)] bg-[var(--bg-pillar)]/40">
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent z-10" />
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
                     
@@ -148,7 +148,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                     <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter mb-4 leading-none uppercase italic">
                                         {activeContract.sponsor.name}
                                     </h2>
-                                    <p className="text-xl text-slate-400 font-medium max-w-xl">
+                                    <p className="text-xl text-[var(--text-muted)] font-medium max-w-xl">
                                         Partner seit der laufenden Saison. Vertrag gültig bis <span className="text-white font-black">{activeContract.ends_on_formatted}</span>.
                                     </p>
                                 </motion.div>
@@ -161,7 +161,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                     <h2 className="text-5xl lg:text-7xl font-black text-slate-700 tracking-tighter mb-4 leading-none uppercase italic">
                                         Kein Partner
                                     </h2>
-                                    <p className="text-xl text-slate-500 font-medium max-w-xl">
+                                    <p className="text-xl text-[var(--text-muted)] font-medium max-w-xl">
                                         Registriere jetzt einen neuen Hauptsponsor, um deine wöchentlichen Einnahmen zu maximieren.
                                     </p>
                                 </motion.div>
@@ -173,9 +173,9 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.2 }}
-                                className="w-full md:w-auto sim-card-soft p-8 text-center md:text-right border-slate-700/50 backdrop-blur-3xl"
+                                className="w-full md:w-auto sim-card-soft p-8 text-center md:text-right border-[var(--border-muted)] backdrop-blur-3xl"
                             >
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Einnahmen / Woche</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">Einnahmen / Woche</p>
                                 <div className="flex items-baseline justify-center md:justify-end gap-2 mb-6">
                                     <span className="text-5xl font-black text-emerald-400 font-mono tracking-tighter">
                                         {activeContract.weekly_amount.toLocaleString('de-DE')}
@@ -202,7 +202,7 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                                 <Crown size={24} weight="duotone" className="text-amber-400" />
                                 Sponsoring-Angebote
                             </h3>
-                            <div className="px-3 py-1 rounded-full bg-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <div className="px-3 py-1 rounded-full bg-[var(--bg-content)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                                 {offers.length} Verfügbar
                             </div>
                         </div>
@@ -222,17 +222,17 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
                     {/* History Sidebar */}
                     <div className="space-y-6">
                         <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                            <HourglassMedium size={24} weight="duotone" className="text-slate-500" />
+                            <HourglassMedium size={24} weight="duotone" className="text-[var(--text-muted)]" />
                             Historie
                         </h3>
-                        <div className="sim-card p-0 border-slate-800/50 overflow-hidden">
+                        <div className="sim-card p-0 border-[var(--border-muted)] overflow-hidden">
                             <div className="divide-y divide-slate-800/50">
                                 {history.length > 0 ? (
                                     history.map((contract) => (
                                         <div key={contract.id} className="p-4 hover:bg-white/[0.02] transition-colors flex justify-between items-center group">
                                             <div>
                                                 <p className="font-bold text-white group-hover:text-amber-500 transition-colors">{contract.sponsor.name}</p>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                                                     {contract.starts_on_formatted} - {contract.ends_on_formatted}
                                                 </p>
                                             </div>

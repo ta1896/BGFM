@@ -52,7 +52,7 @@ const StatRing = ({ value, max = 99, label, color = "emerald" }) => {
                 </svg>
                 <span className="absolute text-sm font-black text-white italic">{value}</span>
             </div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{label}</span>
+            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{label}</span>
         </div>
     );
 };
@@ -63,7 +63,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
         className={`flex items-center gap-2.5 px-6 py-4 border-b-2 transition-all text-xs font-black uppercase tracking-widest ${
             active 
                 ? 'border-amber-500 text-amber-500 bg-amber-500/5' 
-                : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                : 'border-transparent text-[var(--text-muted)] hover:text-slate-300 hover:bg-white/5'
         }`}
     >
         {Icon && <Icon size={18} weight={active ? "fill" : "bold"} />}
@@ -98,7 +98,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                 <div className="flex items-center justify-between">
                     <Link 
                         href={route('players.index')}
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-amber-500 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest hover:text-amber-500 transition-colors"
                     >
                         <ArrowLeft size={14} weight="bold" />
                         Zurück zum Kader
@@ -110,14 +110,14 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                 Dein Spieler
                             </div>
                         )}
-                        <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">
+                        <span className="px-3 py-1 rounded-full bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest italic">
                             ID: #{player.id}
                         </span>
                     </div>
                 </div>
 
                 {/* Hero Profile Card */}
-                <div className="sim-card p-0 overflow-hidden bg-gradient-to-br from-[#0c1222] to-[#161e32] border-slate-800/50 shadow-2xl relative">
+                <div className="sim-card p-0 overflow-hidden bg-gradient-to-br from-[#0c1222] to-[#161e32] border-[var(--border-muted)] shadow-2xl relative">
                     {/* Background Visuals */}
                     <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-cyan-500/5 to-transparent pointer-events-none" />
                     <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
@@ -127,7 +127,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             {/* Player Photo */}
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-cyan-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="w-48 h-48 md:w-56 md:h-56 rounded-full p-2 bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-700/50 shadow-2xl relative">
+                                <div className="w-48 h-48 md:w-56 md:h-56 rounded-full p-2 bg-gradient-to-br from-slate-800 to-slate-950 border border-[var(--border-muted)] shadow-2xl relative">
                                     <img loading="lazy" 
                                         src={player.photo_url} 
                                         alt={player.full_name}
@@ -144,10 +144,10 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             {/* Player Identity */}
                             <div className="flex-1 text-center lg:text-left">
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-4">
-                                    <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black text-amber-500 uppercase tracking-widest italic">
+                                    <span className="px-3 py-1 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[10px] font-black text-amber-500 uppercase tracking-widest italic">
                                         {player.position}
                                     </span>
-                                    <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span className="px-3 py-1 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                                         {player.age} Jahre
                                     </span>
                                 </div>
@@ -162,24 +162,24 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                 <img loading="lazy" src={player.club.logo_url} className="w-full h-full object-contain" alt={player.club.name} />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Aktueller Verein</p>
+                                                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Aktueller Verein</p>
                                                 <p className="text-lg font-black text-white group-hover:text-cyan-400 transition-colors leading-none uppercase italic tracking-tighter">{player.club.name}</p>
                                             </div>
                                         </Link>
                                     ) : (
                                         <div className="flex items-center gap-4 opacity-50">
-                                            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-600 italic font-black">?</div>
+                                            <div className="w-12 h-12 rounded-xl bg-[var(--bg-content)] border border-[var(--border-pillar)] flex items-center justify-center text-slate-600 italic font-black">?</div>
                                             <div>
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</p>
-                                                <p className="text-lg font-black text-slate-400 leading-none uppercase italic tracking-tighter">Vereinslos</p>
+                                                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Status</p>
+                                                <p className="text-lg font-black text-[var(--text-muted)] leading-none uppercase italic tracking-tighter">Vereinslos</p>
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="h-10 w-px bg-slate-800 hidden md:block" />
+                                    <div className="h-10 w-px bg-[var(--bg-content)] hidden md:block" />
 
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Marktwert</p>
+                                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Marktwert</p>
                                         <p className="text-3xl font-black text-white italic tracking-tighter leading-none">
                                             {player.market_value_formatted}
                                         </p>
@@ -188,7 +188,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             </div>
 
                             {/* Main Metrics */}
-                            <div className="flex gap-8 px-8 py-6 rounded-3xl bg-slate-900/50 border border-white/5 backdrop-blur-md self-center">
+                            <div className="flex gap-8 px-8 py-6 rounded-3xl bg-[var(--bg-pillar)]/50 border border-white/5 backdrop-blur-md self-center">
                                 <StatRing value={player.overall} max={99} label="Stärke" color="emerald" />
                                 <StatRing value={player.potential} max={99} label="Potenzial" color="amber" />
                             </div>
@@ -196,7 +196,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                     </div>
 
                     {/* Navigation Tabs */}
-                    <nav className="flex items-center border-t border-slate-800/50 px-8 bg-black/20 overflow-x-auto no-scrollbar">
+                    <nav className="flex items-center border-t border-[var(--border-muted)] px-8 bg-black/20 overflow-x-auto no-scrollbar">
                         <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={ChartBar}>Übersicht</TabButton>
                         <TabButton active={activeTab === 'career'} onClick={() => setActiveTab('career')} icon={Trophy}>Karriere</TabButton>
                         <TabButton active={activeTab === 'matches'} onClick={() => setActiveTab('matches')} icon={SoccerBall}>Spiele</TabButton>
@@ -237,11 +237,11 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     <div className="flex justify-between items-center px-1">
                                                         <div className="flex items-center gap-2">
                                                             <stat.icon size={14} className={stat.color} weight="bold" />
-                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</span>
+                                                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.label}</span>
                                                         </div>
                                                         <span className="text-xs font-black text-white italic">{stat.val}</span>
                                                     </div>
-                                                    <div className="h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                                                    <div className="h-2 bg-[var(--bg-pillar)] rounded-full overflow-hidden p-0.5 border border-[var(--border-pillar)]">
                                                         <motion.div 
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${stat.val}%` }}
@@ -265,14 +265,14 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                 <span className="text-3xl font-black text-white">{player.position}</span>
                                             </div>
                                             {player.position_second && (
-                                                <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 text-center w-full">Nebenposition</span>
+                                                <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-center">
+                                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-2 text-center w-full">Nebenposition</span>
                                                     <span className="text-2xl font-black text-slate-300">{player.position_second}</span>
                                                 </div>
                                             )}
                                             {player.position_third && (
-                                                <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 text-center w-full">Alternativ</span>
+                                                <div className="flex-1 min-w-[200px] p-6 rounded-3xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-center">
+                                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-2 text-center w-full">Alternativ</span>
                                                     <span className="text-2xl font-black text-slate-300">{player.position_third}</span>
                                                 </div>
                                             )}
@@ -290,10 +290,10 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         <div className="space-y-8">
                                             <div>
                                                 <div className="flex justify-between mb-4 px-1">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Fitness</span>
+                                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Fitness</span>
                                                     <span className={`text-xs font-black italic ${player.stamina > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{player.stamina}%</span>
                                                 </div>
-                                                <div className="h-6 bg-slate-900 rounded-xl overflow-hidden p-1 border border-slate-800 shadow-inner relative">
+                                                <div className="h-6 bg-[var(--bg-pillar)] rounded-xl overflow-hidden p-1 border border-[var(--border-pillar)] shadow-inner relative">
                                                     <motion.div 
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${player.stamina}%` }}
@@ -304,10 +304,10 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
 
                                             <div>
                                                 <div className="flex justify-between mb-4 px-1">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Moral</span>
+                                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Moral</span>
                                                     <span className="text-xs font-black text-amber-500 italic">{player.morale}%</span>
                                                 </div>
-                                                <div className="h-6 bg-slate-900 rounded-xl overflow-hidden p-1 border border-slate-800 shadow-inner">
+                                                <div className="h-6 bg-[var(--bg-pillar)] rounded-xl overflow-hidden p-1 border border-[var(--border-pillar)] shadow-inner">
                                                     <motion.div 
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${player.morale}%` }}
@@ -319,18 +319,18 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                     </div>
 
                                     {/* Quick Info Card */}
-                                    <div className="sim-card p-8 bg-slate-900/40 border-slate-800/80">
+                                    <div className="sim-card p-8 bg-[var(--bg-pillar)]/40 border-[var(--border-muted)]">
                                         <div className="flex items-center gap-4 mb-6">
                                             <Info size={24} weight="duotone" className="text-indigo-400" />
                                             <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Vertrag</h3>
                                         </div>
                                         <div className="space-y-4">
-                                            <div className="flex justify-between items-center py-2 border-b border-slate-800">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gehalt</span>
+                                            <div className="flex justify-between items-center py-2 border-b border-[var(--border-pillar)]">
+                                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Gehalt</span>
                                                 <span className="text-xs font-black text-white">{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(player.salary || 0)}</span>
                                             </div>
-                                            <div className="flex justify-between items-center py-2 border-b border-slate-800">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Marktwert</span>
+                                            <div className="flex justify-between items-center py-2 border-b border-[var(--border-pillar)]">
+                                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Marktwert</span>
                                                 <span className="text-xs font-black text-white">{player.market_value_formatted}</span>
                                             </div>
                                         </div>
@@ -351,14 +351,14 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                      <div className="overflow-x-auto">
                                         <table className="w-full text-left">
                                             <thead>
-                                                <tr className="bg-slate-900/50">
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Saison</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Wettbewerb</th>
-                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Spiele</th>
-                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Tore</th>
-                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Vorl.</th>
-                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Gelb/Rot</th>
-                                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Rating</th>
+                                                <tr className="bg-[var(--bg-pillar)]/50">
+                                                    <th className="px-8 py-5 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Saison</th>
+                                                    <th className="px-8 py-5 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Wettbewerb</th>
+                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Spiele</th>
+                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Tore</th>
+                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Vorl.</th>
+                                                    <th className="px-8 py-5 text-center text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Gelb/Rot</th>
+                                                    <th className="px-8 py-5 text-right text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Rating</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800">
@@ -384,14 +384,14 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                             </div>
                                                         </td>
                                                         <td className="px-8 py-5 text-right">
-                                                            <span className={`px-2 py-1 rounded text-xs font-black italic ${stat.average_rating >= 7.0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                                                            <span className={`px-2 py-1 rounded text-xs font-black italic ${stat.average_rating >= 7.0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[var(--bg-content)] text-[var(--text-muted)]'}`}>
                                                                 {stat.average_rating > 0 ? parseFloat(stat.average_rating).toFixed(2) : '-'}
                                                             </span>
                                                         </td>
                                                     </tr>
                                                 )) : (
                                                     <tr>
-                                                        <td colSpan="7" className="px-8 py-20 text-center text-slate-500 italic text-sm">Keine Karrieredaten gefunden.</td>
+                                                        <td colSpan="7" className="px-8 py-20 text-center text-[var(--text-muted)] italic text-sm">Keine Karrieredaten gefunden.</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -412,34 +412,34 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                 <div className="grid gap-6">
                                     {recentMatches.length > 0 ? recentMatches.map((stat, idx) => (
                                         <div key={idx} className="sim-card p-6 flex flex-wrap lg:flex-nowrap items-center gap-8 hover:border-cyan-500/30 transition-all group">
-                                            <div className="flex flex-col gap-1 w-32 border-r border-slate-800 pr-6 shrink-0">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.match?.kickoff_date_formatted}</span>
+                                            <div className="flex flex-col gap-1 w-32 border-r border-[var(--border-pillar)] pr-6 shrink-0">
+                                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{stat.match?.kickoff_date_formatted}</span>
                                                 <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">{stat.match?.competition_season?.competition?.code || 'LG'}</span>
                                             </div>
 
                                             <div className="flex-1 flex items-center justify-center lg:justify-start gap-12 min-w-[300px]">
                                                 <div className="flex items-center gap-4 flex-1 justify-end">
-                                                    <span className={`text-xs font-black uppercase text-right line-clamp-1 ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-500'}`}>{stat.match?.home_club?.short_name}</span>
+                                                    <span className={`text-xs font-black uppercase text-right line-clamp-1 ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-[var(--text-muted)]'}`}>{stat.match?.home_club?.short_name}</span>
                                                     <img loading="lazy" src={stat.match?.home_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
                                                 </div>
                                                 
-                                                <div className="px-4 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-lg font-black text-white italic min-w-[60px] text-center">
+                                                <div className="px-4 py-1.5 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-lg font-black text-white italic min-w-[60px] text-center">
                                                     {stat.match?.home_score} : {stat.match?.away_score}
                                                 </div>
 
                                                 <div className="flex items-center gap-4 flex-1">
                                                     <img loading="lazy" src={stat.match?.away_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
-                                                    <span className={`text-xs font-black uppercase line-clamp-1 ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-500'}`}>{stat.match?.away_club?.short_name}</span>
+                                                    <span className={`text-xs font-black uppercase line-clamp-1 ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-[var(--text-muted)]'}`}>{stat.match?.away_club?.short_name}</span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-8 lg:border-l border-slate-800 lg:pl-8 shrink-0">
+                                            <div className="flex items-center gap-8 lg:border-l border-[var(--border-pillar)] lg:pl-8 shrink-0">
                                                 <div className="text-center">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Einsatz</p>
+                                                    <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Einsatz</p>
                                                     <p className="text-xs font-black text-white italic">{stat.minutes_played}'</p>
                                                 </div>
                                                 <div className="text-center">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">S/A</p>
+                                                    <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">S/A</p>
                                                     <p className="text-xs font-black text-white italic">
                                                         <span className="text-emerald-400">{stat.goals}</span>
                                                         <span className="text-slate-700 mx-1">/</span>
@@ -447,17 +447,17 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     </p>
                                                 </div>
                                                 <div className="text-center">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Rating</p>
-                                                    <span className={`px-2 py-0.5 rounded text-xs font-black italic ${stat.rating >= 7.0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                                                    <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Rating</p>
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-black italic ${stat.rating >= 7.0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[var(--bg-content)] text-[var(--text-muted)]'}`}>
                                                         {parseFloat(stat.rating || 0).toFixed(1)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     )) : (
-                                        <div className="sim-card p-20 text-center border-dashed border-slate-800 bg-slate-900/40">
+                                        <div className="sim-card p-20 text-center border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40">
                                             <SoccerBall size={48} weight="thin" className="text-slate-700 mx-auto mb-6" />
-                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm italic">Keine aktuellen Spieldaten erfasst</p>
+                                            <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm italic">Keine aktuellen Spieldaten erfasst</p>
                                         </div>
                                     )}
                                 </div>
@@ -469,11 +469,11 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                 key="history"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="sim-card p-20 text-center border-dashed border-2 border-slate-800 bg-slate-900/40"
+                                className="sim-card p-20 text-center border-dashed border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40"
                             >
                                 <History size={48} weight="duotone" className="text-slate-700 mx-auto mb-6" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2 italic">Entwicklungshistorie</h3>
-                                <p className="text-slate-500 text-sm font-medium">Die vollständige Transfer- und Attributshistorie wird in Kürze freigeschaltet.</p>
+                                <p className="text-[var(--text-muted)] text-sm font-medium">Die vollständige Transfer- und Attributshistorie wird in Kürze freigeschaltet.</p>
                             </motion.div>
                         )}
 
@@ -482,13 +482,13 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                 key="customize"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="max-w-3xl mx-auto sim-card p-10 bg-[#0c1222]/80 backdrop-blur-xl border-slate-800/50"
+                                className="max-w-3xl mx-auto sim-card p-10 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]"
                             >
-                                <div className="flex items-center gap-4 mb-10 border-b border-slate-800 pb-6">
+                                <div className="flex items-center gap-4 mb-10 border-b border-[var(--border-pillar)] pb-6">
                                     <IdentificationBadge size={32} weight="duotone" className="text-cyan-400" />
                                     <div>
                                         <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Spielerprofil Anpassen</h3>
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">Änderungen werden nach Prüfung übernommen</p>
+                                        <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest">Änderungen werden nach Prüfung übernommen</p>
                                     </div>
                                 </div>
 
@@ -496,7 +496,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                     <div className="grid md:grid-cols-2 gap-8">
                                         <div className="space-y-6">
                                             <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Marktwert (€)</label>
+                                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-3 block">Marktwert (€)</label>
                                                 <input 
                                                     type="number"
                                                     value={data.market_value}
@@ -505,9 +505,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Sortitoutsi Bild-ID oder URL</label>
+                                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-3 block">Sortitoutsi Bild-ID oder URL</label>
                                                 <div className="relative">
-                                                    <Camera size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                                                    <Camera size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                                     <input 
                                                         type="text"
                                                         placeholder="https://sortitoutsi.net/player/..."
@@ -521,7 +521,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
 
                                         <div className="space-y-6">
                                             <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Hauptposition</label>
+                                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-3 block">Hauptposition</label>
                                                 <select 
                                                     value={data.position}
                                                     onChange={e => setData('position', e.target.value)}
@@ -532,7 +532,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Nebenposition 1</label>
+                                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Nebenposition 1</label>
                                                     <select 
                                                         value={data.position_second}
                                                         onChange={e => setData('position_second', e.target.value)}
@@ -543,7 +543,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Nebenposition 2</label>
+                                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Nebenposition 2</label>
                                                     <select 
                                                         value={data.position_third}
                                                         onChange={e => setData('position_third', e.target.value)}
@@ -557,7 +557,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </div>
                                     </div>
 
-                                    <div className="pt-8 border-t border-slate-800 flex items-center justify-between gap-6">
+                                    <div className="pt-8 border-t border-[var(--border-pillar)] flex items-center justify-between gap-6">
                                         <div className="flex items-center gap-3 text-amber-500/60 flex-1">
                                             <Warning size={16} weight="bold" />
                                             <p className="text-[9px] font-black uppercase tracking-widest leading-relaxed max-w-xs">

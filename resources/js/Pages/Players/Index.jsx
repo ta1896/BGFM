@@ -23,22 +23,22 @@ const PlayerListItem = ({ player }) => {
     return (
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }}
-            className="sim-card-soft p-4 bg-slate-900/40 border-slate-800/50 hover:border-amber-500/30 transition-all group relative overflow-hidden"
+            className="sim-card-soft p-4 bg-[var(--bg-pillar)]/40 border-[var(--border-muted)] hover:border-amber-500/30 transition-all group relative overflow-hidden"
         >
             <div className="flex items-center gap-4 relative z-10">
                 <div className="relative shrink-0">
                     {player.photo_url ? (
-                        <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-slate-800 ring-4 ring-amber-500/5">
+                        <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-[var(--border-pillar)] ring-4 ring-amber-500/5">
                             <img loading="lazy" src={player.photo_url} className="w-full h-full object-cover" alt={player.full_name} />
                         </div>
                     ) : (
-                        <div className="h-14 w-14 rounded-2xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center">
-                            <span className="text-sm font-black text-slate-500 uppercase">
+                        <div className="h-14 w-14 rounded-2xl bg-[var(--bg-content)] border-2 border-[var(--border-pillar)] flex items-center justify-center">
+                            <span className="text-sm font-black text-[var(--text-muted)] uppercase">
                                 {player.first_name[0]}{player.last_name[0]}
                             </span>
                         </div>
                     )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-[10px] font-black text-amber-500 shadow-xl">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center text-[10px] font-black text-amber-500 shadow-xl">
                         {player.overall}
                     </div>
                 </div>
@@ -50,14 +50,14 @@ const PlayerListItem = ({ player }) => {
                         </h4>
                         <div className="flex items-center gap-2">
                              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{player.display_position}</span>
-                             <span className="text-[10px] text-slate-500">•</span>
-                             <span className="text-[10px] text-slate-400 font-bold">{player.age} JAHRE</span>
+                             <span className="text-[10px] text-[var(--text-muted)]">•</span>
+                             <span className="text-[10px] text-[var(--text-muted)] font-bold">{player.age} JAHRE</span>
                         </div>
                     </Link>
                 </div>
 
                 <div className="text-right shrink-0">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Marktwert</div>
+                    <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Marktwert</div>
                     <div className="text-xs font-black text-emerald-400">{player.market_value_formatted}</div>
                 </div>
             </div>
@@ -65,15 +65,15 @@ const PlayerListItem = ({ player }) => {
             {/* Micro Stats */}
             <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
                  <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-black text-slate-500 uppercase">PAC</span>
+                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase">PAC</span>
                     <span className="text-[10px] font-black text-white">{player.pace || '-'}</span>
                  </div>
                  <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-black text-slate-500 uppercase">SHO</span>
+                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase">SHO</span>
                     <span className="text-[10px] font-black text-white">{player.shooting || '-'}</span>
                  </div>
                  <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-black text-slate-500 uppercase">DEF</span>
+                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase">DEF</span>
                     <span className="text-[10px] font-black text-white">{player.defending || '-'}</span>
                  </div>
             </div>
@@ -113,7 +113,7 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
 
                     <div className="flex items-center gap-4">
                         <div className="relative group">
-                            <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-amber-500 transition-colors" />
+                            <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-amber-500 transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder="SPIELER SUCHEN..."
@@ -151,11 +151,11 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                                 <IdentificationBadge size={24} weight="duotone" />
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kadergröße</span>
+                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Kadergröße</span>
                         </div>
                         <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white leading-none">{squadStats.count}</span>
-                            <span className="text-xs font-bold text-slate-500 uppercase">Prosa</span>
+                            <span className="text-xs font-bold text-[var(--text-muted)] uppercase">Prosa</span>
                         </div>
                     </motion.div>
 
@@ -169,11 +169,11 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             <div className="p-2 rounded-xl bg-amber-500/5 text-amber-600">
                                 <ChartLineUp size={24} weight="duotone" />
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Ø Stärke / Alter</span>
+                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Ø Stärke / Alter</span>
                         </div>
                         <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white leading-none">{squadStats.avg_rating}</span>
-                            <span className="text-xs font-bold text-slate-500 uppercase">/ {squadStats.avg_age} J</span>
+                            <span className="text-xs font-bold text-[var(--text-muted)] uppercase">/ {squadStats.avg_age} J</span>
                         </div>
                     </motion.div>
 
@@ -187,11 +187,11 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
                                 <CurrencyEur size={24} weight="duotone" />
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaderwert</span>
+                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Kaderwert</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-2xl font-black text-white leading-none truncate">{squadStats.total_value_formatted}</span>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase mt-1">Ø {squadStats.avg_value_formatted}</span>
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase mt-1">Ø {squadStats.avg_value_formatted}</span>
                         </div>
                     </motion.div>
 
@@ -205,14 +205,14 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
                                 <Heartbeat size={24} weight="duotone" />
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Verfügbarkeit</span>
+                            <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Verfügbarkeit</span>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex flex-col">
                                 <span className="text-2xl font-black text-white leading-none">{squadStats.injured_count}</span>
                                 <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Verletzt</span>
                             </div>
-                            <div className="w-px h-8 bg-slate-800" />
+                            <div className="w-px h-8 bg-[var(--bg-content)]" />
                             <div className="flex flex-col">
                                 <span className="text-2xl font-black text-white leading-none">{squadStats.suspended_count}</span>
                                 <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Gesperrt</span>
@@ -267,7 +267,7 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                     >
                         <MagnifyingGlass size={64} weight="thin" className="mx-auto text-slate-800 mb-6" />
                         <h3 className="text-2xl font-black text-slate-600 uppercase tracking-widest">Keine Spieler gefunden</h3>
-                        <p className="text-slate-500 mt-2 font-bold uppercase tracking-widest text-xs">Pass Deine Suche oder Filter an</p>
+                        <p className="text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest text-xs">Pass Deine Suche oder Filter an</p>
                     </motion.div>
                 )}
             </div>

@@ -8,10 +8,10 @@ export default function Index({ auth, activeClub, unreadCount, seasons, activeSe
     };
 
     const PlayerList = ({ title, data, valueKey, label }) => (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <h3 className="text-lg font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-slate-800">{title}</h3>
+        <div className="bg-[var(--bg-pillar)] border border-[var(--border-pillar)] rounded-2xl p-6 shadow-xl">
+            <h3 className="text-lg font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-[var(--border-pillar)]">{title}</h3>
             {data.length === 0 ? (
-                <div className="text-center text-slate-500 italic py-8">Noch keine Daten vorhanden</div>
+                <div className="text-center text-[var(--text-muted)] italic py-8">Noch keine Daten vorhanden</div>
             ) : (
                 <div className="space-y-4">
                     {data.map((item, index) => (
@@ -19,7 +19,7 @@ export default function Index({ auth, activeClub, unreadCount, seasons, activeSe
                             <span className={`w-6 text-center font-black ${index < 3 ? 'text-amber-500' : 'text-slate-600'}`}>
                                 {index + 1}.
                             </span>
-                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-950">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--border-pillar)] bg-[var(--sim-shell-bg)]">
                                 <img loading="lazy" src={item.player?.photo_url || '/images/default-player.png'} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -28,12 +28,12 @@ export default function Index({ auth, activeClub, unreadCount, seasons, activeSe
                                 </Link>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <img loading="lazy" src={item.club?.logo_url} className="w-3.5 h-3.5 object-contain opacity-70" />
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider truncate">{item.club?.short_name}</span>
+                                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-wider truncate">{item.club?.short_name}</span>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <div className="text-lg font-black text-cyan-400">{item[valueKey]}</div>
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest">{label}</div>
+                                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{label}</div>
                             </div>
                         </div>
                     ))}
@@ -57,7 +57,7 @@ export default function Index({ auth, activeClub, unreadCount, seasons, activeSe
                     {/* Season Selector */}
                     <div className="flex justify-end">
                         <select 
-                            className="bg-slate-900 border-slate-800 rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500 min-w-[250px] shadow-xl"
+                            className="bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-xl text-white focus:ring-cyan-500 focus:border-cyan-500 min-w-[250px] shadow-xl"
                             value={activeSeasonId || ''}
                             onChange={handleSeasonChange}
                         >

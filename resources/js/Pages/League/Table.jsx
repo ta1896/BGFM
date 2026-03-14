@@ -27,10 +27,10 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                 {/* Header */}
                 <div className="flex flex-wrap items-start justify-between gap-6">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Wettbewerb</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Wettbewerb</p>
                         <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Tabelle</h1>
                         {activeCompetitionSeason && (
-                            <p className="text-sm font-bold text-slate-400 mt-1 italic">
+                            <p className="text-sm font-bold text-[var(--text-muted)] mt-1 italic">
                                 {activeCompetitionSeason.competition?.name} — {activeCompetitionSeason.season?.name}
                             </p>
                         )}
@@ -51,16 +51,16 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                 </div>
 
                 {table.length === 0 ? (
-                    <div className="sim-card p-20 text-center border-dashed border-slate-800">
+                    <div className="sim-card p-20 text-center border-dashed border-[var(--border-pillar)]">
                         <Trophy size={48} weight="thin" className="text-slate-700 mx-auto mb-6" />
-                        <p className="text-slate-500 font-bold uppercase tracking-widest text-sm italic">
+                        <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm italic">
                             {activeCompetitionSeason ? 'Noch keine Spiele gespielt.' : 'Bitte einen Wettbewerb auswählen.'}
                         </p>
                     </div>
                 ) : (
                     <div className="sim-card overflow-hidden p-0">
                         {/* Table Header */}
-                        <div className="grid grid-cols-[3rem_3rem_1fr_repeat(8,_3.5rem)] gap-2 px-6 py-4 bg-slate-900/60 border-b border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        <div className="grid grid-cols-[3rem_3rem_1fr_repeat(8,_3.5rem)] gap-2 px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                             <div className="text-center">#</div>
                             <div></div>
                             <div>Verein</div>
@@ -82,7 +82,7 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                 ? 'text-amber-400'
                                 : pos <= 3 ? 'text-emerald-400'
                                 : pos >= table.length - 2 ? 'text-rose-400'
-                                : 'text-slate-400';
+                                : 'text-[var(--text-muted)]';
 
                             return (
                                 <motion.div
@@ -116,9 +116,9 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                     </div>
 
                                     {/* Stats */}
-                                    <div className="text-center text-xs font-bold text-slate-400">{row.played}</div>
+                                    <div className="text-center text-xs font-bold text-[var(--text-muted)]">{row.played}</div>
                                     <div className="text-center text-xs font-bold text-emerald-500">{row.won}</div>
-                                    <div className="text-center text-xs font-bold text-slate-500">{row.drawn}</div>
+                                    <div className="text-center text-xs font-bold text-[var(--text-muted)]">{row.drawn}</div>
                                     <div className="text-center text-xs font-bold text-rose-500">{row.lost}</div>
                                     <div className="text-center text-xs font-bold text-slate-300">
                                         {row.goals_for}:{row.goals_against}

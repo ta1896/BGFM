@@ -36,7 +36,7 @@ export default function Create({ club }) {
                 <div className="flex items-center gap-6">
                     <Link 
                         href={route('lineups.index')}
-                        className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all"
+                        className="w-12 h-12 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center text-[var(--text-muted)] hover:text-cyan-400 hover:border-cyan-500/30 transition-all"
                     >
                         <ArrowLeft size={24} weight="bold" />
                     </Link>
@@ -55,7 +55,7 @@ export default function Create({ club }) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onSubmit={submit}
-                    className="sim-card p-8 bg-[#0c1222]/80 backdrop-blur-xl border-slate-800/50 space-y-8"
+                    className="sim-card p-8 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)] space-y-8"
                 >
                     <div className="grid md:grid-cols-2 gap-8">
                         <div>
@@ -91,7 +91,7 @@ export default function Create({ club }) {
 
                     <div>
                         <label className="sim-label flex items-center gap-2 mb-2">
-                            <Note size={16} weight="bold" className="text-slate-500" />
+                            <Note size={16} weight="bold" className="text-[var(--text-muted)]" />
                             Taktische Notizen
                         </label>
                         <textarea 
@@ -112,10 +112,10 @@ export default function Create({ club }) {
                                     checked={data.is_active}
                                     onChange={e => setData('is_active', e.target.checked)}
                                 />
-                                <div className="w-12 h-6 bg-slate-800 rounded-full border border-slate-700 transition-colors peer-checked:bg-cyan-500/20 peer-checked:border-cyan-500/50" />
+                                <div className="w-12 h-6 bg-[var(--bg-content)] rounded-full border border-[var(--border-pillar)] transition-colors peer-checked:bg-cyan-500/20 peer-checked:border-cyan-500/50" />
                                 <div className="absolute left-1 top-1 w-4 h-4 bg-slate-600 rounded-full transition-all peer-checked:left-7 peer-checked:bg-cyan-400 shadow-lg" />
                             </div>
-                            <span className="text-xs font-black text-slate-500 group-hover:text-white transition-colors uppercase tracking-widest">
+                            <span className="text-xs font-black text-[var(--text-muted)] group-hover:text-white transition-colors uppercase tracking-widest">
                                 Als aktive Aufstellung setzen
                             </span>
                         </label>

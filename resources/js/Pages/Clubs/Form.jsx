@@ -10,12 +10,12 @@ import {
 } from '@phosphor-icons/react';
 
 const Card = ({ title, children, icon: Icon }) => (
-    <div className="sim-card p-6 border-slate-800/50 relative overflow-hidden h-full">
+    <div className="sim-card p-6 border-[var(--border-muted)] relative overflow-hidden h-full">
         <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
             {Icon && <Icon size={80} weight="fill" className="text-amber-500" />}
         </div>
         <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-2 bg-slate-800 rounded-lg">
+            <div className="p-2 bg-[var(--bg-content)] rounded-lg">
                 {Icon && <Icon size={20} className="text-amber-500" />}
             </div>
             <h3 className="text-lg font-bold text-white uppercase tracking-wider">{title}</h3>
@@ -28,7 +28,7 @@ const Card = ({ title, children, icon: Icon }) => (
 
 const InputGroup = ({ label, error, children }) => (
     <div className="space-y-1">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{label}</label>
+        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-1">{label}</label>
         {children}
         {error && <p className="text-rose-500 text-[10px] font-bold mt-1 px-1 uppercase tracking-widest">{error}</p>}
     </div>
@@ -76,7 +76,7 @@ export default function Form({ club, rolePlayers = [] }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={isEdit ? route('clubs.show', club.id) : route('clubs.index')}
-                            className="p-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:text-white hover:border-slate-700 transition-all"
+                            className="p-2 bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[var(--text-muted)] rounded-xl hover:text-white hover:border-[var(--border-pillar)] transition-all"
                         >
                             <CaretLeft size={24} weight="bold" />
                         </Link>
@@ -155,9 +155,9 @@ export default function Form({ club, rolePlayers = [] }) {
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             accept="image/*"
                                         />
-                                        <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-xl p-4 transition-all group-hover:border-amber-500/50 flex items-center gap-4">
+                                        <div className="bg-[var(--bg-pillar)] border-2 border-dashed border-[var(--border-pillar)] rounded-xl p-4 transition-all group-hover:border-amber-500/50 flex items-center gap-4">
                                             {isEdit && club.logo_path && !data.logo && (
-                                                <img src={club.logo_url} className="h-10 w-10 object-contain rounded-lg bg-slate-950 p-1" alt="Logo" />
+                                                <img src={club.logo_url} className="h-10 w-10 object-contain rounded-lg bg-[var(--sim-shell-bg)] p-1" alt="Logo" />
                                             )}
                                             {data.logo && (
                                                 <div className="h-10 w-10 bg-emerald-500/10 flex items-center justify-center rounded-lg">
@@ -168,7 +168,7 @@ export default function Form({ club, rolePlayers = [] }) {
                                                 <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest truncate">
                                                     {data.logo ? data.logo.name : (isEdit ? 'Logo ändern' : 'Datei wählen')}
                                                 </p>
-                                                <p className="text-[9px] text-slate-500 font-medium">PNG, JPG bis 2MB</p>
+                                                <p className="text-[9px] text-[var(--text-muted)] font-medium">PNG, JPG bis 2MB</p>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +206,7 @@ export default function Form({ club, rolePlayers = [] }) {
                                     <InputGroup label="Transferbudget (€)" error={errors.budget}>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Wallet size={16} className="text-slate-500" />
+                                                <Wallet size={16} className="text-[var(--text-muted)]" />
                                             </div>
                                             <input 
                                                 type="number" 
@@ -221,7 +221,7 @@ export default function Form({ club, rolePlayers = [] }) {
                                     <InputGroup label="Gehaltsbudget (€)" error={errors.wage_budget}>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <IdentificationBadge size={16} className="text-slate-500" />
+                                                <IdentificationBadge size={16} className="text-[var(--text-muted)]" />
                                             </div>
                                             <input 
                                                 type="number" 
@@ -296,8 +296,8 @@ export default function Form({ club, rolePlayers = [] }) {
                                         </InputGroup>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 bg-slate-900 shadow-inner rounded-2xl border border-slate-800">
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed px-4">
+                                    <div className="text-center py-6 bg-[var(--bg-pillar)] shadow-inner rounded-2xl border border-[var(--border-pillar)]">
+                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-relaxed px-4">
                                             Rollen können erst festgelegt werden, wenn Spieler im Verein vorhanden sind.
                                         </p>
                                     </div>
@@ -321,10 +321,10 @@ export default function Form({ club, rolePlayers = [] }) {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between pt-8 border-t border-slate-800/50">
+                    <div className="flex items-center justify-between pt-8 border-t border-[var(--border-muted)]">
                         <Link 
                             href={isEdit ? route('clubs.show', club.id) : route('clubs.index')}
-                            className="text-slate-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] px-4 transition-all"
+                            className="text-[var(--text-muted)] hover:text-white font-bold uppercase text-xs tracking-[0.2em] px-4 transition-all"
                         >
                             Abbrechen
                         </Link>
@@ -342,17 +342,17 @@ export default function Form({ club, rolePlayers = [] }) {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-input-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700;
+                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-medium text-sm placeholder:text-slate-700;
                 }
                 .sim-select-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
+                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
                     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d9b15c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
                     background-repeat: no-repeat;
                     background-position: right 1rem center;
                     background-size: 1.2rem;
                 }
                 .sim-textarea-modern {
-                    @apply w-full bg-slate-900/80 border-2 border-slate-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-slate-900 transition-all outline-none font-medium text-sm placeholder:text-slate-700 resize-none;
+                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-medium text-sm placeholder:text-slate-700 resize-none;
                 }
             `}} />
         </AuthenticatedLayout>

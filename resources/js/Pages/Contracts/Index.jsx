@@ -49,7 +49,7 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Club Selector */}
-                    <div className="bg-slate-900 overflow-hidden shadow-sm sm:rounded-lg p-6 border border-slate-800">
+                    <div className="bg-[var(--bg-pillar)] overflow-hidden shadow-sm sm:rounded-lg p-6 border border-[var(--border-pillar)]">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                                 <div className="p-3 bg-blue-600/20 rounded-lg text-blue-500">
@@ -57,14 +57,14 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-medium text-white">Vertragsmanagement</h3>
-                                    <p className="text-sm text-slate-400">Verwalte die Laufzeiten und Gehälter deiner Spieler.</p>
+                                    <p className="text-sm text-[var(--text-muted)]">Verwalte die Laufzeiten und Gehälter deiner Spieler.</p>
                                 </div>
                             </div>
                             <div className="w-64">
                                 <select
                                     value={selectedClub}
                                     onChange={handleClubChange}
-                                    className="w-full bg-slate-800 border-slate-700 text-white rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="w-full bg-[var(--bg-content)] border-[var(--border-pillar)] text-white rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 >
                                     {clubs.map((club) => (
                                         <option key={club.id} value={club.id}>
@@ -80,14 +80,14 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {players.length > 0 ? (
                             players.map((player) => (
-                                <div key={player.id} className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden hover:border-blue-500/50 transition-all duration-300 group">
+                                <div key={player.id} className="bg-[var(--bg-pillar)] rounded-xl border border-[var(--border-pillar)] overflow-hidden hover:border-blue-500/50 transition-all duration-300 group">
                                     <div className="p-5">
                                         <div className="flex items-start space-x-4">
                                             <div className="relative">
                                                 <img 
                                                     src={player.photo_url} 
                                                     alt={player.last_name} 
-                                                    className="w-16 h-16 rounded-lg object-cover bg-slate-800"
+                                                    className="w-16 h-16 rounded-lg object-cover bg-[var(--bg-content)]"
                                                 />
                                                 <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded border border-slate-900">
                                                     {player.overall}
@@ -97,7 +97,7 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                                 <h4 className="text-white font-bold text-lg group-hover:text-blue-400 transition-colors">
                                                     {player.first_name} {player.last_name}
                                                 </h4>
-                                                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{player.position}</p>
+                                                <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider">{player.position}</p>
                                                 <div className="mt-2 flex items-center space-x-2 text-sm text-slate-300">
                                                     <Calendar className="text-blue-500" size={12} weight="fill" />
                                                     <span>Läuft aus: {player.expires_on_formatted}</span>
@@ -106,14 +106,14 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                         </div>
 
                                         <div className="mt-6 grid grid-cols-2 gap-4">
-                                            <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Gehalt</p>
+                                            <div className="bg-[var(--bg-content)]/50 p-3 rounded-lg border border-[var(--border-muted)]">
+                                                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight">Gehalt</p>
                                                 <p className="text-white font-semibold flex items-center">
                                                     {player.salary_formatted}
                                                 </p>
                                             </div>
-                                            <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                                                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Marktwert</p>
+                                            <div className="bg-[var(--bg-content)]/50 p-3 rounded-lg border border-[var(--border-muted)]">
+                                                <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tight">Marktwert</p>
                                                 <p className="text-white font-semibold">
                                                     {player.value_formatted}
                                                 </p>
@@ -121,35 +121,35 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                         </div>
 
                                         {isRenewing === player.id ? (
-                                            <form onSubmit={(e) => submitRenewal(e, player.id)} className="mt-6 p-4 bg-slate-800 rounded-lg border border-blue-500/30 animate-in fade-in slide-in-from-top-2">
+                                            <form onSubmit={(e) => submitRenewal(e, player.id)} className="mt-6 p-4 bg-[var(--bg-content)] rounded-lg border border-blue-500/30 animate-in fade-in slide-in-from-top-2">
                                                 <h5 className="text-sm font-bold text-white mb-4 flex items-center">
                                                     <FileText className="mr-2 text-blue-500" weight="fill" /> Vertrag verlängern
                                                 </h5>
                                                 
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <label className="block text-xs font-medium text-slate-400 mb-1">Gehalt / Monat</label>
+                                                        <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Gehalt / Monat</label>
                                                         <div className="relative">
-                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-muted)]">
                                                                 <CurrencyEur size={12} weight="bold" />
                                                             </div>
                                                             <input
                                                                 type="number"
                                                                 value={data.salary}
                                                                 onChange={e => setData('salary', e.target.value)}
-                                                                className="block w-full pl-8 bg-slate-900 border-slate-700 rounded-md text-sm text-white focus:ring-blue-500 focus:border-blue-500"
+                                                                className="block w-full pl-8 bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-md text-sm text-white focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </div>
                                                         {errors.salary && <p className="text-red-500 text-[10px] mt-1">{errors.salary}</p>}
                                                     </div>
 
                                                     <div>
-                                                        <label className="block text-xs font-medium text-slate-400 mb-1">Laufzeit (Monate)</label>
+                                                        <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Laufzeit (Monate)</label>
                                                         <input
                                                             type="number"
                                                             value={data.months}
                                                             onChange={e => setData('months', e.target.value)}
-                                                            className="block w-full bg-slate-900 border-slate-700 rounded-md text-sm text-white focus:ring-blue-500 focus:border-blue-500"
+                                                            className="block w-full bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-md text-sm text-white focus:ring-blue-500 focus:border-blue-500"
                                                             min="1"
                                                             max="84"
                                                         />
@@ -177,7 +177,7 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                         ) : (
                                             <button
                                                 onClick={() => handleRenew(player)}
-                                                className="mt-6 w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-blue-600 text-white text-sm font-bold py-3 rounded-lg border border-slate-700 hover:border-blue-500 transition-all duration-300"
+                                                className="mt-6 w-full flex items-center justify-center space-x-2 bg-[var(--bg-content)] hover:bg-blue-600 text-white text-sm font-bold py-3 rounded-lg border border-[var(--border-pillar)] hover:border-blue-500 transition-all duration-300"
                                             >
                                                 <span>Vertrag verlängern</span>
                                                 <CaretRight size={12} weight="bold" />
@@ -187,7 +187,7 @@ export default function Index({ auth, clubs, activeClub, players, filters }) {
                                 </div>
                             ))
                         ) : (
-                            <div className="col-span-full py-20 bg-slate-900 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-slate-500">
+                            <div className="col-span-full py-20 bg-[var(--bg-pillar)] rounded-xl border border-[var(--border-pillar)] flex flex-col items-center justify-center text-[var(--text-muted)]">
                                 <User className="w-12 h-12 mb-4 opacity-20" weight="fill" />
                                 <p>Keine Spieler in diesem Verein gefunden.</p>
                             </div>

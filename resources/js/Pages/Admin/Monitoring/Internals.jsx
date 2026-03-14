@@ -68,7 +68,7 @@ export default function Internals({ stats }) {
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20 border-orange-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -120,7 +120,7 @@ export default function Internals({ stats }) {
                                 </button>
                                 <Link 
                                     href={route('admin.monitoring.logs')}
-                                    className="px-5 py-2.5 bg-slate-800 text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest transition"
+                                    className="px-5 py-2.5 bg-[var(--bg-content)] text-slate-300 border border-[var(--border-pillar)] rounded-xl hover:bg-slate-700 text-[10px] font-black uppercase tracking-widest transition"
                                 >
                                     Details
                                 </Link>
@@ -138,7 +138,7 @@ export default function Internals({ stats }) {
                                 <ArrowClockwise size={24} className="text-orange-400" />
                                 System-Reset / Cache-Management
                             </h3>
-                            <p className="text-xs text-slate-500 mb-8 font-medium italic">Vorsicht: Das Leeren des Caches löscht alle zwischengespeicherten Diagnostik-Berichte.</p>
+                            <p className="text-xs text-[var(--text-muted)] mb-8 font-medium italic">Vorsicht: Das Leeren des Caches löscht alle zwischengespeicherten Diagnostik-Berichte.</p>
 
                             <button 
                                 onClick={handleClearCache}
@@ -162,8 +162,8 @@ function InfoRow({ label, value, mono = false, badge = null, color = null }) {
     };
 
     return (
-        <div className="flex justify-between items-center bg-slate-900/40 p-3 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{label}</span>
+        <div className="flex justify-between items-center bg-[var(--bg-pillar)]/40 p-3 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors">
+            <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{label}</span>
             {badge ? (
                 <span className={`font-mono text-[10px] px-3 py-1 rounded-lg border font-black uppercase tracking-tighter ${badgeColors[badge]}`}>
                     {value}

@@ -19,7 +19,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'amber' }) => (
             <Icon size={100} weight="fill" />
         </div>
         <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{title}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">{title}</p>
             <div className="flex items-end gap-3">
                 <p className="text-3xl font-black text-white leading-none">{value}</p>
             </div>
@@ -29,7 +29,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'amber' }) => (
 
 const SectionHeader = ({ title, icon: Icon }) => (
     <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/30">
+        <div className="p-2 rounded-lg bg-[var(--bg-content)]/50 border border-[var(--border-pillar)]/30">
             <Icon size={20} className="text-amber-500" />
         </div>
         <h2 className="text-lg font-bold text-white tracking-tight leading-none uppercase italic">{title}</h2>
@@ -71,9 +71,9 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                         <section className="sim-card p-6 border-amber-500/10 shadow-[0_0_50px_rgba(217,177,92,0.03)]">
                             <SectionHeader title="Simulation & Kontrolle" icon={Play} />
                             
-                            <form onSubmit={runSimulation} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-2xl bg-slate-950/50 border border-slate-800/50">
+                            <form onSubmit={runSimulation} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-2xl bg-[var(--sim-shell-bg)]/50 border border-[var(--border-muted)]">
                                 <div className="md:col-span-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 px-1">Wettbewerb wählen</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-2 px-1">Wettbewerb wählen</label>
                                     <select 
                                         className="sim-select w-full"
                                         value={data.competition_season_id}
@@ -115,10 +115,10 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                             <SectionHeader title="Letzte User" icon={Users} />
                             <div className="space-y-2">
                                 {latestUsers.map(user => (
-                                    <div key={user.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-800/20 border border-slate-800/50 group hover:bg-slate-800/40 transition">
+                                    <div key={user.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-content)]/20 border border-[var(--border-muted)] group hover:bg-[var(--bg-content)]/40 transition">
                                         <div className="min-w-0">
                                             <p className="text-sm font-bold text-white leading-none mb-1 truncate">{user.name}</p>
-                                            <p className="text-[10px] text-slate-500 font-medium truncate">{user.email}</p>
+                                            <p className="text-[10px] text-[var(--text-muted)] font-medium truncate">{user.email}</p>
                                         </div>
                                         {user.is_admin && (
                                             <span className="text-[9px] font-black bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest">Admin</span>
@@ -133,14 +133,14 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                             <SectionHeader title="Letzte Vereine" icon={BuildingOffice} />
                             <div className="space-y-2">
                                 {latestClubs.map(club => (
-                                    <div key={club.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-800/20 border border-slate-800/50 group hover:bg-slate-800/40 transition">
+                                    <div key={club.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-content)]/20 border border-[var(--border-muted)] group hover:bg-[var(--bg-content)]/40 transition">
                                         <div className="min-w-0">
                                             <p className="text-sm font-bold text-white leading-none mb-1 truncate">{club.name}</p>
-                                            <p className="text-[10px] text-slate-500 font-medium truncate italic">Owner: {club.user?.name || 'CPU'}</p>
+                                            <p className="text-[10px] text-[var(--text-muted)] font-medium truncate italic">Owner: {club.user?.name || 'CPU'}</p>
                                         </div>
                                         <Link 
                                             href={route('admin.clubs.edit', club.id)}
-                                            className="p-1.5 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition"
+                                            className="p-1.5 text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition"
                                         >
                                             <CaretRight size={16} weight="bold" />
                                         </Link>

@@ -175,7 +175,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                     <span className="font-bold text-white tracking-tight">OpenWS</span>
                 </Link>
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-400 hover:text-white">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-[var(--text-muted)] hover:text-white">
                     {sidebarOpen ? <X size={24} /> : <List size={24} />}
                 </button>
             </div>
@@ -215,11 +215,11 @@ export default function AuthenticatedLayout({ header, children }) {
                             >
                                 {activeClub ? (
                                     <>
-                                        <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-900 border border-slate-600 flex-shrink-0">
+                                        <div className="h-8 w-8 rounded-full overflow-hidden bg-[var(--bg-pillar)] border border-slate-600 flex-shrink-0">
                                             <img loading="lazy" src={activeClub.logo_url} className="h-full w-full object-contain" alt={activeClub.name} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-xs text-slate-400 uppercase tracking-wider font-bold">Aktiver Verein</p>
+                                            <p className="truncate text-xs text-[var(--text-muted)] uppercase tracking-wider font-bold">Aktiver Verein</p>
                                             <p className="truncate text-sm font-bold text-white leading-tight">{activeClub.name}</p>
                                         </div>
                                     </>
@@ -251,7 +251,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                             : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
                                                     }`}
                                                 >
-                                                    <div className="h-7 w-7 rounded-full overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0">
+                                                    <div className="h-7 w-7 rounded-full overflow-hidden bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex-shrink-0">
                                                         <img loading="lazy" src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
                                                     </div>
                                                     <span className="truncate flex-1 text-left font-medium">{club.name}</span>
@@ -280,8 +280,8 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-slate-800/50 group border border-transparent hover:border-slate-700/30">
-                    <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
+                <div className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-[var(--bg-content)]/50 group border border-transparent hover:border-[var(--border-pillar)]/30">
+                    <div className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5">
                          <img loading="lazy" 
                             src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                             alt={auth.user.name}
@@ -290,7 +290,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
-                        <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500 text-left">
+                        <p className="truncate text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-left">
                             {auth.isAdmin ? 'Administrator' : 'Manager'}
                         </p>
                     </div>
@@ -298,7 +298,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                         <Link 
                             href={route('profile.edit')} 
-                            className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
+                            className="p-1.5 text-[var(--text-muted)] hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
                             title="Profil"
                         >
                             <Users size={18} />
@@ -306,7 +306,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         
                         <button 
                             onClick={() => router.post(route('logout'))}
-                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
+                            className="p-1.5 text-[var(--text-muted)] hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
                             title="Logout"
                         >
                             <SignOut size={18} />

@@ -26,17 +26,17 @@ const MatchCard = ({ match, club }) => {
     return (
         <motion.div 
             whileHover={{ y: -5 }}
-            className="sim-card group relative overflow-hidden flex flex-col h-full bg-[#0c1222]/80 backdrop-blur-xl border-slate-800/50"
+            className="sim-card group relative overflow-hidden flex flex-col h-full bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             <div className="p-6 relative z-10 flex flex-col h-full">
                 {/* Meta */}
                 <div className="flex items-center justify-between mb-6">
-                    <div className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <div className="px-2 py-1 rounded bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                         {match.match_type || 'Liga'}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                         <Calendar size={12} weight="bold" />
                         {match.kickoff_at_formatted}
                     </div>
@@ -45,7 +45,7 @@ const MatchCard = ({ match, club }) => {
                 {/* Matchup */}
                 <div className="flex items-center justify-between gap-6 mb-8">
                     <div className="flex flex-col items-center gap-3 flex-1">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
+                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
                             <img loading="lazy" src={match.home_club.logo_url} className="w-full h-full object-contain" />
                             {isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
@@ -55,7 +55,7 @@ const MatchCard = ({ match, club }) => {
                     <div className="text-xl font-black text-slate-700 italic">VS</div>
 
                     <div className="flex flex-col items-center gap-3 flex-1">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
+                        <div className="w-14 h-14 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
                             <img loading="lazy" src={match.away_club.logo_url} className="w-full h-full object-contain" />
                             {!isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
@@ -64,9 +64,9 @@ const MatchCard = ({ match, club }) => {
                 </div>
 
                 {/* Status Indicator */}
-                <div className="mt-auto pt-6 border-t border-slate-800/50 flex items-center justify-between">
+                <div className="mt-auto pt-6 border-t border-[var(--border-muted)] flex items-center justify-between">
                     <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aufstellung</span>
+                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Aufstellung</span>
                         {userLineup ? (
                             <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase">
                                 <Checks size={14} weight="bold" /> GESETZT
@@ -82,7 +82,7 @@ const MatchCard = ({ match, club }) => {
                         href={route('lineups.match', match.id)}
                         className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
                             userLineup 
-                                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                                ? 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700' 
                                 : 'bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40'
                         }`}
                     >
@@ -142,8 +142,8 @@ export default function Index({ club, matches, templates }) {
                     </div>
 
                     {matches.length === 0 ? (
-                        <div className="sim-card p-20 text-center border-dashed border-2 border-slate-800 bg-slate-900/20">
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Keine geplanten Spiele erfasst</p>
+                        <div className="sim-card p-20 text-center border-dashed border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/20">
+                            <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm">Keine geplanten Spiele erfasst</p>
                         </div>
                     ) : (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -155,15 +155,15 @@ export default function Index({ club, matches, templates }) {
                 </section>
 
                 {/* Templates Section */}
-                <section className="space-y-6 pt-12 border-t border-slate-800/50">
+                <section className="space-y-6 pt-12 border-t border-[var(--border-muted)]">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="p-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700">
+                            <div className="p-2 rounded-xl bg-[var(--bg-content)] text-[var(--text-muted)] border border-[var(--border-pillar)]">
                                 <Layout size={24} weight="duotone" />
                             </div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Gespeicherte Vorlagen</h2>
                         </div>
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{templates.length} Profile</span>
+                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{templates.length} Profile</span>
                     </div>
 
                     {templates.length === 0 ? (
@@ -174,26 +174,26 @@ export default function Index({ club, matches, templates }) {
                                 <motion.div 
                                     key={template.id}
                                     whileHover={{ scale: 1.02 }}
-                                    className="sim-card p-6 bg-slate-900/50 border-slate-800 group"
+                                    className="sim-card p-6 bg-[var(--bg-pillar)]/50 border-[var(--border-pillar)] group"
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="font-black text-white uppercase tracking-tight group-hover:text-amber-500 transition-colors line-clamp-1">
                                             {template.name}
                                         </h3>
-                                        <div className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] font-black text-amber-500 uppercase">
+                                        <div className="px-2 py-0.5 rounded bg-[var(--sim-shell-bg)] border border-[var(--border-pillar)] text-[10px] font-black text-amber-500 uppercase">
                                             {template.formation}
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-6">
                                         <Users size={14} />
                                         {template.players_count || template.players?.length} Spieler zugewiesen
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                                    <div className="flex items-center justify-between pt-4 border-t border-[var(--border-pillar)]">
                                         <Link 
                                             href={route('lineups.edit', template.id)}
-                                            className="text-[10px] font-black text-slate-400 hover:text-white transition-colors"
+                                            className="text-[10px] font-black text-[var(--text-muted)] hover:text-white transition-colors"
                                         >
                                             BEARBEITEN
                                         </Link>

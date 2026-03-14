@@ -89,7 +89,7 @@ export default function Index({
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 border-indigo-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -105,7 +105,7 @@ export default function Index({
                             <span className="flex h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
                             System Monitoring Hub
                         </h2>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Zentrale Steuerung</p>
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Zentrale Steuerung</p>
                     </div>
                     <div className="grid gap-4 md:grid-cols-3">
                         <HubCard 
@@ -148,7 +148,7 @@ export default function Index({
                         <div className="flex items-end justify-between">
                             <div>
                                 <p className="text-xl font-bold text-white">{liveStatus.active_matches} Aktiv</p>
-                                <p className="text-xs text-slate-400 mt-1">{liveStatus.stalled_matches} Hängend</p>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">{liveStatus.stalled_matches} Hängend</p>
                             </div>
                             {liveStatus.stalled_matches > 0 ? (
                                 <Warning size={32} className="text-red-500" />
@@ -193,7 +193,7 @@ export default function Index({
                         <div className="flex items-end justify-between">
                             <div>
                                 <p className="text-xl font-bold text-white">{health.storage.free} frei</p>
-                                <p className="text-xs text-slate-400 mt-1">Von {health.storage.total}</p>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">Von {health.storage.total}</p>
                             </div>
                             <p className="text-2xl font-bold text-cyan-300">{health.storage.percentage}%</p>
                         </div>
@@ -212,12 +212,12 @@ export default function Index({
                             <p className={`text-3xl font-bold ${logStats.errors > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                 {logStats.errors}
                             </p>
-                            <div className="text-right text-xs text-slate-400">
+                            <div className="text-right text-xs text-[var(--text-muted)]">
                                 <p>Gesamt: {logStats.total}</p>
                                 <p>Warnungen: {logStats.warnings}</p>
                             </div>
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-wider overflow-hidden text-ellipsis whitespace-nowrap">
+                        <p className="text-[10px] text-[var(--text-muted)] mt-2 uppercase tracking-wider overflow-hidden text-ellipsis whitespace-nowrap">
                             Letzter: {logStats.latest_error || 'Keiner'}
                         </p>
                     </div>
@@ -232,13 +232,13 @@ export default function Index({
                                 Simulation-Profiling
                             </h2>
                         </div>
-                        <div className="flex items-center justify-around mb-6 py-4 bg-slate-950/30 rounded-2xl border border-white/5">
+                        <div className="flex items-center justify-around mb-6 py-4 bg-[var(--sim-shell-bg)]/30 rounded-2xl border border-white/5">
                             <div className="text-center">
-                                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Ø Zeit / Spiel</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1">Ø Zeit / Spiel</p>
                                 <p className="text-2xl font-black text-cyan-400">{diagnostics.performance.avg_time_ms}ms</p>
                             </div>
                             <div className="text-center border-l border-white/10 pl-8">
-                                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Ø Aktionen</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1">Ø Aktionen</p>
                                 <p className="text-2xl font-black text-indigo-400">{diagnostics.performance.avg_actions}</p>
                             </div>
                         </div>
@@ -249,7 +249,7 @@ export default function Index({
                                         <Warning size={14} className="text-orange-500" />
                                         {issue.description}
                                     </p>
-                                    <p className="text-[10px] text-slate-400 mt-1">{issue.reason}</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-1">{issue.reason}</p>
                                 </div>
                             ))}
                         </div>
@@ -270,12 +270,12 @@ export default function Index({
                                             <ShieldWarning size={14} className="text-red-500" />
                                             {issue.description}
                                         </p>
-                                        <p className="text-[10px] text-slate-400 mt-1">{issue.reason}</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-1">{issue.reason}</p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-48 text-slate-500 opacity-50 grayscale">
+                            <div className="flex flex-col items-center justify-center h-48 text-[var(--text-muted)] opacity-50 grayscale">
                                 <CheckCircle size={48} weight="thin" />
                                 <p className="text-xs mt-4 font-bold tracking-widest uppercase">Finanzen Stabil</p>
                                 <p className="text-[10px] mt-1">Keine Anomalien gefunden</p>
@@ -292,7 +292,7 @@ export default function Index({
                                 <Database size={20} className="text-cyan-400" />
                                 Daten-Integrität & Diagnose
                             </h2>
-                            <p className="text-xs text-slate-400 mt-1">
+                            <p className="text-xs text-[var(--text-muted)] mt-1">
                                 Prüfung wichtiger Datenbankfelder. 
                                 <span className="text-cyan-400 ml-2 font-mono">Stand: {diagnostics.generated_at}</span>
                             </p>
@@ -306,7 +306,7 @@ export default function Index({
                                 Neu Scannen
                             </Link>
                             <div className="text-center px-4 border-l border-white/10">
-                                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Total</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Total</p>
                                 <p className="text-xl font-black text-white">
                                     {diagnostics.matches.count + diagnostics.events.count + diagnostics.clubs.count + diagnostics.inactivity.count}
                                 </p>
@@ -331,11 +331,11 @@ export default function Index({
                                         className={`sim-card-soft p-3 border-l-2 ${issue.severity === 'CRITICAL' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'}`}
                                     >
                                         <p className="text-xs font-bold text-white">{issue.description}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1"><span className="text-cyan-400 font-bold">Grund:</span> {issue.reason}</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-1"><span className="text-cyan-400 font-bold">Grund:</span> {issue.reason}</p>
                                     </motion.div>
                                 ))}
                                 {[...diagnostics.matches.issues, ...diagnostics.events.issues].length === 0 && (
-                                    <p className="text-xs text-slate-500 italic py-4">Keine Probleme gefunden.</p>
+                                    <p className="text-xs text-[var(--text-muted)] italic py-4">Keine Probleme gefunden.</p>
                                 )}
                             </div>
                         </div>
@@ -359,7 +359,7 @@ export default function Index({
                                             <p className="text-xs font-bold text-white">
                                                 {issue.name && `${issue.name}: `}{issue.description}
                                             </p>
-                                            <p className="text-[10px] text-slate-400 mt-1"><span className="text-cyan-400 font-bold">Grund:</span> {issue.reason}</p>
+                                            <p className="text-[10px] text-[var(--text-muted)] mt-1"><span className="text-cyan-400 font-bold">Grund:</span> {issue.reason}</p>
                                         </div>
                                         {issue.description.includes('no active lineup') && (
                                             <button 
@@ -373,7 +373,7 @@ export default function Index({
                                     </motion.div>
                                 ))}
                                 {[...diagnostics.clubs.issues, ...diagnostics.inactivity.issues].length === 0 && (
-                                    <p className="text-xs text-slate-500 italic py-4">Alles im grünen Bereich.</p>
+                                    <p className="text-xs text-[var(--text-muted)] italic py-4">Alles im grünen Bereich.</p>
                                 )}
                             </div>
                         </div>
@@ -388,7 +388,7 @@ export default function Index({
                                 <Scroll size={20} className="text-indigo-400" />
                                 Letzte Log-Einträge
                             </h2>
-                            <p className="text-xs text-slate-400 mt-1">Auszug aus der laravel.log Datei</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-1">Auszug aus der laravel.log Datei</p>
                         </div>
                         <Link href={route('admin.monitoring.logs')} className="sim-btn-muted text-xs">Vollständige Logs</Link>
                     </div>
@@ -396,7 +396,7 @@ export default function Index({
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-800/30 text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+                                <tr className="bg-[var(--bg-content)]/30 text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest">
                                     <th className="px-5 py-3 border-b border-white/5">Zeitstempel</th>
                                     <th className="px-5 py-3 border-b border-white/5">Level</th>
                                     <th className="px-5 py-3 border-b border-white/5">Nachricht</th>
@@ -406,7 +406,7 @@ export default function Index({
                             <tbody className="divide-y divide-white/5">
                                 {recentLogs.map((log, idx) => (
                                     <tr key={idx} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-5 py-3 text-xs font-mono text-slate-400 whitespace-nowrap">{log.timestamp}</td>
+                                        <td className="px-5 py-3 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap">{log.timestamp}</td>
                                         <td className="px-5 py-3 text-xs">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter ${
                                                 ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'].includes(log.level) 
@@ -438,7 +438,7 @@ export default function Index({
                                 ))}
                                 {recentLogs.length === 0 && (
                                     <tr>
-                                        <td colSpan="4" className="px-5 py-10 text-center text-slate-500 italic">Keine Logs gefunden.</td>
+                                        <td colSpan="4" className="px-5 py-10 text-center text-[var(--text-muted)] italic">Keine Logs gefunden.</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -468,7 +468,7 @@ function HubCard({ href, title, subtitle, description, color, icon }) {
             </div>
             <p className="sim-section-title mb-1 uppercase tracking-widest">{subtitle}</p>
             <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed mb-4">{description}</p>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-4">{description}</p>
             <span className="text-xs font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                 Öffnen <CaretRight size={12} weight="bold" />
             </span>
@@ -501,7 +501,7 @@ function HealthCard({ title, value, subtitle, status, icon }) {
                 </div>
             </div>
             <p className="text-xl font-bold text-white">{value}</p>
-            <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{subtitle}</p>
         </article>
     );
 }

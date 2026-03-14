@@ -152,7 +152,7 @@ export default function Settings({ userClubs, passkeys }) {
                                                             <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{passkey.created_at_formatted || 'Passkey'}</p>
                                                         </div>
                                                     </div>
-                                                    <button className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all">
+                                                    <button className="p-2 text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all">
                                                         <Trash size={20} />
                                                     </button>
                                                 </div>
@@ -161,7 +161,7 @@ export default function Settings({ userClubs, passkeys }) {
                                     ) : (
                                         <div className="text-center py-12 bg-[var(--bg-pillar)]/50 rounded-3xl border-2 border-dashed border-[var(--border-muted)]">
                                             <Fingerprint size={48} weight="thin" className="mx-auto text-slate-700 mb-4" />
-                                            <p className="text-slate-500 font-medium">Bisher wurden keine Passkeys registriert.</p>
+                                            <p className="text-[var(--text-muted)] font-medium">Bisher wurden keine Passkeys registriert.</p>
                                         </div>
                                     )}
 

@@ -74,7 +74,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={route('admin.clubs.index')}
-                            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                            className="p-2 rounded-xl bg-[var(--bg-content)] text-[var(--text-muted)] hover:text-white transition"
                         >
                             <ArrowLeft size={20} weight="bold" />
                         </Link>
@@ -82,13 +82,13 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">
                                 {isEdit ? 'Verein bearbeiten' : 'Neuer Verein'}
                             </h2>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1">
+                            <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">
                                 {isEdit ? club.name : 'Manueller Vereins-Setup'}
                             </p>
                         </div>
                     </div>
                     {isEdit && club.logo_url && (
-                        <div className="h-16 w-16 p-2 rounded-2xl bg-slate-900 border border-slate-800">
+                        <div className="h-16 w-16 p-2 rounded-2xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)]">
                             <img src={club.logo_url} className="h-full w-full object-contain" alt="" />
                         </div>
                     )}
@@ -99,7 +99,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                         <Card title="Stammdaten" icon={Shield}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1 mt-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Owner User</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Owner User</label>
                                     <select 
                                         className="sim-select w-full"
                                         value={data.user_id}
@@ -114,7 +114,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Vereinsname</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Vereinsname</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -126,7 +126,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kurzname (z.B. FCB)</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Kurzname (z.B. FCB)</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -136,17 +136,17 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Logo Upload</label>
-                                    <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/50 border border-slate-800 group relative">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Logo Upload</label>
+                                    <div className="flex items-center gap-4 p-3 rounded-xl bg-[var(--sim-shell-bg)]/50 border border-[var(--border-pillar)] group relative">
                                         <input 
                                             type="file"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                             onChange={e => setData('logo', e.target.files[0])}
                                         />
-                                        <div className="p-1.5 rounded-lg bg-slate-800 text-slate-500 group-hover:text-cyan-400 transition">
+                                        <div className="p-1.5 rounded-lg bg-[var(--bg-content)] text-[var(--text-muted)] group-hover:text-cyan-400 transition">
                                             <Image size={16} />
                                         </div>
-                                        <div className="text-[10px] text-slate-400 font-bold truncate">
+                                        <div className="text-[10px] text-[var(--text-muted)] font-bold truncate">
                                             {data.logo ? data.logo.name : 'Bild wählen...'}
                                         </div>
                                     </div>
@@ -154,7 +154,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Land</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Land</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -165,7 +165,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Liga Bezeichnung</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Liga Bezeichnung</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -176,7 +176,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Gründungsjahr</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Gründungsjahr</label>
                                     <input 
                                         type="number"
                                         className="sim-input w-full"
@@ -186,7 +186,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="flex items-end pb-1.5">
-                                    <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl bg-slate-900 overflow-hidden border border-slate-800 w-full active:scale-95 transition">
+                                    <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl bg-[var(--bg-pillar)] overflow-hidden border border-[var(--border-pillar)] w-full active:scale-95 transition">
                                         <div className={`w-9 h-5 rounded-full p-0.5 transition-colors ${data.is_cpu ? 'bg-amber-500' : 'bg-slate-700'}`}>
                                             <div className={`w-4 h-4 bg-white rounded-full transition-transform ${data.is_cpu ? 'translate-x-4' : 'translate-x-0'}`} />
                                         </div>
@@ -196,7 +196,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                             checked={data.is_cpu}
                                             onChange={e => setData('is_cpu', e.target.checked)}
                                         />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">CPU-Gesteuert</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors">CPU-Gesteuert</span>
                                     </label>
                                 </div>
                             </div>
@@ -205,7 +205,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                         <Card title="Finanzen & Erfolg" icon={Coins} color="amber">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Money size={12} />
                                         Transferbudget (€)
                                     </label>
@@ -219,7 +219,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Money size={12} />
                                         Gehaltsbudget (€/Woche)
                                     </label>
@@ -233,7 +233,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Coins</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Coins</label>
                                     <input 
                                         type="number"
                                         className="sim-input w-full text-cyan-400"
@@ -243,7 +243,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Reputation (1-99)</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Reputation (1-99)</label>
                                     <input 
                                         type="number"
                                         min="1"
@@ -256,7 +256,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Saisonziel</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Saisonziel</label>
                                     <select 
                                         className="sim-select w-full"
                                         value={data.season_objective}
@@ -271,7 +271,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Fan Stimmung (1-100)</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Fan Stimmung (1-100)</label>
                                     <input 
                                         type="number"
                                         min="1"
@@ -292,7 +292,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 {isEdit && rolePlayers.length > 0 ? (
                                     <>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kapitän</label>
+                                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Kapitän</label>
                                             <select 
                                                 className="sim-select w-full text-xs"
                                                 value={data.captain_player_id}
@@ -305,7 +305,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                             </select>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Vize-Kapitän</label>
+                                            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Vize-Kapitän</label>
                                             <select 
                                                 className="sim-select w-full text-xs"
                                                 value={data.vice_captain_player_id}
@@ -319,13 +319,13 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                         </div>
                                     </>
                                 ) : isEdit && (
-                                    <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">
+                                    <div className="p-3 rounded-xl bg-[var(--bg-pillar)]/50 border border-[var(--border-pillar)] text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest text-center">
                                         Keine Spieler im Verein
                                     </div>
                                 )}
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Sword size={12} className="text-rose-500" />
                                         Erzrivale 1
                                     </label>
@@ -342,7 +342,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
                                         <Sword size={12} className="text-rose-500" />
                                         Erzrivale 2
                                     </label>
@@ -362,7 +362,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
 
                         <div className="sim-card p-6 space-y-6">
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Spezielle Notizen</label>
+                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Spezielle Notizen</label>
                                 <textarea 
                                     className="sim-textarea w-full text-xs h-32"
                                     value={data.notes}

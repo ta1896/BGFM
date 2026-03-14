@@ -20,17 +20,17 @@ const StatCard = ({ title, value, unit, icon: Icon, colorClass, delay }) => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay }}
-        className="sim-card p-6 relative overflow-hidden group border-slate-800/50"
+        className="sim-card p-6 relative overflow-hidden group border-[var(--border-muted)]"
     >
         <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${colorClass}`}>
             <Icon size={80} weight="fill" />
         </div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">{title}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">{title}</p>
         <div className="flex items-baseline gap-2">
             <p className="text-3xl font-black text-white tracking-tighter">
                 {typeof value === 'number' ? value.toLocaleString('de-DE') : value}
             </p>
-            <span className="text-sm font-bold text-slate-500 uppercase">{unit}</span>
+            <span className="text-sm font-bold text-[var(--text-muted)] uppercase">{unit}</span>
         </div>
         <div className={`mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 border border-white/10 ${colorClass}`}>
             Live Balance
@@ -47,7 +47,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                     <WarningCircle size={64} weight="thin" className="text-slate-700 mb-6" />
                     <h2 className="text-2xl font-bold text-white mb-2">Kein Verein aktiv</h2>
-                    <p className="text-slate-400 max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste oder erstelle einen neuen.</p>
+                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste oder erstelle einen neuen.</p>
                 </div>
             </AuthenticatedLayout>
         );
@@ -96,8 +96,8 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                 <p className="text-white font-medium">Finanziell stabil</p>
                             </div>
                             <div className="mt-auto">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Sponsor-Einnahmen lfd. Saison</p>
-                                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mb-2">Sponsor-Einnahmen lfd. Saison</p>
+                                <div className="h-2 w-full bg-[var(--bg-content)] rounded-full overflow-hidden">
                                     <div className="h-full bg-amber-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(217,177,92,0.5)]"></div>
                                 </div>
                             </div>
@@ -110,7 +110,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="border-b border-slate-800/50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                <tr className="border-b border-[var(--border-muted)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                                     <th className="px-6 py-4">Datum</th>
                                     <th className="px-6 py-4">Kontext</th>
                                     <th className="px-6 py-4">Kategorie</th>
@@ -134,7 +134,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-3">
                                                     <Calendar size={16} className="text-slate-600" />
-                                                    <span className="text-sm font-bold text-slate-400 font-mono italic">
+                                                    <span className="text-sm font-bold text-[var(--text-muted)] font-mono italic">
                                                         {tx.booked_at_formatted}
                                                     </span>
                                                 </div>
@@ -148,7 +148,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                                     {tx.context_type}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-tighter">
+                                            <td className="px-6 py-4 text-sm font-bold text-[var(--text-muted)] uppercase tracking-tighter">
                                                 {tx.asset_type}
                                             </td>
                                             <td className={`px-6 py-4 text-right font-black font-mono tracking-tighter ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -160,9 +160,9 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                             </td>
                                             <td className="px-6 py-4 text-right font-bold text-slate-300 font-mono tracking-tighter">
                                                 {tx.balance_after ? tx.balance_after.toLocaleString('de-DE', { minimumFractionDigits: isCoin ? 0 : 2 }) : '-'}
-                                                <span className="text-[10px] text-slate-500 ml-1">{isCoin ? 'C' : '€'}</span>
+                                                <span className="text-[10px] text-[var(--text-muted)] ml-1">{isCoin ? 'C' : '€'}</span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-slate-500 italic max-w-xs truncate">
+                                            <td className="px-6 py-4 text-sm text-[var(--text-muted)] italic max-w-xs truncate">
                                                 {tx.note || '-'}
                                             </td>
                                         </motion.tr>
@@ -174,7 +174,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
 
                     {/* Pagination */}
                     {transactions.links.length > 3 && (
-                        <div className="px-6 py-6 border-t border-slate-800/50 flex justify-center gap-2">
+                        <div className="px-6 py-6 border-t border-[var(--border-muted)] flex justify-center gap-2">
                             {transactions.links.map((link, i) => (
                                 <Link
                                     key={i}
@@ -183,7 +183,7 @@ export default function Finances({ clubs, activeClub, transactions }) {
                                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                         link.active 
                                             ? 'bg-amber-600 text-black shadow-[0_0_10px_rgba(217,177,92,0.3)]' 
-                                            : 'text-slate-500 hover:text-white hover:bg-slate-800'
+                                            : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]'
                                     } ${!link.url && 'opacity-30 pointer-events-none'}`}
                                 />
                             ))}
@@ -199,9 +199,9 @@ const Card = ({ title, children, icon: Icon }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sim-card border-slate-800/50"
+        className="sim-card border-[var(--border-muted)]"
     >
-        <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/40 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 flex items-center justify-between">
             <div className="flex items-center gap-3">
                 <Icon size={20} weight="duotone" className="text-amber-500" />
                 <h2 className="text-lg font-black text-white tracking-tight uppercase">{title}</h2>

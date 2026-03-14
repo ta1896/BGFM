@@ -10,7 +10,7 @@ import {
 const StatusBadge = ({ status }) => {
     const configs = {
         live:      { cls: 'bg-rose-500/20 border-rose-500/40 text-rose-400', label: 'LIVE', pulse: true },
-        scheduled: { cls: 'bg-slate-800 border-slate-700 text-slate-400',    label: 'GEPLANT', pulse: false },
+        scheduled: { cls: 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)]',    label: 'GEPLANT', pulse: false },
         played:    { cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500', label: 'BEENDET', pulse: false },
     };
     const cfg = configs[status] || configs.scheduled;
@@ -36,8 +36,8 @@ const MatchCard = ({ match, ownedClubIds }) => {
                 className={`flex items-center gap-6 px-6 py-5 transition-all border-b border-white/5 hover:bg-white/[0.03] group ${isOwned ? 'bg-amber-500/[0.02]' : ''}`}
             >
                 {/* Competition Badge */}
-                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
-                    <span className="text-[9px] font-black text-slate-500 uppercase">
+                <div className="w-10 h-10 rounded-xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center shrink-0">
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase">
                         {match.competition_season?.competition?.code || 'LG'}
                     </span>
                 </div>
@@ -62,7 +62,7 @@ const MatchCard = ({ match, ownedClubIds }) => {
                                 {match.home_score ?? 0} : {match.away_score ?? 0}
                             </span>
                         ) : (
-                            <span className="text-lg font-black text-slate-400 italic">{match.kickoff_formatted?.split(' ')[1] || '-'}</span>
+                            <span className="text-lg font-black text-[var(--text-muted)] italic">{match.kickoff_formatted?.split(' ')[1] || '-'}</span>
                         )}
                         <StatusBadge status={match.status} />
                     </div>
@@ -111,7 +111,7 @@ export default function Matches({
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Wettbewerb</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Wettbewerb</p>
                         <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">
                             Spielplan
                         </h1>
@@ -123,9 +123,9 @@ export default function Matches({
                 </div>
 
                 {/* Filters */}
-                <div className="sim-card p-5 bg-[#0c1222]/60 border-slate-800/50">
+                <div className="sim-card p-5 bg-[#0c1222]/60 border-[var(--border-muted)]">
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                             <FunnelSimple size={14} weight="bold" />
                             Filter
                         </div>
@@ -152,7 +152,7 @@ export default function Matches({
                                 className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                                     localFilters.status === s
                                         ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                                        : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+                                        : 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-slate-300'
                                 }`}
                             >
                                 {s === 'scheduled' ? 'Geplant' : s === 'live' ? 'Live' : 'Beendet'}
@@ -167,7 +167,7 @@ export default function Matches({
                                 className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
                                     localFilters.scope === s
                                         ? 'bg-amber-600/20 border-amber-600/40 text-amber-600'
-                                        : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
+                                        : 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-slate-300'
                                 }`}
                             >
                                 {s === 'today' ? 'Heute' : s === 'week' ? 'Diese Woche' : 'Bevorstehend'}
@@ -187,14 +187,14 @@ export default function Matches({
                 {/* Match Groups */}
                 <div className="space-y-6">
                     {groups.length === 0 ? (
-                        <div className="sim-card p-20 text-center border-dashed border-slate-800">
+                        <div className="sim-card p-20 text-center border-dashed border-[var(--border-pillar)]">
                             <SoccerBall size={48} weight="thin" className="text-slate-700 mx-auto mb-6" />
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm italic">Keine Spiele gefunden</p>
+                            <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm italic">Keine Spiele gefunden</p>
                         </div>
                     ) : groups.map(([groupKey, matches]) => (
                         <div key={groupKey} className="sim-card overflow-hidden p-0">
                             {/* Group Header */}
-                            <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-4">
+                            <div className="px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 flex items-center gap-4">
                                 <div className="w-8 h-8 rounded-lg bg-amber-600/20 border border-amber-600/20 flex items-center justify-center">
                                     <span className="text-[10px] font-black text-amber-600">
                                         {groupType === 'matchday' ? groupKey : groupKey?.split('-')[2]}

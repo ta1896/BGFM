@@ -48,7 +48,7 @@ export default function Logs({ logs }) {
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl transition text-sm font-bold border ${
                                 item.active 
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 border-indigo-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'
+                                : 'bg-[var(--bg-content)] text-slate-300 hover:bg-slate-700 border-[var(--border-pillar)]'
                             }`}
                         >
                             {item.icon}
@@ -58,19 +58,19 @@ export default function Logs({ logs }) {
                 </div>
 
                 <article className="sim-card overflow-hidden">
-                    <div className="p-5 border-b border-white/5 bg-slate-800/20">
+                    <div className="p-5 border-b border-white/5 bg-[var(--bg-content)]/20">
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Error</span>
+                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Error</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Warning</span>
+                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Warning</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-slate-500 shadow-[0_0_8px_rgba(100,116,139,0.5)]"></span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Info</span>
+                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Info</span>
                             </div>
                         </div>
                     </div>
@@ -80,7 +80,7 @@ export default function Logs({ logs }) {
                             <LogEntry key={idx} log={log} index={idx} />
                         ))}
                         {logs.length === 0 && (
-                            <div className="p-20 text-center text-slate-500 italic">
+                            <div className="p-20 text-center text-[var(--text-muted)] italic">
                                 Keine Log-Einträge vorhanden.
                             </div>
                         )}
@@ -100,14 +100,14 @@ function LogEntry({ log, index }) {
         ALERT: 'bg-red-500/20 text-red-400 border-red-500/20',
         EMERGENCY: 'bg-red-500/20 text-red-400 border-red-500/20',
         WARNING: 'bg-orange-500/20 text-orange-400 border-orange-500/20',
-        INFO: 'bg-slate-700/50 text-slate-300 border-slate-700/50',
-        DEBUG: 'bg-slate-800 text-slate-500 border-slate-800',
+        INFO: 'bg-slate-700/50 text-slate-300 border-[var(--border-muted)]',
+        DEBUG: 'bg-[var(--bg-content)] text-[var(--text-muted)] border-[var(--border-pillar)]',
     };
 
     return (
         <div className="px-5 py-4 border-b border-white/5 hover:bg-white/5 transition-colors group">
             <div className="flex items-start gap-4">
-                <span className="text-slate-500 shrink-0 select-none opacity-50">{log.timestamp}</span>
+                <span className="text-[var(--text-muted)] shrink-0 select-none opacity-50">{log.timestamp}</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter shrink-0 border ${levelStyles[log.level] || levelStyles.INFO}`}>
                     {log.level}
                 </span>
@@ -132,7 +132,7 @@ function LogEntry({ log, index }) {
                                         exit={{ height: 0, opacity: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="mt-2 p-4 bg-black/60 rounded-xl border border-white/5 text-[10px] text-slate-400 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar font-mono ring-1 ring-inset ring-white/5 shadow-inner">
+                                        <div className="mt-2 p-4 bg-black/60 rounded-xl border border-white/5 text-[10px] text-[var(--text-muted)] whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar font-mono ring-1 ring-inset ring-white/5 shadow-inner">
                                             {log.context}
                                         </div>
                                     </motion.div>

@@ -22,7 +22,7 @@ const Card = ({ title, children, icon: Icon, color = 'cyan' }) => (
 
 const AttributeInput = ({ label, value, onChange, icon: Icon, error }) => (
     <div className="space-y-1.5">
-        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1">
+        <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
             {Icon && <Icon size={10} />}
             {label}
         </label>
@@ -31,7 +31,7 @@ const AttributeInput = ({ label, value, onChange, icon: Icon, error }) => (
                 type="number"
                 min="1"
                 max="100"
-                className="sim-input w-full text-center font-black group-hover:border-cyan-500/30 transition-all border-slate-700/50"
+                className="sim-input w-full text-center font-black group-hover:border-cyan-500/30 transition-all border-[var(--border-muted)]"
                 value={value}
                 onChange={onChange}
                 required
@@ -96,7 +96,7 @@ export default function Form({ player, clubs, positions }) {
                     <div className="flex items-center gap-4">
                         <Link 
                             href={route('admin.players.index')}
-                            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+                            className="p-2 rounded-xl bg-[var(--bg-content)] text-[var(--text-muted)] hover:text-white transition"
                         >
                             <ArrowLeft size={20} weight="bold" />
                         </Link>
@@ -104,7 +104,7 @@ export default function Form({ player, clubs, positions }) {
                             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic border-l-4 border-cyan-500 pl-4">
                                 {isEdit ? 'Profil Editieren' : 'Neuer Spieler'}
                             </h2>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1 pl-4">
+                            <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1 pl-4">
                                 {isEdit ? player.full_name : 'Global Player Registry'}
                             </p>
                         </div>
@@ -117,7 +117,7 @@ export default function Form({ player, clubs, positions }) {
                         <Card title="Personalien & Info" icon={IdentificationBadge}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Vorname</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Vorname</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -129,7 +129,7 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nachname</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Nachname</label>
                                     <input 
                                         type="text"
                                         className="sim-input w-full"
@@ -141,7 +141,7 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Aktueller Verein</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Aktueller Verein</label>
                                     <select 
                                         className="sim-select w-full"
                                         value={data.club_id}
@@ -156,7 +156,7 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Primäre Position</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Primäre Position</label>
                                     <select 
                                         className="sim-select w-full"
                                         value={data.position}
@@ -171,7 +171,7 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Alter</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Alter</label>
                                     <input 
                                         type="number"
                                         min="15"
@@ -185,17 +185,17 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Foto Upload</label>
-                                    <div className="relative group p-2.5 rounded-xl bg-slate-950/50 border border-slate-700/50 hover:border-cyan-500/30 transition-all flex items-center gap-3">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Foto Upload</label>
+                                    <div className="relative group p-2.5 rounded-xl bg-[var(--sim-shell-bg)]/50 border border-[var(--border-muted)] hover:border-cyan-500/30 transition-all flex items-center gap-3">
                                         <input 
                                             type="file" 
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                             onChange={e => setData('photo', e.target.files[0])}
                                         />
-                                        <div className="p-1 rounded bg-slate-800 text-slate-500">
+                                        <div className="p-1 rounded bg-[var(--bg-content)] text-[var(--text-muted)]">
                                             <Image size={16} />
                                         </div>
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider truncate">
+                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider truncate">
                                             {data.photo ? data.photo.name : 'Neues Foto wählen...'}
                                         </span>
                                     </div>
@@ -210,7 +210,7 @@ export default function Form({ player, clubs, positions }) {
                                     <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.2em] mb-4">Hauptattribute</p>
                                     <div className="p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between group">
                                          <div>
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Stärkerating (OVR)</p>
+                                            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Stärkerating (OVR)</p>
                                             <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Wichtigster Skill-Indicator</p>
                                          </div>
                                          <input 
@@ -239,7 +239,7 @@ export default function Form({ player, clubs, positions }) {
                         <Card title="Werte & Finanzen" icon={Coins} color="amber">
                             <div className="space-y-6">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Marktwert (€)</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Marktwert (€)</label>
                                     <div className="relative group">
                                         <input 
                                             type="number"
@@ -254,7 +254,7 @@ export default function Form({ player, clubs, positions }) {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Gehalt / Woche (€)</label>
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Gehalt / Woche (€)</label>
                                     <div className="relative group">
                                         <input 
                                             type="number"
@@ -271,12 +271,12 @@ export default function Form({ player, clubs, positions }) {
                         </Card>
 
                         <div className="sim-card p-6 space-y-6">
-                             <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 border-dashed">
+                             <div className="p-4 rounded-xl bg-[var(--bg-pillar)]/50 border border-[var(--border-pillar)] border-dashed">
                                 <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                                     <Info size={14} className="text-cyan-500" />
                                     Admin Info
                                 </h4>
-                                <p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-tighter">
+                                <p className="text-[10px] text-[var(--text-muted)] leading-relaxed font-bold uppercase tracking-tighter">
                                     Änderungen an den Attributen wirken sich unmittelbar auf die Simulation aus.
                                     Nutze den OVR als primären Balancer.
                                 </p>

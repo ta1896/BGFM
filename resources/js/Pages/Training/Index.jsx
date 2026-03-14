@@ -35,10 +35,10 @@ const Card = ({ title, children, icon: Icon, className = "" }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`sim-card border-slate-800/50 ${className}`}
+        className={`sim-card border-[var(--border-muted)] ${className}`}
     >
         {title && (
-            <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/40 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Icon size={20} weight="duotone" className="text-amber-500" />
                     <h2 className="text-lg font-black text-white tracking-tight uppercase">{title}</h2>
@@ -79,7 +79,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                     <WarningCircle size={64} weight="thin" className="text-slate-700 mb-6" />
                     <h2 className="text-2xl font-bold text-white mb-2">Kein Verein aktiv</h2>
-                    <p className="text-slate-400 max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste.</p>
+                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste.</p>
                 </div>
             </AuthenticatedLayout>
         );
@@ -116,11 +116,11 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                             <Card title="Neue Trainingseinheit Planen" icon={Plus}>
                                 <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Typ</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Typ</label>
                                         <select 
                                             value={data.type}
                                             onChange={e => setData('type', e.target.value)}
-                                            className="w-full bg-slate-900 border-slate-800 rounded-xl text-white font-bold"
+                                            className="w-full bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-xl text-white font-bold"
                                         >
                                             <option value="technical">Technik</option>
                                             <option value="tactics">Taktik</option>
@@ -130,11 +130,11 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Intensität</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Intensität</label>
                                         <select 
                                             value={data.intensity}
                                             onChange={e => setData('intensity', e.target.value)}
-                                            className="w-full bg-slate-900 border-slate-800 rounded-xl text-white font-bold"
+                                            className="w-full bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-xl text-white font-bold"
                                         >
                                             <option value="low">Niedrig</option>
                                             <option value="medium">Mittel</option>
@@ -142,16 +142,16 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Datum</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Datum</label>
                                         <input 
                                             type="date"
                                             value={data.session_date}
                                             onChange={e => setData('session_date', e.target.value)}
-                                            className="w-full bg-slate-900 border-slate-800 rounded-xl text-white font-bold"
+                                            className="w-full bg-[var(--bg-pillar)] border-[var(--border-pillar)] rounded-xl text-white font-bold"
                                         />
                                     </div>
                                     <div className="space-y-2 lg:col-span-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Aktion</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Aktion</label>
                                         <button 
                                             type="submit" 
                                             disabled={processing}
@@ -171,7 +171,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="border-b border-slate-800/50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                <tr className="border-b border-[var(--border-muted)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                                     <th className="px-6 py-4">Datum</th>
                                     <th className="px-6 py-4">Typ</th>
                                     <th className="px-6 py-4">Intensität</th>
@@ -191,13 +191,13 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                             className="group hover:bg-white/[0.02] transition-colors"
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-bold text-slate-400 font-mono italic">
+                                                <span className="text-sm font-bold text-[var(--text-muted)] font-mono italic">
                                                     {new Date(session.session_date).toLocaleDateString('de-DE')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-amber-500 border border-slate-700/50">
+                                                    <div className="h-8 w-8 rounded-lg bg-[var(--bg-content)] flex items-center justify-center text-amber-500 border border-[var(--border-muted)]">
                                                         <Icon size={18} weight="duotone" />
                                                     </div>
                                                     <span className="text-sm font-black text-white uppercase tracking-tight">
@@ -238,7 +238,7 @@ export default function Training({ clubs, sessions, filters, prefillClubId, pref
                                 })}
                                 {sessions.data.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-12 text-center text-slate-500 italic text-sm">
+                                        <td colSpan="5" className="px-6 py-12 text-center text-[var(--text-muted)] italic text-sm">
                                             Keine Trainingseinheiten für diesen Zeitraum geplant.
                                         </td>
                                     </tr>

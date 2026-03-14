@@ -33,32 +33,32 @@ const ACTION_CONFIG = {
     tackle:            { Icon: HandFist,          color: 'text-amber-600',    bg: 'bg-amber-600/15 border-amber-600/20' },
     tackle_won:        { Icon: HandFist,          color: 'text-amber-600',    bg: 'bg-amber-600/15 border-amber-600/20' },
     tackle_lost:       { Icon: HandFist,          color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/15' },
-    clearance:         { Icon: Wind,              color: 'text-slate-400',   bg: 'bg-slate-800 border-slate-700' },
+    clearance:         { Icon: Wind,              color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-content)] border-[var(--border-pillar)]' },
     interception:      { Icon: CornersOut,        color: 'text-teal-400',    bg: 'bg-teal-500/15 border-teal-500/20' },
     // Shots
     shot:              { Icon: Lightning,         color: 'text-amber-300',   bg: 'bg-amber-500/15 border-amber-500/20' },
     chance:            { Icon: Lightning,         color: 'text-amber-300',   bg: 'bg-amber-500/15 border-amber-500/20' },
     shot_on_target:    { Icon: Crosshair,         color: 'text-amber-400',   bg: 'bg-amber-500/20 border-amber-500/30' },
-    shot_off_target:   { Icon: Crosshair,         color: 'text-slate-500',   bg: 'bg-slate-800 border-slate-700' },
-    shot_blocked:      { Icon: Prohibit,          color: 'text-slate-400',   bg: 'bg-slate-800 border-slate-700' },
+    shot_off_target:   { Icon: Crosshair,         color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-content)] border-[var(--border-pillar)]' },
+    shot_blocked:      { Icon: Prohibit,          color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-content)] border-[var(--border-pillar)]' },
     // Set Pieces
     corner:            { Icon: Flag,              color: 'text-sky-400',     bg: 'bg-sky-500/15 border-sky-500/20' },
     free_kick:         { Icon: Target,            color: 'text-violet-400',  bg: 'bg-violet-500/15 border-violet-500/20' },
     // Passing
-    pass:              { Icon: ArrowBendUpRight,  color: 'text-slate-500',   bg: 'bg-slate-900 border-slate-800' },
-    pass_completed:    { Icon: ArrowBendUpRight,  color: 'text-emerald-500/70', bg: 'bg-slate-900 border-slate-800' },
-    pass_failed:       { Icon: ArrowBendUpRight,  color: 'text-rose-400/50', bg: 'bg-slate-900 border-slate-800' },
+    pass:              { Icon: ArrowBendUpRight,  color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
+    pass_completed:    { Icon: ArrowBendUpRight,  color: 'text-emerald-500/70', bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
+    pass_failed:       { Icon: ArrowBendUpRight,  color: 'text-rose-400/50', bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
     key_pass:          { Icon: Star,              color: 'text-amber-400',   bg: 'bg-amber-500/20 border-amber-500/30' },
     // Dribble
     dribble:           { Icon: PersonSimpleRun,   color: 'text-purple-400',  bg: 'bg-purple-500/15 border-purple-500/20' },
     dribble_success:   { Icon: PersonSimpleRun,   color: 'text-purple-400',  bg: 'bg-purple-500/15 border-purple-500/20' },
-    dribble_failed:    { Icon: PersonSimpleRun,   color: 'text-rose-400/50', bg: 'bg-slate-900 border-slate-800' },
+    dribble_failed:    { Icon: PersonSimpleRun,   color: 'text-rose-400/50', bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
     // Foul / Offside
     foul:              { Icon: WarningDiamond,    color: 'text-orange-400',  bg: 'bg-orange-500/15 border-orange-500/20' },
     offside:           { Icon: Flag,              color: 'text-rose-300',    bg: 'bg-rose-500/10 border-rose-500/15' },
     // Possession / Misc
-    possession_loss:   { Icon: Timer,             color: 'text-slate-500',   bg: 'bg-slate-900 border-slate-800' },
-    pressure:          { Icon: Wind,              color: 'text-slate-500',   bg: 'bg-slate-900 border-slate-800' },
+    possession_loss:   { Icon: Timer,             color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
+    pressure:          { Icon: Wind,              color: 'text-[var(--text-muted)]',   bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
     assist:            { Icon: ArrowRight,         color: 'text-amber-500',   bg: 'bg-amber-500/15 border-amber-500/20' },
     // Fallback
     default:           { Icon: CaretRight,        color: 'text-slate-600',   bg: 'bg-transparent border-transparent' },
@@ -81,7 +81,7 @@ const StatBar = ({ label, home, away }) => {
         <div className="space-y-1.5">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                 <span className="text-white">{home ?? 0}</span>
-                <span className="text-slate-500">{label}</span>
+                <span className="text-[var(--text-muted)]">{label}</span>
                 <span className="text-white">{away ?? 0}</span>
             </div>
             <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
@@ -98,12 +98,12 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
     const isPlayed = status === 'played';
 
     return (
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#080d1a] to-[#0e1628] border border-slate-800/50 shadow-2xl">
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#080d1a] to-[#0e1628] border border-[var(--border-muted)] shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-600/5 pointer-events-none" />
             <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-64 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
 
             {/* Competition bar */}
-            <div className="flex items-center justify-center gap-3 pt-8 pb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <div className="flex items-center justify-center gap-3 pt-8 pb-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                 <Trophy size={12} weight="fill" className="text-amber-500" />
                 {competition || type || 'Spiel'}
                 {matchday && <span>• Spieltag {matchday}</span>}
@@ -141,7 +141,7 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
                     <div className={`flex items-center gap-2 px-5 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest ${
                         isLive ? 'bg-rose-500/15 border-rose-500/40 text-rose-400' :
                         isPlayed ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                        'bg-slate-900 border-slate-800 text-slate-500'
+                        'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)]'
                     }`}>
                         {isLive && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" /></span>}
                         {isLive ? `${live_minute}'` : isPlayed ? 'Beendet' : 'Geplant'}
@@ -209,7 +209,7 @@ const TickerItem = ({ action, homeClubId }) => {
 
             {/* Icon bubble — ALWAYS visible */}
             <div className={`w-9 h-9 rounded-2xl border flex items-center justify-center shrink-0 transition-all ${
-                key ? bg : 'bg-slate-900/60 border-slate-800'
+                key ? bg : 'bg-[var(--bg-pillar)]/60 border-[var(--border-pillar)]'
             }`}>
                 <ActionIcon type={action.action_type} size={key ? 18 : 15} />
             </div>
@@ -221,20 +221,20 @@ const TickerItem = ({ action, homeClubId }) => {
                     <p className="text-xs font-black text-white uppercase tracking-tight leading-tight mb-0.5">
                         <span className={`${color} mr-1`}>{EVENT_LABELS[action.action_type] || action.action_type}</span>
                         {action.player_name && <span className="text-slate-200">• {action.player_name}</span>}
-                        {action.assister_name && <span className="text-slate-500"> (V: {action.assister_name})</span>}
-                        {action.metadata?.score && <span className="text-slate-400 italic ml-2">[{action.metadata.score}]</span>}
+                        {action.assister_name && <span className="text-[var(--text-muted)]"> (V: {action.assister_name})</span>}
+                        {action.metadata?.score && <span className="text-[var(--text-muted)] italic ml-2">[{action.metadata.score}]</span>}
                     </p>
                 )}
                 {/* Regular event label (non-key) */}
                 {!key && action.action_type && (
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-0.5">
                         {EVENT_LABELS[action.action_type] || action.action_type}
                         {action.player_name && <span className="text-slate-600 ml-1">• {action.player_name}</span>}
                     </p>
                 )}
                 {/* Narrative */}
                 {action.narrative && (
-                    <p className={`text-xs leading-snug ${key ? 'text-slate-400' : 'text-slate-600'}`}>{action.narrative}</p>
+                    <p className={`text-xs leading-snug ${key ? 'text-[var(--text-muted)]' : 'text-slate-600'}`}>{action.narrative}</p>
                 )}
                 {/* Club badge */}
                 {key && action.club_short_name && (
@@ -290,7 +290,7 @@ const LineupToken = ({ player, accent, livePlayerStates }) => {
     return (
         <div className="flex flex-col items-center gap-1 relative">
             <div className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-md 
-                ${isOff ? 'opacity-40 border-rose-500/60 bg-rose-950/60' : `bg-slate-950 border-${accent}-400/80`}
+                ${isOff ? 'opacity-40 border-rose-500/60 bg-rose-950/60' : `bg-[var(--sim-shell-bg)] border-${accent}-400/80`}
             `}>
                 {player.photo_url
                     ? <img loading="lazy" src={player.photo_url} className="w-full h-full rounded-full object-cover" />
@@ -360,7 +360,7 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
                         {bench.map(p => (
                             <div key={p.id} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg bg-${accent}-500/5 border border-${accent}-500/10`}>
                                 <span className={`text-[8px] font-black text-${accent}-400`}>{p.overall}</span>
-                                <span className="text-[8px] font-bold text-slate-400 truncate max-w-[60px]">{p.name?.split(' ').pop()}</span>
+                                <span className="text-[8px] font-bold text-[var(--text-muted)] truncate max-w-[60px]">{p.name?.split(' ').pop()}</span>
                                 <span className="text-[7px] font-black text-slate-700 uppercase">{p.position}</span>
                             </div>
                         ))}
@@ -446,7 +446,7 @@ export default function Show({
 
             <div className="max-w-[1300px] mx-auto space-y-8">
                 {/* Back Link */}
-                <Link href={route('league.matches')} className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-amber-500 transition-colors w-fit">
+                <Link href={route('league.matches')} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest hover:text-amber-500 transition-colors w-fit">
                     <ArrowLeft size={14} weight="bold" />
                     Spielplan
                 </Link>
@@ -481,7 +481,7 @@ export default function Show({
                             <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black ${
                                 a.action_type === 'goal' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                 a.action_type === 'yellow_card' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
-                                'bg-slate-900 border-slate-800 text-slate-400'
+                                'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)]'
                             }`}>
                                 <ActionIcon type={a.action_type} />
                                 <span>{a.minute}'</span>
@@ -492,18 +492,18 @@ export default function Show({
                 )}
 
                 {/* Tab Nav */}
-                <nav className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/60 border border-slate-800 w-fit flex-wrap">
+                <nav className="flex items-center gap-1 p-1 rounded-2xl bg-[var(--bg-pillar)]/60 border border-[var(--border-pillar)] w-fit flex-wrap">
                     {tabs.map(t => (
                         <button
                             key={t.key}
                             onClick={() => setTab(t.key)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                tab === t.key ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'
+                                tab === t.key ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-[var(--text-muted)] hover:text-slate-300'
                             }`}
                         >
                             {t.label}
                             {t.count > 0 && (
-                                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black ${tab === t.key ? 'bg-black/20' : 'bg-slate-800 text-slate-400'}`}>
+                                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black ${tab === t.key ? 'bg-black/20' : 'bg-[var(--bg-content)] text-[var(--text-muted)]'}`}>
                                     {t.count}
                                 </span>
                             )}
@@ -523,7 +523,7 @@ export default function Show({
                                 { label: 'Ø Alter', home: comparison?.home?.avg_age, away: comparison?.away?.avg_age, fmt: (v) => parseFloat(v).toFixed(1) },
                             ].map(({ label, home, away, fmt }) => (
                                 <div key={label} className="sim-card p-6">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center mb-6">{label}</p>
+                                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest text-center mb-6">{label}</p>
                                     <div className="flex items-center justify-between text-sm font-black text-white mb-4">
                                         <span className="text-amber-500">{fmt(home || 0)}</span>
                                         <span className="text-slate-700">vs</span>
@@ -539,7 +539,7 @@ export default function Show({
                     {tab === 'ticker' && (
                         <motion.div key="ticker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <div className="sim-card overflow-hidden p-0">
-                                <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-3">
+                                <div className="px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 flex items-center gap-3">
                                     <SoccerBall size={18} weight="fill" className="text-amber-500" />
                                     <h3 className="text-xs font-black text-white uppercase tracking-widest">Spielverlauf</h3>
                                     <span className="ml-auto text-[9px] font-black text-slate-600 uppercase tracking-widest">{allActions.length} Aktionen</span>
@@ -547,7 +547,7 @@ export default function Show({
                                 {allActions.length === 0 ? (
                                     <div className="p-20 text-center">
                                         <SoccerBall size={48} weight="thin" className="text-slate-700 mx-auto mb-6" />
-                                        <p className="text-slate-500 italic font-bold uppercase tracking-widest text-sm">Noch keine Aktionen.</p>
+                                        <p className="text-[var(--text-muted)] italic font-bold uppercase tracking-widest text-sm">Noch keine Aktionen.</p>
                                     </div>
                                 ) : (
                                     <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
@@ -581,7 +581,7 @@ export default function Show({
                             className="sim-card p-8"
                         >
                             {(!hState && !aState) ? (
-                                <p className="text-center text-slate-500 italic py-12">Noch keine Statistiken verfügbar.</p>
+                                <p className="text-center text-[var(--text-muted)] italic py-12">Noch keine Statistiken verfügbar.</p>
                             ) : (
                                 <div className="space-y-6 max-w-2xl mx-auto">
                                     {[
@@ -608,7 +608,7 @@ export default function Show({
                                 const players = final_stats.filter(s => s.club_id === club?.id).sort((a, b) => b.rating - a.rating);
                                 return (
                                     <div key={club?.id} className="sim-card overflow-hidden p-0">
-                                        <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-4">
+                                        <div className="px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 flex items-center gap-4">
                                             <img loading="lazy" src={club?.logo_url} className="w-8 h-8 object-contain" />
                                             <p className="text-xs font-black text-white uppercase tracking-tighter">{club?.name}</p>
                                         </div>
@@ -619,11 +619,11 @@ export default function Show({
                                             {players.map(p => (
                                                 <div key={p.player_id} className="grid grid-cols-[1fr_3.5rem_3.5rem_3.5rem_3.5rem_3.5rem] px-4 py-3 border-b border-white/5 items-center hover:bg-white/[0.02]">
                                                     <span className="text-xs font-bold text-white truncate">{p.player_name}</span>
-                                                    <span className="text-center text-[10px] text-slate-400">{p.minutes_played}'</span>
+                                                    <span className="text-center text-[10px] text-[var(--text-muted)]">{p.minutes_played}'</span>
                                                     <span className="text-center text-[10px] text-emerald-400 font-black">{p.goals}</span>
                                                     <span className="text-center text-[10px] text-amber-500 font-black">{p.assists}</span>
-                                                    <span className="text-center text-[10px] text-slate-500">{p.shots}</span>
-                                                    <span className={`text-center text-xs font-black italic ${p.rating >= 7 ? 'text-emerald-400' : 'text-slate-400'}`}>{parseFloat(p.rating).toFixed(1)}</span>
+                                                    <span className="text-center text-[10px] text-[var(--text-muted)]">{p.shots}</span>
+                                                    <span className={`text-center text-xs font-black italic ${p.rating >= 7 ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>{parseFloat(p.rating).toFixed(1)}</span>
                                                 </div>
                                             ))}
                                         </div>
