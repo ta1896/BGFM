@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { 
@@ -23,8 +23,9 @@ import {
     Warning
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Chart from 'react-apexcharts';
 import axios from 'axios';
+
+const ApexChart = lazy(() => import('react-apexcharts'));
 
 export default function Lab({ clubs }) {
     const [mode, setMode] = useState('single');
@@ -396,6 +397,22 @@ export default function Lab({ clubs }) {
     );
 }
 
+function LazyChart(props) {
+    return (
+        <Suspense fallback={<ChartSkeleton />}>
+            <ApexChart {...props} />
+        </Suspense>
+    );
+}
+
+function ChartSkeleton() {
+    return (
+        <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/5 bg-[var(--bg-content)]/20 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            Lade Diagramm...
+        </div>
+    );
+}
+
 function SingleResult({ data }) {
     return (
         <div className="space-y-6">
@@ -571,7 +588,7 @@ function BatchResult({ data }) {
                     </h4>
                 </div>
                 <div className="h-64">
-                    <Chart options={chartOptions} series={chartOptions.series} type="bar" height="100%" />
+                    <LazyChart options={chartOptions} series={chartOptions.series} type="bar" height="100%" />
                 </div>
             </div>
         </div>

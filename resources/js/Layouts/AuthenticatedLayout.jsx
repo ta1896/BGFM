@@ -1,84 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     House, Tray, Bank, Briefcase, BuildingOffice, UsersThree,
     Users, GraduationCap, Tent, Calendar, Trophy, HandPeace,
     Star, FileText,
     MagnifyingGlass, Gear, CaretDown, SignOut, List, X,
-    CaretRight, Bell
+    Bell
 } from '@phosphor-icons/react';
+import SidebarMenuGroup from '@/Components/SidebarMenuGroup';
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
-
-const MenuGroup = React.memo(({ group, currentRoute }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    // Check if any item in this group is active
-    useEffect(() => {
-        const hasActive = group.items.some(item => {
-            if (item.active.endsWith('.*')) {
-                const base = item.active.replace('.*', '');
-                return currentRoute ? currentRoute.startsWith(base) : false;
-            }
-            return currentRoute === item.active;
-        });
-        if (hasActive) setIsOpen(true);
-    }, [currentRoute, group.items]);
-
-    return (
-        <div className="mb-2">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors group/btn rounded-lg hover:bg-[var(--bg-content)]/50 focus:outline-none"
-            >
-                <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors">
-                    {group.label}
-                </span>
-                <CaretDown
-                    size={14}
-                    weight="bold"
-                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
-                />
-            </button>
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
-                    >
-                        {group.items.map((item, idx) => {
-                            const isActive = item.active.endsWith('.*')
-                                ? (currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false)
-                                : currentRoute === item.active;
-
-                            return (
-                                <Link
-                                    key={idx}
-                                    href={route(item.route)}
-                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-[color,background-color] rounded-lg group ${
-                                        isActive
-                                            ? 'text-[var(--text-main)] bg-[var(--bg-content)]/50'
-                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30'
-                                    }`}
-                                >
-                                    {isActive ? (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                                    ) : (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-800 group-hover:bg-amber-800 transition-colors" />
-                                    )}
-                                    {item.label}
-                                </Link>
-                            );
-                        })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-});
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, activeClub, userClubs, flash } = usePage().props;
@@ -201,7 +132,15 @@ export default function AuthenticatedLayout({ header, children }) {
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
                     {Object.entries(menuGroups).map(([key, group]) => (
-                        <MenuGroup key={key} group={group} currentRoute={currentRoute} />
+                        <SidebarMenuGroup
+                            key={key}
+                            group={group}
+                            currentRoute={currentRoute}
+                            autoOpenActive
+                            activeTextClassName="text-[var(--text-main)] bg-[var(--bg-content)]/50"
+                            inactiveTextClassName="text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30"
+                            labelClassName="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors"
+                        />
                     ))}
                 </nav>
 
@@ -229,41 +168,34 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <CaretDown size={14} className={`transition-transform duration-200 ${clubSelectorOpen ? 'rotate-180' : ''}`} />
                             </button>
 
-                            <AnimatePresence>
-                                {clubSelectorOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute bottom-full left-0 mb-2 w-full rounded-xl bg-[var(--bg-content)] border border-[var(--border-pillar)] shadow-2xl overflow-hidden z-[60] max-h-64 overflow-y-auto custom-scrollbar"
-                                    >
-                                        <div className="p-1.5 space-y-1">
-                                            {userClubs.map(club => (
-                                                <button
-                                                    key={club.id}
-                                                    onClick={() => {
-                                                        router.get(route('dashboard', { club: club.id }));
-                                                        setClubSelectorOpen(false);
-                                                    }}
-                                                    className={`w-full flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition group ${
-                                                        activeClub?.id === club.id 
-                                                            ? 'bg-indigo-600/20 text-indigo-300' 
-                                                            : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
-                                                    }`}
-                                                >
-                                                    <div className="h-7 w-7 rounded-full overflow-hidden bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex-shrink-0">
-                                                        <img loading="lazy" src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
-                                                    </div>
-                                                    <span className="truncate flex-1 text-left font-medium">{club.name}</span>
-                                                    {activeClub?.id === club.id && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.6)]" />
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            {clubSelectorOpen && (
+                                <div className="absolute bottom-full left-0 mb-2 w-full rounded-xl bg-[var(--bg-content)] border border-[var(--border-pillar)] shadow-2xl overflow-hidden z-[60] max-h-64 overflow-y-auto custom-scrollbar">
+                                    <div className="p-1.5 space-y-1">
+                                        {userClubs.map(club => (
+                                            <button
+                                                key={club.id}
+                                                onClick={() => {
+                                                    router.get(route('dashboard', { club: club.id }));
+                                                    setClubSelectorOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition group ${
+                                                    activeClub?.id === club.id 
+                                                        ? 'bg-indigo-600/20 text-indigo-300' 
+                                                        : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                                                }`}
+                                            >
+                                                <div className="h-7 w-7 rounded-full overflow-hidden bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex-shrink-0">
+                                                    <img loading="lazy" src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
+                                                </div>
+                                                <span className="truncate flex-1 text-left font-medium">{club.name}</span>
+                                                {activeClub?.id === club.id && (
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.6)]" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -281,13 +213,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 )}
 
                 <div className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-[var(--bg-content)]/50 group border border-transparent hover:border-[var(--border-pillar)]/30">
-                    <div className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5">
-                         <img loading="lazy" 
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
-                            alt={auth.user.name}
-                            className="w-full h-full rounded-full"
-                         />
-                    </div>
+                    <UserAvatar
+                        name={auth.user.name}
+                        className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5"
+                        textClassName="text-xs font-black text-black"
+                    />
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
                         <p className="truncate text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-left">
@@ -346,13 +276,9 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full custom-scrollbar">
                     {flash.status && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5 text-left"
-                        >
+                        <div className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5 text-left">
                             {flash.status}
-                        </motion.div>
+                        </div>
                     )}
                     
                     {children}
@@ -361,17 +287,12 @@ export default function AuthenticatedLayout({ header, children }) {
         </div>
 
             {/* Backdrop for mobile */}
-            <AnimatePresence>
-                {sidebarOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setSidebarOpen(false)}
-                        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-                    />
-                )}
-            </AnimatePresence>
+            {sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                />
+            )}
             
             <style dangerouslySetInnerHTML={{ __html: `
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }

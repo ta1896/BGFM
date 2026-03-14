@@ -1,7 +1,6 @@
 import React from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Sparkle, Crosshair, Crown, Sun } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
 
 const themes = [
     {
@@ -64,10 +63,7 @@ export default function ThemeSwitcher() {
                     <theme.icon size={14} weight={currentTheme === theme.id ? 'fill' : 'bold'} />
                     
                     {currentTheme === theme.id && (
-                        <motion.div 
-                            layoutId="theme-active-dot"
-                            className="absolute -bottom-0.5 w-0.5 h-0.5 rounded-full bg-current opacity-50"
-                        />
+                        <span className="absolute -bottom-0.5 h-0.5 w-0.5 rounded-full bg-current opacity-50" />
                     )}
                 </button>
             ))}

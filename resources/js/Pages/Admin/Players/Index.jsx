@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import PaginationLink from '@/Components/PaginationLink';
 import { 
     Users, UserPlus, MagnifyingGlass, Funnel, 
     ChartBar, TrendUp, Warning, FirstAid,
@@ -188,24 +189,16 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                             </div>
                             <div className="flex gap-2">
                                 {players.links.map((link, idx) => (
-                                    link.url ? (
-                                        <Link
-                                            key={idx}
-                                            href={link.url}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
-                                                link.active 
-                                                ? 'bg-cyan-500 border-cyan-400 text-white' 
-                                                : 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-white'
-                                            }`}
-                                        />
-                                    ) : (
-                                        <span
-                                            key={idx}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-slate-700 cursor-default opacity-50"
-                                        />
-                                    )
+                                    <PaginationLink
+                                        key={idx}
+                                        link={link}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                            link.active 
+                                            ? 'bg-cyan-500 border-cyan-400 text-white' 
+                                            : 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-white'
+                                        }`}
+                                        disabledClassName="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-slate-700 cursor-default opacity-50"
+                                    />
                                 ))}
                             </div>
                         </div>

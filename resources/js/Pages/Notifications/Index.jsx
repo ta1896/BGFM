@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import PaginationLink from '@/Components/PaginationLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Envelope, 
@@ -154,15 +155,15 @@ export default function Notifications({ notifications }) {
                     {notifications.links.length > 3 && (
                         <div className="p-6 border-t border-[var(--border-muted)] bg-[#0c1222] flex justify-center gap-2">
                             {notifications.links.map((link, i) => (
-                                <Link
+                                <PaginationLink
                                     key={i}
-                                    href={link.url}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    link={link}
                                     className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${
                                         link.active 
                                             ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
                                             : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]'
-                                    } ${!link.url && 'opacity-30 pointer-events-none'}`}
+                                    }`}
+                                    disabledClassName="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all opacity-30 pointer-events-none"
                                 />
                             ))}
                         </div>

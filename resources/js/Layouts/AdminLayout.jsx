@@ -1,70 +1,13 @@
 import React, { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    House, Gear, Trophy, Calendar, BuildingOffice, Users, 
-    FileText, Bell, SignOut, List, X, CaretDown, CaretRight,
+import {
+    Gear, Trophy, Calendar, BuildingOffice, Users,
+    FileText, SignOut, List, X,
     ArrowLeft
 } from '@phosphor-icons/react';
+import SidebarMenuGroup from '@/Components/SidebarMenuGroup';
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
-
-const MenuGroup = React.memo(({ group, currentRoute }) => {
-    const [isOpen, setIsOpen] = useState(true);
-    
-    return (
-        <div className="mb-2">
-            <button 
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between px-3 py-2 text-[var(--text-muted)] hover:text-white transition-colors group/btn rounded-lg hover:bg-[var(--bg-content)]/50 focus:outline-none"
-            >
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors">
-                    {group.label}
-                </span>
-                <CaretDown 
-                    size={14} 
-                    weight="bold"
-                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
-                />
-            </button>
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
-                    >
-                        {group.items.map((item, idx) => {
-                            const isActive = item.active.endsWith('.*') 
-                                ? (currentRoute ? currentRoute.startsWith(item.active.replace('.*', '')) : false)
-                                : currentRoute === item.active;
-                            
-                            return (
-                                <Link
-                                    key={idx}
-                                    href={route(item.route)}
-                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-[color,background-color] rounded-lg group ${
-                                        isActive 
-                                            ? 'text-white bg-[var(--bg-content)]/50' 
-                                            : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]/30'
-                                    }`}
-                                >
-                                    {isActive ? (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                                    ) : (
-                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-800 group-hover:bg-amber-800 transition-colors" />
-                                    )}
-                                    {isActive ? item.label : item.label}
-                                </Link>
-                            );
-                        })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-});
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function AdminLayout({ header, children }) {
     const { auth, flash } = usePage().props;
@@ -143,20 +86,26 @@ export default function AdminLayout({ header, children }) {
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
                     {Object.entries(menuGroups).map(([key, group]) => (
-                        <MenuGroup key={key} group={group} currentRoute={currentRoute} />
+                        <SidebarMenuGroup
+                            key={key}
+                            group={group}
+                            currentRoute={currentRoute}
+                            autoOpenActive
+                            activeTextClassName="text-white bg-[var(--bg-content)]/50"
+                            inactiveTextClassName="text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]/30"
+                            labelClassName="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors"
+                        />
                     ))}
                 </nav>
 
                 {/* User Info */}
                 <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                     <div className="flex items-center gap-3">
-                         <div className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5">
-                             <img loading="lazy" 
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
-                                alt={auth.user.name}
-                                className="w-full h-full rounded-full"
-                             />
-                        </div>
+                        <UserAvatar
+                            name={auth.user.name}
+                            className="h-9 w-9 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-content)] flex-shrink-0 p-0.5"
+                            textClassName="text-xs font-black text-black"
+                        />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
                             <p className="truncate text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">System Admin</p>

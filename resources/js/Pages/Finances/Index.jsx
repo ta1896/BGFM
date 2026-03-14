@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, Link } from '@inertiajs/react';
+import PaginationLink from '@/Components/PaginationLink';
 import { motion } from 'framer-motion';
 import { 
     Bank, 
@@ -176,15 +177,15 @@ export default function Finances({ clubs, activeClub, transactions }) {
                     {transactions.links.length > 3 && (
                         <div className="px-6 py-6 border-t border-[var(--border-muted)] flex justify-center gap-2">
                             {transactions.links.map((link, i) => (
-                                <Link
+                                <PaginationLink
                                     key={i}
-                                    href={link.url}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    link={link}
                                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                         link.active 
                                             ? 'bg-amber-600 text-black shadow-[0_0_10px_rgba(217,177,92,0.3)]' 
                                             : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]'
-                                    } ${!link.url && 'opacity-30 pointer-events-none'}`}
+                                    }`}
+                                    disabledClassName="px-3 py-1 rounded-lg text-xs font-bold transition-all opacity-30 pointer-events-none"
                                 />
                             ))}
                         </div>

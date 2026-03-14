@@ -1,6 +1,7 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
+import PaginationLink from '@/Components/PaginationLink';
 import { 
     Trophy, Globe, Plus, PencilSimple, 
     CheckCircle, XCircle 
@@ -92,24 +93,16 @@ export default function Index({ competitions }) {
                 {/* Pagination placeholder */}
                 <div className="flex justify-center gap-2 mt-6">
                     {competitions.links.map((link, idx) => (
-                        link.url ? (
-                            <Link
-                                key={idx}
-                                href={link.url}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
-                                    link.active 
-                                    ? 'bg-cyan-500 border-cyan-400 text-white' 
-                                    : 'bg-[var(--bg-content)]/50 border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-content)] hover:text-white'
-                                }`}
-                            />
-                        ) : (
-                            <span
-                                key={idx}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                className="px-4 py-2 rounded-xl text-sm font-bold border bg-[var(--bg-pillar)]/50 border-[var(--border-pillar)]/30 text-slate-600 cursor-default opacity-50"
-                            />
-                        )
+                        <PaginationLink
+                            key={idx}
+                            link={link}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                                link.active 
+                                ? 'bg-cyan-500 border-cyan-400 text-white' 
+                                : 'bg-[var(--bg-content)]/50 border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-content)] hover:text-white'
+                            }`}
+                            disabledClassName="px-4 py-2 rounded-xl text-sm font-bold border bg-[var(--bg-pillar)]/50 border-[var(--border-pillar)]/30 text-slate-600 cursor-default opacity-50"
+                        />
                     ))}
                 </div>
             </div>
