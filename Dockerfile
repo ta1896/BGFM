@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    default-mysql-client
+    default-mysql-client \
+    libfcgi-bin
 
 # Cache leeren
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -18,6 +19,10 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache \
     && pecl install redis \
     && docker-php-ext-enable redis
+
+# PHP-FPM Healthcheck Script installieren
+RUN curl -o /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/master/php-fpm-healthcheck \
+    && chmod +x /usr/local/bin/php-fpm-healthcheck
 
 # OPcache für maximale Performance in Production konfigurieren
 RUN echo "opcache.enable=1\n\
