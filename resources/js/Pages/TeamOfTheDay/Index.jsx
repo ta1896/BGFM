@@ -124,7 +124,7 @@ export default function Index({ auth, teams, activeTeam, entries, competitionSea
                                         >
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-slate-700">
-                                                    <img 
+                                                    <img loading="lazy" 
                                                         src={entry.player?.photo_url} 
                                                         className="w-full h-full object-cover"
                                                         alt="" 
@@ -175,7 +175,7 @@ function PitchPlayer({ entry }) {
         <div className="flex flex-col items-center group cursor-pointer" onClick={() => router.get(route('players.show', entry.player.id))}>
             <div className="relative mb-2">
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-yellow-500 overflow-hidden bg-slate-800 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                    <img src={entry.player.photo_url} className="w-full h-full object-cover" alt="" />
+                    <img loading="lazy" src={entry.player.photo_url} className="w-full h-full object-cover" alt="" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-slate-900 text-xs font-black px-1.5 py-0.5 rounded border border-slate-900 shadow-lg">
                     {entry.player.overall}

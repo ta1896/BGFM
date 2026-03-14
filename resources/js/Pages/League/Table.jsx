@@ -97,7 +97,7 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
 
                                     {/* Logo */}
                                     <div className="flex justify-center">
-                                        <img
+                                        <img loading="lazy"
                                             src={row.club?.logo_url || '/images/default-club.png'}
                                             className="w-8 h-8 object-contain"
                                         />

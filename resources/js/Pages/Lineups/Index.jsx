@@ -46,7 +46,7 @@ const MatchCard = ({ match, club }) => {
                 <div className="flex items-center justify-between gap-6 mb-8">
                     <div className="flex flex-col items-center gap-3 flex-1">
                         <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
-                            <img src={match.home_club.logo_url} className="w-full h-full object-contain" />
+                            <img loading="lazy" src={match.home_club.logo_url} className="w-full h-full object-contain" />
                             {isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
                         <span className="text-xs font-black text-white uppercase tracking-tighter text-center line-clamp-1">{match.home_club.short_name}</span>
@@ -56,7 +56,7 @@ const MatchCard = ({ match, club }) => {
 
                     <div className="flex flex-col items-center gap-3 flex-1">
                         <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl group-hover:border-amber-500/30 transition-colors relative">
-                            <img src={match.away_club.logo_url} className="w-full h-full object-contain" />
+                            <img loading="lazy" src={match.away_club.logo_url} className="w-full h-full object-contain" />
                             {!isHome && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0c1222] shadow-[0_0_10px_rgba(217,177,92,0.5)]" />}
                         </div>
                         <span className="text-xs font-black text-white uppercase tracking-tighter text-center line-clamp-1">{match.away_club.short_name}</span>

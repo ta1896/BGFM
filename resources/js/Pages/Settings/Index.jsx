@@ -14,7 +14,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
         className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all duration-300 font-bold ${
             active 
                 ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.1)]' 
-                : 'bg-slate-900/40 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                : 'bg-[var(--bg-pillar)]/40 border-[var(--border-muted)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--border-pillar)]'
         }`}
     >
         <Icon size={20} weight={active ? 'fill' : 'bold'} />
@@ -26,14 +26,14 @@ const Card = ({ title, description, children, icon: Icon }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sim-card p-8 border-slate-800/50 relative overflow-hidden"
+        className="sim-card p-8 border-[var(--border-muted)] relative overflow-hidden"
     >
         <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
             {Icon && <Icon size={120} weight="fill" />}
         </div>
         <div className="mb-8">
-            <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-            {description && <p className="text-slate-400 text-sm">{description}</p>}
+            <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">{title}</h3>
+            {description && <p className="text-[var(--text-muted)] text-sm">{description}</p>}
         </div>
         {children}
     </motion.div>
@@ -91,16 +91,16 @@ export default function Settings({ userClubs, passkeys }) {
                             >
                                 <form onSubmit={submitGeneral} className="space-y-6">
                                     <div className="space-y-4">
-                                        <label className="block text-sm font-bold text-slate-300 uppercase tracking-widest">
+                                        <label className="block text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest">
                                             Bevorzugter Verein
                                         </label>
-                                        <p className="text-xs text-slate-500 italic mb-4">
+                                        <p className="text-xs text-[var(--text-muted)] italic mb-4">
                                             Dieser Verein wird nach dem Login automatisch als aktiver Verein geladen.
                                         </p>
                                         <select 
                                             value={generalForm.data.default_club_id}
                                             onChange={e => generalForm.setData('default_club_id', e.target.value)}
-                                            className="w-full bg-slate-800 border-2 border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 focus:ring-0 transition-all cursor-pointer"
+                                            className="w-full bg-[var(--bg-content)] border-2 border-[var(--border-muted)] rounded-xl px-4 py-3 text-[var(--text-main)] focus:border-cyan-500/50 focus:ring-0 transition-all cursor-pointer"
                                         >
                                             <option value="">Kein Standard-Verein gewählt</option>
                                             {userClubs.map(club => (
@@ -112,7 +112,7 @@ export default function Settings({ userClubs, passkeys }) {
                                         )}
                                     </div>
 
-                                    <div className="flex items-center justify-end border-t border-slate-800 pt-6 mt-8">
+                                    <div className="flex items-center justify-end border-t border-[var(--border-muted)] pt-6 mt-8">
                                         <button 
                                             disabled={generalForm.processing}
                                             className="sim-btn-primary px-8"
@@ -142,14 +142,14 @@ export default function Settings({ userClubs, passkeys }) {
                                     {passkeys && passkeys.length > 0 ? (
                                         <div className="grid gap-4">
                                             {passkeys.map(passkey => (
-                                                <div key={passkey.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-2xl border border-slate-700/50 group">
+                                                <div key={passkey.id} className="flex items-center justify-between p-4 bg-[var(--bg-pillar)]/50 rounded-2xl border border-[var(--border-muted)] group">
                                                     <div className="flex items-center gap-4">
                                                         <div className="h-10 w-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center">
                                                             <Fingerprint size={20} weight="fill" />
                                                         </div>
                                                         <div>
-                                                            <p className="font-bold text-white leading-tight">{passkey.alias || 'Unbenannter Schlüssel'}</p>
-                                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{passkey.created_at_formatted || 'Passkey'}</p>
+                                                            <p className="font-bold text-[var(--text-main)] leading-tight">{passkey.alias || 'Unbenannter Schlüssel'}</p>
+                                                            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{passkey.created_at_formatted || 'Passkey'}</p>
                                                         </div>
                                                     </div>
                                                     <button className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all">
@@ -159,7 +159,7 @@ export default function Settings({ userClubs, passkeys }) {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-12 bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-700/50">
+                                        <div className="text-center py-12 bg-[var(--bg-pillar)]/50 rounded-3xl border-2 border-dashed border-[var(--border-muted)]">
                                             <Fingerprint size={48} weight="thin" className="mx-auto text-slate-700 mb-4" />
                                             <p className="text-slate-500 font-medium">Bisher wurden keine Passkeys registriert.</p>
                                         </div>
@@ -180,8 +180,8 @@ export default function Settings({ userClubs, passkeys }) {
                                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 flex items-start gap-4">
                                     <CheckCircle size={24} weight="fill" className="text-emerald-500 mt-1" />
                                     <div>
-                                        <p className="font-bold text-white mb-1">E-Mail verifiziert</p>
-                                        <p className="text-sm text-slate-400">Deine E-Mail Adresse ist bestätigt und schützt dein Konto zusätzlich.</p>
+                                        <p className="font-bold text-[var(--text-main)] mb-1">E-Mail verifiziert</p>
+                                        <p className="text-sm text-[var(--text-muted)]">Deine E-Mail Adresse ist bestätigt und schützt dein Konto zusätzlich.</p>
                                     </div>
                                 </div>
                             </Card>

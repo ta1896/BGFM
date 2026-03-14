@@ -32,6 +32,7 @@ class DashboardController extends Controller
 
         $clubs = $request->user()
             ->clubs()
+            ->with(['stadium'])
             ->withCount(['players', 'lineups'])
             ->orderBy('name')
             ->get();
@@ -72,12 +73,13 @@ class DashboardController extends Controller
         $selectedCompetitionSeasonId = null;
 
         if ($activeClub) {
-            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor', 'lineups']);
+            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor', 'lineups' => function($q) {
+                $q->with('players');
+            }]);
 
-            $activeLineup = $activeClub->lineups()
-                ->with('players')
+            $activeLineup = $activeClub->lineups
                 ->where('is_active', true)
-                ->first() ?? $activeClub->lineups()->with('players')->first();
+                ->first() ?? $activeClub->lineups->first();
 
             if ($activeLineup) {
                 $metrics = $calculator->calculate($activeLineup);
@@ -296,7 +298,7 @@ class DashboardController extends Controller
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'activeLineup' => $activeLineup,
-            'metrics' => $metrics,
+            'metrics' => \Inertia\Inertia::lazy(fn() => $metrics),
             'nextMatch' => $nextMatch,
             'nextMatchTypeLabel' => $nextMatchTypeLabel,
             'activeClubReadyForNextMatch' => $activeClubReadyForNextMatch,
@@ -304,7 +306,7 @@ class DashboardController extends Controller
             'notifications' => $notifications,
             'unreadNotificationsCount' => $unreadNotificationsCount,
             'todayMatchesCount' => $todayMatchesCount,
-            'clubRank' => $clubRank,
+            'clubRank' => \Inertia\Inertia::lazy(fn() => $clubRank),
             'clubPoints' => $clubPoints,
             'recentForm' => $recentForm,
             'weekDays' => $weekDays,

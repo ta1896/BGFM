@@ -38,17 +38,18 @@ class MatchCenterController extends Controller
             'competitionSeason.competition',
         ]);
 
+        $getComparisonMetrics = function(\App\Models\Club $club) {
+            $players = $club->players()->where('status', 'active')->get(['market_value', 'age', 'overall']);
+            return [
+                'market_value' => $players->sum('market_value') ?? 0,
+                'avg_age' => round($players->avg('age') ?? 0, 1),
+                'strength' => round($players->sortByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
+            ];
+        };
+
         $comparison = [
-            'home' => [
-                'market_value' => $match->homeClub->players()->where('status', 'active')->sum('market_value') ?? 0,
-                'avg_age' => round($match->homeClub->players()->where('status', 'active')->avg('age') ?? 0, 1),
-                'strength' => round($match->homeClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
-            ],
-            'away' => [
-                'market_value' => $match->awayClub->players()->where('status', 'active')->sum('market_value') ?? 0,
-                'avg_age' => round($match->awayClub->players()->where('status', 'active')->avg('age') ?? 0, 1),
-                'strength' => round($match->awayClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
-            ],
+            'home' => $getComparisonMetrics($match->homeClub),
+            'away' => $getComparisonMetrics($match->awayClub),
         ];
 
         $state = $this->statePayload($request, $match);
@@ -493,8 +494,11 @@ class MatchCenterController extends Controller
                 );
 
                 $formation = '4-4-2';
+                $allDraftPlayerIds = array_merge(array_values($selection['starters'] ?? []), array_values($selection['bench'] ?? []));
+                $allDraftPlayers = \App\Models\Player::whereIn('id', $allDraftPlayerIds)->get()->keyBy('id');
+
                 foreach ($selection['starters'] ?? [] as $slot => $playerId) {
-                    $player = \App\Models\Player::find($playerId);
+                    $player = $allDraftPlayers->get($playerId);
                     if ($player) {
                         $players->push((object) [
                             'id' => $player->id,
@@ -515,7 +519,7 @@ class MatchCenterController extends Controller
                     }
                 }
                 foreach ($selection['bench'] ?? [] as $idx => $playerId) {
-                    $player = \App\Models\Player::find($playerId);
+                    $player = $allDraftPlayers->get($playerId);
                     if ($player) {
                         $players->push((object) [
                             'id' => $player->id,

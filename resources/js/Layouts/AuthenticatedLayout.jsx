@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    House, Tray, Bank, Briefcase, BuildingOffice, UsersThree, 
-    Users, GraduationCap, Tent, Calendar, Trophy, HandPeace, 
-    Star, FileText, 
+import {
+    House, Tray, Bank, Briefcase, BuildingOffice, UsersThree,
+    Users, GraduationCap, Tent, Calendar, Trophy, HandPeace,
+    Star, FileText,
     MagnifyingGlass, Gear, CaretDown, SignOut, List, X,
     CaretRight, Bell
 } from '@phosphor-icons/react';
+import ThemeSwitcher from '@/Components/ThemeSwitcher';
 
-const MenuGroup = ({ group, currentRoute }) => {
+const MenuGroup = React.memo(({ group, currentRoute }) => {
     const [isOpen, setIsOpen] = useState(false);
-    
+
     // Check if any item in this group is active
     useEffect(() => {
         const hasActive = group.items.some(item => {
@@ -26,41 +27,41 @@ const MenuGroup = ({ group, currentRoute }) => {
 
     return (
         <div className="mb-2">
-            <button 
+            <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
+                className="flex w-full items-center justify-between px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors group/btn rounded-lg hover:bg-[var(--bg-content)]/50 focus:outline-none"
             >
                 <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors">
                     {group.label}
                 </span>
-                <CaretDown 
-                    size={14} 
+                <CaretDown
+                    size={14}
                     weight="bold"
                     className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
                 />
             </button>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
                 {isOpen && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
                     >
                         {group.items.map((item, idx) => {
-                            const isActive = item.active.endsWith('.*') 
+                            const isActive = item.active.endsWith('.*')
                                 ? currentRoute.startsWith(item.active.replace('.*', ''))
                                 : currentRoute === item.active;
-                            
+
                             return (
                                 <Link
                                     key={idx}
                                     href={route(item.route)}
-                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all rounded-lg group ${
-                                        isActive 
-                                            ? 'text-white bg-slate-800/50' 
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-[color,background-color] rounded-lg group ${
+                                        isActive
+                                            ? 'text-[var(--text-main)] bg-[var(--bg-content)]/50'
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30'
                                     }`}
                                 >
                                     {isActive ? (
@@ -77,10 +78,11 @@ const MenuGroup = ({ group, currentRoute }) => {
             </AnimatePresence>
         </div>
     );
-};
+});
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, activeClub, userClubs, flash } = usePage().props;
+    const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
     const currentRoute = route().current();
@@ -89,7 +91,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const getMenuGroups = () => {
         const groups = {};
-        
+
         if (hasManagedClub) {
             groups.bg_buro = {
                 label: 'Büro',
@@ -117,8 +119,10 @@ export default function AuthenticatedLayout({ header, children }) {
                 items: [
                     { route: 'league.matches', label: 'Spiele', active: 'league.matches', icon: Calendar },
                     { route: 'league.table', label: 'Tabelle', active: 'league.table', icon: Trophy },
-                    { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*', icon: HandPeace },
+                    { route: 'statistics.index', label: 'Statistiken', active: 'statistics.*', icon: Star },
+                    { route: 'teams.compare', label: 'Vergleich', active: 'teams.*', icon: MagnifyingGlass },
                     { route: 'team-of-the-day.index', label: 'Team der Woche', active: 'team-of-the-day.*', icon: Star },
+                    { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*', icon: HandPeace },
                 ]
             };
 
@@ -148,7 +152,7 @@ export default function AuthenticatedLayout({ header, children }) {
     };
 
     const menuGroups = getMenuGroups();
-    
+
     // Find active menu label
     let activeMenuLabel = 'Dashboard';
     Object.values(menuGroups).forEach(group => {
@@ -162,9 +166,9 @@ export default function AuthenticatedLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#07080a] text-slate-100 font-sans lg:p-4 flex gap-4 transition-all duration-500">
+        <div className={`min-h-screen bg-[var(--sim-shell-bg)] text-[var(--text-main)] font-sans lg:p-4 flex gap-4 transition-all duration-500 theme-${currentTheme}`}>
             {/* Mobile Sidebar Toggle */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50">
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[var(--bg-pillar)]/80 backdrop-blur-xl border-b border-[var(--border-pillar)]">
                 <Link href={route('dashboard')} className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#d9b15c] to-[#8d6e32]">
                         <span className="text-xs font-bold text-black">NW</span>
@@ -189,7 +193,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
                         <div className="min-w-0">
                             <p className="font-black text-white leading-tight tracking-[0.05em] uppercase truncate">NewGen</p>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-amber-500 transition-colors">Elite Suite</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-amber-500 transition-colors">Management Suite</p>
                         </div>
                     </Link>
                 </div>
@@ -202,17 +206,17 @@ export default function AuthenticatedLayout({ header, children }) {
                 </nav>
 
                 {/* User Profile Footer */}
-                <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800/30 bg-slate-900/50 p-4">
+                <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                     {hasManagedClub && userClubs.length > 1 && (
                         <div className="relative mb-3">
                             <button 
                                 onClick={() => setClubSelectorOpen(!clubSelectorOpen)}
-                                className="flex w-full items-center gap-3 rounded-lg bg-slate-800/60 p-2 text-left hover:bg-slate-700/60 transition border border-slate-700/30 overflow-hidden"
+                                className="flex w-full items-center gap-3 rounded-lg bg-[var(--bg-content)]/60 p-2 text-left hover:bg-[var(--bg-content)] transition border border-[var(--border-muted)] overflow-hidden"
                             >
                                 {activeClub ? (
                                     <>
                                         <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-900 border border-slate-600 flex-shrink-0">
-                                            <img src={activeClub.logo_url} className="h-full w-full object-contain" alt={activeClub.name} />
+                                            <img loading="lazy" src={activeClub.logo_url} className="h-full w-full object-contain" alt={activeClub.name} />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-xs text-slate-400 uppercase tracking-wider font-bold">Aktiver Verein</p>
@@ -231,7 +235,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute bottom-full left-0 mb-2 w-full rounded-xl bg-slate-800 border border-slate-700 shadow-2xl overflow-hidden z-[60] max-h-64 overflow-y-auto custom-scrollbar"
+                                        className="absolute bottom-full left-0 mb-2 w-full rounded-xl bg-[var(--bg-content)] border border-[var(--border-pillar)] shadow-2xl overflow-hidden z-[60] max-h-64 overflow-y-auto custom-scrollbar"
                                     >
                                         <div className="p-1.5 space-y-1">
                                             {userClubs.map(club => (
@@ -248,7 +252,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     }`}
                                                 >
                                                     <div className="h-7 w-7 rounded-full overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0">
-                                                        <img src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
+                                                        <img loading="lazy" src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
                                                     </div>
                                                     <span className="truncate flex-1 text-left font-medium">{club.name}</span>
                                                     {activeClub?.id === club.id && (
@@ -278,7 +282,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <div className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-slate-800/50 group border border-transparent hover:border-slate-700/30">
                     <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
-                         <img 
+                         <img loading="lazy" 
                             src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                             alt={auth.user.name}
                             className="w-full h-full rounded-full"
@@ -315,7 +319,7 @@ export default function AuthenticatedLayout({ header, children }) {
         <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80">
             <div className="sim-content-floating lg:h-[calc(100vh-2rem)] flex flex-col relative">
                 {/* Header */}
-                <header className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30 shrink-0">
+                <header className="bg-[var(--bg-pillar)]/60 backdrop-blur-xl border-b border-[var(--border-muted)] shrink-0">
                     <div className="px-6 py-4 min-h-[4.5rem] flex items-center justify-between">
                         {header ? (
                             header
@@ -327,6 +331,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </div>
                                 
                                 <div className="flex items-center gap-4">
+                                    <ThemeSwitcher />
                                     <button className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition">
                                         <Bell size={20} />
                                         <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500 border border-black" />

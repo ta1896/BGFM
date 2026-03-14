@@ -29,7 +29,7 @@ const PlayerListItem = ({ player }) => {
                 <div className="relative shrink-0">
                     {player.photo_url ? (
                         <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-slate-800 ring-4 ring-amber-500/5">
-                            <img src={player.photo_url} className="w-full h-full object-cover" alt={player.full_name} />
+                            <img loading="lazy" src={player.photo_url} className="w-full h-full object-cover" alt={player.full_name} />
                         </div>
                     ) : (
                         <div className="h-14 w-14 rounded-2xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center">

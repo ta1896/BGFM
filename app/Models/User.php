@@ -27,6 +27,7 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         'password',
         'is_admin',
         'default_club_id',
+        'theme',
     ];
 
     /**

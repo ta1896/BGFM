@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/lineups/{lineup}/activate', [LineupsController::class, 'activate'])->name('lineups.activate');
             Route::get('/matches', [LeagueController::class, 'matches'])->name('league.matches');
             Route::get('/matches/{match}', [MatchCenterController::class, 'show'])->name('matches.show');
-            Route::match(['get', 'post'], '/matches/{match}/simulate', [MatchCenterController::class, 'simulate'])->name('matches.simulate');
+            Route::match(['get', 'post'], '/matches/{match}/simulate', [MatchCenterController::class, 'simulate'])->name('matches.simulate')->middleware('throttle:heavy_task');
             Route::post('/matches/{match}/live/start', [MatchCenterController::class, 'liveStart'])->name('matches.live.start');
             Route::post('/matches/{match}/live/resume', [MatchCenterController::class, 'liveResume'])->name('matches.live.resume');
             Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
@@ -88,6 +88,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
             Route::get('/team-of-the-day', [TeamOfTheDayController::class, 'index'])->name('team-of-the-day.index');
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');
+            Route::get('/teams/compare', [App\Http\Controllers\TeamComparisonController::class, 'index'])->name('teams.compare');
+            Route::get('/statistics', [App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
         }
     );
 });
@@ -106,7 +108,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('lineups', AdminLineupController::class);
         Route::post('/lineups/{lineup}/activate', [AdminLineupController::class, 'activate'])->name('lineups.activate');
         Route::post('/competition-seasons/{competitionSeason}/fixtures', [LeagueController::class, 'generateFixtures'])->name('competition-seasons.generate-fixtures');
-        Route::post('/simulation/process-matchday', [AdminSimulationController::class, 'processMatchday'])->name('simulation.process-matchday');
+        Route::post('/simulation/process-matchday', [AdminSimulationController::class, 'processMatchday'])->name('simulation.process-matchday')->middleware('throttle:heavy_task');
 
         Route::prefix('simulation/settings')->name('simulation.settings.')->group(
             function () {

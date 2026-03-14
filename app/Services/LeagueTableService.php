@@ -15,15 +15,20 @@ class LeagueTableService
     public function rebuild(CompetitionSeason $competitionSeason): void
     {
         $this->statisticsAggregationService->rebuildLeagueTable($competitionSeason);
+        \Illuminate\Support\Facades\Cache::forget("league_table_{$competitionSeason->id}");
     }
 
     public function table(CompetitionSeason $competitionSeason): Collection
     {
-        return $competitionSeason->statistics()
-            ->with('club')
-            ->orderByDesc('points')
-            ->orderByDesc('goal_diff')
-            ->orderByDesc('goals_for')
-            ->get();
+        return \Illuminate\Support\Facades\Cache::remember(
+            "league_table_{$competitionSeason->id}",
+            3600, // 1 hour
+            fn() => $competitionSeason->statistics()
+                ->with('club')
+                ->orderByDesc('points')
+                ->orderByDesc('goal_diff')
+                ->orderByDesc('goals_for')
+                ->get()
+        );
     }
 }

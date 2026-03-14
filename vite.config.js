@@ -19,4 +19,15 @@ export default defineConfig({
             avif: { lossy: true, quality: 70 },
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom', '@inertiajs/react'],
+                    'vendor-ui': ['@phosphor-icons/react', 'framer-motion'],
+                    'vendor-charts': ['apexcharts', 'react-apexcharts'],
+                },
+            },
+        },
+    },
 });

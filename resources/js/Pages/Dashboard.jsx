@@ -7,13 +7,14 @@ import {
     ArrowRight, Bell, WarningCircle, Info, Bank,
     Smiley, SmileySad
 } from '@phosphor-icons/react';
+import Skeleton from '@/Components/Skeleton';
 
 const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber', delay = 0 }) => (
     <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay }}
-        className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800/50 p-6 relative overflow-hidden group hover:border-slate-700/60 transition-all shadow-xl"
+        className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 relative overflow-hidden group hover:border-[var(--accent-primary)]/30 transition-all shadow-xl"
     >
         <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-${color}-500/5 blur-2xl group-hover:bg-${color}-500/10 transition-colors`} />
         
@@ -22,10 +23,10 @@ const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber', delay =
                 <Icon size={24} weight="duotone" />
             </div>
             <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">{label}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-0.5">{label}</p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-white tracking-tight">{value}</span>
-                    {subValue && <span className="text-xs font-semibold text-slate-400">{subValue}</span>}
+                    <span className="text-2xl font-bold text-[var(--text-main)] tracking-tight">{value}</span>
+                    {subValue && <span className="text-xs font-semibold text-[var(--text-muted)]">{subValue}</span>}
                 </div>
             </div>
         </div>
@@ -44,7 +45,7 @@ const TimelineDay = ({ day, delay }) => {
             transition={{ delay }}
             className={`
                 relative flex flex-col justify-between rounded-2xl border p-4 transition-all hover:-translate-y-1 hover:shadow-2xl
-                ${isToday ? 'border-amber-500/40 bg-amber-500/5 shadow-lg shadow-amber-500/10' : 'border-slate-800/50 bg-slate-900/30'}
+                ${isToday ? 'border-amber-500/40 bg-amber-500/5 shadow-lg shadow-amber-500/10' : 'border-[var(--border-muted)] bg-[var(--bg-pillar)]/30'}
                 ${hasMatch ? 'hover:border-amber-600/40' : 'hover:border-amber-400/40'}
             `}
         >
@@ -56,7 +57,7 @@ const TimelineDay = ({ day, delay }) => {
                 <p className={`text-[10px] font-bold uppercase tracking-widest ${isToday ? 'text-amber-500' : 'text-slate-500'}`}>
                     {day.label}
                 </p>
-                <p className="mt-1 text-xl font-bold text-white">{day.date}</p>
+                <p className="mt-1 text-xl font-bold text-[var(--text-main)]">{day.date}</p>
             </div>
 
             <div className="mt-6 flex flex-col gap-2">
@@ -134,14 +135,26 @@ export default function Dashboard(props) {
                         color="emerald"
                         delay={0.1}
                     />
-                    <StatCard 
-                        label="League Rank" 
-                        value={clubRank ? `#${clubRank}` : 'N/A'} 
-                        subValue={`${clubPoints || 0} Points`} 
-                        icon={Trophy} 
-                        color="amber"
-                        delay={0.2}
-                    />
+                    {clubRank !== undefined ? (
+                        <StatCard 
+                            label="League Rank" 
+                            value={clubRank ? `#${clubRank}` : 'N/A'} 
+                            subValue={`${clubPoints || 0} Points`} 
+                            icon={Trophy} 
+                            color="amber"
+                            delay={0.2}
+                        />
+                    ) : (
+                        <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800/50 p-6 shadow-xl h-[104px]">
+                            <div className="flex items-center gap-4">
+                                <Skeleton variant="rect" className="h-12 w-12 rounded-xl" />
+                                <div className="space-y-2">
+                                    <Skeleton variant="text" className="w-20" />
+                                    <Skeleton variant="text" className="w-24 h-6" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <StatCard 
                         label="Today's Games" 
                         value={todayMatchesCount} 
@@ -191,7 +204,7 @@ export default function Dashboard(props) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="bg-slate-900/40 rounded-3xl border border-slate-800/50 p-8 shadow-2xl relative overflow-hidden"
+                            className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-8 shadow-2xl relative overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
                             
@@ -202,7 +215,7 @@ export default function Dashboard(props) {
                                          <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-amber-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.home_club.logo_url} alt={nextMatch.home_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-white mb-1 uppercase tracking-tight italic">{nextMatch.home_club.name}</p>
+                                         <p className="text-xl font-bold text-[var(--text-main)] mb-1 uppercase tracking-tight italic">{nextMatch.home_club.name}</p>
                                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Host</span>
                                     </div>
 
@@ -221,7 +234,7 @@ export default function Dashboard(props) {
                                          <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-slate-700 bg-slate-900 p-4 transition group-hover:border-amber-600/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.away_club.logo_url} alt={nextMatch.away_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-white mb-1 uppercase tracking-tight italic">{nextMatch.away_club.name}</p>
+                                         <p className="text-xl font-bold text-[var(--text-main)] mb-1 uppercase tracking-tight italic">{nextMatch.away_club.name}</p>
                                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Guest</span>
                                     </div>
                                 </div>
@@ -259,35 +272,47 @@ export default function Dashboard(props) {
                     <div className="lg:col-span-4 space-y-8">
                         
                         {/* Squad Metrics */}
-                        <section className="bg-slate-900/40 rounded-3xl border border-slate-800/50 p-6 shadow-xl">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Squad Strength</h3>
+                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl leading-none">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6 font-mono">Squad Strength</h3>
                             <div className="space-y-6">
-                                {[
-                                    { label: 'Attack', value: metrics?.attack || 0, color: 'amber' },
-                                    { label: 'Midfield', value: metrics?.midfield || 0, color: 'amber' },
-                                    { label: 'Defense', value: metrics?.defense || 0, color: 'amber' },
-                                    { label: 'Chemistry', value: metrics?.chemistry || 0, color: 'amber' },
-                                ].map((item, id) => (
-                                    <div key={id}>
-                                        <div className="flex justify-between items-end mb-2">
-                                            <span className="text-sm font-bold text-white">{item.label}</span>
-                                            <span className={`text-lg font-black text-${item.color}-400`}>{item.value}</span>
+                                {metrics ? (
+                                    [
+                                        { label: 'Attack', value: metrics?.attack || 0, color: 'amber' },
+                                        { label: 'Midfield', value: metrics?.midfield || 0, color: 'amber' },
+                                        { label: 'Defense', value: metrics?.defense || 0, color: 'amber' },
+                                        { label: 'Chemistry', value: metrics?.chemistry || 0, color: 'amber' },
+                                    ].map((item, id) => (
+                                        <div key={id}>
+                                            <div className="flex justify-between items-end mb-2">
+                                                 <span className="text-sm font-bold text-[var(--text-main)]">{item.label}</span>
+                                                <span className={`text-lg font-black text-${item.color}-400`}>{item.value}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                                <motion.div 
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${item.value}%` }}
+                                                    transition={{ duration: 1, delay: 0.6 + id * 0.1 }}
+                                                    className={`h-full bg-${item.color}-500 shadow-[0_0_10px_rgba(var(--${item.color}-rgb),0.5)]`}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                                            <motion.div 
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${item.value}%` }}
-                                                transition={{ duration: 1, delay: 0.6 + id * 0.1 }}
-                                                className={`h-full bg-${item.color}-500 shadow-[0_0_10px_rgba(var(--${item.color}-rgb),0.5)]`}
-                                            />
+                                    ))
+                                ) : (
+                                    [1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Skeleton variant="text" className="w-16" />
+                                                <Skeleton variant="text" className="w-8" />
+                                            </div>
+                                            <Skeleton variant="rect" className="h-2 w-full" />
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </section>
 
                         {/* Recent Form */}
-                        <section className="bg-slate-900/40 rounded-3xl border border-slate-800/50 p-6 shadow-xl">
+                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Last 5 Matches</h3>
                             <div className="flex gap-2">
                                 {recentForm && recentForm.length > 0 ? recentForm.map((res, idx) => (
@@ -319,7 +344,7 @@ export default function Dashboard(props) {
                                             <div className="flex items-start gap-3">
                                                 <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.kind === 'warning' ? 'bg-rose-500' : 'bg-amber-500'}`} />
                                                 <div>
-                                                    <p className="text-sm font-bold text-white mb-1 text-white">{task.label}</p>
+                                                     <p className="text-sm font-bold text-[var(--text-main)] mb-1 text-[var(--text-main)]">{task.label}</p>
                                                     <p className="text-xs text-slate-400 leading-relaxed mb-3">{task.description}</p>
                                                     <Link 
                                                         href={task.url}

@@ -41,20 +41,19 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'default_club_id' => ['nullable', 'exists:clubs,id'],
+            'theme' => ['nullable', 'string', 'in:catalyst,tactical,elite,classic'],
         ]);
 
         $user = $request->user();
 
         // Ensure user actually owns the club if set
-        if ($validated['default_club_id']) {
+        if ($validated['default_club_id'] ?? null) {
             if (!$user->isAdmin() && !$user->clubs()->where('id', $validated['default_club_id'])->exists()) {
                 return back()->withErrors(['default_club_id' => 'Invalid club selection.']);
             }
         }
 
-        $user->update([
-            'default_club_id' => $validated['default_club_id'],
-        ]);
+        $user->update($validated);
 
         return back()->with('status', 'Einstellungen gespeichert.');
     }

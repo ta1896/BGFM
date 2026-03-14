@@ -6,15 +6,16 @@ import {
     FileText, Bell, SignOut, List, X, CaretDown, CaretRight,
     ArrowLeft
 } from '@phosphor-icons/react';
+import ThemeSwitcher from '@/Components/ThemeSwitcher';
 
-const MenuGroup = ({ group, currentRoute }) => {
+const MenuGroup = React.memo(({ group, currentRoute }) => {
     const [isOpen, setIsOpen] = useState(true);
     
     return (
         <div className="mb-2">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
+                className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition-colors group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
             >
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors">
                     {group.label}
@@ -25,13 +26,13 @@ const MenuGroup = ({ group, currentRoute }) => {
                     className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-500' : 'text-gray-600'}`}
                 />
             </button>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
                 {isOpen && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="space-y-0.5 mt-1 pl-3 ml-2 border-l border-amber-500/10 overflow-hidden"
                     >
                         {group.items.map((item, idx) => {
@@ -43,7 +44,7 @@ const MenuGroup = ({ group, currentRoute }) => {
                                 <Link
                                     key={idx}
                                     href={route(item.route)}
-                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all rounded-lg group ${
+                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-[color,background-color] rounded-lg group ${
                                         isActive 
                                             ? 'text-white bg-slate-800/50' 
                                             : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
@@ -63,10 +64,11 @@ const MenuGroup = ({ group, currentRoute }) => {
             </AnimatePresence>
         </div>
     );
-};
+});
 
 export default function AdminLayout({ header, children }) {
     const { auth, flash } = usePage().props;
+    const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const currentRoute = route().current();
 
@@ -109,7 +111,7 @@ export default function AdminLayout({ header, children }) {
     });
 
     return (
-        <div className="min-h-screen bg-[#07080a] text-slate-100 font-sans lg:p-4 flex gap-4 transition-all duration-500">
+        <div className={`min-h-screen bg-[var(--sim-shell-bg)] text-[var(--text-main)] font-sans lg:p-4 flex gap-4 transition-all duration-500 theme-${currentTheme}`}>
             {/* Sidebar */}
             <aside className={`
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -127,7 +129,6 @@ export default function AdminLayout({ header, children }) {
                         </div>
                     </Link>
                 </div>
-
                 {/* Return to Manager Button */}
                 <div className="px-5 py-6">
                     <Link 
@@ -147,10 +148,10 @@ export default function AdminLayout({ header, children }) {
                 </nav>
 
                 {/* User Info */}
-                <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800/30 bg-slate-900/50 p-4">
+                <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                     <div className="flex items-center gap-3">
                          <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
-                             <img 
+                             <img loading="lazy" 
                                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0a0b0d&color=d9b15c`} 
                                 alt={auth.user.name}
                                 className="w-full h-full rounded-full"
@@ -173,7 +174,7 @@ export default function AdminLayout({ header, children }) {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col transition-all duration-300 lg:ml-80">
                 <div className="sim-content-floating lg:h-[calc(100vh-2rem)] flex flex-col relative">
-                <header className="bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30 shrink-0">
+                <header className="bg-[var(--bg-pillar)]/60 backdrop-blur-xl border-b border-[var(--border-muted)] shrink-0">
                     <div className="px-6 py-4 flex items-center justify-between min-h-[4.5rem]">
                         {header ? header : (
                             <div className="text-left">
@@ -183,6 +184,7 @@ export default function AdminLayout({ header, children }) {
                         )}
                         
                         <div className="flex items-center gap-4">
+                            <ThemeSwitcher />
                             <button className="lg:hidden p-2 text-slate-400" onClick={() => setSidebarOpen(!sidebarOpen)}>
                                 {sidebarOpen ? <X size={24} /> : <List size={24} />}
                             </button>

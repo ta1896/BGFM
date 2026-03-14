@@ -128,7 +128,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-cyan-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="w-48 h-48 md:w-56 md:h-56 rounded-full p-2 bg-gradient-to-br from-slate-800 to-slate-950 border border-slate-700/50 shadow-2xl relative">
-                                    <img 
+                                    <img loading="lazy" 
                                         src={player.photo_url} 
                                         alt={player.full_name}
                                         className="w-full h-full object-cover rounded-full mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
@@ -159,7 +159,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                     {player.club ? (
                                         <Link href={route('clubs.show', player.club.id)} className="flex items-center gap-4 group">
                                             <div className="w-12 h-12 p-2 rounded-xl bg-white/5 border border-white/10 group-hover:border-cyan-500/30 transition-all">
-                                                <img src={player.club.logo_url} className="w-full h-full object-contain" alt={player.club.name} />
+                                                <img loading="lazy" src={player.club.logo_url} className="w-full h-full object-contain" alt={player.club.name} />
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Aktueller Verein</p>
@@ -420,7 +420,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                             <div className="flex-1 flex items-center justify-center lg:justify-start gap-12 min-w-[300px]">
                                                 <div className="flex items-center gap-4 flex-1 justify-end">
                                                     <span className={`text-xs font-black uppercase text-right line-clamp-1 ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-500'}`}>{stat.match?.home_club?.short_name}</span>
-                                                    <img src={stat.match?.home_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
+                                                    <img loading="lazy" src={stat.match?.home_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
                                                 </div>
                                                 
                                                 <div className="px-4 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-lg font-black text-white italic min-w-[60px] text-center">
@@ -428,7 +428,7 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                 </div>
 
                                                 <div className="flex items-center gap-4 flex-1">
-                                                    <img src={stat.match?.away_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
+                                                    <img loading="lazy" src={stat.match?.away_club?.logo_url} className="w-8 h-8 object-contain opacity-80" />
                                                     <span className={`text-xs font-black uppercase line-clamp-1 ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-500'}`}>{stat.match?.away_club?.short_name}</span>
                                                 </div>
                                             </div>

@@ -43,9 +43,14 @@ class HandleInertiaRequests extends Middleware
         $userClubs = collect();
         if ($user) {
             if ($isAdmin) {
-                $userClubs = \App\Models\Club::where('is_cpu', false)->orderBy('name')->get();
+                $userClubs = \App\Models\Club::where('is_cpu', false)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'logo_path']);
             } else {
-                $userClubs = $user->clubs()->where('is_cpu', false)->orderBy('name')->get();
+                $userClubs = $user->clubs()
+                    ->where('is_cpu', false)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'logo_path']);
             }
         }
 
@@ -58,6 +63,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'isAdmin' => $isAdmin,
+                'theme' => $user?->theme ?? 'catalyst',
             ],
             'activeClub' => $activeClub,
             'userClubs' => $userClubs,

@@ -97,7 +97,7 @@ export default function Stadium({ stadium, projects, projectTypes, activeClub })
                                     className="flex items-center gap-3 mb-6"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-2 shadow-xl shadow-black/50">
-                                        <img src={activeClub.logo_url} className="w-full h-full object-contain" />
+                                        <img loading="lazy" src={activeClub.logo_url} className="w-full h-full object-contain" />
                                     </div>
                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Heimstätte // Infrastruktur</span>
                                 </motion.div>

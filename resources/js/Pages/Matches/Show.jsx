@@ -114,7 +114,7 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
                 {/* Home */}
                 <div className="flex flex-col items-center gap-4 flex-1">
                     <div className="w-24 h-24 rounded-full p-3 bg-white/5 border border-white/10 shadow-2xl">
-                        <img src={home_club?.logo_url} alt={home_club?.name} className="w-full h-full object-contain" />
+                        <img loading="lazy" src={home_club?.logo_url} alt={home_club?.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="text-center">
                         <p className="text-xl font-black text-white uppercase tracking-tighter italic">{home_club?.short_name || home_club?.name}</p>
@@ -151,7 +151,7 @@ const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_
                 {/* Away */}
                 <div className="flex flex-col items-center gap-4 flex-1">
                     <div className="w-24 h-24 rounded-full p-3 bg-white/5 border border-white/10 shadow-2xl">
-                        <img src={away_club?.logo_url} alt={away_club?.name} className="w-full h-full object-contain" />
+                        <img loading="lazy" src={away_club?.logo_url} alt={away_club?.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="text-center">
                         <p className="text-xl font-black text-white uppercase tracking-tighter italic">{away_club?.short_name || away_club?.name}</p>
@@ -293,7 +293,7 @@ const LineupToken = ({ player, accent, livePlayerStates }) => {
                 ${isOff ? 'opacity-40 border-rose-500/60 bg-rose-950/60' : `bg-slate-950 border-${accent}-400/80`}
             `}>
                 {player.photo_url
-                    ? <img src={player.photo_url} className="w-full h-full rounded-full object-cover" />
+                    ? <img loading="lazy" src={player.photo_url} className="w-full h-full rounded-full object-cover" />
                     : <span className={`text-[9px] font-black text-${accent}-300`}>{player.position?.slice(0,2)}</span>
                 }
                 {/* Yellow card pip */}
@@ -329,7 +329,7 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
         <div className="flex-1 min-w-0 space-y-3">
             {/* Club header */}
             <div className="flex items-center gap-2">
-                <img src={club?.logo_url} className="w-6 h-6 object-contain" />
+                <img loading="lazy" src={club?.logo_url} className="w-6 h-6 object-contain" />
                 <div>
                     <p className="text-[10px] font-black text-white uppercase tracking-tight">{club?.short_name || club?.name}</p>
                     <p className={`text-[8px] font-black text-${accent}-500 uppercase tracking-widest`}>{lineup?.formation || '—'}</p>
@@ -609,7 +609,7 @@ export default function Show({
                                 return (
                                     <div key={club?.id} className="sim-card overflow-hidden p-0">
                                         <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center gap-4">
-                                            <img src={club?.logo_url} className="w-8 h-8 object-contain" />
+                                            <img loading="lazy" src={club?.logo_url} className="w-8 h-8 object-contain" />
                                             <p className="text-xs font-black text-white uppercase tracking-tighter">{club?.name}</p>
                                         </div>
                                         <div>

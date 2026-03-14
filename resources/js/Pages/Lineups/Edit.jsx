@@ -145,6 +145,88 @@ export default function Edit({
         return new Set(ids);
     }, [data.starter_slots, data.bench_slots]);
 
+    const getPlayer = (id) => clubPlayers.find(p => p.id === parseInt(id));
+
+    // Helper for position grouping (simplified JS version of PlayerPositionService)
+    const getGroupFromPosition = (pos) => {
+        if (!pos) return null;
+        const p = pos.toUpperCase();
+        if (['TW', 'GK'].includes(p)) return 'GK';
+        if (['LV', 'IV', 'RV', 'LWB', 'RWB', 'DEF'].includes(p)) return 'DEF';
+        if (['LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'MID'].includes(p)) return 'MID';
+        if (['LS', 'MS', 'RS', 'ST', 'LW', 'RW', 'LF', 'RF', 'HS', 'FWD'].includes(p)) return 'FWD';
+        if (p.startsWith('IV')) return 'DEF';
+        if (p.startsWith('ZM') || p.startsWith('DM')) return 'MID';
+        if (p.startsWith('ST')) return 'FWD';
+        return null;
+    };
+
+    // Client-side Strength Calculation
+    const calculatedMetrics = useMemo(() => {
+        const starterIds = Object.entries(data.starter_slots).filter(([slot, id]) => id !== null);
+        if (starterIds.length === 0) return { overall: 0, attack: 0, midfield: 0, defense: 0, chemistry: 0 };
+
+        const entries = starterIds.map(([slotKey, pId]) => {
+            const p = getPlayer(pId);
+            const slot = slots.find(s => s.slot === slotKey);
+            const slotGroup = slot ? slot.group : null;
+            
+            // Simplified Fit Factor
+            let fit = positionFit.foreign;
+            const pPos = (p.position_main || p.position).toUpperCase();
+            const pSec = (p.position_second || '').toUpperCase();
+            const pThird = (p.position_third || '').toUpperCase();
+
+            const pGroup = getGroupFromPosition(pPos);
+            const sGroup = slotGroup;
+
+            if (pGroup === sGroup) fit = positionFit.main;
+            else if (getGroupFromPosition(pSec) === sGroup) fit = positionFit.second;
+            else if (getGroupFromPosition(pThird) === sGroup) fit = positionFit.third;
+            else if (pGroup === 'GK' || sGroup === 'GK') fit = positionFit.foreign_gk;
+
+            return { player: p, group: sGroup, fit };
+        });
+
+        const calculateScore = (players, type) => {
+            if (players.length === 0) return 0;
+            const sum = players.reduce((acc, { player: p, fit }) => {
+                let base = 0;
+                if (type === 'attack') base = (p.shooting * 0.4) + (p.pace * 0.2) + (p.physical * 0.15) + (p.overall * 0.25);
+                else if (type === 'midfield') base = (p.passing * 0.35) + (p.pace * 0.15) + (p.defending * 0.2) + (p.overall * 0.3);
+                else base = (p.defending * 0.4) + (p.physical * 0.2) + (p.passing * 0.1) + (p.overall * 0.3);
+
+                const condition = ((p.stamina + p.morale) / 200) + 0.5;
+                return acc + Math.min(99, base * condition * fit);
+            }, 0);
+            return sum / players.length;
+        };
+
+        const attScore = calculateScore(entries.filter(e => e.group === 'FWD'), 'attack');
+        const midScore = calculateScore(entries.filter(e => e.group === 'MID'), 'midfield');
+        const defScore = calculateScore(entries.filter(e => ['DEF', 'GK'].includes(e.group)), 'defense');
+
+        const baseOverall = (attScore + midScore + defScore) / 3;
+        
+        // Chemistry
+        const avgMorale = entries.length ? entries.reduce((a, b) => a + b.player.morale, 0) / entries.length : 0;
+        const avgStamina = entries.length ? entries.reduce((a, b) => a + b.player.stamina, 0) / entries.length : 0;
+        const avgFit = entries.length ? entries.reduce((a, b) => a + b.fit, 0) / entries.length : 0;
+        const chemistry = Math.min(100, (((avgMorale + avgStamina) / 2) + (Math.min(10, entries.length) / 2)) * Math.max(0.82, Math.min(1, avgFit)));
+
+        const formationFactor = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '5-3-2'].includes(data.formation) ? 1.0 : 0.95;
+        const countFactor = entries.length < 8 ? 0.8 : 1.0;
+        const overall = Math.round(Math.min(99, baseOverall * formationFactor * countFactor * (chemistry / 100)));
+
+        return {
+            overall,
+            attack: Math.round(attScore),
+            midfield: Math.round(midScore),
+            defense: Math.round(defScore),
+            chemistry: Math.round(chemistry)
+        };
+    }, [data.starter_slots, data.formation, clubPlayers, slots, positionFit]);
+
     // Handle Drop to Slot
     const handleDrop = (e, slotKey, isBench = false) => {
         e.preventDefault();
@@ -247,8 +329,6 @@ export default function Edit({
             router.get(window.location.pathname, { formation: data.formation }, { preserveState: true });
         }
     }, [data.formation]);
-
-    const getPlayer = (id) => clubPlayers.find(p => p.id === parseInt(id));
 
     return (
         <AuthenticatedLayout>
@@ -442,21 +522,21 @@ export default function Edit({
                                 <div className="flex items-center gap-6 px-4">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">STÄRKE</span>
-                                        <span className="text-2xl font-black text-white italic leading-none">{metrics.overall}</span>
+                                        <span className="text-2xl font-black text-white italic leading-none">{calculatedMetrics.overall}</span>
                                     </div>
                                     <div className="h-8 w-px bg-slate-800" />
                                     <div className="flex gap-4">
                                         <div className="flex flex-col">
                                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ANGRIFF</span>
-                                            <span className="text-sm font-black text-white">{metrics.attack}</span>
+                                            <span className="text-sm font-black text-white">{calculatedMetrics.attack}</span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">MITTE</span>
-                                            <span className="text-sm font-black text-white">{metrics.midfield}</span>
+                                            <span className="text-sm font-black text-white">{calculatedMetrics.midfield}</span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ABWEHR</span>
-                                            <span className="text-sm font-black text-white">{metrics.defense}</span>
+                                            <span className="text-sm font-black text-white">{calculatedMetrics.defense}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -465,7 +545,7 @@ export default function Edit({
                                     <Lightning size={16} weight="fill" className="text-amber-500" />
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest leading-none">CHEMIE</span>
-                                        <span className="text-sm font-black text-white leading-none">{metrics.chemistry}%</span>
+                                        <span className="text-sm font-black text-white leading-none">{calculatedMetrics.chemistry}%</span>
                                     </div>
                                 </div>
                             </div>
