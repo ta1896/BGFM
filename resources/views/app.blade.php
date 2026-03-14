@@ -18,7 +18,21 @@
         <!-- Scripts -->
         <script>
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
+                window.addEventListener('load', async () => {
+                    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+                    if (isLocalhost) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(registrations.map((registration) => registration.unregister()));
+
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+                        }
+
+                        return;
+                    }
+
                     navigator.serviceWorker.register('/sw.js');
                 });
             }

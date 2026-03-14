@@ -1,35 +1,35 @@
 import React from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Sparkle, Crosshair, Crown, Sun } from '@phosphor-icons/react';
+import { Sparkle, Crosshair, Flame, SunHorizon } from '@phosphor-icons/react';
 
 const themes = [
     {
         id: 'catalyst',
-        name: 'The Catalyst',
-        description: 'Luxury Gold & Deep Amber',
-        icon: Crown,
-        color: 'from-amber-400 to-amber-600',
+        name: 'Solar Forge',
+        description: 'Volcanic ember and molten brass',
+        icon: Flame,
+        color: 'from-orange-400 to-amber-300',
     },
     {
         id: 'tactical',
-        name: 'Tactical Blueprint',
-        description: 'Tech Cyan & High Contrast',
+        name: 'Tidal Vector',
+        description: 'Aqua neon and tactical depth',
         icon: Crosshair,
-        color: 'from-cyan-400 to-blue-600',
+        color: 'from-cyan-300 to-teal-500',
     },
     {
         id: 'elite',
-        name: 'Elite Suite',
-        description: 'Silver Glass & Minimalist',
+        name: 'Nocturne Luxe',
+        description: 'Electric orchid and glass haze',
         icon: Sparkle,
-        color: 'from-slate-200 to-slate-400',
+        color: 'from-fuchsia-300 to-cyan-300',
     },
     {
         id: 'classic',
-        name: 'Classic Light',
-        description: 'Clean & Professional White',
-        icon: Sun,
-        color: 'from-blue-400 to-indigo-600',
+        name: 'Dune Ledger',
+        description: 'Warm paper and terracotta ink',
+        icon: SunHorizon,
+        color: 'from-orange-300 to-rose-400',
     }
 ];
 
@@ -47,17 +47,17 @@ export default function ThemeSwitcher() {
     };
 
     return (
-        <div className="flex items-center gap-1.5 p-1 bg-black/20 rounded-xl border border-white/5 backdrop-blur-md">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl border border-[var(--border-muted)] bg-[var(--bg-pillar)]/55 backdrop-blur-md">
             {themes.map((theme) => (
                 <button
                     key={theme.id}
                     onClick={() => handleThemeChange(theme.id)}
-                    title={theme.name}
+                    title={`${theme.name} · ${theme.description}`}
                     className={`
                         relative flex items-center justify-center h-7 w-7 rounded-lg transition-all
                         ${currentTheme === theme.id 
-                            ? 'bg-gradient-to-br ' + theme.color + ' text-black shadow-lg shadow-amber-900/10' 
-                            : 'text-gray-500 hover:text-white hover:bg-white/5'}
+                            ? 'bg-gradient-to-br ' + theme.color + ' text-black shadow-lg shadow-black/20 scale-105' 
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5'}
                     `}
                 >
                     <theme.icon size={14} weight={currentTheme === theme.id ? 'fill' : 'bold'} />

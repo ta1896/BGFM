@@ -23,11 +23,20 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
+            'framer-motion': path.resolve(__dirname, 'resources/js/lib/framer-motion-shim.jsx'),
         },
     },
     build: {
         rollupOptions: {
-            output: {},
+            output: {
+                manualChunks(id) {
+                    if (id.includes('pusher-js') || id.includes('laravel-echo')) {
+                        return 'vendor-realtime';
+                    }
+
+                    return undefined;
+                },
+            },
         },
     },
     test: {

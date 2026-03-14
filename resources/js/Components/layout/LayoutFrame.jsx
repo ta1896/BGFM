@@ -1,5 +1,6 @@
 import React from 'react';
 import FlashStatus from '@/Components/layout/FlashStatus';
+import PageTransition from '@/Components/PageTransition';
 
 export default function LayoutFrame({
     themeClassName,
@@ -24,7 +25,9 @@ export default function LayoutFrame({
 
                     <main className={contentClassName}>
                         <FlashStatus status={flashStatus} />
-                        {children}
+                        <PageTransition>
+                            {children}
+                        </PageTransition>
                     </main>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "Inter", "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Sora", "Manrope", ui-sans-serif, system-ui, sans-serif;
     --color-slate-950: #0a0b0d;
 }
 
@@ -14,72 +14,72 @@
         --sim-sidebar-bg: rgba(15, 17, 21, 0.8);
     }
 
-    /* Theme: The Catalyst (Default Luxury Gold) */
+    /* Theme: The Catalyst */
     .theme-catalyst {
-        --bg-pillar: rgba(15, 17, 21, 0.8);
-        --bg-content: #0d0e12;
-        --border-pillar: rgba(217, 177, 120, 0.15);
-        --border-muted: rgba(217, 177, 120, 0.05);
-        --accent-primary: #d9b15c;
-        --accent-secondary: #f59e0b;
-        --accent-glow: rgba(217, 177, 92, 0.12);
-        --pillar-radius: 2.5rem;
-        --text-main: #f3f4f6;
-        --text-muted: #9ca3af;
-        --sim-shell-bg: #090a0c;
-        --sim-shell-bg-image: radial-gradient(circle at top right, #1a1c20 0%, #0f1115 45%, #050608 100%);
-        --sim-border-dark: rgba(255, 255, 255, 0.05);
+        --bg-pillar: rgba(24, 14, 11, 0.78);
+        --bg-content: #110b0d;
+        --border-pillar: rgba(255, 124, 67, 0.18);
+        --border-muted: rgba(255, 124, 67, 0.08);
+        --accent-primary: #ff7c43;
+        --accent-secondary: #ffd166;
+        --accent-glow: rgba(255, 124, 67, 0.18);
+        --pillar-radius: 2rem;
+        --text-main: #fff4ea;
+        --text-muted: #d3b8ab;
+        --sim-shell-bg: #140d0b;
+        --sim-shell-bg-image: radial-gradient(circle at top right, rgba(255, 124, 67, 0.16) 0%, transparent 30%), radial-gradient(circle at bottom left, rgba(255, 209, 102, 0.1) 0%, transparent 35%), linear-gradient(135deg, #140d0b 0%, #1f1210 48%, #090607 100%);
+        --sim-border-dark: rgba(255, 170, 130, 0.08);
     }
 
-    /* Theme: Tactical Blueprint (High-Tech Cyan) */
+    /* Theme: Tactical Blueprint */
     .theme-tactical {
-        --bg-pillar: rgba(10, 20, 35, 0.9);
-        --bg-content: #050b15;
-        --border-pillar: rgba(6, 182, 212, 0.2);
-        --border-muted: rgba(6, 182, 212, 0.08);
-        --accent-primary: #06b6d4;
-        --accent-secondary: #0ea5e9;
-        --accent-glow: rgba(6, 182, 212, 0.1);
-        --pillar-radius: 0.75rem;
-        --text-main: #e2e8f0;
-        --text-muted: #64748b;
-        --sim-shell-bg: #050b15;
-        --sim-shell-bg-image: none;
-        --sim-border-dark: rgba(6, 182, 212, 0.1);
-    }
-
-    /* Theme: Elite Suite (Glass / Silver) */
-    .theme-elite {
-        --bg-pillar: rgba(255, 255, 255, 0.05);
-        --bg-content: #0a0a0a;
-        --border-pillar: rgba(255, 255, 255, 0.1);
-        --border-muted: rgba(255, 255, 255, 0.03);
-        --accent-primary: #ffffff;
-        --accent-secondary: #94a3b8;
-        --accent-glow: rgba(255, 255, 255, 0.05);
-        --pillar-radius: 3rem;
-        --text-main: #ffffff;
-        --text-muted: #94a3b8;
-        --sim-shell-bg: #0a0a0a;
-        --sim-shell-bg-image: none;
-        --sim-border-dark: rgba(255, 255, 255, 0.05);
-    }
-
-    /* Theme: Classic Light (Professional / High Clarity) */
-    .theme-classic {
-        --bg-pillar: #ffffff;
-        --bg-content: #f8fafc;
-        --border-pillar: #e2e8f0;
-        --border-muted: #f1f5f9;
-        --accent-primary: #1e40af;
-        --accent-secondary: #3b82f6;
-        --accent-glow: rgba(30, 64, 175, 0.05);
+        --bg-pillar: rgba(8, 18, 34, 0.84);
+        --bg-content: #07101d;
+        --border-pillar: rgba(0, 214, 201, 0.2);
+        --border-muted: rgba(0, 214, 201, 0.08);
+        --accent-primary: #00d6c9;
+        --accent-secondary: #63f5ff;
+        --accent-glow: rgba(0, 214, 201, 0.16);
         --pillar-radius: 1rem;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --sim-shell-bg: #f1f5f9;
-        --sim-shell-bg-image: none;
-        --sim-border-dark: #e2e8f0;
+        --text-main: #ebfffe;
+        --text-muted: #8cbcc1;
+        --sim-shell-bg: #07111f;
+        --sim-shell-bg-image: radial-gradient(circle at top left, rgba(99, 245, 255, 0.12) 0%, transparent 28%), linear-gradient(135deg, #06111e 0%, #07192d 50%, #02060d 100%);
+        --sim-border-dark: rgba(99, 245, 255, 0.08);
+    }
+
+    /* Theme: Elite Suite */
+    .theme-elite {
+        --bg-pillar: rgba(34, 16, 54, 0.62);
+        --bg-content: #180f28;
+        --border-pillar: rgba(197, 116, 255, 0.22);
+        --border-muted: rgba(197, 116, 255, 0.08);
+        --accent-primary: #c574ff;
+        --accent-secondary: #7cf6ff;
+        --accent-glow: rgba(197, 116, 255, 0.18);
+        --pillar-radius: 2.75rem;
+        --text-main: #faf3ff;
+        --text-muted: #baabd5;
+        --sim-shell-bg: #120c1d;
+        --sim-shell-bg-image: radial-gradient(circle at top center, rgba(197, 116, 255, 0.18) 0%, transparent 26%), radial-gradient(circle at bottom right, rgba(124, 246, 255, 0.12) 0%, transparent 24%), linear-gradient(140deg, #140d20 0%, #1f1531 45%, #09060e 100%);
+        --sim-border-dark: rgba(220, 170, 255, 0.08);
+    }
+
+    /* Theme: Classic Light */
+    .theme-classic {
+        --bg-pillar: rgba(255, 251, 245, 0.92);
+        --bg-content: #fff8ef;
+        --border-pillar: rgba(192, 91, 56, 0.18);
+        --border-muted: rgba(192, 91, 56, 0.08);
+        --accent-primary: #c05b38;
+        --accent-secondary: #ff9b54;
+        --accent-glow: rgba(192, 91, 56, 0.12);
+        --pillar-radius: 1.4rem;
+        --text-main: #2f211c;
+        --text-muted: #856a5f;
+        --sim-shell-bg: #f8efe4;
+        --sim-shell-bg-image: radial-gradient(circle at top left, rgba(255, 155, 84, 0.2) 0%, transparent 24%), linear-gradient(135deg, #fcf2e8 0%, #f6eadc 48%, #efe4d7 100%);
+        --sim-border-dark: rgba(192, 91, 56, 0.08);
     }
 
     html {
@@ -117,21 +117,100 @@
     }
 
     ::-webkit-scrollbar-thumb {
-        background: rgba(217, 177, 92, 0.15);
+        background: color-mix(in srgb, var(--accent-primary) 35%, transparent);
         border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(217, 177, 92, 0.3);
+        background: color-mix(in srgb, var(--accent-primary) 55%, transparent);
     }
 
     * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(217, 177, 92, 0.15) transparent;
+        scrollbar-color: color-mix(in srgb, var(--accent-primary) 35%, transparent) transparent;
     }
 }
 
 @layer components {
+    .page-reveal {
+        --reveal-delay: 0ms;
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+        filter: blur(10px);
+        animation: page-reveal-in 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        animation-delay: var(--reveal-delay);
+    }
+
+    .stagger-group > * {
+        --reveal-delay: calc(var(--stagger-index, 0) * 90ms);
+        opacity: 0;
+        transform: translateY(16px) scale(0.99);
+        filter: blur(8px);
+        animation: page-reveal-in 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        animation-delay: var(--reveal-delay);
+    }
+
+    .stagger-group > :nth-child(1) { --stagger-index: 0; }
+    .stagger-group > :nth-child(2) { --stagger-index: 1; }
+    .stagger-group > :nth-child(3) { --stagger-index: 2; }
+    .stagger-group > :nth-child(4) { --stagger-index: 3; }
+    .stagger-group > :nth-child(5) { --stagger-index: 4; }
+    .stagger-group > :nth-child(6) { --stagger-index: 5; }
+    .stagger-group > :nth-child(7) { --stagger-index: 6; }
+    .stagger-group > :nth-child(8) { --stagger-index: 7; }
+
+    .page-shell {
+        position: relative;
+        width: 100%;
+        transform-origin: top center;
+        will-change: opacity, transform, filter;
+    }
+
+    .page-shell::before {
+        content: "";
+        position: absolute;
+        inset: -1.5rem 12% auto;
+        height: 8rem;
+        border-radius: 999px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--accent-primary) 14%, transparent) 0%, transparent 72%);
+        filter: blur(28px);
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    .page-shell-enter {
+        opacity: 0;
+        transform: translateY(22px) scale(0.985);
+        filter: blur(12px);
+    }
+
+    .page-shell-enter::before {
+        opacity: 1;
+    }
+
+    .page-shell-enter-active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+        transition: opacity 320ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms ease;
+    }
+
+    .page-shell-enter-active::before {
+        animation: page-shell-glow 520ms ease-out forwards;
+    }
+
+    .page-shell-exit {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+
+    .page-shell-exit-active {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.995);
+        filter: blur(8px);
+        transition: opacity 180ms ease, transform 220ms ease, filter 220ms ease;
+    }
 
     /* Layout: Precise Gold Accents */
     #app-layout aside,
@@ -182,7 +261,7 @@
     }
 
     .sim-sidebar-floating:hover {
-        @apply border-amber-500/20;
+        border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
     }
 
     /* Responsive Floating Content */
@@ -231,8 +310,9 @@
     }
 
     .sim-card-soft {
-        @apply rounded-lg bg-gray-900/40 transition-colors;
-        border: 1px solid rgba(217, 177, 92, 0.08);
+        @apply rounded-lg transition-colors;
+        background-color: color-mix(in srgb, var(--bg-pillar) 86%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent-primary) 14%, transparent);
     }
 
     /* High-Contrast Typography */
@@ -242,18 +322,38 @@
     }
 
     .sim-heading {
-        @apply text-xl font-black text-white tracking-tight italic uppercase;
+        @apply text-xl font-black tracking-tight italic uppercase;
+        color: var(--text-main);
     }
 
     .sim-heading-muted {
-        @apply text-sm font-bold text-gray-500 uppercase tracking-widest;
+        @apply text-sm font-bold uppercase tracking-widest;
+        color: var(--text-muted);
     }
 
     /* Inputs - Darker & Gold Focus */
     .sim-input,
     .sim-select,
     .sim-textarea {
-        @apply w-full rounded-lg border border-gray-800/60 bg-black/40 px-4 py-3 text-sm text-gray-100 placeholder:text-gray-700 transition-all focus:border-amber-500/50 focus:bg-black/80 focus:outline-none focus:ring-1 focus:ring-amber-500/20 shadow-inner;
+        @apply w-full rounded-lg px-4 py-3 text-sm transition-all focus:outline-none shadow-inner;
+        border: 1px solid color-mix(in srgb, var(--accent-primary) 14%, transparent);
+        background-color: color-mix(in srgb, var(--bg-content) 82%, transparent);
+        color: var(--text-main);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 4%, transparent);
+    }
+
+    .sim-input::placeholder,
+    .sim-select::placeholder,
+    .sim-textarea::placeholder {
+        color: color-mix(in srgb, var(--text-muted) 78%, transparent);
+    }
+
+    .sim-input:focus,
+    .sim-select:focus,
+    .sim-textarea:focus {
+        border-color: color-mix(in srgb, var(--accent-primary) 48%, transparent);
+        background-color: color-mix(in srgb, var(--bg-content) 96%, transparent);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 26%, transparent);
     }
 
     /* Buttons - Luxury Theme Gradient */
@@ -273,7 +373,16 @@
     }
 
     .sim-btn-muted {
-        @apply inline-flex items-center justify-center rounded-lg border border-gray-800 bg-gray-900/60 px-6 py-3 text-sm font-bold text-gray-300 transition-all hover:bg-gray-800 hover:text-white hover:border-gray-600 active:scale-[0.98];
+        @apply inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-bold transition-all active:scale-[0.98];
+        border: 1px solid color-mix(in srgb, var(--accent-primary) 14%, transparent);
+        background-color: color-mix(in srgb, var(--bg-pillar) 82%, transparent);
+        color: var(--text-muted);
+    }
+
+    .sim-btn-muted:hover {
+        background-color: color-mix(in srgb, var(--bg-content) 96%, transparent);
+        color: var(--text-main);
+        border-color: color-mix(in srgb, var(--accent-primary) 24%, transparent);
     }
 
     .sim-btn-danger {
@@ -282,7 +391,8 @@
 
     /* Navigation - Gold Indication */
     .sim-nav-item {
-        @apply flex items-center justify-between rounded-md px-4 py-3 text-sm font-bold text-gray-500 transition-all hover:bg-white/5 hover:text-white;
+        @apply flex items-center justify-between rounded-md px-4 py-3 text-sm font-bold transition-all hover:bg-white/5;
+        color: var(--text-muted);
     }
 
     .sim-nav-item-active {
@@ -295,28 +405,40 @@
 
     /* Elements */
     .sim-pill {
-        @apply inline-flex items-center rounded bg-gray-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-gray-500 border border-gray-800;
+        @apply inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border rounded;
+        background-color: color-mix(in srgb, var(--bg-content) 92%, transparent);
+        color: var(--text-muted);
+        border-color: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     }
 
     .sim-switch-track {
-        @apply relative w-11 h-6 bg-gray-900 rounded-full border border-gray-800 transition-colors duration-200;
+        @apply relative w-11 h-6 rounded-full border transition-colors duration-200;
+        background-color: color-mix(in srgb, var(--bg-content) 92%, transparent);
+        border-color: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     }
 
     .sim-switch input:checked+.sim-switch-track {
-        @apply bg-amber-900/30 border-amber-600/50;
+        background-color: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+        border-color: color-mix(in srgb, var(--accent-primary) 48%, transparent);
     }
 
     .sim-switch input:checked+.sim-switch-track::after {
-        @apply translate-x-5 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)];
+        @apply translate-x-5;
+        background-color: var(--accent-primary);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 55%, transparent);
     }
 
     /* Tables - Luxury Dark */
     .sim-table th {
-        @apply px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 border-b border-gray-800/60 transition-colors;
+        @apply px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] border-b transition-colors;
+        color: var(--text-muted);
+        border-color: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     }
 
     .sim-table td {
-        @apply px-5 py-4 text-sm font-medium text-gray-300 border-b border-gray-900/40 transition-colors;
+        @apply px-5 py-4 text-sm font-medium border-b transition-colors;
+        color: color-mix(in srgb, var(--text-main) 84%, transparent);
+        border-color: color-mix(in srgb, var(--accent-primary) 6%, transparent);
     }
 
     .sim-table tr:hover td {
@@ -346,5 +468,31 @@
         @apply w-2 h-2 rounded-full bg-amber-500;
         box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
         animation: flash 1.5s ease-in-out infinite;
+    }
+}
+
+@keyframes page-shell-glow {
+    0% {
+        opacity: 0.9;
+        transform: scale(0.92);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.18);
+    }
+}
+
+@keyframes page-reveal-in {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+        filter: blur(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
     }
 }

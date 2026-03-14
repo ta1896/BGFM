@@ -1,5 +1,6 @@
 import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
+import PageTransition from '@/Components/PageTransition';
 
 export default function AuthLayout({ title, heading, subtitle, children, footer }) {
     const status = usePage().props.flash?.status;
@@ -24,15 +25,17 @@ export default function AuthLayout({ title, heading, subtitle, children, footer 
                     )}
                 </div>
 
-                <div className="sim-card border-white/5 bg-[var(--bg-pillar)]/40 p-10 backdrop-blur-2xl shadow-2xl shadow-indigo-500/5">
-                    {status && (
-                        <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-400">
-                            {status}
-                        </div>
-                    )}
+                <PageTransition className="rounded-[inherit]">
+                    <div className="sim-card border-white/5 bg-[var(--bg-pillar)]/40 p-10 backdrop-blur-2xl shadow-2xl shadow-indigo-500/5">
+                        {status && (
+                            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-400">
+                                {status}
+                            </div>
+                        )}
 
-                    {children}
-                </div>
+                        {children}
+                    </div>
+                </PageTransition>
 
                 {footer && (
                     <div className="mt-8 text-center text-sm font-bold text-[var(--text-muted)]">

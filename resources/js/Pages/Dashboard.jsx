@@ -1,7 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { motion } from 'framer-motion';
+import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import { 
     Calendar, Trophy, Users, ChartBar, TrendUp, 
     ArrowRight, Bell, WarningCircle, Info, Bank,
@@ -9,13 +9,8 @@ import {
 } from '@phosphor-icons/react';
 import Skeleton from '@/Components/Skeleton';
 
-const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber', delay = 0 }) => (
-    <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay }}
-        className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 relative overflow-hidden group hover:border-[var(--accent-primary)]/30 transition-all shadow-xl"
-    >
+const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber' }) => (
+    <div className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 relative overflow-hidden group hover:border-[var(--accent-primary)]/30 transition-all shadow-xl">
         <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-${color}-500/5 blur-2xl group-hover:bg-${color}-500/10 transition-colors`} />
         
         <div className="flex items-center gap-4 relative z-10">
@@ -30,19 +25,16 @@ const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber', delay =
                 </div>
             </div>
         </div>
-    </motion.div>
+    </div>
 );
 
-const TimelineDay = ({ day, delay }) => {
+const TimelineDay = ({ day }) => {
     const isToday = day.is_today;
     const hasMatch = day.match_count > 0;
     const hasTraining = day.training_count > 0;
     
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay }}
+        <div
             className={`
                 relative flex flex-col justify-between rounded-2xl border p-4 transition-all hover:-translate-y-1 hover:shadow-2xl
                 ${isToday ? 'border-amber-500/40 bg-amber-500/5 shadow-lg shadow-amber-500/10' : 'border-[var(--border-muted)] bg-[var(--bg-pillar)]/30'}
@@ -77,7 +69,7 @@ const TimelineDay = ({ day, delay }) => {
                     <span className="text-[10px] font-medium text-slate-600 px-1 py-1.5">Rest Day</span>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 };
 
@@ -95,11 +87,7 @@ export default function Dashboard(props) {
             <AuthenticatedLayout>
                 <Head title="Welcome" />
                 <div className="max-w-4xl mx-auto py-12 text-center">
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }} 
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-[var(--bg-pillar)]/40 p-12 rounded-3xl border border-[var(--border-pillar)]"
-                    >
+                    <div className="bg-[var(--bg-pillar)]/40 p-12 rounded-3xl border border-[var(--border-pillar)]">
                         <Trophy size={64} weight="duotone" className="mx-auto text-amber-500 mb-6" />
                         <h1 className="text-4xl font-bold text-white mb-4">Start Your Career</h1>
                         <p className="text-[var(--text-muted)] text-lg mb-8 max-w-xl mx-auto">
@@ -112,7 +100,7 @@ export default function Dashboard(props) {
                             View Available Clubs
                             <ArrowRight size={20} weight="bold" />
                         </Link>
-                    </motion.div>
+                    </div>
                 </div>
             </AuthenticatedLayout>
         );
@@ -126,14 +114,13 @@ export default function Dashboard(props) {
             
             <div className="space-y-8">
                 {/* Header Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StaggerGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
                         label="Account Balance" 
                         value={new Intl.NumberFormat('de-DE').format(activeClub.budget)} 
                         subValue="€" 
                         icon={Bank} 
                         color="emerald"
-                        delay={0.1}
                     />
                     {clubRank !== undefined ? (
                         <StatCard 
@@ -142,7 +129,6 @@ export default function Dashboard(props) {
                             subValue={`${clubPoints || 0} Points`} 
                             icon={Trophy} 
                             color="amber"
-                            delay={0.2}
                         />
                     ) : (
                         <div className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 shadow-xl h-[104px]">
@@ -161,7 +147,6 @@ export default function Dashboard(props) {
                         subValue="Total" 
                         icon={Calendar} 
                         color="amber"
-                        delay={0.3}
                     />
                     <StatCard 
                         label="Fan Mood" 
@@ -169,15 +154,14 @@ export default function Dashboard(props) {
                         subValue={fanMood > 70 ? 'Excellent' : fanMood > 40 ? 'Stable' : 'Unrest'} 
                         icon={fanMood > 50 ? Smiley : SmileySad} 
                         color={fanMood > 70 ? 'emerald' : fanMood > 40 ? 'amber' : 'rose'}
-                        delay={0.4}
                     />
-                </div>
+                </StaggerGroup>
 
                 {/* Main Dashboard Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     
                     {/* Left Column (Main Info) */}
-                    <div className="lg:col-span-8 space-y-8">
+                    <PageReveal className="lg:col-span-8 space-y-8" delay={90}>
                         
                         {/* Weekly Overview */}
                         <section>
@@ -194,18 +178,13 @@ export default function Dashboard(props) {
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                                 {weekDays.map((day, idx) => (
-                                    <TimelineDay key={idx} day={day} delay={0.1 + idx * 0.05} />
+                                    <TimelineDay key={idx} day={day} />
                                 ))}
                             </div>
                         </section>
 
                         {/* Next Match Card */}
-                        <motion.section
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                            className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-8 shadow-2xl relative overflow-hidden"
-                        >
+                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-8 shadow-2xl relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
                             
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-500 mb-8">Next Fixture</h3>
@@ -265,11 +244,11 @@ export default function Dashboard(props) {
                                     </Link>
                                 </div>
                             )}
-                        </motion.section>
-                    </div>
+                        </section>
+                    </PageReveal>
 
                     {/* Right Column (Sidebar Widgets) */}
-                    <div className="lg:col-span-4 space-y-8">
+                    <PageReveal className="lg:col-span-4 space-y-8" delay={180}>
                         
                         {/* Squad Metrics */}
                         <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl leading-none">
@@ -288,11 +267,9 @@ export default function Dashboard(props) {
                                                 <span className={`text-lg font-black text-${item.color}-400`}>{item.value}</span>
                                             </div>
                                             <div className="h-2 w-full bg-[var(--bg-content)] rounded-full overflow-hidden">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${item.value}%` }}
-                                                    transition={{ duration: 1, delay: 0.6 + id * 0.1 }}
-                                                    className={`h-full bg-${item.color}-500 shadow-[0_0_10px_rgba(var(--${item.color}-rgb),0.5)]`}
+                                                <div
+                                                    className={`h-full bg-${item.color}-500 shadow-[0_0_10px_rgba(var(--${item.color}-rgb),0.5)] transition-[width] duration-700`}
+                                                    style={{ width: `${item.value}%` }}
                                                 />
                                             </div>
                                         </div>
@@ -359,7 +336,7 @@ export default function Dashboard(props) {
                                 </div>
                             </section>
                         )}
-                    </div>
+                    </PageReveal>
                 </div>
             </div>
             
