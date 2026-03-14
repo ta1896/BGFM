@@ -42,6 +42,7 @@ class SimulationSettingsService
                 'default_types' => $this->normalizeTypes((array) config('simulation.scheduler.default_types', self::ALLOWED_MATCH_TYPES)),
                 'claim_stale_after_seconds' => max(30, (int) config('simulation.scheduler.claim_stale_after_seconds', 180)),
                 'runner_lock_seconds' => max(30, (int) config('simulation.scheduler.runner_lock_seconds', 120)),
+                'max_concurrency' => max(1, (int) config('simulation.scheduler.max_concurrency', 5)),
             ],
             'position_fit' => [
                 'main' => (float) config('simulation.position_fit.main', 1.00),
@@ -87,6 +88,7 @@ class SimulationSettingsService
             'simulation.scheduler.default_types' => $this->normalizeTypes((array) data_get($payload, 'scheduler.default_types', self::ALLOWED_MATCH_TYPES)),
             'simulation.scheduler.claim_stale_after_seconds' => max(30, (int) data_get($payload, 'scheduler.claim_stale_after_seconds', 180)),
             'simulation.scheduler.runner_lock_seconds' => max(30, (int) data_get($payload, 'scheduler.runner_lock_seconds', 120)),
+            'simulation.scheduler.max_concurrency' => max(1, min(50, (int) data_get($payload, 'scheduler.max_concurrency', 5))),
             'simulation.position_fit.main' => round((float) data_get($payload, 'position_fit.main', 1.00), 2),
             'simulation.position_fit.second' => round((float) data_get($payload, 'position_fit.second', 0.92), 2),
             'simulation.position_fit.third' => round((float) data_get($payload, 'position_fit.third', 0.84), 2),

@@ -67,6 +67,11 @@
                             <x-text-input id="scheduler_default_minutes_per_run" type="number" min="1" max="90" name="simulation[scheduler][default_minutes_per_run]" class="block mt-1 w-full" :value="old('simulation.scheduler.default_minutes_per_run', data_get($simulationSettings, 'scheduler.default_minutes_per_run', 5))" />
                             <p class="text-xs text-slate-500 mt-1">Spielminuten pro Echtzeit-Intervall.</p>
                         </div>
+                        <div>
+                            <x-input-label for="scheduler_max_concurrency" value="Max. parallele Simulationen" />
+                            <x-text-input id="scheduler_max_concurrency" type="number" min="1" max="50" name="simulation[scheduler][max_concurrency]" class="block mt-1 w-full" :value="old('simulation.scheduler.max_concurrency', data_get($simulationSettings, 'scheduler.max_concurrency', 5))" />
+                            <p class="text-xs text-slate-500 mt-1">Anzahl der parallelen Worker-Prozesse.</p>
+                        </div>
                     </div>
 
                     {{-- These fields are validated as required but not shown in UI — pass current values --}}

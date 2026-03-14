@@ -22,6 +22,7 @@ class GeneralSimulationSettingsController extends Controller
         $validated = $request->validate([
             'simulation.scheduler.interval_minutes' => ['required', 'integer', 'min:1', 'max:60'],
             'simulation.scheduler.default_limit' => ['required', 'integer', 'min:0', 'max:500'],
+            'simulation.scheduler.max_concurrency' => ['required', 'integer', 'min:1', 'max:50'],
             'simulation.scheduler.default_minutes_per_run' => ['required', 'integer', 'min:1', 'max:90'],
             'simulation.scheduler.default_types' => ['required', 'array', 'min:1'],
             'simulation.scheduler.default_types.*' => ['string', 'in:friendly,league,cup'],
