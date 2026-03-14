@@ -30,7 +30,7 @@ use App\Http\Controllers\TransferMarketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
+    return inertia('Home');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {

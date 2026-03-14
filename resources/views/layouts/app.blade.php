@@ -111,7 +111,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', 'OpenWS Laravell') }}</title>
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     </head>
     <body class="sim-shell font-sans text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
         <div id="app-layout" class="min-h-screen lg:flex">
