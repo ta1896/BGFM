@@ -39,5 +39,5 @@ jobs:
             docker compose exec -T app php artisan view:cache
             docker compose exec -T app php artisan event:cache
             
-            # Restart queue workers so they load the fresh code into RAM
-            docker compose exec -T app php artisan queue:restart
+            # Restart Horizon so it loads the fresh code into RAM
+            docker compose exec -T app php artisan horizon:terminate

@@ -67,7 +67,7 @@ services:
     container_name: newgen_queue
     restart: unless-stopped
     working_dir: /var/www
-    command: php artisan queue:work --tries=3 --timeout=90
+    command: php artisan horizon
     logging: *default-logging
     environment:
       - REDIS_CLIENT=phpredis
@@ -108,3 +108,25 @@ services:
 volumes:
   db-data:
   redis-data:
+
+  reverb:
+    image: newgen-app
+    container_name: newgen_reverb
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan reverb:start --debug
+    logging: *default-logging
+    environment:
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - app
+      - mysql
+      - redis
