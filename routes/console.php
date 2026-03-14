@@ -528,3 +528,48 @@ Artisan::command(
         return 0;
     }
 )->purpose('Rebuild + optionales Integritaets-Audit fuer League-/Player-Statistiken aus Match-Rohdaten.');
+
+Artisan::command('game:backup-db', function () {
+    $host = env('DB_HOST', 'mysql');
+    $user = env('DB_USERNAME', 'sail');
+    $password = env('DB_PASSWORD', 'password');
+    $database = env('DB_DATABASE', 'laravel');
+
+    $backupPath = storage_path('app/backups');
+    if (!\Illuminate\Support\Facades\File::isDirectory($backupPath)) {
+        \Illuminate\Support\Facades\File::makeDirectory($backupPath, 0755, true);
+    }
+
+    $filename = 'db-backup-' . date('Y-m-d_H-i-s') . '.sql';
+    $path = $backupPath . '/' . $filename;
+
+    $command = sprintf(
+        'mysqldump -h %s -u %s -p%s %s > %s',
+        escapeshellarg((string) $host),
+        escapeshellarg((string) $user),
+        escapeshellarg((string) $password),
+        escapeshellarg((string) $database),
+        escapeshellarg((string) $path)
+    );
+
+    exec($command, $output, $returnVar);
+
+    if ($returnVar !== 0) {
+        $this->error('Backup fehlgeschlagen!');
+        \Illuminate\Support\Facades\Log::error('DB Backup failed.', ['output' => $output]);
+        return 1;
+    }
+
+    // Alte Backups löschen (älter als 7 Tage)
+    $files = \Illuminate\Support\Facades\File::files($backupPath);
+    foreach ($files as $file) {
+        if (now()->diffInDays(\Carbon\Carbon::createFromTimestamp($file->getMTime())) > 7) {
+            \Illuminate\Support\Facades\File::delete($file);
+        }
+    }
+
+    $this->info("Backup {$filename} erfolgreich erstellt.");
+    return 0;
+})->purpose('Erstellt ein vollautomatisches Backup der Datenbank.');
+
+Schedule::command('game:backup-db')->dailyAt('03:00');

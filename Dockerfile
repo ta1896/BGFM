@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # PHP-Erweiterungen installieren
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # OPcache für maximale Performance in Production konfigurieren
 RUN echo "opcache.enable=1\n\

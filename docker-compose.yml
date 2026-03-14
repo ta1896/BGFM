@@ -1,5 +1,11 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   app:
     build:
@@ -9,15 +15,24 @@ services:
     container_name: newgen_app
     restart: unless-stopped
     working_dir: /var/www
+    logging: *default-logging
+    environment:
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
     volumes:
       - ./:/var/www
     depends_on:
       - mysql
+      - redis
 
   web:
     image: nginx:alpine
     container_name: newgen_nginx
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "80:80"
       # - "443:443" # Für Let's Encrypt SSL später
@@ -33,11 +48,19 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     command: php artisan schedule:work
+    logging: *default-logging
+    environment:
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
     volumes:
       - ./:/var/www
     depends_on:
       - app
       - mysql
+      - redis
 
   queue:
     image: newgen-app
@@ -45,11 +68,19 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     command: php artisan queue:work --tries=3 --timeout=90
+    logging: *default-logging
+    environment:
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
     volumes:
       - ./:/var/www
     depends_on:
       - app
       - mysql
+      - redis
 
   mysql:
     image: mysql:8.0
@@ -60,10 +91,20 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_PASSWORD: password
       MYSQL_USER: sail
+    logging: *default-logging
     volumes:
       - db-data:/var/lib/mysql
     ports:
       - "3306:3306"
 
+  redis:
+    image: redis:alpine
+    container_name: newgen_redis
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - redis-data:/data
+
 volumes:
   db-data:
+  redis-data:
