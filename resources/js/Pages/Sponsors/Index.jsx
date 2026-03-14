@@ -1,109 +1,87 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Handshake, 
-    Crown, 
-    Calendar, 
-    TrendUp, 
-    XCircle,
-    CheckCircle,
-    Info,
-    CurrencyEur,
-    Star,
-    HourglassMedium
-} from '@phosphor-icons/react';
+import { Head, useForm } from '@inertiajs/react';
+import { Handshake, Crown, XCircle, Star, HourglassMedium } from '@phosphor-icons/react';
+import PageHeader from '@/Components/PageHeader';
+import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import SectionCard from '@/Components/SectionCard';
+import MetricCard from '@/Components/MetricCard';
 
-const OfferCard = ({ offer, activeClub, onSign, disabled }) => {
+function OfferCard({ offer, onSign, disabled }) {
     const [months, setMonths] = useState(12);
-    
+
     return (
-        <motion.div 
-            layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="sim-card p-6 flex flex-col h-full group border-[var(--border-muted)] hover:border-amber-500/30 transition-all"
-        >
-            <div className="flex justify-between items-start mb-6">
+        <div className="sim-card flex h-full flex-col border-[var(--border-muted)] p-6 transition-colors hover:border-[var(--accent-primary)]/30">
+            <div className="mb-6 flex items-start justify-between">
                 <div>
-                    <h4 className="text-xl font-black text-white group-hover:text-amber-500 transition-colors uppercase tracking-tighter">
-                        {offer.name}
-                    </h4>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-[var(--bg-content)] text-[var(--text-muted)] border border-[var(--border-pillar)] mt-2">
+                    <h4 className="text-xl font-black uppercase tracking-tighter text-[var(--text-main)]">{offer.name}</h4>
+                    <span className="mt-2 inline-flex rounded border border-[var(--border-pillar)] bg-[var(--bg-content)] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                         {offer.tier}
                     </span>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-[var(--bg-content)]/50 flex items-center justify-center text-[var(--text-muted)] group-hover:text-amber-500 transition-colors border border-[var(--border-muted)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/50 text-[var(--text-muted)]">
                     <Handshake size={28} weight="duotone" />
                 </div>
             </div>
 
-            <div className="space-y-4 mb-8 flex-1">
-                <div className="flex justify-between items-center text-sm">
-                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-[10px]">Basisbetrag</span>
-                    <span className="font-black text-emerald-400 font-mono">
-                        {offer.base_weekly_amount.toLocaleString('de-DE')} €
-                    </span>
+            <div className="mb-8 flex-1 space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Basisbetrag</span>
+                    <span className="font-mono font-black text-emerald-400">{offer.base_weekly_amount.toLocaleString('de-DE')} EUR</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-[10px]">Reputation-Anforderung</span>
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Reputation</span>
                     <div className="flex items-center gap-1">
-                        <Star size={14} weight="fill" className="text-amber-400" />
-                        <span className="font-black text-white font-mono">{offer.reputation_min}</span>
+                        <Star size={14} weight="fill" className="text-[var(--accent-primary)]" />
+                        <span className="font-mono font-black text-[var(--text-main)]">{offer.reputation_min}</span>
                     </div>
                 </div>
             </div>
 
             <div className="mt-auto space-y-4">
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                        <input 
-                            type="number" 
-                            min="1" 
-                            max="60" 
-                            value={months}
-                            onChange={(e) => setMonths(e.target.value)}
-                            className="w-full bg-[var(--bg-pillar)] border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white font-bold text-center focus:border-amber-500/50 focus:ring-0 transition-all disabled:opacity-50"
-                            disabled={disabled}
-                        />
-                        <span className="absolute right-3 top-3.5 text-[10px] font-black uppercase tracking-widest text-slate-600 pointer-events-none">Mte</span>
-                    </div>
+                <div className="relative">
+                    <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={months}
+                        onChange={(event) => setMonths(event.target.value)}
+                        className="w-full rounded-xl border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-4 py-3 text-center font-bold text-[var(--text-main)] outline-none transition-all focus:border-[var(--accent-primary)]/50 disabled:opacity-50"
+                        disabled={disabled}
+                    />
+                    <span className="pointer-events-none absolute right-3 top-3.5 text-[10px] font-black uppercase tracking-widest text-slate-600">Mte</span>
                 </div>
-                <button 
+                <button
+                    type="button"
                     onClick={() => onSign(offer.id, months)}
                     disabled={disabled}
-                    className="w-full sim-btn-primary py-4 disabled:opacity-20 disabled:grayscale transition-all"
+                    className="w-full rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] py-4 font-black text-white transition-opacity disabled:opacity-20"
                 >
                     {disabled ? 'Vertrag aktiv' : 'Angebot annehmen'}
                 </button>
             </div>
-        </motion.div>
+        </div>
     );
-};
+}
 
 export default function Sponsors({ offers, activeContract, history, activeClub }) {
-    const { auth } = usePage().props;
     const signForm = useForm({
         club_id: activeClub?.id,
         months: 12,
     });
+    const terminateForm = useForm({});
 
     const handleSign = (sponsorId, months) => {
         signForm.setData({
             club_id: activeClub.id,
-            months: months
+            months,
         });
-        signForm.post(route('sponsors.sign', sponsorId), {
-            preserveScroll: true,
-        });
+        signForm.post(route('sponsors.sign', sponsorId), { preserveScroll: true });
     };
 
     const handleTerminate = () => {
-        if (confirm('Möchtest du diesen Vertrag wirklich vorzeitig beenden?')) {
-            useForm().post(route('sponsors.contracts.terminate', activeContract.id), {
-                preserveScroll: true,
-            });
+        if (confirm('Moechtest du diesen Vertrag wirklich vorzeitig beenden?')) {
+            terminateForm.post(route('sponsors.contracts.terminate', activeContract.id), { preserveScroll: true });
         }
     };
 
@@ -111,8 +89,8 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
         return (
             <AuthenticatedLayout>
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-2">Kein Verein aktiv</h2>
-                    <p className="text-[var(--text-muted)] max-w-md">Es konnte kein aktiver Verein gefunden werden. Bitte wähle einen Verein aus der Liste oder erstelle einen neuen.</p>
+                    <h2 className="mb-2 text-2xl font-bold text-[var(--text-main)]">Kein Verein aktiv</h2>
+                    <p className="max-w-md text-[var(--text-muted)]">Es konnte kein aktiver Verein gefunden werden. Bitte waehle einen Verein aus der Liste oder erstelle einen neuen.</p>
                 </div>
             </AuthenticatedLayout>
         );
@@ -122,146 +100,102 @@ export default function Sponsors({ offers, activeContract, history, activeClub }
         <AuthenticatedLayout>
             <Head title="Sponsoring" />
 
-            <div className="max-w-[1400px] mx-auto space-y-10">
-                {/* Active Support Hero */}
-                <div className="relative rounded-[2rem] overflow-hidden border border-[var(--border-muted)] bg-[var(--bg-pillar)]/40">
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent z-10" />
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                    
-                    <div className="relative z-20 p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12">
-                        <div className="flex-1">
-                            <motion.div 
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center gap-3 mb-6"
-                            >
-                                <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(217,177,92,0.6)] animate-pulse" />
-                                <span className="text-xs font-black uppercase tracking-[0.3em] text-amber-500">Status: Sponsoring Live</span>
-                            </motion.div>
-                            
+            <div className="mx-auto max-w-[1400px] space-y-8">
+                <PageHeader eyebrow="Business" title="Sponsoring" />
+
+                <PageReveal className="rounded-[2rem] border border-[var(--border-muted)] bg-[linear-gradient(135deg,var(--bg-pillar),var(--sim-shell-bg))] p-10 md:p-14">
+                    <div className="grid gap-8 md:grid-cols-[1.5fr_1fr] md:items-center">
+                        <div>
+                            <div className="mb-6 flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(217,177,92,0.6)]" />
+                                <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--accent-primary)]">Status: Sponsoring Live</span>
+                            </div>
                             {activeContract ? (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                >
-                                    <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter mb-4 leading-none uppercase italic">
-                                        {activeContract.sponsor.name}
-                                    </h2>
-                                    <p className="text-xl text-[var(--text-muted)] font-medium max-w-xl">
-                                        Partner seit der laufenden Saison. Vertrag gültig bis <span className="text-white font-black">{activeContract.ends_on_formatted}</span>.
+                                <>
+                                    <h2 className="mb-4 text-5xl font-black uppercase italic leading-none tracking-tighter text-[var(--text-main)] lg:text-7xl">{activeContract.sponsor.name}</h2>
+                                    <p className="max-w-xl text-xl font-medium text-[var(--text-muted)]">
+                                        Partner seit der laufenden Saison. Vertrag gueltig bis <span className="font-black text-[var(--text-main)]">{activeContract.ends_on_formatted}</span>.
                                     </p>
-                                </motion.div>
+                                </>
                             ) : (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                >
-                                    <h2 className="text-5xl lg:text-7xl font-black text-slate-700 tracking-tighter mb-4 leading-none uppercase italic">
-                                        Kein Partner
-                                    </h2>
-                                    <p className="text-xl text-[var(--text-muted)] font-medium max-w-xl">
-                                        Registriere jetzt einen neuen Hauptsponsor, um deine wöchentlichen Einnahmen zu maximieren.
+                                <>
+                                    <h2 className="mb-4 text-5xl font-black uppercase italic leading-none tracking-tighter text-slate-700 lg:text-7xl">Kein Partner</h2>
+                                    <p className="max-w-xl text-xl font-medium text-[var(--text-muted)]">
+                                        Registriere jetzt einen neuen Hauptsponsor, um deine woechentlichen Einnahmen zu maximieren.
                                     </p>
-                                </motion.div>
+                                </>
                             )}
                         </div>
 
                         {activeContract && (
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="w-full md:w-auto sim-card-soft p-8 text-center md:text-right border-[var(--border-muted)] backdrop-blur-3xl"
-                            >
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">Einnahmen / Woche</p>
-                                <div className="flex items-baseline justify-center md:justify-end gap-2 mb-6">
-                                    <span className="text-5xl font-black text-emerald-400 font-mono tracking-tighter">
-                                        {activeContract.weekly_amount.toLocaleString('de-DE')}
-                                    </span>
-                                    <span className="text-xl font-black text-emerald-600/50">€</span>
+                            <div className="sim-card-soft border-[var(--border-muted)] p-8 text-center backdrop-blur-3xl md:text-right">
+                                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Einnahmen / Woche</p>
+                                <div className="mb-6 flex items-baseline justify-center gap-2 md:justify-end">
+                                    <span className="font-mono text-5xl font-black tracking-tighter text-emerald-400">{activeContract.weekly_amount.toLocaleString('de-DE')}</span>
+                                    <span className="text-xl font-black text-emerald-600/50">EUR</span>
                                 </div>
-                                <button 
-                                    onClick={handleTerminate}
-                                    className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-400 transition-colors flex items-center justify-center md:justify-end gap-2 ml-auto"
-                                >
+                                <button type="button" onClick={handleTerminate} className="ml-auto inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-rose-500 transition-colors hover:text-rose-400">
                                     <XCircle size={16} weight="bold" />
-                                    Vertrag kündigen
+                                    Vertrag kuendigen
                                 </button>
-                            </motion.div>
+                            </div>
                         )}
                     </div>
-                </div>
+                </PageReveal>
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    {/* Available Offers */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                                <Crown size={24} weight="duotone" className="text-amber-400" />
-                                Sponsoring-Angebote
-                            </h3>
-                            <div className="px-3 py-1 rounded-full bg-[var(--bg-content)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                                {offers.length} Verfügbar
+                {activeContract && (
+                    <PageReveal delay={80} className="grid gap-4 md:grid-cols-3">
+                        <MetricCard label="Aktiver Partner" value={activeContract.sponsor.name} icon={Handshake} />
+                        <MetricCard label="Wochenrate" value={activeContract.weekly_amount} unit="EUR" icon={Crown} />
+                        <MetricCard label="Laufzeit bis" value={activeContract.ends_on_formatted} icon={HourglassMedium} />
+                    </PageReveal>
+                )}
+
+                <div className="grid gap-8 lg:grid-cols-3">
+                    <div className="space-y-6 lg:col-span-2">
+                        <PageReveal>
+                            <div className="flex items-center justify-between">
+                                <h3 className="flex items-center gap-3 text-xl font-black uppercase tracking-widest text-[var(--text-main)]">
+                                    <Crown size={24} weight="duotone" className="text-[var(--accent-primary)]" />
+                                    Sponsoring-Angebote
+                                </h3>
+                                <div className="rounded-full bg-[var(--bg-content)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{offers.length} Verfuegbar</div>
                             </div>
-                        </div>
+                        </PageReveal>
 
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <StaggerGroup className="grid gap-6 md:grid-cols-2">
                             {offers.map((offer) => (
-                                <OfferCard 
-                                    key={offer.id} 
-                                    offer={offer} 
-                                    onSign={handleSign}
-                                    disabled={activeContract !== null}
-                                />
+                                <OfferCard key={offer.id} offer={offer} onSign={handleSign} disabled={activeContract !== null} />
                             ))}
-                        </div>
+                        </StaggerGroup>
                     </div>
 
-                    {/* History Sidebar */}
-                    <div className="space-y-6">
-                        <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                            <HourglassMedium size={24} weight="duotone" className="text-[var(--text-muted)]" />
-                            Historie
-                        </h3>
-                        <div className="sim-card p-0 border-[var(--border-muted)] overflow-hidden">
+                    <PageReveal delay={120}>
+                        <SectionCard title="Historie" icon={HourglassMedium} bodyClassName="overflow-hidden p-0">
                             <div className="divide-y divide-slate-800/50">
-                                {history.length > 0 ? (
-                                    history.map((contract) => (
-                                        <div key={contract.id} className="p-4 hover:bg-white/[0.02] transition-colors flex justify-between items-center group">
-                                            <div>
-                                                <p className="font-bold text-white group-hover:text-amber-500 transition-colors">{contract.sponsor.name}</p>
-                                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                                                    {contract.starts_on_formatted} - {contract.ends_on_formatted}
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-black text-emerald-400 font-mono italic">+{contract.weekly_amount.toLocaleString('de-DE')} €</p>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest ${
-                                                    contract.status === 'active' ? 'text-amber-500' : 'text-slate-600'
-                                                }`}>
-                                                    {contract.status}
-                                                </p>
-                                            </div>
+                                {history.length > 0 ? history.map((contract) => (
+                                    <div key={contract.id} className="flex items-center justify-between p-4 transition-colors hover:bg-white/[0.02]">
+                                        <div>
+                                            <p className="font-bold text-[var(--text-main)]">{contract.sponsor.name}</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                                                {contract.starts_on_formatted} - {contract.ends_on_formatted}
+                                            </p>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="p-12 text-center text-slate-600 italic text-sm">
-                                        Keine historischen Daten verfügbar.
+                                        <div className="text-right">
+                                            <p className="font-mono font-black italic text-emerald-400">+{contract.weekly_amount.toLocaleString('de-DE')} EUR</p>
+                                            <p className={`text-[10px] font-black uppercase tracking-widest ${contract.status === 'active' ? 'text-[var(--accent-primary)]' : 'text-slate-600'}`}>
+                                                {contract.status}
+                                            </p>
+                                        </div>
                                     </div>
+                                )) : (
+                                    <div className="p-12 text-center text-sm italic text-slate-600">Keine historischen Daten verfuegbar.</div>
                                 )}
                             </div>
-                        </div>
-                    </div>
+                        </SectionCard>
+                    </PageReveal>
                 </div>
             </div>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .sim-btn-primary {
-                    @apply bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(217,177,92,0.15)];
-                }
-            `}} />
         </AuthenticatedLayout>
     );
 }

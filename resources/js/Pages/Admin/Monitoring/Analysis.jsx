@@ -16,7 +16,6 @@ import {
     ChartBar,
     X
 } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
 
 export default function Analysis({ match, matchDiagnostics }) {
     const { data, setData, get, processing } = useForm({
@@ -207,12 +206,10 @@ export default function Analysis({ match, matchDiagnostics }) {
                                                 <span className="font-black text-cyan-400 text-lg tabular-nums">{match.events?.length || 0}</span>
                                             </div>
                                             <div className="h-2 bg-[var(--sim-shell-bg)] rounded-full overflow-hidden border border-white/5">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${Math.min(100, (match.events?.length || 0) * 4)}%` }}
-                                                    transition={{ duration: 1, ease: 'easeOut' }}
-                                                    className="bg-cyan-500 h-full shadow-[0_0_8px_rgba(6,182,212,0.5)]"
-                                                ></motion.div>
+                                                <div
+                                                    className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-all duration-700 ease-out"
+                                                    style={{ width: `${Math.min(100, (match.events?.length || 0) * 4)}%` }}
+                                                />
                                             </div>
                                         </div>
                                         <div>
@@ -221,12 +218,10 @@ export default function Analysis({ match, matchDiagnostics }) {
                                                 <span className="font-black text-indigo-400 text-lg tabular-nums">{match.live_actions?.length || 0}</span>
                                             </div>
                                             <div className="h-2 bg-[var(--sim-shell-bg)] rounded-full overflow-hidden border border-white/5">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${Math.min(100, (match.live_actions?.length || 0) / 1.5)}%` }}
-                                                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
-                                                    className="bg-indigo-500 h-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"
-                                                ></motion.div>
+                                                <div
+                                                    className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-700 ease-out"
+                                                    style={{ width: `${Math.min(100, (match.live_actions?.length || 0) / 1.5)}%` }}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -310,3 +305,4 @@ export default function Analysis({ match, matchDiagnostics }) {
         </AdminLayout>
     );
 }
+

@@ -1,22 +1,20 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import PaginationLink from '@/Components/PaginationLink';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Envelope, 
-    EnvelopeOpen, 
-    CheckCircle, 
-    ArrowRight, 
-    Trash, 
+import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import PageHeader from '@/Components/PageHeader';
+import {
+    Envelope,
+    EnvelopeOpen,
+    CheckCircle,
+    ArrowRight,
     Clock,
-    Notification,
     Tray,
-    Checks
+    Checks,
 } from '@phosphor-icons/react';
 
 export default function Notifications({ notifications }) {
-    const { auth } = usePage().props;
     const { post } = useForm();
 
     const markAllSeen = () => {
@@ -32,138 +30,114 @@ export default function Notifications({ notifications }) {
             <Head title="Posteingang" />
 
             <div className="max-w-4xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                    <div>
-                        <p className="sim-section-title">Kommunikation</p>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Posteingang</h1>
-                    </div>
-                    
-                    {notifications.data.some(n => !n.seen_at) && (
-                        <motion.button 
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={markAllSeen}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--bg-content)] text-slate-300 font-black text-[10px] uppercase tracking-widest border border-[var(--border-pillar)] hover:bg-slate-700 hover:text-white transition-all shadow-lg shadow-black/20"
-                        >
-                            <Checks size={18} weight="bold" className="text-cyan-400" />
-                            Alle als gelesen markieren
-                        </motion.button>
-                    )}
-                </div>
-
-                <div className="sim-card p-0 border-[var(--border-muted)] shadow-2xl overflow-hidden min-h-[500px] flex flex-col bg-[#0c1222]/80 backdrop-blur-xl">
-                    <AnimatePresence mode="popLayout">
-                        {notifications.data.length === 0 ? (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex-1 flex flex-col items-center justify-center p-20 text-center"
+                <PageHeader
+                    eyebrow="Kommunikation"
+                    title="Posteingang"
+                    actions={
+                        notifications.data.some((notification) => !notification.seen_at) ? (
+                            <button
+                                onClick={markAllSeen}
+                                className="flex items-center gap-2 rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-300 shadow-lg shadow-black/20 transition-all hover:bg-slate-700 hover:text-white"
                             >
-                                <div className="w-24 h-24 rounded-3xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center mb-8 text-slate-700 shadow-inner">
-                                    <Tray size={48} weight="thin" />
-                                </div>
-                                <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Postfach leer</h3>
-                                <p className="text-[var(--text-muted)] font-medium max-w-xs">Keine neuen Nachrichten vorhanden. Du bist auf dem neuesten Stand.</p>
-                            </motion.div>
-                        ) : (
-                            <div className="divide-y divide-slate-800/50">
-                                {notifications.data.map((notification, idx) => (
-                                    <motion.article 
-                                        key={notification.id}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.03 }}
-                                        className={`p-6 flex gap-6 transition-all relative ${
-                                            notification.seen_at 
-                                                ? 'bg-transparent opacity-50 grayscale-[0.5]' 
-                                                : 'bg-white/[0.02] border-l-4 border-l-cyan-500'
-                                        }`}
-                                    >
-                                        {/* Status Icon */}
-                                        <div className="shrink-0 pt-1">
-                                            {!notification.seen_at ? (
-                                                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-                                                    <Envelope size={20} weight="fill" />
-                                                </div>
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-pillar)] flex items-center justify-center text-slate-600 border border-[var(--border-pillar)]">
-                                                    <EnvelopeOpen size={20} weight="bold" />
+                                <Checks size={18} weight="bold" className="text-cyan-400" />
+                                Alle als gelesen markieren
+                            </button>
+                        ) : null
+                    }
+                />
+
+                <div className="sim-card min-h-[500px] overflow-hidden border-[var(--border-muted)] bg-[#0c1222]/80 p-0 shadow-2xl backdrop-blur-xl">
+                    {notifications.data.length === 0 ? (
+                        <PageReveal className="flex flex-1 flex-col items-center justify-center p-20 text-center">
+                            <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-slate-700 shadow-inner">
+                                <Tray size={48} weight="thin" />
+                            </div>
+                            <h3 className="mb-2 text-2xl font-black uppercase tracking-tighter text-white">Postfach leer</h3>
+                            <p className="max-w-xs font-medium text-[var(--text-muted)]">
+                                Keine neuen Nachrichten vorhanden. Du bist auf dem neuesten Stand.
+                            </p>
+                        </PageReveal>
+                    ) : (
+                        <StaggerGroup className="divide-y divide-slate-800/50">
+                            {notifications.data.map((notification) => (
+                                <article
+                                    key={notification.id}
+                                    className={`relative flex gap-6 p-6 transition-all ${
+                                        notification.seen_at ? 'bg-transparent opacity-50 grayscale-[0.5]' : 'border-l-4 border-l-cyan-500 bg-white/[0.02]'
+                                    }`}
+                                >
+                                    <div className="shrink-0 pt-1">
+                                        {!notification.seen_at ? (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+                                                <Envelope size={20} weight="fill" />
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-slate-600">
+                                                <EnvelopeOpen size={20} weight="bold" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        <div className="mb-2 flex items-start justify-between gap-4">
+                                            <h3 className={`text-lg font-black uppercase italic tracking-tight ${!notification.seen_at ? 'text-white' : 'text-[var(--text-muted)]'}`}>
+                                                {notification.title}
+                                            </h3>
+                                            <div className="flex items-center gap-2 whitespace-nowrap text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                <Clock size={12} weight="bold" />
+                                                {notification.created_at_formatted}
+                                            </div>
+                                        </div>
+
+                                        <p className={`mb-6 text-base leading-relaxed font-medium ${!notification.seen_at ? 'text-slate-300' : 'text-[var(--text-muted)]'}`}>
+                                            {notification.message}
+                                        </p>
+
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            {notification.club && (
+                                                <div className="flex items-center gap-2 rounded-lg border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                                                    <img className="h-5 w-5 object-contain" src={notification.club.logo_url} alt={notification.club.name} />
+                                                    {notification.club.name}
                                                 </div>
                                             )}
-                                        </div>
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-4 mb-2">
-                                                <h3 className={`text-lg font-black tracking-tight uppercase italic ${
-                                                    !notification.seen_at ? 'text-white' : 'text-[var(--text-muted)]'
-                                                }`}>
-                                                    {notification.title}
-                                                </h3>
-                                                <div className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
-                                                    <Clock size={12} weight="bold" />
-                                                    {notification.created_at_formatted}
-                                                </div>
-                                            </div>
-                                            
-                                            <p className={`text-base leading-relaxed mb-6 font-medium ${
-                                                !notification.seen_at ? 'text-slate-300' : 'text-[var(--text-muted)]'
-                                            }`}>
-                                                {notification.message}
-                                            </p>
+                                            <div className="flex-1" />
 
-                                            <div className="flex flex-wrap items-center gap-4">
-                                                {notification.club && (
-                                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.1em]">
-                                                         <img className="w-5 h-5 object-contain" src={notification.club.logo_url} alt={notification.club.name} />
-                                                         {notification.club.name}
-                                                    </div>
+                                            <div className="flex items-center gap-4">
+                                                {notification.action_url && (
+                                                    <Link href={notification.action_url} className="inline-flex items-center gap-2 text-xs font-black text-cyan-400 transition-all hover:translate-x-1 hover:text-white">
+                                                        Details oeffnen
+                                                        <ArrowRight size={14} weight="bold" />
+                                                    </Link>
                                                 )}
 
-                                                <div className="flex-1" />
-
-                                                <div className="flex items-center gap-4">
-                                                    {notification.action_url && (
-                                                        <Link 
-                                                            href={notification.action_url} 
-                                                            className="text-xs font-black text-cyan-400 hover:text-white flex items-center gap-2 transition-all hover:translate-x-1"
-                                                        >
-                                                            DETAILS ÖFFNEN
-                                                            <ArrowRight size={14} weight="bold" />
-                                                        </Link>
-                                                    )}
-                                                    
-                                                    {!notification.seen_at && (
-                                                        <button 
-                                                            onClick={() => markSeen(notification.id)}
-                                                            className="text-[10px] font-black text-[var(--text-muted)] hover:text-cyan-400 uppercase tracking-widest transition-colors flex items-center gap-2"
-                                                        >
-                                                            <CheckCircle size={14} weight="bold" />
-                                                            ALS GELESEN MARKIEREN
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {!notification.seen_at && (
+                                                    <button
+                                                        onClick={() => markSeen(notification.id)}
+                                                        className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] transition-colors hover:text-cyan-400"
+                                                    >
+                                                        <CheckCircle size={14} weight="bold" />
+                                                        Als gelesen markieren
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                    </motion.article>
-                                ))}
-                            </div>
-                        )}
-                    </AnimatePresence>
+                                    </div>
+                                </article>
+                            ))}
+                        </StaggerGroup>
+                    )}
 
-                    {/* Pagination */}
                     {notifications.links.length > 3 && (
-                        <div className="p-6 border-t border-[var(--border-muted)] bg-[#0c1222] flex justify-center gap-2">
-                            {notifications.links.map((link, i) => (
+                        <div className="flex justify-center gap-2 border-t border-[var(--border-muted)] bg-[#0c1222] p-6">
+                            {notifications.links.map((link, index) => (
                                 <PaginationLink
-                                    key={i}
+                                    key={index}
                                     link={link}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${
-                                        link.active 
-                                            ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
-                                            : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]'
+                                    className={`rounded-lg px-3 py-1.5 text-[10px] font-black tracking-widest transition-all ${
+                                        link.active ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-content)] hover:text-white'
                                     }`}
-                                    disabledClassName="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all opacity-30 pointer-events-none"
+                                    disabledClassName="rounded-lg px-3 py-1.5 text-[10px] font-black tracking-widest opacity-30 pointer-events-none"
                                 />
                             ))}
                         </div>

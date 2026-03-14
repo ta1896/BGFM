@@ -21,7 +21,6 @@ import {
     Bug,
     ShieldWarning
 } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
 
 export default function Index({ 
     health, 
@@ -323,16 +322,13 @@ export default function Index({
                             </h3>
                             <div className="space-y-2">
                                 {[...diagnostics.matches.issues, ...diagnostics.events.issues].map((issue, idx) => (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        key={idx} 
+                                    <div
+                                        key={idx}
                                         className={`sim-card-soft p-3 border-l-2 ${issue.severity === 'CRITICAL' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'}`}
                                     >
                                         <p className="text-xs font-bold text-white">{issue.description}</p>
                                         <p className="text-[10px] text-[var(--text-muted)] mt-1"><span className="text-cyan-400 font-bold">Grund:</span> {issue.reason}</p>
-                                    </motion.div>
+                                    </div>
                                 ))}
                                 {[...diagnostics.matches.issues, ...diagnostics.events.issues].length === 0 && (
                                     <p className="text-xs text-[var(--text-muted)] italic py-4">Keine Probleme gefunden.</p>
@@ -348,11 +344,8 @@ export default function Index({
                             </h3>
                             <div className="space-y-2">
                                 {[...diagnostics.clubs.issues, ...diagnostics.inactivity.issues].map((issue, idx) => (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        key={idx} 
+                                    <div
+                                        key={idx}
                                         className={`sim-card-soft p-3 border-l-2 ${issue.severity === 'CRITICAL' ? 'border-l-red-500 bg-red-500/5' : 'border-l-orange-500 bg-orange-500/5'} flex justify-between items-start`}
                                     >
                                         <div>
@@ -370,7 +363,7 @@ export default function Index({
                                                 Fix It
                                             </button>
                                         )}
-                                    </motion.div>
+                                    </div>
                                 ))}
                                 {[...diagnostics.clubs.issues, ...diagnostics.inactivity.issues].length === 0 && (
                                     <p className="text-xs text-[var(--text-muted)] italic py-4">Alles im grünen Bereich.</p>
@@ -505,3 +498,4 @@ function HealthCard({ title, value, subtitle, status, icon }) {
         </article>
     );
 }
+

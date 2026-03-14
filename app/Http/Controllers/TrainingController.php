@@ -62,15 +62,7 @@ class TrainingController extends Controller
             ->withQueryString();
 
         return \Inertia\Inertia::render('Training/Index', [
-            'clubs' => $clubs,
             'sessions' => $sessions,
-            'filters' => [
-                'club_id' => $activeClub?->id,
-                'range' => $rangeFilter,
-                'date' => $selectedDate,
-                'from' => $dateFrom,
-                'to' => $dateTo,
-            ],
             'prefillClubId' => $activeClub?->id,
             'prefillDate' => now()->toDateString(),
         ]);

@@ -1,41 +1,25 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, Link } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import { 
-    Suitcase, Globe, ChartBar, 
-    Coins, Wallet, IdentificationBadge,
-    FileText, Camera, ArrowsClockwise,
-    CaretLeft, UserCircle
+import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    Wallet, Coins, IdentificationBadge, FileText, Camera, ArrowsClockwise, CaretLeft, UserCircle
 } from '@phosphor-icons/react';
+import PageHeader from '@/Components/PageHeader';
+import { PageReveal } from '@/Components/PageReveal';
+import SectionCard from '@/Components/SectionCard';
 
-const Card = ({ title, children, icon: Icon }) => (
-    <div className="sim-card p-6 border-[var(--border-muted)] relative overflow-hidden h-full">
-        <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
-            {Icon && <Icon size={80} weight="fill" className="text-amber-500" />}
-        </div>
-        <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-2 bg-[var(--bg-content)] rounded-lg">
-                {Icon && <Icon size={20} className="text-amber-500" />}
-            </div>
-            <h3 className="text-lg font-bold text-white uppercase tracking-wider">{title}</h3>
-        </div>
-        <div className="relative z-10 space-y-4">
+function CardField({ label, error, children }) {
+    return (
+        <div className="space-y-1">
+            <label className="px-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</label>
             {children}
+            {error && <p className="mt-1 px-1 text-[10px] font-bold uppercase tracking-widest text-rose-500">{error}</p>}
         </div>
-    </div>
-);
-
-const InputGroup = ({ label, error, children }) => (
-    <div className="space-y-1">
-        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-1">{label}</label>
-        {children}
-        {error && <p className="text-rose-500 text-[10px] font-bold mt-1 px-1 uppercase tracking-widest">{error}</p>}
-    </div>
-);
+    );
+}
 
 export default function Form({ club, rolePlayers = [] }) {
-    const isEdit = !!club;
+    const isEdit = Boolean(club);
 
     const { data, setData, post, processing, errors } = useForm({
         name: club?.name ?? '',
@@ -53,288 +37,191 @@ export default function Form({ club, rolePlayers = [] }) {
         captain_player_id: club?.captain_player_id ?? '',
         vice_captain_player_id: club?.vice_captain_player_id ?? '',
         notes: club?.notes ?? '',
-        _method: isEdit ? 'PUT' : 'POST', // Method spoofing for file uploads
+        _method: isEdit ? 'PUT' : 'POST',
     });
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = (event) => {
+        event.preventDefault();
         if (isEdit) {
-            // For file uploads in Laravel via PUT/PATCH, we often need to POST with _method spoofing
             post(route('clubs.update', club.id));
-        } else {
-            post(route('clubs.store'));
+            return;
         }
+        post(route('clubs.store'));
     };
 
     return (
         <AuthenticatedLayout>
             <Head title={isEdit ? `${club.name} bearbeiten` : 'Neuen Verein anlegen'} />
 
-            <div className="max-w-5xl mx-auto pb-20">
-                {/* Header Section */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <Link 
+            <div className="mx-auto max-w-5xl pb-20">
+                <PageHeader
+                    eyebrow="Vereins-Management"
+                    title={isEdit ? 'Verein bearbeiten' : 'Gruendung und Registrierung'}
+                    actions={
+                        <Link
                             href={isEdit ? route('clubs.show', club.id) : route('clubs.index')}
-                            className="p-2 bg-[var(--bg-pillar)] border border-[var(--border-pillar)] text-[var(--text-muted)] rounded-xl hover:text-white hover:border-[var(--border-pillar)] transition-all"
+                            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-4 py-3 text-sm font-black text-[var(--text-muted)] transition-colors hover:text-[var(--accent-primary)]"
                         >
-                            <CaretLeft size={24} weight="bold" />
+                            <CaretLeft size={20} weight="bold" />
+                            Zurueck
                         </Link>
-                        <div>
-                            <p className="sim-section-title">Vereins-Management</p>
-                            <h1 className="text-3xl font-black text-white italic uppercase">{isEdit ? 'Verein bearbeiten' : 'Gründung & Registrierung'}</h1>
-                        </div>
-                    </div>
-                </div>
+                    }
+                />
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Basic Info */}
-                        <div className="lg:col-span-2">
-                            <Card title="Basis-Informationen" icon={IdentificationBadge}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <InputGroup label="Vereinsname" error={errors.name}>
-                                        <input 
-                                            type="text" 
-                                            value={data.name} 
-                                            onChange={e => setData('name', e.target.value)}
-                                            className="sim-input-modern"
-                                            required
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="Kurzname (Code)" error={errors.short_name}>
-                                        <input 
-                                            type="text" 
-                                            value={data.short_name} 
-                                            onChange={e => setData('short_name', e.target.value)}
-                                            className="sim-input-modern"
-                                            placeholder="z.B. FCB, BVB"
-                                        />
-                                    </InputGroup>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <PageReveal className="lg:col-span-2">
+                            <SectionCard title="Basis-Informationen" icon={IdentificationBadge} bodyClassName="space-y-4 p-6">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <CardField label="Vereinsname" error={errors.name}>
+                                        <input type="text" value={data.name} onChange={(event) => setData('name', event.target.value)} className="sim-input-modern" required />
+                                    </CardField>
+                                    <CardField label="Kurzname (Code)" error={errors.short_name}>
+                                        <input type="text" value={data.short_name} onChange={(event) => setData('short_name', event.target.value)} className="sim-input-modern" placeholder="z.B. FCB, BVB" />
+                                    </CardField>
                                 </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputGroup label="Land" error={errors.country}>
-                                        <input 
-                                            type="text" 
-                                            value={data.country} 
-                                            onChange={e => setData('country', e.target.value)}
-                                            className="sim-input-modern"
-                                            required
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="Liga" error={errors.league}>
-                                        <input 
-                                            type="text" 
-                                            value={data.league} 
-                                            onChange={e => setData('league', e.target.value)}
-                                            className="sim-input-modern"
-                                            required
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="Gründungsjahr" error={errors.founded_year}>
-                                        <input 
-                                            type="number" 
-                                            value={data.founded_year} 
-                                            onChange={e => setData('founded_year', e.target.value)}
-                                            className="sim-input-modern"
-                                        />
-                                    </InputGroup>
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    <CardField label="Land" error={errors.country}>
+                                        <input type="text" value={data.country} onChange={(event) => setData('country', event.target.value)} className="sim-input-modern" required />
+                                    </CardField>
+                                    <CardField label="Liga" error={errors.league}>
+                                        <input type="text" value={data.league} onChange={(event) => setData('league', event.target.value)} className="sim-input-modern" required />
+                                    </CardField>
+                                    <CardField label="Gruendungsjahr" error={errors.founded_year}>
+                                        <input type="number" value={data.founded_year} onChange={(event) => setData('founded_year', event.target.value)} className="sim-input-modern" />
+                                    </CardField>
                                 </div>
-                            </Card>
-                        </div>
+                            </SectionCard>
+                        </PageReveal>
 
-                        {/* Logo & Reputation */}
-                        <div className="lg:col-span-1">
-                            <Card title="Brand & Status" icon={Camera}>
-                                <InputGroup label="Vereinslogo" error={errors.logo}>
-                                    <div className="relative group">
-                                        <input 
-                                            type="file" 
-                                            onChange={e => setData('logo', e.target.files[0])}
-                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                            accept="image/*"
-                                        />
-                                        <div className="bg-[var(--bg-pillar)] border-2 border-dashed border-[var(--border-pillar)] rounded-xl p-4 transition-all group-hover:border-amber-500/50 flex items-center gap-4">
+                        <PageReveal delay={80}>
+                            <SectionCard title="Brand und Status" icon={Camera} bodyClassName="space-y-4 p-6">
+                                <CardField label="Vereinslogo" error={errors.logo}>
+                                    <div className="group relative">
+                                        <input type="file" onChange={(event) => setData('logo', event.target.files[0])} className="absolute inset-0 z-10 cursor-pointer opacity-0" accept="image/*" />
+                                        <div className="flex items-center gap-4 rounded-xl border-2 border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-4 transition-all group-hover:border-[var(--accent-primary)]/50">
                                             {isEdit && club.logo_path && !data.logo && (
-                                                <img src={club.logo_url} className="h-10 w-10 object-contain rounded-lg bg-[var(--sim-shell-bg)] p-1" alt="Logo" />
+                                                <img src={club.logo_url} className="h-10 w-10 rounded-lg bg-[var(--sim-shell-bg)] p-1 object-contain" alt="Logo" />
                                             )}
                                             {data.logo && (
-                                                <div className="h-10 w-10 bg-emerald-500/10 flex items-center justify-center rounded-lg">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
                                                     <FileText size={20} className="text-emerald-400" />
                                                 </div>
                                             )}
                                             <div className="flex-1 overflow-hidden">
-                                                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest truncate">
-                                                    {data.logo ? data.logo.name : (isEdit ? 'Logo ändern' : 'Datei wählen')}
+                                                <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                                                    {data.logo ? data.logo.name : (isEdit ? 'Logo aendern' : 'Datei waehlen')}
                                                 </p>
-                                                <p className="text-[9px] text-[var(--text-muted)] font-medium">PNG, JPG bis 2MB</p>
+                                                <p className="text-[9px] font-medium text-[var(--text-muted)]">PNG, JPG bis 2MB</p>
                                             </div>
                                         </div>
                                     </div>
-                                </InputGroup>
+                                </CardField>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <InputGroup label="Reputation" error={errors.reputation}>
-                                        <input 
-                                            type="number" 
-                                            min="1" max="99"
-                                            value={data.reputation} 
-                                            onChange={e => setData('reputation', e.target.value)}
-                                            className="sim-input-modern"
-                                            required
-                                        />
-                                    </InputGroup>
-                                    <InputGroup label="Fan-Mood" error={errors.fan_mood}>
-                                        <input 
-                                            type="number" 
-                                            min="1" max="100"
-                                            value={data.fan_mood} 
-                                            onChange={e => setData('fan_mood', e.target.value)}
-                                            className="sim-input-modern"
-                                            required
-                                        />
-                                    </InputGroup>
+                                    <CardField label="Reputation" error={errors.reputation}>
+                                        <input type="number" min="1" max="99" value={data.reputation} onChange={(event) => setData('reputation', event.target.value)} className="sim-input-modern" required />
+                                    </CardField>
+                                    <CardField label="Fan-Mood" error={errors.fan_mood}>
+                                        <input type="number" min="1" max="100" value={data.fan_mood} onChange={(event) => setData('fan_mood', event.target.value)} className="sim-input-modern" required />
+                                    </CardField>
                                 </div>
-                            </Card>
-                        </div>
+                            </SectionCard>
+                        </PageReveal>
 
-                        {/* Finances & Objectives */}
-                        <div className="lg:col-span-2">
-                            <Card title="Finanzplan & Ziele" icon={Wallet}>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <InputGroup label="Transferbudget (€)" error={errors.budget}>
+                        <PageReveal delay={120} className="lg:col-span-2">
+                            <SectionCard title="Finanzplan und Ziele" icon={Wallet} bodyClassName="space-y-4 p-6">
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    <CardField label="Transferbudget (EUR)" error={errors.budget}>
                                         <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                                 <Wallet size={16} className="text-[var(--text-muted)]" />
                                             </div>
-                                            <input 
-                                                type="number" 
-                                                min="0" step="0.01"
-                                                value={data.budget} 
-                                                onChange={e => setData('budget', e.target.value)}
-                                                className="sim-input-modern pl-10"
-                                                required
-                                            />
+                                            <input type="number" min="0" step="0.01" value={data.budget} onChange={(event) => setData('budget', event.target.value)} className="sim-input-modern pl-10" required />
                                         </div>
-                                    </InputGroup>
-                                    <InputGroup label="Gehaltsbudget (€)" error={errors.wage_budget}>
+                                    </CardField>
+                                    <CardField label="Gehaltsbudget (EUR)" error={errors.wage_budget}>
                                         <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                                 <IdentificationBadge size={16} className="text-[var(--text-muted)]" />
                                             </div>
-                                            <input 
-                                                type="number" 
-                                                min="0" step="0.01"
-                                                value={data.wage_budget} 
-                                                onChange={e => setData('wage_budget', e.target.value)}
-                                                className="sim-input-modern pl-10"
-                                                required
-                                            />
+                                            <input type="number" min="0" step="0.01" value={data.wage_budget} onChange={(event) => setData('wage_budget', event.target.value)} className="sim-input-modern pl-10" required />
                                         </div>
-                                    </InputGroup>
-                                    <InputGroup label="Start-Coins" error={errors.coins}>
+                                    </CardField>
+                                    <CardField label="Start-Coins" error={errors.coins}>
                                         <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Coins size={16} className="text-amber-500" weight="fill" />
+                                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                <Coins size={16} className="text-[var(--accent-primary)]" weight="fill" />
                                             </div>
-                                            <input 
-                                                type="number" 
-                                                min="0" step="1"
-                                                value={data.coins} 
-                                                onChange={e => setData('coins', e.target.value)}
-                                                className="sim-input-modern pl-10"
-                                            />
+                                            <input type="number" min="0" step="1" value={data.coins} onChange={(event) => setData('coins', event.target.value)} className="sim-input-modern pl-10" />
                                         </div>
-                                    </InputGroup>
+                                    </CardField>
                                 </div>
 
-                                <InputGroup label="Saisonziel" error={errors.season_objective}>
-                                    <select 
-                                        value={data.season_objective} 
-                                        onChange={e => setData('season_objective', e.target.value)}
-                                        className="sim-select-modern"
-                                    >
+                                <CardField label="Saisonziel" error={errors.season_objective}>
+                                    <select value={data.season_objective} onChange={(event) => setData('season_objective', event.target.value)} className="sim-select-modern">
                                         <option value="avoid_relegation">Abstiegskampf / Klassenerhalt</option>
                                         <option value="mid_table">Gesichertes Mittelfeld</option>
-                                        <option value="promotion">Obere Tabellenhälfte / Aufstieg</option>
+                                        <option value="promotion">Obere Tabellenhaelfte / Aufstieg</option>
                                         <option value="title">Meisterschaftskampf</option>
                                         <option value="cup_run">Fokus auf Pokalerfolg</option>
                                     </select>
-                                </InputGroup>
-                            </Card>
-                        </div>
+                                </CardField>
+                            </SectionCard>
+                        </PageReveal>
 
-                        {/* Staff & Roles (Only if rolePlayers exists) */}
-                        <div className="lg:col-span-1">
-                            <Card title="Spielführer & Rollen" icon={UserCircle}>
+                        <PageReveal delay={160}>
+                            <SectionCard title="Spielfuehrer und Rollen" icon={UserCircle} bodyClassName="p-6">
                                 {rolePlayers.length > 0 ? (
                                     <div className="space-y-4">
-                                        <InputGroup label="Kapitän" error={errors.captain_player_id}>
-                                            <select 
-                                                value={data.captain_player_id} 
-                                                onChange={e => setData('captain_player_id', e.target.value)}
-                                                className="sim-select-modern"
-                                            >
-                                                <option value="">Keiner gewählt</option>
-                                                {rolePlayers.map(p => (
-                                                    <option key={p.id} value={p.id}>{p.full_name} ({p.position} | OVR {p.overall})</option>
-                                                ))}
+                                        <CardField label="Kapitaen" error={errors.captain_player_id}>
+                                            <select value={data.captain_player_id} onChange={(event) => setData('captain_player_id', event.target.value)} className="sim-select-modern">
+                                                <option value="">Keiner gewaehlt</option>
+                                                {rolePlayers.map((player) => <option key={player.id} value={player.id}>{player.full_name} ({player.position} | OVR {player.overall})</option>)}
                                             </select>
-                                        </InputGroup>
-                                        <InputGroup label="Vize-Kapitän" error={errors.vice_captain_player_id}>
-                                            <select 
-                                                value={data.vice_captain_player_id} 
-                                                onChange={e => setData('vice_captain_player_id', e.target.value)}
-                                                className="sim-select-modern"
-                                            >
-                                                <option value="">Keiner gewählt</option>
-                                                {rolePlayers.map(p => (
-                                                    <option key={p.id} value={p.id}>{p.full_name} ({p.position} | OVR {p.overall})</option>
-                                                ))}
+                                        </CardField>
+                                        <CardField label="Vize-Kapitaen" error={errors.vice_captain_player_id}>
+                                            <select value={data.vice_captain_player_id} onChange={(event) => setData('vice_captain_player_id', event.target.value)} className="sim-select-modern">
+                                                <option value="">Keiner gewaehlt</option>
+                                                {rolePlayers.map((player) => <option key={player.id} value={player.id}>{player.full_name} ({player.position} | OVR {player.overall})</option>)}
                                             </select>
-                                        </InputGroup>
+                                        </CardField>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 bg-[var(--bg-pillar)] shadow-inner rounded-2xl border border-[var(--border-pillar)]">
-                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-relaxed px-4">
-                                            Rollen können erst festgelegt werden, wenn Spieler im Verein vorhanden sind.
+                                    <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] py-6 text-center shadow-inner">
+                                        <p className="px-4 text-[10px] font-bold uppercase tracking-widest leading-relaxed text-[var(--text-muted)]">
+                                            Rollen koennen erst festgelegt werden, wenn Spieler im Verein vorhanden sind.
                                         </p>
                                     </div>
                                 )}
-                            </Card>
-                        </div>
+                            </SectionCard>
+                        </PageReveal>
 
-                        {/* Notes */}
-                        <div className="col-span-full">
-                            <Card title="Zusätzliche Notizen" icon={FileText}>
-                                <InputGroup label="Internes Protokoll / Beschreibung" error={errors.notes}>
-                                    <textarea 
-                                        value={data.notes} 
-                                        onChange={e => setData('notes', e.target.value)}
+                        <PageReveal delay={200} className="col-span-full">
+                            <SectionCard title="Zusaetzliche Notizen" icon={FileText} bodyClassName="p-6">
+                                <CardField label="Internes Protokoll / Beschreibung" error={errors.notes}>
+                                    <textarea
+                                        value={data.notes}
+                                        onChange={(event) => setData('notes', event.target.value)}
                                         className="sim-textarea-modern h-32"
-                                        placeholder="Hier können Vereinsphilosophie, Taktikvorgaben oder andere Notizen festgehalten werden..."
+                                        placeholder="Hier koennen Vereinsphilosophie, Taktikvorgaben oder andere Notizen festgehalten werden..."
                                     />
-                                </InputGroup>
-                            </Card>
-                        </div>
+                                </CardField>
+                            </SectionCard>
+                        </PageReveal>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-between pt-8 border-t border-[var(--border-muted)]">
-                        <Link 
-                            href={isEdit ? route('clubs.show', club.id) : route('clubs.index')}
-                            className="text-[var(--text-muted)] hover:text-white font-bold uppercase text-xs tracking-[0.2em] px-4 transition-all"
-                        >
+                    <div className="flex items-center justify-between border-t border-[var(--border-muted)] pt-8">
+                        <Link href={isEdit ? route('clubs.show', club.id) : route('clubs.index')} className="px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] transition-colors hover:text-[var(--text-main)]">
                             Abbrechen
                         </Link>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={processing}
-                            className="bg-gradient-to-br from-[#d9b15c] via-[#b69145] to-[#8d6e32] text-black font-black py-4 px-12 rounded-xl shadow-[0_0_40px_rgba(217,177,92,0.2)] hover:scale-[1.05] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 uppercase tracking-widest text-sm"
+                            className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] px-12 py-4 text-sm font-black uppercase tracking-widest text-white transition-opacity disabled:opacity-50"
                         >
                             {processing && <ArrowsClockwise size={20} className="animate-spin" />}
-                            {isEdit ? 'Daten aktualisieren' : 'Verein gründen'}
+                            {isEdit ? 'Daten aktualisieren' : 'Verein gruenden'}
                         </button>
                     </div>
                 </form>
@@ -342,19 +229,19 @@ export default function Form({ club, rolePlayers = [] }) {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-input-modern {
-                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-medium text-sm placeholder:text-slate-700;
+                    @apply w-full rounded-xl border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/80 px-4 py-3 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-700 focus:border-[var(--accent-primary)]/50;
                 }
                 .sim-select-modern {
-                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-bold text-sm cursor-pointer appearance-none shadow-sm;
+                    @apply w-full appearance-none rounded-xl border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/80 px-4 py-3 text-sm font-bold text-white outline-none transition-all focus:border-[var(--accent-primary)]/50;
                     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d9b15c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E");
                     background-repeat: no-repeat;
                     background-position: right 1rem center;
                     background-size: 1.2rem;
                 }
                 .sim-textarea-modern {
-                    @apply w-full bg-[var(--bg-pillar)]/80 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:bg-[var(--bg-pillar)] transition-all outline-none font-medium text-sm placeholder:text-slate-700 resize-none;
+                    @apply w-full resize-none rounded-xl border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/80 px-4 py-3 text-sm font-medium text-white outline-none transition-all placeholder:text-slate-700 focus:border-[var(--accent-primary)]/50;
                 }
-            `}} />
+            ` }} />
         </AuthenticatedLayout>
     );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router } from '@inertiajs/react';
+import PageHeader from '@/Components/PageHeader';
 import {
     Plus,
     MagnifyingGlass,
@@ -75,18 +76,11 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
             <Head title="Kaderuebersicht" />
 
             <div className="max-w-[1600px] mx-auto space-y-12">
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-white/5 pb-12">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="h-px w-8 bg-[var(--accent-primary)]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent-primary)]">Squad Management</span>
-                        </div>
-                        <h1 className="text-6xl font-black text-[var(--text-main)] tracking-tighter uppercase italic leading-none">
-                            Kader <span className="text-[var(--text-muted)]">&</span> Analyse
-                        </h1>
-                    </div>
-
-                    <div className="flex items-center gap-4">
+                <div className="border-b border-white/5 pb-12">
+                    <PageHeader
+                        eyebrow="Squad Management"
+                        title="Kader & Analyse"
+                        actions={<div className="flex items-center gap-4">
                         <div className="relative group">
                             <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--accent-primary)] transition-colors" />
                             <input
@@ -112,7 +106,8 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                                 <Plus size={24} weight="bold" />
                             </Link>
                         )}
-                    </div>
+                        </div>}
+                    />
                 </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

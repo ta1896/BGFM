@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
     SoccerBall, 
     ArrowLeft, 
@@ -44,8 +43,7 @@ const PitchMarkings = () => (
 
 const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, onRemove }) => {
     return (
-        <motion.div
-            layout
+        <div
             draggable
             onDragStart={(e) => onDragStart(e, player.id)}
             className={`sim-card-soft p-2.5 flex items-center justify-between gap-3 border-[var(--border-pillar)]/30 group transition-all cursor-grab active:cursor-grabbing ${isSelected ? 'opacity-40 grayscale-[0.5]' : 'hover:border-amber-500/40 hover:bg-[var(--bg-content)]/50'}`}
@@ -85,7 +83,7 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                     </button>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 };
 
@@ -668,22 +666,20 @@ export default function Edit({
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                    <AnimatePresence mode="popLayout">
-                                        {clubPlayers
-                                            .filter(p => !searchTerm || p.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                                            .map(p => (
-                                                <PlayerCard 
-                                                    key={p.id}
-                                                    player={p}
-                                                    isSelected={selectedPlayerIds.has(p.id)}
-                                                    onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
-                                                    onAddPitch={addPitchAuto}
-                                                    onAddBench={addBenchAuto}
-                                                    onRemove={removePlayer}
-                                                />
-                                            ))
-                                        }
-                                    </AnimatePresence>
+                                    {clubPlayers
+                                        .filter(p => !searchTerm || p.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map(p => (
+                                            <PlayerCard 
+                                                key={p.id}
+                                                player={p}
+                                                isSelected={selectedPlayerIds.has(p.id)}
+                                                onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
+                                                onAddPitch={addPitchAuto}
+                                                onAddBench={addBenchAuto}
+                                                onRemove={removePlayer}
+                                            />
+                                        ))
+                                    }
                                 </div>
                             </div>
                         </aside>
@@ -708,3 +704,4 @@ export default function Edit({
         </AuthenticatedLayout>
     );
 }
+

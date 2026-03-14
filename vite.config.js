@@ -23,7 +23,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
-            'framer-motion': path.resolve(__dirname, 'resources/js/lib/framer-motion-shim.jsx'),
         },
     },
     build: {

@@ -11,7 +11,7 @@ class FinanceController extends Controller
     public function index(Request $request): \Inertia\Response
     {
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
-        $clubs = $request->user()->isAdmin() 
+        $clubs = $request->user()->isAdmin()
             ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
             : $request->user()->clubs()->orderBy('name')->get();
 
@@ -41,7 +41,6 @@ class FinanceController extends Controller
         }
 
         return \Inertia\Inertia::render('Finances/Index', [
-            'clubs' => $clubs,
             'activeClub' => $activeClub,
             'transactions' => $transactions,
         ]);

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     SoccerBall, Lightning, ArrowLeft,
     ArrowsDownUp, FirstAidKit, Cards, Trophy,
@@ -85,8 +84,8 @@ const StatBar = ({ label, home, away }) => {
                 <span className="text-white">{away ?? 0}</span>
             </div>
             <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${homePct}%` }} className="h-full bg-amber-500 rounded-full" />
-                <motion.div initial={{ width: 0 }} animate={{ width: `${awayPct}%` }} className="h-full bg-[#d4af37] rounded-full" />
+                <div className="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${homePct}%` }} />
+                <div className="h-full bg-[#d4af37] rounded-full transition-all duration-700 ease-out" style={{ width: `${awayPct}%` }} />
             </div>
         </div>
     );
@@ -195,9 +194,7 @@ const TickerItem = ({ action, homeClubId }) => {
     if (!key && !action.narrative) return null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, x: isHome ? -8 : 8 }}
-            animate={{ opacity: 1, x: 0 }}
+        <div
             className={`flex gap-4 items-start px-6 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-all ${
                 key ? '' : 'opacity-70'
             }`}
@@ -241,7 +238,7 @@ const TickerItem = ({ action, homeClubId }) => {
                     <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest mt-1">{action.club_short_name}</p>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 };
 
@@ -511,12 +508,10 @@ export default function Show({
                     ))}
                 </nav>
 
-                <AnimatePresence mode="wait">
+                <div>
                     {/* ── Preview Tab ── */}
                     {tab === 'preview' && (
-                        <motion.div key="preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                            className="grid md:grid-cols-3 gap-8"
-                        >
+                        <div className="grid md:grid-cols-3 gap-8">
                             {[
                                 { label: 'Kaderstärke', home: comparison?.home?.strength, away: comparison?.away?.strength, fmt: (v) => parseFloat(v).toFixed(1) },
                                 { label: 'Marktwert (M)', home: comparison?.home?.market_value, away: comparison?.away?.market_value, fmt: (v) => (v/1_000_000).toFixed(1) + 'M' },
@@ -532,12 +527,12 @@ export default function Show({
                                     <StatBar label="" home={parseFloat(home || 0)} away={parseFloat(away || 0)} />
                                 </div>
                             ))}
-                        </motion.div>
+                        </div>
                     )}
 
                     {/* ── Ticker Tab ── */}
                     {tab === 'ticker' && (
-                        <motion.div key="ticker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div>
                             <div className="sim-card overflow-hidden p-0">
                                 <div className="px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 flex items-center gap-3">
                                     <SoccerBall size={18} weight="fill" className="text-amber-500" />
@@ -557,12 +552,12 @@ export default function Show({
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     )}
 
                     {/* ── Lineup Tab ── */}
                     {tab === 'lineup' && (
-                        <motion.div key="lineup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div>
                             <div className="sim-card p-6">
                                 <LineupPitch
                                     homeClub={home_club}
@@ -572,14 +567,12 @@ export default function Show({
                                     livePlayerStates={liveState.player_states}
                                 />
                             </div>
-                        </motion.div>
+                        </div>
                     )}
 
                     {/* ── Stats Tab ── */}
                     {tab === 'stats' && (
-                        <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="sim-card p-8"
-                        >
+                        <div className="sim-card p-8">
                             {(!hState && !aState) ? (
                                 <p className="text-center text-[var(--text-muted)] italic py-12">Noch keine Statistiken verfügbar.</p>
                             ) : (
@@ -596,14 +589,12 @@ export default function Show({
                                     ].map(s => <StatBar key={s.label} {...s} />)}
                                 </div>
                             )}
-                        </motion.div>
+                        </div>
                     )}
 
                     {/* ── Players Tab ── */}
                     {tab === 'players' && (
-                        <motion.div key="players" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="grid md:grid-cols-2 gap-8"
-                        >
+                        <div className="grid md:grid-cols-2 gap-8">
                             {[home_club, away_club].map(club => {
                                 const players = final_stats.filter(s => s.club_id === club?.id).sort((a, b) => b.rating - a.rating);
                                 return (
@@ -630,12 +621,13 @@ export default function Show({
                                     </div>
                                 );
                             })}
-                        </motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `.custom-scrollbar::-webkit-scrollbar{width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px}` }} />
         </AuthenticatedLayout>
     );
 }
+

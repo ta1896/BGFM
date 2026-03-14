@@ -1,40 +1,34 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage, Link } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    User, Lock, Warning, Trash, 
-    CheckCircle, Envelope, ShieldCheck,
-    ArrowsClockwise, Fingerprint
-} from '@phosphor-icons/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Warning, Trash, CheckCircle, Envelope, ShieldCheck, ArrowsClockwise, User } from '@phosphor-icons/react';
+import PageHeader from '@/Components/PageHeader';
+import { PageReveal } from '@/Components/PageReveal';
+import SectionCard from '@/Components/SectionCard';
 
-const Card = ({ title, description, children, icon: Icon, variant = 'default' }) => (
-    <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`sim-card p-8 border-[var(--border-muted)] relative overflow-hidden ${
-            variant === 'danger' ? 'border-rose-500/20 shadow-[0_0_30px_rgba(244,63,94,0.05)]' : ''
-        }`}
-    >
-        <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
-            {Icon && <Icon size={120} weight="fill" className={variant === 'danger' ? 'text-rose-500' : 'text-cyan-400'} />}
+function Field({ label, icon: Icon, type = 'text', value, onChange, autoComplete, error, placeholder }) {
+    return (
+        <div className="space-y-2">
+            <label className="px-1 text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</label>
+            <div className="relative group">
+                {Icon && (
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                        <Icon size={18} className="text-[var(--text-muted)] transition-colors group-focus-within:text-[var(--accent-primary)]" />
+                    </div>
+                )}
+                <input
+                    type={type}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    autoComplete={autoComplete}
+                    className={`w-full rounded-xl border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/60 py-3 text-[var(--text-main)] outline-none transition-all focus:border-[var(--accent-primary)]/50 focus:ring-4 focus:ring-[var(--accent-primary)]/5 ${Icon ? 'pl-11 pr-4' : 'px-4'}`}
+                />
+            </div>
+            {error && <p className="text-xs font-bold text-rose-500">{error}</p>}
         </div>
-        <div className="mb-8 relative z-10">
-            <h3 className={`text-xl font-bold mb-2 ${variant === 'danger' ? 'text-rose-400' : 'text-white'}`}>{title}</h3>
-            {description && <p className="text-[var(--text-muted)] text-sm max-w-lg">{description}</p>}
-        </div>
-        <div className="relative z-10">
-            {children}
-        </div>
-    </motion.div>
-);
-
-const SectionHeader = ({ title, subtitle }) => (
-    <div className="mb-8 pl-4 border-l-4 border-cyan-500/50">
-        <h2 className="text-3xl font-black text-white tracking-tight leading-none uppercase italic">{title}</h2>
-        {subtitle && <p className="text-[var(--text-muted)] text-sm mt-2 font-bold uppercase tracking-widest">{subtitle}</p>}
-    </div>
-);
+    );
+}
 
 export default function Edit({ mustVerifyEmail, status }) {
     const { auth } = usePage().props;
@@ -55,23 +49,21 @@ export default function Edit({ mustVerifyEmail, status }) {
         password: '',
     });
 
-    const submitProfile = (e) => {
-        e.preventDefault();
-        profileForm.patch(route('profile.update'), {
-            preserveScroll: true,
-        });
+    const submitProfile = (event) => {
+        event.preventDefault();
+        profileForm.patch(route('profile.update'), { preserveScroll: true });
     };
 
-    const submitPassword = (e) => {
-        e.preventDefault();
+    const submitPassword = (event) => {
+        event.preventDefault();
         passwordForm.put(route('password.update'), {
             preserveScroll: true,
             onSuccess: () => passwordForm.reset(),
         });
     };
 
-    const deleteUser = (e) => {
-        e.preventDefault();
+    const deleteUser = (event) => {
+        event.preventDefault();
         deleteForm.delete(route('profile.destroy'), {
             preserveScroll: true,
             onSuccess: () => setConfirmingUserDeletion(false),
@@ -83,246 +75,191 @@ export default function Edit({ mustVerifyEmail, status }) {
         <AuthenticatedLayout>
             <Head title="Profil Einstellungen" />
 
-            <div className="max-w-4xl mx-auto space-y-12 pb-20">
-                <SectionHeader 
-                    title="Profil-Zentrale" 
-                    subtitle="Verwalte deine Identität und Sicherheit"
+            <div className="mx-auto max-w-5xl space-y-8 pb-20">
+                <PageHeader
+                    eyebrow="Account"
+                    title="Profil und Sicherheit"
+                    actions={
+                        <div className="rounded-full border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-4 py-2 text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">
+                            {auth.user.email}
+                        </div>
+                    }
                 />
 
-                {/* Profile Information */}
-                <Card 
-                    title="Persönliche Daten" 
-                    description="Aktualisiere deinen Namen und deine E-Mail-Adresse für die Kommunikation."
-                    icon={User}
-                >
-                    <form onSubmit={submitProfile} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Manager-Name</label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <User size={18} className="text-[var(--text-muted)] group-focus-within:text-cyan-400 transition-colors" />
-                                    </div>
-                                    <input 
-                                        type="text"
-                                        value={profileForm.data.name}
-                                        onChange={e => profileForm.setData('name', e.target.value)}
-                                        className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
-                                        required
-                                        autoComplete="name"
-                                    />
-                                </div>
-                                {profileForm.errors.name && <p className="text-rose-500 text-xs mt-1 font-bold">{profileForm.errors.name}</p>}
+                <PageReveal className="grid gap-8">
+                    <SectionCard title="Persoenliche Daten" icon={User} bodyClassName="space-y-6 p-6 md:p-8">
+                        <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+                            Aktualisiere Name und E-Mail-Adresse fuer Benachrichtigungen und Login.
+                        </p>
+
+                        <form onSubmit={submitProfile} className="space-y-6">
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <Field
+                                    label="Manager-Name"
+                                    icon={User}
+                                    value={profileForm.data.name}
+                                    onChange={(event) => profileForm.setData('name', event.target.value)}
+                                    autoComplete="name"
+                                    error={profileForm.errors.name}
+                                />
+                                <Field
+                                    label="E-Mail-Adresse"
+                                    icon={Envelope}
+                                    type="email"
+                                    value={profileForm.data.email}
+                                    onChange={(event) => profileForm.setData('email', event.target.value)}
+                                    autoComplete="username"
+                                    error={profileForm.errors.email}
+                                />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">E-Mail Adresse</label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Envelope size={18} className="text-[var(--text-muted)] group-focus-within:text-cyan-400 transition-colors" />
-                                    </div>
-                                    <input 
-                                        type="email"
-                                        value={profileForm.data.email}
-                                        onChange={e => profileForm.setData('email', e.target.value)}
-                                        className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl pl-11 pr-4 py-3 text-white focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
-                                        required
-                                        autoComplete="username"
-                                    />
-                                </div>
-                                {profileForm.errors.email && <p className="text-rose-500 text-xs mt-1 font-bold">{profileForm.errors.email}</p>}
-                            </div>
-                        </div>
-
-                        {mustVerifyEmail && auth.user.email_verified_at === null && (
-                            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-center justify-between">
-                                <p className="text-sm text-amber-200 font-medium">Deine E-Mail ist noch nicht verifiziert.</p>
-                                <Link 
-                                    href={route('verification.send')} 
-                                    method="post" 
-                                    as="button"
-                                    className="text-xs font-black bg-amber-500/10 text-amber-400 px-4 py-2 rounded-lg hover:bg-amber-500/20 transition-all uppercase tracking-widest"
-                                >
-                                    Verifizierung senden
-                                </Link>
-                            </div>
-                        )}
-
-                        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-muted)]">
-                            <button 
-                                type="submit" 
-                                disabled={profileForm.processing}
-                                className="sim-btn-primary px-8 flex items-center gap-2"
-                            >
-                                {profileForm.processing && <ArrowsClockwise size={18} className="animate-spin" />}
-                                Daten aktualisieren
-                            </button>
-                            
-                            <AnimatePresence>
-                                {status === 'profile-updated' && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        className="text-emerald-400 text-sm font-bold flex items-center gap-2"
+                            {mustVerifyEmail && auth.user.email_verified_at === null && (
+                                <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 md:flex-row md:items-center md:justify-between">
+                                    <p className="text-sm font-medium text-amber-200">Deine E-Mail ist noch nicht verifiziert.</p>
+                                    <Link
+                                        href={route('verification.send')}
+                                        method="post"
+                                        as="button"
+                                        className="rounded-xl bg-amber-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-500/20"
                                     >
+                                        Verifizierung senden
+                                    </Link>
+                                </div>
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-4 border-t border-[var(--border-muted)] pt-4">
+                                <button type="submit" disabled={profileForm.processing} className="sim-btn-primary flex items-center gap-2 px-8">
+                                    {profileForm.processing && <ArrowsClockwise size={18} className="animate-spin" />}
+                                    Daten aktualisieren
+                                </button>
+                                {status === 'profile-updated' && (
+                                    <span className="page-reveal inline-flex items-center gap-2 text-sm font-bold text-emerald-400">
                                         <CheckCircle size={18} weight="fill" />
                                         Gespeichert
-                                    </motion.p>
+                                    </span>
                                 )}
-                            </AnimatePresence>
-                        </div>
-                    </form>
-                </Card>
+                            </div>
+                        </form>
+                    </SectionCard>
 
-                {/* Update Password */}
-                <Card 
-                    title="Sicherheit" 
-                    description="Schütze dein Konto mit einem starken, einzigartigen Passwort."
-                    icon={ShieldCheck}
-                >
-                    <form onSubmit={submitPassword} className="space-y-6">
-                        <div className="space-y-4 max-w-md">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Aktuelles Passwort</label>
-                                <input 
+                    <SectionCard title="Passwort" icon={ShieldCheck} bodyClassName="space-y-6 p-6 md:p-8">
+                        <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+                            Nutze ein starkes Passwort und aendere es regelmaessig.
+                        </p>
+                        <form onSubmit={submitPassword} className="space-y-6">
+                            <div className="grid max-w-2xl gap-4">
+                                <Field
+                                    label="Aktuelles Passwort"
                                     type="password"
                                     value={passwordForm.data.current_password}
-                                    onChange={e => passwordForm.setData('current_password', e.target.value)}
-                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    onChange={(event) => passwordForm.setData('current_password', event.target.value)}
                                     autoComplete="current-password"
+                                    error={passwordForm.errors.current_password}
                                 />
-                                {passwordForm.errors.current_password && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.current_password}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Neues Passwort</label>
-                                <input 
+                                <Field
+                                    label="Neues Passwort"
                                     type="password"
                                     value={passwordForm.data.password}
-                                    onChange={e => passwordForm.setData('password', e.target.value)}
-                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    onChange={(event) => passwordForm.setData('password', event.target.value)}
                                     autoComplete="new-password"
+                                    error={passwordForm.errors.password}
                                 />
-                                {passwordForm.errors.password && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.password}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Passwort bestätigen</label>
-                                <input 
+                                <Field
+                                    label="Passwort bestaetigen"
                                     type="password"
                                     value={passwordForm.data.password_confirmation}
-                                    onChange={e => passwordForm.setData('password_confirmation', e.target.value)}
-                                    className="w-full bg-[var(--bg-pillar)]/50 border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-cyan-500/50 transition-all outline-none"
+                                    onChange={(event) => passwordForm.setData('password_confirmation', event.target.value)}
                                     autoComplete="new-password"
+                                    error={passwordForm.errors.password_confirmation}
                                 />
-                                {passwordForm.errors.password_confirmation && <p className="text-rose-500 text-xs mt-1 font-bold">{passwordForm.errors.password_confirmation}</p>}
                             </div>
-                        </div>
 
-                        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-muted)]">
-                            <button 
-                                type="submit" 
-                                disabled={passwordForm.processing}
-                                className="sim-btn-secondary px-8 flex items-center gap-2"
-                            >
-                                {passwordForm.processing && <ArrowsClockwise size={18} className="animate-spin" />}
-                                Passwort ändern
-                            </button>
-                            
-                            <AnimatePresence>
+                            <div className="flex flex-wrap items-center gap-4 border-t border-[var(--border-muted)] pt-4">
+                                <button type="submit" disabled={passwordForm.processing} className="sim-btn-secondary flex items-center gap-2 px-8">
+                                    {passwordForm.processing && <ArrowsClockwise size={18} className="animate-spin" />}
+                                    Passwort aendern
+                                </button>
                                 {status === 'password-updated' && (
-                                    <motion.p 
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        className="text-emerald-400 text-sm font-bold flex items-center gap-2"
-                                    >
+                                    <span className="page-reveal inline-flex items-center gap-2 text-sm font-bold text-emerald-400">
                                         <CheckCircle size={18} weight="fill" />
                                         Passwort aktualisiert
-                                    </motion.p>
+                                    </span>
                                 )}
-                            </AnimatePresence>
-                        </div>
-                    </form>
-                </Card>
+                            </div>
+                        </form>
+                    </SectionCard>
 
-                {/* Delete Account */}
-                <Card 
-                    title="Gefahrenzone" 
-                    description="Wenn du deinen Account löschst, werden alle deine Daten dauerhaft entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden."
-                    icon={Warning}
-                    variant="danger"
-                >
-                    <div className="flex flex-col items-start gap-4">
+                    <SectionCard title="Gefahrenzone" icon={Warning} bodyClassName="space-y-6 p-6 md:p-8">
+                        <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+                            Wenn du deinen Account loeschst, werden alle Daten dauerhaft entfernt.
+                        </p>
+
                         {!confirmingUserDeletion ? (
-                            <button 
+                            <button
+                                type="button"
                                 onClick={() => setConfirmingUserDeletion(true)}
-                                className="bg-rose-600/10 border-2 border-rose-500/30 text-rose-400 font-black py-3 px-8 rounded-xl hover:bg-rose-600/20 transition-all flex items-center gap-2"
+                                className="inline-flex items-center gap-2 rounded-xl border-2 border-rose-500/30 bg-rose-600/10 px-8 py-3 font-black text-rose-400 transition-colors hover:bg-rose-600/20"
                             >
                                 <Trash size={18} weight="bold" />
-                                ACCOUNT LÖSCHEN
+                                Account loeschen
                             </button>
                         ) : (
-                            <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="w-full bg-[var(--bg-pillar)]/50 border-2 border-rose-500/20 rounded-2xl p-6 space-y-6"
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 bg-rose-500/10 rounded-xl">
+                            <PageReveal className="rounded-2xl border-2 border-rose-500/20 bg-[var(--bg-pillar)]/60 p-6">
+                                <div className="mb-6 flex items-start gap-4">
+                                    <div className="rounded-xl bg-rose-500/10 p-3">
                                         <Warning size={24} className="text-rose-500" weight="fill" />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-bold text-lg">Bist du dir absolut sicher?</h4>
-                                        <p className="text-[var(--text-muted)] text-sm">Bitte gib dein Passwort ein, um die endgültige Löschung deines Kontos zu bestätigen.</p>
+                                        <h3 className="text-lg font-bold text-[var(--text-main)]">Bist du dir sicher?</h3>
+                                        <p className="text-sm text-[var(--text-muted)]">
+                                            Gib dein Passwort ein, um die endgueltige Loeschung zu bestaetigen.
+                                        </p>
                                     </div>
                                 </div>
 
                                 <form onSubmit={deleteUser} className="space-y-4">
                                     <div className="max-w-md">
-                                        <input 
+                                        <Field
+                                            label="Passwort zur Bestaetigung"
                                             type="password"
-                                            placeholder="Dein Passwort zur Bestätigung"
                                             value={deleteForm.data.password}
-                                            onChange={e => deleteForm.setData('password', e.target.value)}
-                                            className="w-full bg-[var(--sim-shell-bg)] border-2 border-[var(--border-pillar)] rounded-xl px-4 py-3 text-white focus:border-rose-500/50 transition-all outline-none"
-                                            required
+                                            onChange={(event) => deleteForm.setData('password', event.target.value)}
+                                            error={deleteForm.errors.password}
+                                            placeholder="Passwort"
                                         />
-                                        {deleteForm.errors.password && <p className="text-rose-500 text-xs mt-1 font-bold">{deleteForm.errors.password}</p>}
                                     </div>
 
-                                    <div className="flex items-center gap-4 pt-2">
-                                        <button 
-                                            type="submit" 
+                                    <div className="flex flex-wrap items-center gap-4 pt-2">
+                                        <button
+                                            type="submit"
                                             disabled={deleteForm.processing}
-                                            className="bg-rose-600 hover:bg-rose-700 text-white font-black py-3 px-8 rounded-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                                            className="rounded-xl bg-rose-600 px-8 py-3 font-black text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
                                         >
-                                            UNWIDERRUFLICH LÖSCHEN
+                                            Unwiderruflich loeschen
                                         </button>
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={() => setConfirmingUserDeletion(false)}
-                                            className="text-[var(--text-muted)] font-bold hover:text-white transition-colors uppercase text-sm tracking-widest px-4"
+                                            className="px-4 text-sm font-bold uppercase tracking-widest text-[var(--text-muted)] transition-colors hover:text-[var(--text-main)]"
                                         >
                                             Abbrechen
                                         </button>
                                     </div>
                                 </form>
-                            </motion.div>
+                            </PageReveal>
                         )}
-                    </div>
-                </Card>
+                    </SectionCard>
+                </PageReveal>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .sim-btn-primary {
-                    @apply bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-black py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(34,211,238,0.2)] disabled:opacity-50 disabled:scale-100;
+                    @apply rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] py-3 font-black text-white transition-all disabled:opacity-50;
                 }
                 .sim-btn-secondary {
-                    @apply bg-[var(--bg-content)] border-2 border-[var(--border-muted)] text-white font-black py-3 rounded-xl hover:bg-slate-700 hover:border-slate-600 transition-all active:scale-[0.98] disabled:opacity-50 disabled:scale-100;
+                    @apply rounded-xl border-2 border-[var(--border-muted)] bg-[var(--bg-content)] py-3 font-black text-[var(--text-main)] transition-all disabled:opacity-50;
                 }
-            `}} />
+            ` }} />
         </AuthenticatedLayout>
     );
 }

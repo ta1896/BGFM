@@ -1,48 +1,26 @@
-import React, { useState } from 'react';
+import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, Link } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Users, UserGear, BuildingOffice, UserCircle, 
-    CalendarCheck, Suitcase, Warehouse, Tent,
-    Lightning, Play, ChartLineUp, ListNumbers,
-    CaretRight, ArrowsClockwise
+import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    Users, UserGear, BuildingOffice, UserCircle, CalendarCheck, Suitcase, Warehouse, Tent,
+    Lightning, Play, CaretRight, ArrowsClockwise, ListNumbers
 } from '@phosphor-icons/react';
+import MetricCard from '@/Components/MetricCard';
+import PageHeader from '@/Components/PageHeader';
+import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import SectionCard from '@/Components/SectionCard';
 
-const StatCard = ({ title, value, icon: Icon, color = 'amber' }) => (
-    <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="sim-card p-5 relative overflow-hidden group"
-    >
-        <div className={`absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500 text-${color}-400`}>
-            <Icon size={100} weight="fill" />
-        </div>
-        <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1">{title}</p>
-            <div className="flex items-end gap-3">
-                <p className="text-3xl font-black text-white leading-none">{value}</p>
-            </div>
-        </div>
-    </motion.div>
-);
+const actionClass = 'rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-4 py-3 text-center text-sm font-black text-[var(--text-main)] transition-colors hover:bg-[var(--bg-content)]';
+const actionPrimaryClass = 'rounded-xl border border-[var(--accent-primary)]/25 bg-[var(--accent-primary)]/10 px-4 py-3 text-center text-sm font-black text-[var(--accent-primary)] transition-colors hover:bg-[var(--accent-primary)]/15';
+const actionHighlightClass = 'rounded-xl border border-[var(--accent-secondary)]/25 bg-[var(--accent-secondary)]/10 px-4 py-3 text-center text-sm font-black text-[var(--accent-secondary)] transition-colors hover:bg-[var(--accent-secondary)]/15';
 
-const SectionHeader = ({ title, icon: Icon }) => (
-    <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-[var(--bg-content)]/50 border border-[var(--border-pillar)]/30">
-            <Icon size={20} className="text-amber-500" />
-        </div>
-        <h2 className="text-lg font-bold text-white tracking-tight leading-none uppercase italic">{title}</h2>
-    </div>
-);
-
-export default function Dashboard({ stats, latestUsers, latestClubs, activeCompetitionSeasons, simulationSettings }) {
+export default function Dashboard({ stats, latestUsers, latestClubs, activeCompetitionSeasons }) {
     const { data, setData, post, processing } = useForm({
         competition_season_id: '',
     });
 
-    const runSimulation = (e) => {
-        e.preventDefault();
+    const runSimulation = (event) => {
+        event.preventDefault();
         post(route('admin.simulation.process-matchday'));
     };
 
@@ -51,45 +29,43 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
             <Head title="Admin Dashboard" />
 
             <div className="space-y-10 pb-20">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <StatCard title="Total User" value={stats.users} icon={Users} />
-                    <StatCard title="Administratoren" value={stats.admins} icon={UserGear} color="amber" />
-                    <StatCard title="Vereine Gesamt" value={stats.clubs} icon={BuildingOffice} />
-                    <StatCard title="CPU Teams" value={stats.cpu_clubs} icon={Lightning} color="amber" />
-                    <StatCard title="Total Spieler" value={stats.players} icon={UserCircle} />
-                    <StatCard title="Aufstellungen" value={stats.lineups} icon={ListNumbers} />
-                    <StatCard title="Geplante Spiele" value={stats.scheduled_matches} icon={CalendarCheck} color="amber" />
-                    <StatCard title="Sponsoren" value={stats.active_sponsors} icon={Suitcase} />
-                    <StatCard title="Stadionprojekte" value={stats.active_stadium_projects} icon={Warehouse} />
-                    <StatCard title="Trainingslager" value={stats.active_training_camps} icon={Tent} />
-                </div>
+                <PageHeader eyebrow="Administration" title="Dashboard" />
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    {/* Quick Actions & Simulation */}
-                    <div className="space-y-8">
-                        <section className="sim-card p-6 border-amber-500/10 shadow-[0_0_50px_rgba(217,177,92,0.03)]">
-                            <SectionHeader title="Simulation & Kontrolle" icon={Play} />
-                            
-                            <form onSubmit={runSimulation} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-2xl bg-[var(--sim-shell-bg)]/50 border border-[var(--border-muted)]">
+                <StaggerGroup className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    <MetricCard label="Total User" value={stats.users} icon={Users} />
+                    <MetricCard label="Administratoren" value={stats.admins} icon={UserGear} />
+                    <MetricCard label="Vereine" value={stats.clubs} icon={BuildingOffice} />
+                    <MetricCard label="CPU Teams" value={stats.cpu_clubs} icon={Lightning} />
+                    <MetricCard label="Spieler" value={stats.players} icon={UserCircle} />
+                    <MetricCard label="Aufstellungen" value={stats.lineups} icon={ListNumbers} />
+                    <MetricCard label="Geplante Spiele" value={stats.scheduled_matches} icon={CalendarCheck} />
+                    <MetricCard label="Sponsoren" value={stats.active_sponsors} icon={Suitcase} />
+                    <MetricCard label="Stadionprojekte" value={stats.active_stadium_projects} icon={Warehouse} />
+                    <MetricCard label="Trainingslager" value={stats.active_training_camps} icon={Tent} />
+                </StaggerGroup>
+
+                <div className="grid gap-8 xl:grid-cols-2">
+                    <PageReveal>
+                        <SectionCard title="Simulation und Kontrolle" icon={Play} bodyClassName="space-y-8 p-6">
+                            <form onSubmit={runSimulation} className="grid grid-cols-1 gap-4 rounded-2xl border border-[var(--border-muted)] bg-[var(--sim-shell-bg)]/50 p-4 md:grid-cols-3">
                                 <div className="md:col-span-2">
-                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-2 px-1">Wettbewerb wählen</label>
-                                    <select 
+                                    <label className="mb-2 block px-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Wettbewerb waehlen</label>
+                                    <select
                                         className="sim-select w-full"
                                         value={data.competition_season_id}
-                                        onChange={e => setData('competition_season_id', e.target.value)}
+                                        onChange={(event) => setData('competition_season_id', event.target.value)}
                                     >
                                         <option value="">Alle aktiven Ligen</option>
-                                        {activeCompetitionSeasons.map(cs => (
-                                            <option key={cs.id} value={cs.id}>{cs.label}</option>
+                                        {activeCompetitionSeasons.map((competitionSeason) => (
+                                            <option key={competitionSeason.id} value={competitionSeason.id}>{competitionSeason.label}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div className="flex items-end">
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         disabled={processing}
-                                        className="sim-btn-primary w-full flex items-center justify-center gap-2 h-[46px]"
+                                        className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] font-black text-white transition-opacity disabled:opacity-50"
                                     >
                                         {processing ? <ArrowsClockwise size={18} className="animate-spin" /> : <Play size={18} weight="fill" />}
                                         Spieltag starten
@@ -97,61 +73,54 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                                 </div>
                             </form>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                <Link href={route('admin.competitions.create')} className="sim-action-btn">Liga erstellen</Link>
-                                <Link href={route('admin.clubs.create')} className="sim-action-btn primary">Verein erstellen</Link>
-                                <Link href={route('admin.players.create')} className="sim-action-btn">Spieler erstellen</Link>
-                                <Link href={route('admin.match-engine.index')} className="sim-action-btn primary">Match Engine</Link>
-                                <Link href={route('admin.monitoring.index')} className="sim-action-btn highlight">System Monitor</Link>
-                                <Link href={route('admin.simulation.settings.index')} className="sim-action-btn">Simulation Setup</Link>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                <Link href={route('admin.competitions.create')} className={actionClass}>Liga erstellen</Link>
+                                <Link href={route('admin.clubs.create')} className={actionPrimaryClass}>Verein erstellen</Link>
+                                <Link href={route('admin.players.create')} className={actionClass}>Spieler erstellen</Link>
+                                <Link href={route('admin.match-engine.index')} className={actionPrimaryClass}>Match Engine</Link>
+                                <Link href={route('admin.monitoring.index')} className={actionHighlightClass}>System Monitor</Link>
+                                <Link href={route('admin.simulation.settings.index')} className={actionClass}>Simulation Setup</Link>
                             </div>
-                        </section>
-                    </div>
+                        </SectionCard>
+                    </PageReveal>
 
-                    {/* Activity Lists */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                        {/* Latest Users */}
-                        <section className="sim-card p-6">
-                            <SectionHeader title="Letzte User" icon={Users} />
-                            <div className="space-y-2">
-                                {latestUsers.map(user => (
-                                    <div key={user.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-content)]/20 border border-[var(--border-muted)] group hover:bg-[var(--bg-content)]/40 transition">
+                    <div className="grid gap-8 sm:grid-cols-2">
+                        <PageReveal>
+                            <SectionCard title="Letzte User" icon={Users} bodyClassName="space-y-2 p-6">
+                                {latestUsers.map((user) => (
+                                    <div key={user.id} className="flex items-center justify-between rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/20 p-3 transition-colors hover:bg-[var(--bg-content)]/40">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-white leading-none mb-1 truncate">{user.name}</p>
-                                            <p className="text-[10px] text-[var(--text-muted)] font-medium truncate">{user.email}</p>
+                                            <p className="mb-1 truncate text-sm font-bold text-[var(--text-main)]">{user.name}</p>
+                                            <p className="truncate text-[10px] font-medium text-[var(--text-muted)]">{user.email}</p>
                                         </div>
                                         {user.is_admin && (
-                                            <span className="text-[9px] font-black bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest">Admin</span>
+                                            <span className="rounded border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--accent-primary)]">
+                                                Admin
+                                            </span>
                                         )}
                                     </div>
                                 ))}
-                            </div>
-                        </section>
+                            </SectionCard>
+                        </PageReveal>
 
-                        {/* Latest Clubs */}
-                        <section className="sim-card p-6">
-                            <SectionHeader title="Letzte Vereine" icon={BuildingOffice} />
-                            <div className="space-y-2">
-                                {latestClubs.map(club => (
-                                    <div key={club.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-content)]/20 border border-[var(--border-muted)] group hover:bg-[var(--bg-content)]/40 transition">
+                        <PageReveal>
+                            <SectionCard title="Letzte Vereine" icon={BuildingOffice} bodyClassName="space-y-2 p-6">
+                                {latestClubs.map((club) => (
+                                    <div key={club.id} className="flex items-center justify-between rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/20 p-3 transition-colors hover:bg-[var(--bg-content)]/40">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-white leading-none mb-1 truncate">{club.name}</p>
-                                            <p className="text-[10px] text-[var(--text-muted)] font-medium truncate italic">Owner: {club.user?.name || 'CPU'}</p>
+                                            <p className="mb-1 truncate text-sm font-bold text-[var(--text-main)]">{club.name}</p>
+                                            <p className="truncate text-[10px] font-medium italic text-[var(--text-muted)]">Owner: {club.user?.name || 'CPU'}</p>
                                         </div>
-                                        <Link 
-                                            href={route('admin.clubs.edit', club.id)}
-                                            className="p-1.5 text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition"
-                                        >
+                                        <Link href={route('admin.clubs.edit', club.id)} className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--accent-primary)]/10 hover:text-[var(--accent-primary)]">
                                             <CaretRight size={16} weight="bold" />
                                         </Link>
                                     </div>
                                 ))}
-                            </div>
-                        </section>
+                            </SectionCard>
+                        </PageReveal>
                     </div>
                 </div>
             </div>
-
         </AdminLayout>
     );
 }

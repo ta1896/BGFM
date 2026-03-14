@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
+import PageHeader from '@/Components/PageHeader';
 import {
     Layout,
     Plus,
@@ -72,22 +73,14 @@ export default function Index({ club, matches, templates }) {
             <Head title="Aufstellungen & Taktik" />
 
             <div className="max-w-[1400px] mx-auto space-y-12">
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="h-px w-8 bg-[var(--accent-primary)]" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--accent-primary)]">Matchcenter // Strategie</span>
-                        </div>
-                        <h1 className="text-5xl lg:text-7xl font-black text-[var(--text-main)] tracking-tighter uppercase italic leading-none">
-                            Aufstellungen <span className="text-[var(--text-muted)]">&</span> Taktik
-                        </h1>
-                    </div>
-
-                    <Link href={route('lineups.create')} className="sim-btn-primary flex items-center gap-3 px-8 py-4 group">
+                <PageHeader
+                    eyebrow="Matchcenter // Strategie"
+                    title="Aufstellungen & Taktik"
+                    actions={<Link href={route('lineups.create')} className="sim-btn-primary flex items-center gap-3 px-8 py-4 group">
                         <Plus size={20} weight="bold" />
                         <span className="font-black uppercase tracking-widest text-xs">Neue Vorlage erstellen</span>
-                    </Link>
-                </div>
+                    </Link>}
+                />
 
                 <section className="space-y-6">
                     <div className="flex items-center gap-4">

@@ -68,7 +68,6 @@ class FriendlyMatchController extends Controller
         }
 
         return \Inertia\Inertia::render('Friendlies/Index', [
-            'clubs' => $clubs,
             'activeClub' => $activeClub,
             'opponents' => $opponents,
             'outgoingRequests' => $outgoing,

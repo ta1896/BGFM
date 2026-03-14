@@ -3,6 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage } from '@inertiajs/react';
 import PaginationLink from '@/Components/PaginationLink';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import PageHeader from '@/Components/PageHeader';
+import MetricCard from '@/Components/MetricCard';
+import SectionCard from '@/Components/SectionCard';
 import {
     ArrowsLeftRight,
     TrendUp,
@@ -12,24 +15,6 @@ import {
     Wallet,
     WarningCircle,
 } from '@phosphor-icons/react';
-
-const StatCard = ({ title, value, unit, icon: Icon, colorClass }) => (
-    <div className="sim-card p-6 relative overflow-hidden group border-[var(--border-muted)]">
-        <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${colorClass}`}>
-            <Icon size={80} weight="fill" />
-        </div>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">{title}</p>
-        <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-black text-[var(--text-main)] tracking-tighter">
-                {typeof value === 'number' ? value.toLocaleString('de-DE') : value}
-            </p>
-            <span className="text-sm font-bold text-[var(--text-muted)] uppercase">{unit}</span>
-        </div>
-        <div className={`mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 border border-white/10 ${colorClass}`}>
-            Live Balance
-        </div>
-    </div>
-);
 
 export default function Finances({ activeClub, transactions }) {
     usePage();
@@ -51,27 +36,24 @@ export default function Finances({ activeClub, transactions }) {
             <Head title="Finanzen" />
 
             <div className="max-w-[1400px] mx-auto space-y-8">
-                <PageReveal className="flex items-end justify-between">
-                    <div>
-                        <p className="sim-section-title">Finanz-Management</p>
-                        <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tighter">Budget & Bilanz</h1>
-                    </div>
-                </PageReveal>
+                <PageHeader eyebrow="Finanz-Management" title="Budget & Bilanz" />
 
                 <StaggerGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <StatCard
+                    <MetricCard
                         title="Transferbudget"
-                        value={parseFloat(activeClub.budget)}
+                        value={parseFloat(activeClub.budget).toLocaleString('de-DE')}
                         unit="EUR"
                         icon={Wallet}
-                        colorClass="text-emerald-400"
+                        accentClass="text-emerald-400"
+                        footer={<div className="mt-4 inline-flex items-center gap-2 rounded border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-400">Live Balance</div>}
                     />
-                    <StatCard
+                    <MetricCard
                         title="Club Coins"
-                        value={parseInt(activeClub.coins)}
+                        value={parseInt(activeClub.coins).toLocaleString('de-DE')}
                         unit="Coins"
                         icon={Coin}
-                        colorClass="text-amber-400"
+                        accentClass="text-amber-400"
+                        footer={<div className="mt-4 inline-flex items-center gap-2 rounded border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-400">Live Balance</div>}
                     />
                     <div className="sim-card p-6 bg-gradient-to-br from-[color:var(--accent-glow)] to-transparent border-[var(--border-pillar)] hidden lg:block">
                         <div className="flex flex-col h-full justify-between">
@@ -90,7 +72,7 @@ export default function Finances({ activeClub, transactions }) {
                 </StaggerGroup>
 
                 <PageReveal delay={140}>
-                    <Card title="Transaktionshistorie" icon={ArrowsLeftRight}>
+                    <SectionCard title="Transaktionshistorie" icon={ArrowsLeftRight}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
@@ -168,21 +150,9 @@ export default function Finances({ activeClub, transactions }) {
                             ))}
                         </div>
                     )}
-                    </Card>
+                    </SectionCard>
                 </PageReveal>
             </div>
         </AuthenticatedLayout>
     );
 }
-
-const Card = ({ title, children, icon: Icon }) => (
-    <div className="sim-card border-[var(--border-muted)]">
-        <div className="px-6 py-4 border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Icon size={20} weight="duotone" className="text-[var(--accent-primary)]" />
-                <h2 className="text-lg font-black text-[var(--text-main)] tracking-tight uppercase">{title}</h2>
-            </div>
-        </div>
-        {children}
-    </div>
-);

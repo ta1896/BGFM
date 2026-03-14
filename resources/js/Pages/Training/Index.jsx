@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageReveal } from '@/Components/PageReveal';
+import PageHeader from '@/Components/PageHeader';
+import SectionCard from '@/Components/SectionCard';
 import {
     GraduationCap,
     Lightning,
@@ -27,20 +29,6 @@ const typeIcons = {
     recovery: Heartbeat,
     friendly: Users,
 };
-
-const Card = ({ title, children, icon: Icon, className = '' }) => (
-    <div className={`sim-card border-[var(--border-muted)] ${className}`}>
-        {title && (
-            <div className="px-6 py-4 border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Icon size={20} weight="duotone" className="text-[var(--accent-primary)]" />
-                    <h2 className="text-lg font-black text-[var(--text-main)] tracking-tight uppercase">{title}</h2>
-                </div>
-            </div>
-        )}
-        {children}
-    </div>
-);
 
 export default function Training({ sessions, prefillClubId, prefillDate }) {
     const { activeClub } = usePage().props;
@@ -83,20 +71,20 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
             <Head title="Training" />
 
             <div className="max-w-[1400px] mx-auto space-y-8">
-                <PageReveal className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <p className="sim-section-title">Leistungsentwicklung</p>
-                        <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tighter">Trainingszentrum</h1>
-                    </div>
-                    <button onClick={() => setShowForm((open) => !open)} className="sim-btn-primary flex items-center gap-2 px-6 py-3">
+                <PageHeader
+                    eyebrow="Leistungsentwicklung"
+                    title="Trainingszentrum"
+                    actions={(
+                        <button onClick={() => setShowForm((open) => !open)} className="sim-btn-primary flex items-center gap-2 px-6 py-3">
                         <Plus size={20} weight="bold" />
                         Neue Einheit
-                    </button>
-                </PageReveal>
+                        </button>
+                    )}
+                />
 
                 {showForm && (
                     <PageReveal className="overflow-hidden transition-all duration-300" delay={90}>
-                        <Card title="Neue Trainingseinheit Planen" icon={Plus}>
+                        <SectionCard title="Neue Trainingseinheit Planen" icon={Plus}>
                             <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <SelectField label="Typ" value={data.type} onChange={(event) => setData('type', event.target.value)}>
                                     <option value="technical">Technik</option>
@@ -126,12 +114,12 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                                     </button>
                                 </div>
                             </form>
-                        </Card>
+                        </SectionCard>
                     </PageReveal>
                 )}
 
                 <PageReveal delay={140}>
-                    <Card title="Trainingseinheiten" icon={Calendar}>
+                    <SectionCard title="Trainingseinheiten" icon={Calendar}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
@@ -205,7 +193,7 @@ export default function Training({ sessions, prefillClubId, prefillDate }) {
                             </tbody>
                         </table>
                     </div>
-                    </Card>
+                    </SectionCard>
                 </PageReveal>
             </div>
         </AuthenticatedLayout>

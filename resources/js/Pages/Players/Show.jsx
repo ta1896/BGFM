@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
     User, 
     CalendarBlank,
@@ -42,12 +41,9 @@ const StatRing = ({ value, max = 99, label, color = "emerald" }) => {
             <div className="relative flex items-center justify-center w-16 h-16">
                 <svg className="w-full h-full transform -rotate-90">
                     <circle cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="4" fill="transparent" className="text-slate-800" />
-                    <motion.circle 
-                        initial={{ strokeDashoffset: circumference }}
-                        animate={{ strokeDashoffset: offset }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="4" fill="transparent" 
-                        strokeDasharray={circumference} className={colors[color]} 
+                    <circle
+                        cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="4" fill="transparent"
+                        strokeDasharray={circumference} strokeDashoffset={offset} className={colors[color]}
                     />
                 </svg>
                 <span className="absolute text-sm font-black text-white italic">{value}</span>
@@ -208,15 +204,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                 </div>
 
                 <div className="min-h-[500px]">
-                    <AnimatePresence mode="wait">
+                    <div>
                         {activeTab === 'overview' && (
-                            <motion.div 
-                                key="overview"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="grid lg:grid-cols-3 gap-8"
-                            >
+                            <div className="grid lg:grid-cols-3 gap-8">
                                 {/* Core Stats */}
                                 <div className="lg:col-span-2 space-y-8">
                                     <div className="sim-card p-8">
@@ -242,10 +232,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                         <span className="text-xs font-black text-white italic">{stat.val}</span>
                                                     </div>
                                                     <div className="h-2 bg-[var(--bg-pillar)] rounded-full overflow-hidden p-0.5 border border-[var(--border-pillar)]">
-                                                        <motion.div 
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${stat.val}%` }}
-                                                            className={`h-full rounded-full bg-gradient-to-r ${stat.color.replace('text-', 'from-')}/60 to-transparent`}
+                                                        <div
+                                                            className={`h-full rounded-full bg-gradient-to-r ${stat.color.replace('text-', 'from-')}/60 to-transparent transition-all duration-700 ease-out`}
+                                                            style={{ width: `${stat.val}%` }}
                                                         />
                                                     </div>
                                                 </div>
@@ -294,10 +283,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     <span className={`text-xs font-black italic ${player.stamina > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{player.stamina}%</span>
                                                 </div>
                                                 <div className="h-6 bg-[var(--bg-pillar)] rounded-xl overflow-hidden p-1 border border-[var(--border-pillar)] shadow-inner relative">
-                                                    <motion.div 
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${player.stamina}%` }}
-                                                        className={`h-full rounded-lg bg-gradient-to-r ${player.stamina > 80 ? 'from-emerald-600 to-emerald-400' : 'from-amber-600 to-amber-400'} shadow-lg`}
+                                                    <div
+                                                        className={`h-full rounded-lg bg-gradient-to-r ${player.stamina > 80 ? 'from-emerald-600 to-emerald-400' : 'from-amber-600 to-amber-400'} shadow-lg transition-all duration-700 ease-out`}
+                                                        style={{ width: `${player.stamina}%` }}
                                                     />
                                                 </div>
                                             </div>
@@ -308,10 +296,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                                     <span className="text-xs font-black text-amber-500 italic">{player.morale}%</span>
                                                 </div>
                                                 <div className="h-6 bg-[var(--bg-pillar)] rounded-xl overflow-hidden p-1 border border-[var(--border-pillar)] shadow-inner">
-                                                    <motion.div 
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${player.morale}%` }}
-                                                        className="h-full rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 shadow-lg"
+                                                    <div
+                                                        className="h-full rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 shadow-lg transition-all duration-700 ease-out"
+                                                        style={{ width: `${player.morale}%` }}
                                                     />
                                                 </div>
                                             </div>
@@ -336,17 +323,11 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         )}
 
                         {activeTab === 'career' && (
-                            <motion.div 
-                                key="career"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-8"
-                            >
+                            <div className="space-y-8">
                                 <div className="sim-card p-0 overflow-hidden">
                                      <div className="overflow-x-auto">
                                         <table className="w-full text-left">
@@ -398,17 +379,11 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </table>
                                      </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         )}
 
                         {activeTab === 'matches' && (
-                            <motion.div 
-                                key="matches"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 20 }}
-                                className="space-y-8"
-                            >
+                            <div className="space-y-8">
                                 <div className="grid gap-6">
                                     {recentMatches.length > 0 ? recentMatches.map((stat, idx) => (
                                         <div key={idx} className="sim-card p-6 flex flex-wrap lg:flex-nowrap items-center gap-8 hover:border-cyan-500/30 transition-all group">
@@ -461,29 +436,19 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </div>
                                     )}
                                 </div>
-                            </motion.div>
+                            </div>
                         )}
 
                         {activeTab === 'history' && (
-                            <motion.div 
-                                key="history"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="sim-card p-20 text-center border-dashed border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40"
-                            >
+                            <div className="sim-card p-20 text-center border-dashed border-2 border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40">
                                 <History size={48} weight="duotone" className="text-slate-700 mx-auto mb-6" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2 italic">Entwicklungshistorie</h3>
                                 <p className="text-[var(--text-muted)] text-sm font-medium">Die vollständige Transfer- und Attributshistorie wird in Kürze freigeschaltet.</p>
-                            </motion.div>
+                            </div>
                         )}
 
                         {activeTab === 'customize' && isOwner && (
-                            <motion.div 
-                                key="customize"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-3xl mx-auto sim-card p-10 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]"
-                            >
+                            <div className="max-w-3xl mx-auto sim-card p-10 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]">
                                 <div className="flex items-center gap-4 mb-10 border-b border-[var(--border-pillar)] pb-6">
                                     <IdentificationBadge size={32} weight="duotone" className="text-cyan-400" />
                                     <div>
@@ -574,9 +539,9 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
                                         </button>
                                     </div>
                                 </form>
-                            </motion.div>
+                            </div>
                         )}
-                    </AnimatePresence>
+                    </div>
                 </div>
             </div>
 
@@ -593,3 +558,4 @@ export default function Show({ player, currentSeasonStats, careerStats, recentMa
         </AuthenticatedLayout>
     );
 }
+

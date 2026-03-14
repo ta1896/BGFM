@@ -1,97 +1,75 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { motion } from 'framer-motion';
-import {
-    SoccerBall, FunnelSimple, X, CaretRight,
-    Lightning, Clock, CheckCircle, Circle
-} from '@phosphor-icons/react';
+import { SoccerBall, FunnelSimple, X, CaretRight } from '@phosphor-icons/react';
+import PageHeader from '@/Components/PageHeader';
+import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import SectionCard from '@/Components/SectionCard';
 
-const StatusBadge = ({ status }) => {
+function StatusBadge({ status }) {
     const configs = {
-        live:      { cls: 'bg-rose-500/20 border-rose-500/40 text-rose-400', label: 'LIVE', pulse: true },
-        scheduled: { cls: 'bg-[var(--bg-content)] border-[var(--border-pillar)] text-[var(--text-muted)]',    label: 'GEPLANT', pulse: false },
-        played:    { cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500', label: 'BEENDET', pulse: false },
+        live: 'border-rose-500/40 bg-rose-500/20 text-rose-400',
+        scheduled: 'border-[var(--border-pillar)] bg-[var(--bg-content)] text-[var(--text-muted)]',
+        played: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500',
     };
-    const cfg = configs[status] || configs.scheduled;
+
     return (
-        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${cfg.cls}`}>
-            {cfg.pulse && <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500" /></span>}
-            {cfg.label}
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${configs[status] || configs.scheduled}`}>
+            {status === 'live' && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />}
+            {status === 'scheduled' ? 'Geplant' : status === 'live' ? 'Live' : 'Beendet'}
         </span>
     );
-};
+}
 
-const MatchCard = ({ match, ownedClubIds }) => {
+function MatchCard({ match, ownedClubIds }) {
     const isOwned = ownedClubIds.includes(match.home_club_id) || ownedClubIds.includes(match.away_club_id);
-    const isLive = match.status === 'live';
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
+        <Link
+            href={route('matches.show', match.id)}
+            className={`flex items-center gap-6 border-b border-white/5 px-6 py-5 transition-all hover:bg-white/[0.03] ${isOwned ? 'bg-[var(--accent-primary)]/[0.03]' : ''}`}
         >
-            <Link
-                href={route('matches.show', match.id)}
-                className={`flex items-center gap-6 px-6 py-5 transition-all border-b border-white/5 hover:bg-white/[0.03] group ${isOwned ? 'bg-amber-500/[0.02]' : ''}`}
-            >
-                {/* Competition Badge */}
-                <div className="w-10 h-10 rounded-xl bg-[var(--bg-pillar)] border border-[var(--border-pillar)] flex items-center justify-center shrink-0">
-                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase">
-                        {match.competition_season?.competition?.code || 'LG'}
-                    </span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-[9px] font-black uppercase text-[var(--text-muted)]">
+                {match.competition_season?.competition?.code || 'LG'}
+            </div>
+
+            <div className="flex min-w-0 flex-1 items-center gap-6">
+                <div className={`flex flex-1 items-center justify-end gap-3 min-w-0 ${ownedClubIds.includes(match.home_club_id) ? 'opacity-100' : 'opacity-60'}`}>
+                    <span className="truncate text-right text-sm font-black uppercase tracking-tight text-[var(--text-main)]">{match.home_club?.short_name}</span>
+                    <img src={match.home_club?.logo_url || '/images/default-club.png'} alt={match.home_club?.short_name} className="h-9 w-9 shrink-0 rounded object-contain" />
                 </div>
 
-                {/* Match */}
-                <div className="flex-1 flex items-center gap-6 min-w-0">
-                    {/* Home */}
-                    <div className={`flex items-center gap-3 flex-1 justify-end min-w-0 ${ownedClubIds.includes(match.home_club_id) ? 'opacity-100' : 'opacity-60'}`}>
-                        <span className="text-sm font-black text-white uppercase tracking-tight truncate text-right">{match.home_club?.short_name}</span>
-                        <img src={match.home_club?.logo_url || '/images/default-club.png'}
-                            className="w-9 h-9 object-contain rounded shrink-0" />
-                    </div>
-
-                    {/* Score / Time */}
-                    <div className="flex flex-col items-center gap-1 shrink-0 w-24">
-                        {match.status === 'played' ? (
-                            <span className="text-xl font-black text-white italic tabular-nums">
-                                {match.home_score} : {match.away_score}
-                            </span>
-                        ) : match.status === 'live' ? (
-                            <span className="text-xl font-black text-rose-400 italic animate-pulse tabular-nums">
-                                {match.home_score ?? 0} : {match.away_score ?? 0}
-                            </span>
-                        ) : (
-                            <span className="text-lg font-black text-[var(--text-muted)] italic">{match.kickoff_formatted?.split(' ')[1] || '-'}</span>
-                        )}
-                        <StatusBadge status={match.status} />
-                    </div>
-
-                    {/* Away */}
-                    <div className={`flex items-center gap-3 flex-1 min-w-0 ${ownedClubIds.includes(match.away_club_id) ? 'opacity-100' : 'opacity-60'}`}>
-                        <img src={match.away_club?.logo_url || '/images/default-club.png'}
-                            className="w-9 h-9 object-contain rounded shrink-0" />
-                        <span className="text-sm font-black text-white uppercase tracking-tight truncate">{match.away_club?.short_name}</span>
-                    </div>
+                <div className="flex w-24 shrink-0 flex-col items-center gap-1">
+                    {match.status === 'played' ? (
+                        <span className="text-xl font-black italic tabular-nums text-[var(--text-main)]">{match.home_score} : {match.away_score}</span>
+                    ) : match.status === 'live' ? (
+                        <span className="text-xl font-black italic tabular-nums text-rose-400">{match.home_score ?? 0} : {match.away_score ?? 0}</span>
+                    ) : (
+                        <span className="text-lg font-black italic text-[var(--text-muted)]">{match.kickoff_formatted?.split(' ')[1] || '-'}</span>
+                    )}
+                    <StatusBadge status={match.status} />
                 </div>
 
-                {/* Arrow */}
-                <CaretRight size={16} className="text-slate-700 group-hover:text-amber-500 transition-colors shrink-0" />
-            </Link>
-        </motion.div>
+                <div className={`flex min-w-0 flex-1 items-center gap-3 ${ownedClubIds.includes(match.away_club_id) ? 'opacity-100' : 'opacity-60'}`}>
+                    <img src={match.away_club?.logo_url || '/images/default-club.png'} alt={match.away_club?.short_name} className="h-9 w-9 shrink-0 rounded object-contain" />
+                    <span className="truncate text-sm font-black uppercase tracking-tight text-[var(--text-main)]">{match.away_club?.short_name}</span>
+                </div>
+            </div>
+
+            <CaretRight size={16} className="shrink-0 text-slate-600 transition-colors" />
+        </Link>
     );
-};
+}
 
-export default function Matches({
-    competitionSeasons, activeCompetitionSeason, matchesByGroup, groupType,
-    ownedClubIds, clubFilterOptions, activeClub, filters, hasActiveFilters
-}) {
+export default function Matches({ competitionSeasons, matchesByGroup, groupType, ownedClubIds, filters, hasActiveFilters }) {
     const [localFilters, setLocalFilters] = useState(filters);
+    const groups = Object.entries(matchesByGroup || {});
+    const totalMatches = groups.reduce((accumulator, [, matches]) => accumulator + matches.length, 0);
 
     const applyFilter = (key, value) => {
         const updated = { ...localFilters, [key]: value };
         setLocalFilters(updated);
-        const params = Object.fromEntries(Object.entries(updated).filter(([, v]) => v));
+        const params = Object.fromEntries(Object.entries(updated).filter(([, currentValue]) => currentValue));
         router.get(route('league.matches'), params, { preserveState: true, replace: true });
     };
 
@@ -100,123 +78,110 @@ export default function Matches({
         router.get(route('league.matches'), {}, { preserveState: false });
     };
 
-    const groups = Object.entries(matchesByGroup || {});
-    const totalMatches = groups.reduce((acc, [, ms]) => acc + ms.length, 0);
-
     return (
         <AuthenticatedLayout>
             <Head title="Spielplan" />
 
-            <div className="max-w-[1200px] mx-auto space-y-8">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Wettbewerb</p>
-                        <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">
-                            Spielplan
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                        <SoccerBall size={16} weight="fill" className="text-slate-700" />
-                        {totalMatches} Spiele
-                    </div>
-                </div>
-
-                {/* Filters */}
-                <div className="sim-card p-5 bg-[#0c1222]/60 border-[var(--border-muted)]">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                            <FunnelSimple size={14} weight="bold" />
-                            Filter
+            <div className="mx-auto max-w-[1200px] space-y-8">
+                <PageHeader
+                    eyebrow="Wettbewerb"
+                    title="Spielplan"
+                    actions={
+                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                            <SoccerBall size={16} weight="fill" className="text-[var(--accent-primary)]" />
+                            {totalMatches} Spiele
                         </div>
+                    }
+                />
 
-                        {/* Competition Season */}
-                        <select
-                            value={localFilters.competition_season || ''}
-                            onChange={e => applyFilter('competition_season', e.target.value)}
-                            className="sim-select py-2 text-[10px] uppercase font-black"
-                        >
-                            <option value="">Alle Wettbewerbe</option>
-                            {competitionSeasons.map(cs => (
-                                <option key={cs.id} value={cs.id}>
-                                    {cs.competition?.name} — {cs.season?.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Status */}
-                        {['scheduled', 'live', 'played'].map(s => (
-                            <button
-                                key={s}
-                                onClick={() => applyFilter('status', localFilters.status === s ? '' : s)}
-                                className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                                    localFilters.status === s
-                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                                        : 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-slate-300'
-                                }`}
+                <PageReveal>
+                    <SectionCard title="Filter" icon={FunnelSimple} bodyClassName="p-5">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select
+                                value={localFilters.competition_season || ''}
+                                onChange={(event) => applyFilter('competition_season', event.target.value)}
+                                className="sim-select py-2 text-[10px] font-black uppercase"
                             >
-                                {s === 'scheduled' ? 'Geplant' : s === 'live' ? 'Live' : 'Beendet'}
-                            </button>
-                        ))}
-
-                        {/* Scope */}
-                        {['today', 'week', 'upcoming'].map(s => (
-                            <button
-                                key={s}
-                                onClick={() => applyFilter('scope', localFilters.scope === s ? '' : s)}
-                                className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
-                                    localFilters.scope === s
-                                        ? 'bg-amber-600/20 border-amber-600/40 text-amber-600'
-                                        : 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-slate-300'
-                                }`}
-                            >
-                                {s === 'today' ? 'Heute' : s === 'week' ? 'Diese Woche' : 'Bevorstehend'}
-                            </button>
-                        ))}
-
-                        {hasActiveFilters && (
-                            <button onClick={clearFilters}
-                                className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
-                            >
-                                <X size={12} weight="bold" /> Filter löschen
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Match Groups */}
-                <div className="space-y-6">
-                    {groups.length === 0 ? (
-                        <div className="sim-card p-20 text-center border-dashed border-[var(--border-pillar)]">
-                            <SoccerBall size={48} weight="thin" className="text-slate-700 mx-auto mb-6" />
-                            <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-sm italic">Keine Spiele gefunden</p>
-                        </div>
-                    ) : groups.map(([groupKey, matches]) => (
-                        <div key={groupKey} className="sim-card overflow-hidden p-0">
-                            {/* Group Header */}
-                            <div className="px-6 py-4 bg-[var(--bg-pillar)]/60 border-b border-white/5 flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-amber-600/20 border border-amber-600/20 flex items-center justify-center">
-                                    <span className="text-[10px] font-black text-amber-600">
-                                        {groupType === 'matchday' ? groupKey : groupKey?.split('-')[2]}
-                                    </span>
-                                </div>
-                                <span className="text-xs font-black text-white uppercase tracking-widest">
-                                    {groupType === 'matchday'
-                                        ? `Spieltag ${groupKey}`
-                                        : (matches[0]?.kickoff_day_label || groupKey)}
-                                </span>
-                                <span className="ml-auto text-[9px] font-black text-slate-600 uppercase tracking-widest">{matches.length} Spiel{matches.length !== 1 ? 'e' : ''}</span>
-                            </div>
-
-                            {/* Matches */}
-                            <div>
-                                {matches.map(match => (
-                                    <MatchCard key={match.id} match={match} ownedClubIds={ownedClubIds} />
+                                <option value="">Alle Wettbewerbe</option>
+                                {competitionSeasons.map((competitionSeason) => (
+                                    <option key={competitionSeason.id} value={competitionSeason.id}>
+                                        {competitionSeason.competition?.name} - {competitionSeason.season?.name}
+                                    </option>
                                 ))}
-                            </div>
+                            </select>
+
+                            {['scheduled', 'live', 'played'].map((status) => (
+                                <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() => applyFilter('status', localFilters.status === status ? '' : status)}
+                                    className={`rounded-xl border px-4 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                        localFilters.status === status
+                                            ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
+                                            : 'border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-[var(--text-muted)]'
+                                    }`}
+                                >
+                                    {status === 'scheduled' ? 'Geplant' : status === 'live' ? 'Live' : 'Beendet'}
+                                </button>
+                            ))}
+
+                            {['today', 'week', 'upcoming'].map((scope) => (
+                                <button
+                                    key={scope}
+                                    type="button"
+                                    onClick={() => applyFilter('scope', localFilters.scope === scope ? '' : scope)}
+                                    className={`rounded-xl border px-4 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                        localFilters.scope === scope
+                                            ? 'border-[var(--accent-secondary)]/40 bg-[var(--accent-secondary)]/15 text-[var(--accent-secondary)]'
+                                            : 'border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-[var(--text-muted)]'
+                                    }`}
+                                >
+                                    {scope === 'today' ? 'Heute' : scope === 'week' ? 'Diese Woche' : 'Bevorstehend'}
+                                </button>
+                            ))}
+
+                            {hasActiveFilters && (
+                                <button
+                                    type="button"
+                                    onClick={clearFilters}
+                                    className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-rose-400 transition-colors hover:bg-rose-500/20"
+                                >
+                                    <X size={12} weight="bold" />
+                                    Filter loeschen
+                                </button>
+                            )}
                         </div>
-                    ))}
-                </div>
+                    </SectionCard>
+                </PageReveal>
+
+                {groups.length === 0 ? (
+                    <PageReveal>
+                        <SectionCard bodyClassName="p-20 text-center">
+                            <SoccerBall size={48} weight="thin" className="mx-auto mb-6 text-slate-700" />
+                            <p className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)]">Keine Spiele gefunden</p>
+                        </SectionCard>
+                    </PageReveal>
+                ) : (
+                    <StaggerGroup className="space-y-6">
+                        {groups.map(([groupKey, matches]) => (
+                            <SectionCard
+                                key={groupKey}
+                                title={groupType === 'matchday' ? `Spieltag ${groupKey}` : (matches[0]?.kickoff_day_label || groupKey)}
+                                icon={SoccerBall}
+                                bodyClassName="overflow-hidden"
+                            >
+                                <div className="border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/25 px-6 py-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                    {matches.length} Spiel{matches.length !== 1 ? 'e' : ''}
+                                </div>
+                                <div>
+                                    {matches.map((match) => (
+                                        <MatchCard key={match.id} match={match} ownedClubIds={ownedClubIds} />
+                                    ))}
+                                </div>
+                            </SectionCard>
+                        ))}
+                    </StaggerGroup>
+                )}
             </div>
         </AuthenticatedLayout>
     );

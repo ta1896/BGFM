@@ -298,7 +298,6 @@ class DashboardController extends Controller
         }
 
         return \Inertia\Inertia::render('Dashboard', [
-            'clubs' => $clubs,
             'activeClub' => $activeClub,
             'activeLineup' => $activeLineup,
             'metrics' => $metrics,

@@ -61,12 +61,27 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'default_club_id' => $user->default_club_id,
+                    'is_admin' => $isAdmin,
+                ] : null,
                 'isAdmin' => $isAdmin,
                 'theme' => $user?->theme ?? 'catalyst',
             ],
-            'activeClub' => $activeClub,
-            'userClubs' => $userClubs,
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'logo_url' => $activeClub->logo_url,
+            ] : null,
+            'userClubs' => $userClubs->map(fn ($club) => [
+                'id' => $club->id,
+                'name' => $club->name,
+                'logo_url' => $club->logo_url,
+            ])->values(),
             'flash' => [
                 'status' => session('status'),
             ],
