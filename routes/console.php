@@ -230,7 +230,7 @@ Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run
 })->purpose('Startet und tickt alle offenen Freundschafts-, Liga- und Pokalspiele automatisch (Live-Simulation)');
 
 Schedule::command('game:simulate-matches')
-    ->everyMinute()
+    ->everyThirtySeconds()
     ->withoutOverlapping();
 
 Artisan::command('game:simulation-health {--limit=20} {--strict}', function () {

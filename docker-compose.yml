@@ -27,6 +27,30 @@ services:
     depends_on:
       - app
 
+  scheduler:
+    image: newgen-app
+    container_name: newgen_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan schedule:work
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - app
+      - mysql
+
+  queue:
+    image: newgen-app
+    container_name: newgen_queue
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan queue:listen --tries=1 --timeout=0
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - app
+      - mysql
+
   mysql:
     image: mysql:8.0
     container_name: newgen_db
