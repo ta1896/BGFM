@@ -34,7 +34,22 @@ class MonitoringController extends Controller
         // Live Watchdog
         $liveStatus = $this->getSystemStatus();
 
-        return view('admin.monitoring.index', compact('health', 'logStats', 'recentLogs', 'diagnostics', 'dataTimestamp', 'liveStatus'));
+        // System Hub Links
+        $monitoringLinks = [
+            'horizon' => url('/horizon'),
+            'telescope' => url('/telescope'),
+            'goaccess' => $request->getSchemeAndHttpHost() . ':7817',
+        ];
+
+        return view('admin.monitoring.index', compact(
+            'health', 
+            'logStats', 
+            'recentLogs', 
+            'diagnostics', 
+            'dataTimestamp', 
+            'liveStatus',
+            'monitoringLinks'
+        ));
     }
 
     public function getSystemStatus(): array

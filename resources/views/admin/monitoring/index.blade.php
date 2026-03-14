@@ -57,6 +57,63 @@
                 </div>
             @endif
 
+            <!-- System Monitoring Hub -->
+            <section>
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span class="flex h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
+                        System Monitoring Hub
+                    </h2>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Zentrale Steuerung</p>
+                </div>
+                <div class="grid gap-4 md:grid-cols-3">
+                    <!-- Horizon -->
+                    <a href="{{ $monitoringLinks['horizon'] }}" target="_blank" class="sim-card group hover:border-indigo-500/50 transition-all p-5 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <p class="sim-section-title text-indigo-400 mb-1">Queues & Worker</p>
+                        <h3 class="text-xl font-bold text-white mb-2">Laravel Horizon</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">Überwache Hintergrund-Jobs, Simulationen und Worker-Auslastung in Echtzeit.</p>
+                        <span class="text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Öffnen <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        </span>
+                    </a>
+
+                    <!-- Telescope -->
+                    <a href="{{ $monitoringLinks['telescope'] }}" target="_blank" class="sim-card group hover:border-emerald-500/50 transition-all p-5 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <p class="sim-section-title text-emerald-400 mb-1">Debugging & Insights</p>
+                        <h3 class="text-xl font-bold text-white mb-2">Laravel Telescope</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">Analysiere Queries, Requests, Mail-Versand und Exceptions bis ins kleinste Detail.</p>
+                        <span class="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Öffnen <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        </span>
+                    </a>
+
+                    <!-- GoAccess -->
+                    <a href="{{ $monitoringLinks['goaccess'] }}" target="_blank" class="sim-card group hover:border-cyan-500/50 transition-all p-5 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <p class="sim-section-title text-cyan-400 mb-1">Besucher-Analytics</p>
+                        <h3 class="text-xl font-bold text-white mb-2">Real-Time GoAccess</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">Verfolge Besucherzahlen, beliebte Seiten und Server-Last live in deinem Nginx-Dashboard.</p>
+                        <span class="text-xs font-bold text-cyan-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Öffnen <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        </span>
+                    </a>
+                </div>
+            </section>
+
             <!-- Health Cards -->
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <!-- Live Watchdog -->

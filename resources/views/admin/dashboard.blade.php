@@ -65,6 +65,7 @@
                 <a class="sim-btn-muted" href="{{ route('stadium.index') }}">Stadion</a>
                 <a class="sim-btn-muted" href="{{ route('training-camps.index') }}">Trainingslager</a>
                 <a class="sim-btn-primary" href="{{ route('admin.match-engine.index') }}">Match Engine</a>
+                <a class="sim-btn-muted border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10" href="{{ route('admin.monitoring.index') }}">System Monitoring</a>
             </div>
 
             <form method="POST" action="{{ route('admin.simulation.process-matchday') }}" class="mt-4 grid gap-2 sm:grid-cols-3">
