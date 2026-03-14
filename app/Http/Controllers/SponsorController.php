@@ -12,10 +12,16 @@ use Illuminate\View\View;
 
 class SponsorController extends Controller
 {
-    public function index(Request $request, SponsorService $sponsorService): View
+    public function index(Request $request, SponsorService $sponsorService): \Inertia\Response
     {
-        $clubs = $request->user()->clubs()->orderBy('name')->get();
-        $activeClub = $clubs->firstWhere('id', (int) $request->query('club')) ?? $clubs->first();
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin() 
+            ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
 
         $offers = collect();
         $activeContract = null;
@@ -31,15 +37,24 @@ class SponsorController extends Controller
                 ->latest('id')
                 ->first();
 
+            if ($activeContract) {
+                $activeContract->ends_on_formatted = $activeContract->ends_on?->format('d.m.Y');
+            }
+
             $history = SponsorContract::query()
                 ->with('sponsor')
                 ->where('club_id', $activeClub->id)
                 ->latest('id')
                 ->limit(15)
-                ->get();
+                ->get()
+                ->map(function ($c) {
+                    $c->starts_on_formatted = $c->starts_on?->format('d.m.Y');
+                    $c->ends_on_formatted = $c->ends_on?->format('d.m.Y');
+                    return $c;
+                });
         }
 
-        return view('sponsors.index', [
+        return \Inertia\Inertia::render('Sponsors/Index', [
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'offers' => $offers,

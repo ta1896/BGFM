@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 class Club extends Model
 {
     use HasFactory;
+    
+    protected $appends = ['logo_url'];
 
     protected $fillable = [
         'user_id',

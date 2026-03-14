@@ -15,12 +15,12 @@ use Illuminate\View\View;
 
 class MatchCenterController extends Controller
 {
-    public function show(Request $request, GameMatch $match): View
+    public function show(Request $request, GameMatch $match): \Inertia\Response
     {
         $this->ensureReadable($request, $match);
 
         $match->load([
-            'homeClub',
+            'homeClub.stadium',
             'awayClub',
             'events.player',
             'events.assister',
@@ -35,29 +35,46 @@ class MatchCenterController extends Controller
             'liveMinuteSnapshots',
             'plannedSubstitutions.playerOut',
             'plannedSubstitutions.playerIn',
+            'competitionSeason.competition',
         ]);
 
         $comparison = [
             'home' => [
                 'market_value' => $match->homeClub->players()->where('status', 'active')->sum('market_value') ?? 0,
-                'avg_age' => $match->homeClub->players()->where('status', 'active')->avg('age') ?? 0,
-                'strength' => $match->homeClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0,
-                'rank' => '-', // Placeholder
+                'avg_age' => round($match->homeClub->players()->where('status', 'active')->avg('age') ?? 0, 1),
+                'strength' => round($match->homeClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
             ],
             'away' => [
                 'market_value' => $match->awayClub->players()->where('status', 'active')->sum('market_value') ?? 0,
-                'avg_age' => $match->awayClub->players()->where('status', 'active')->avg('age') ?? 0,
-                'strength' => $match->awayClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0,
-                'rank' => '-',
+                'avg_age' => round($match->awayClub->players()->where('status', 'active')->avg('age') ?? 0, 1),
+                'strength' => round($match->awayClub->players()->where('status', 'active')->orderByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
             ],
         ];
 
-        return view('leagues.matchcenter', [
-            'match' => $match,
-            'canSimulate' => $this->canSimulate($request, $match),
-            'manageableClubIds' => $this->manageableClubIds($request, $match),
-            'comparison' => $comparison,
-        ]);
+        $state = $this->statePayload($request, $match);
+
+        return \Inertia\Inertia::render('Matches/Show', array_merge($state, [
+            'home_club' => [
+                'id'         => $match->homeClub->id,
+                'name'       => $match->homeClub->name,
+                'short_name' => $match->homeClub->short_name,
+                'logo_url'   => $match->homeClub->logo_url,
+                'stadium'    => $match->homeClub->stadium?->name,
+            ],
+            'away_club' => [
+                'id'         => $match->awayClub->id,
+                'name'       => $match->awayClub->name,
+                'short_name' => $match->awayClub->short_name,
+                'logo_url'   => $match->awayClub->logo_url,
+            ],
+            'competition'       => $match->competitionSeason?->competition?->name,
+            'matchday'          => $match->matchday,
+            'kickoff_formatted' => $match->kickoff_at?->format('d.m.Y \u2022 H:i'),
+            'weather'           => $match->weather,
+            'referee'           => $match->referee,
+            'type'              => $match->type,
+            'comparison'        => $comparison,
+        ]));
     }
 
     public function simulate(

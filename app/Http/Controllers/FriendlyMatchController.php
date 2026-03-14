@@ -67,13 +67,17 @@ class FriendlyMatchController extends Controller
                 ->get();
         }
 
-        return view('friendlies.index', [
+        return \Inertia\Inertia::render('Friendlies/Index', [
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'opponents' => $opponents,
             'outgoingRequests' => $outgoing,
             'incomingRequests' => $incoming,
-            'friendlyMatches' => $matches,
+            'friendlyMatches' => $matches->map(function($m) use ($activeClub) {
+                $m->kickoff_formatted = $m->kickoff_at?->format('d.m.Y H:i');
+                $m->is_home = $m->home_club_id === $activeClub?->id;
+                return $m;
+            }),
         ]);
     }
 

@@ -1,0 +1,380 @@
+import React, { useState, useEffect } from 'react';
+import { usePage, Link, router } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    House, Tray, Bank, Briefcase, BuildingOffice, UsersThree, 
+    Users, GraduationCap, Tent, Calendar, Trophy, HandPeace, 
+    Star, Globe, ArrowsLeftRight, ArrowClockwise, FileText, 
+    MagnifyingGlass, Gear, CaretDown, SignOut, List, X,
+    CaretRight, Bell
+} from '@phosphor-icons/react';
+
+const MenuGroup = ({ group, currentRoute }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    // Check if any item in this group is active
+    useEffect(() => {
+        const hasActive = group.items.some(item => {
+            if (item.active.endsWith('.*')) {
+                const base = item.active.replace('.*', '');
+                return currentRoute.startsWith(base);
+            }
+            return currentRoute === item.active;
+        });
+        if (hasActive) setIsOpen(true);
+    }, [currentRoute, group.items]);
+
+    return (
+        <div className="mb-2">
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex w-full items-center justify-between px-3 py-2 text-slate-400 hover:text-white transition group/btn rounded-lg hover:bg-slate-800/50 focus:outline-none"
+            >
+                <span className="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-cyan-400 transition-colors">
+                    {group.label}
+                </span>
+                <CaretDown 
+                    size={14} 
+                    weight="bold"
+                    className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-slate-600'}`}
+                />
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-0.5 mt-1 pl-3 ml-2 border-l-2 border-slate-800/30 overflow-hidden"
+                    >
+                        {group.items.map((item, idx) => {
+                            const isActive = item.active.endsWith('.*') 
+                                ? currentRoute.startsWith(item.active.replace('.*', ''))
+                                : currentRoute === item.active;
+                            
+                            return (
+                                <Link
+                                    key={idx}
+                                    href={route(item.route)}
+                                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all rounded-lg group ${
+                                        isActive 
+                                            ? 'text-white bg-slate-800/50' 
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                                    }`}
+                                >
+                                    {isActive ? (
+                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                    ) : (
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-slate-500 transition-colors" />
+                                    )}
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+export default function AuthenticatedLayout({ header, children }) {
+    const { auth, activeClub, userClubs, flash } = usePage().props;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
+    const currentRoute = route().current();
+
+    const hasManagedClub = auth.isAdmin || (userClubs && userClubs.length > 0);
+
+    const getMenuGroups = () => {
+        const groups = {};
+        
+        if (hasManagedClub) {
+            groups.bg_buro = {
+                label: 'Büro',
+                items: [
+                    { route: 'dashboard', label: 'Dashboard', active: 'dashboard', icon: House },
+                    { route: 'notifications.index', label: 'Postfach', active: 'notifications.*', icon: Tray },
+                    { route: 'finances.index', label: 'Finanzen', active: 'finances.*', icon: Bank },
+                    { route: 'sponsors.index', label: 'Sponsoren', active: 'sponsors.*', icon: Briefcase },
+                    { route: 'stadium.index', label: 'Stadion', active: 'stadium.*', icon: BuildingOffice },
+                ]
+            };
+
+            groups.bg_team = {
+                label: 'Team',
+                items: [
+                    { route: 'lineups.index', label: 'Aufstellung', active: 'lineups.*', icon: UsersThree },
+                    { route: 'players.index', label: 'Kader', active: 'players.*', icon: Users },
+                    { route: 'training.index', label: 'Training', active: 'training.*', icon: GraduationCap },
+                    { route: 'training-camps.index', label: 'Trainingslager', active: 'training-camps.*', icon: Tent },
+                ]
+            };
+
+            groups.bg_wettbewerb = {
+                label: 'Wettbewerb',
+                items: [
+                    { route: 'league.matches', label: 'Spiele', active: 'league.matches', icon: Calendar },
+                    { route: 'league.table', label: 'Tabelle', active: 'league.table', icon: Trophy },
+                    { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*', icon: HandPeace },
+                    { route: 'team-of-the-day.index', label: 'Team der Woche', active: 'team-of-the-day.*', icon: Star },
+                    { route: 'national-teams.index', label: 'Nationalteams', active: 'national-teams.*', icon: Globe },
+                ]
+            };
+
+            groups.bg_markt = {
+                label: 'Markt',
+                items: [
+                    { route: 'transfers.index', label: 'Transfermarkt', active: 'transfers.*', icon: ArrowsLeftRight },
+                    { route: 'loans.index', label: 'Leihmarkt', active: 'loans.*', icon: ArrowClockwise },
+                    { route: 'contracts.index', label: 'Verträge', active: 'contracts.*', icon: FileText },
+                    { route: 'clubs.index', label: 'Vereins-Suche', active: 'clubs.*', icon: MagnifyingGlass },
+                ]
+            };
+        } else {
+            groups.bg_start = {
+                label: 'Start',
+                items: [
+                    { route: 'dashboard', label: 'Dashboard', active: 'dashboard', icon: House },
+                    { route: 'clubs.free', label: 'Verein wählen', active: 'clubs.free', icon: MagnifyingGlass },
+                    { route: 'profile.edit', label: 'Profil', active: 'profile.*', icon: Users },
+                ]
+            };
+        }
+
+        if (auth.isAdmin) {
+            groups.bg_admin = {
+                label: 'Administration',
+                items: [
+                    { route: 'admin.dashboard', label: 'ACP Übersicht', active: 'admin.dashboard', icon: Gear },
+                    { route: 'admin.competitions.index', label: 'Wettbewerbe', active: 'admin.competitions.*', icon: Trophy },
+                    { route: 'admin.seasons.index', label: 'Saisons', active: 'admin.seasons.*', icon: Calendar },
+                    { route: 'admin.clubs.index', label: 'Vereine', active: 'admin.clubs.*', icon: BuildingOffice },
+                    { route: 'admin.players.index', label: 'Spieler', active: 'admin.players.*', icon: Users },
+                    { route: 'admin.ticker-templates.index', label: 'Ticker Vorlagen', active: 'admin.ticker-templates.*', icon: FileText },
+                    { route: 'admin.match-engine.index', label: 'Match Engine', active: 'admin.match-engine.*', icon: Gear },
+                    { route: 'admin.monitoring.index', label: 'Monitoring & Debug', active: 'admin.monitoring.*', icon: Gear },
+                ]
+            };
+        }
+
+        return groups;
+    };
+
+    const menuGroups = getMenuGroups();
+    
+    // Find active menu label
+    let activeMenuLabel = 'Dashboard';
+    Object.values(menuGroups).forEach(group => {
+        group.items.forEach(item => {
+            if (item.active.endsWith('.*')) {
+                if (currentRoute?.startsWith(item.active.replace('.*', ''))) activeMenuLabel = item.label;
+            } else if (currentRoute === item.active) {
+                activeMenuLabel = item.label;
+            }
+        });
+    });
+
+    return (
+        <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans">
+            {/* Mobile Sidebar Toggle */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/50">
+                <Link href={route('dashboard')} className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600">
+                        <span className="text-xs font-bold text-white">OW</span>
+                    </div>
+                    <span className="font-bold text-white tracking-tight">OpenWS</span>
+                </Link>
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-slate-400 hover:text-white">
+                    {sidebarOpen ? <X size={24} /> : <List size={24} />}
+                </button>
+            </div>
+
+            {/* Sidebar */}
+            <aside className={`
+                fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-900/70 backdrop-blur-2xl border-r border-slate-800/30 transition-transform duration-300 ease-in-out lg:translate-x-0
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
+                {/* Branding */}
+                <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-800/30">
+                    <Link href={route('dashboard')} className="flex items-center gap-3 group rounded-lg py-1 pr-2 -m-1 transition-colors hover:bg-slate-800/50">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600 shadow-md shadow-cyan-500/20 transition group-hover:shadow-cyan-500/30">
+                            <span className="text-sm font-bold text-white">OW</span>
+                        </div>
+                        <div className="min-w-0">
+                            <p className="font-bold text-white leading-tight tracking-tight truncate">OpenWS</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-cyan-400 transition-colors">Laravell</p>
+                        </div>
+                    </Link>
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+                    {Object.entries(menuGroups).map(([key, group]) => (
+                        <MenuGroup key={key} group={group} currentRoute={currentRoute} />
+                    ))}
+                </nav>
+
+                {/* User Profile Footer */}
+                <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800/30 bg-slate-900/50 p-4">
+                    {hasManagedClub && userClubs.length > 1 && (
+                        <div className="relative mb-3">
+                            <button 
+                                onClick={() => setClubSelectorOpen(!clubSelectorOpen)}
+                                className="flex w-full items-center gap-3 rounded-lg bg-slate-800/60 p-2 text-left hover:bg-slate-700/60 transition border border-slate-700/30 overflow-hidden"
+                            >
+                                {activeClub ? (
+                                    <>
+                                        <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-900 border border-slate-600 flex-shrink-0">
+                                            <img src={activeClub.logo_url} className="h-full w-full object-contain" alt={activeClub.name} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-xs text-slate-400 uppercase tracking-wider font-bold">Aktiver Verein</p>
+                                            <p className="truncate text-sm font-bold text-white leading-tight">{activeClub.name}</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-sm font-medium text-slate-300 px-2 py-1">Verein wählen</div>
+                                )}
+                                <CaretDown size={14} className={`transition-transform duration-200 ${clubSelectorOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {clubSelectorOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute bottom-full left-0 mb-2 w-full rounded-xl bg-slate-800 border border-slate-700 shadow-2xl overflow-hidden z-[60] max-h-64 overflow-y-auto custom-scrollbar"
+                                    >
+                                        <div className="p-1.5 space-y-1">
+                                            {userClubs.map(club => (
+                                                <button
+                                                    key={club.id}
+                                                    onClick={() => {
+                                                        router.get(route('dashboard', { club: club.id }));
+                                                        setClubSelectorOpen(false);
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition group ${
+                                                        activeClub?.id === club.id 
+                                                            ? 'bg-indigo-600/20 text-indigo-300' 
+                                                            : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                                                    }`}
+                                                >
+                                                    <div className="h-7 w-7 rounded-full overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0">
+                                                        <img src={club.logo_url} className="h-full w-full object-contain group-hover:scale-110 transition" alt={club.name} />
+                                                    </div>
+                                                    <span className="truncate flex-1 text-left font-medium">{club.name}</span>
+                                                    {activeClub?.id === club.id && (
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-800/50 group">
+                        <div className="h-9 w-9 overflow-hidden rounded-full border border-slate-700 bg-slate-800 flex-shrink-0 p-0.5">
+                             <img 
+                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=0f172a&color=cbd5e1`} 
+                                alt={auth.user.name}
+                                className="w-full h-full rounded-full"
+                             />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-white leading-tight">{auth.user.name}</p>
+                            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                                {auth.isAdmin ? 'Administrator' : 'Manager'}
+                            </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <Link 
+                                href={route('settings.index')} 
+                                className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg transition"
+                                title="Einstellungen"
+                            >
+                                <Gear size={18} />
+                            </Link>
+                            
+                            <button 
+                                onClick={() => router.post(route('logout'))}
+                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
+                                title="Logout"
+                            >
+                                <SignOut size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex min-h-screen flex-1 flex-col lg:pl-72 transition-all">
+                {/* Header */}
+                <header className="sticky top-0 z-40 bg-slate-900/60 backdrop-blur-xl border-b border-slate-800/30">
+                    <div className="px-6 py-4 min-h-[4.5rem] flex items-center justify-between">
+                        {header ? (
+                            header
+                        ) : (
+                            <div className="flex items-center justify-between w-full">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500/80 mb-0.5">Aktuelle Ansicht</p>
+                                    <h1 className="text-xl font-bold text-white tracking-tight leading-none">{activeMenuLabel}</h1>
+                                </div>
+                                
+                                <div className="flex items-center gap-4">
+                                    <button className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-xl transition">
+                                        <Bell size={20} />
+                                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 border border-slate-900" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    {/* Progress indicator gradient line */}
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
+                </header>
+
+                <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+                    {flash.status && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 shadow-xl shadow-emerald-500/5"
+                        >
+                            {flash.status}
+                        </motion.div>
+                    )}
+                    
+                    {children}
+                </main>
+            </div>
+
+            {/* Backdrop for mobile */}
+            <AnimatePresence>
+                {sidebarOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSidebarOpen(false)}
+                        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                    />
+                )}
+            </AnimatePresence>
+            
+            <style dangerouslySetInnerHTML={{ __html: `
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+            `}} />
+        </div>
+    );
+}

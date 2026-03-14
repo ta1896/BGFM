@@ -35,9 +35,35 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+        
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        
+        $userClubs = collect();
+        if ($user) {
+            if ($isAdmin) {
+                $userClubs = \App\Models\Club::where('is_cpu', false)->orderBy('name')->get();
+            } else {
+                $userClubs = $user->clubs()->where('is_cpu', false)->orderBy('name')->get();
+            }
+        }
+
+        if (!$activeClub && $userClubs->isNotEmpty()) {
+            $activeClub = $userClubs->first();
+        }
+
         return [
             ...parent::share($request),
-            //
+            'auth' => [
+                'user' => $user,
+                'isAdmin' => $isAdmin,
+            ],
+            'activeClub' => $activeClub,
+            'userClubs' => $userClubs,
+            'flash' => [
+                'status' => session('status'),
+            ],
         ];
     }
 }

@@ -12,33 +12,19 @@ use Illuminate\View\View;
 
 class TrainingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
-        $clubs = $request->user()->isAdmin()
-            ? Club::with('players')->orderBy('name')->get()
-            : $request->user()->clubs()->with('players')->orderBy('name')->get();
-
-        $clubIds = $clubs->pluck('id');
-
-        // Use standard activeClub
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin() 
+            ? Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
 
-        $selectedClubId = $activeClub?->id ?? (int) $request->query('club');
-
-        if ($selectedClubId > 0 && !$clubIds->contains($selectedClubId)) {
-            // If admin, they might be viewing a club not in the list if the list logic was strict, 
-            // but we fetched all clubs for admin above, so this check is fine.
-            // For managers, if they try to view a club they don't own, fallback.
-            if (!$request->user()->isAdmin()) {
-                $selectedClubId = 0;
-            }
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
         }
 
         $normalizeDate = static function (?string $value): ?string {
-            if (!$value) {
-                return null;
-            }
-
+            if (!$value) return null;
             try {
                 return Carbon::createFromFormat('Y-m-d', $value)->toDateString();
             } catch (\Throwable) {
@@ -47,9 +33,7 @@ class TrainingController extends Controller
         };
 
         $rangeFilter = (string) $request->query('range', '');
-        if (!in_array($rangeFilter, ['today', 'week'], true)) {
-            $rangeFilter = '';
-        }
+        if (!in_array($rangeFilter, ['today', 'week'], true)) $rangeFilter = '';
 
         $selectedDate = $normalizeDate($request->query('date') ?? $request->query('day'));
         $dateFrom = $normalizeDate($request->query('from'));
@@ -60,7 +44,6 @@ class TrainingController extends Controller
             $dateFrom = $selectedDate;
             $dateTo = $selectedDate;
         } elseif ($rangeFilter === 'week') {
-            $selectedDate = null;
             $dateFrom = now()->startOfWeek(Carbon::MONDAY)->toDateString();
             $dateTo = now()->startOfWeek(Carbon::MONDAY)->addDays(6)->toDateString();
         } elseif ($selectedDate) {
@@ -70,28 +53,25 @@ class TrainingController extends Controller
 
         $sessions = TrainingSession::query()
             ->with(['club', 'players'])
-            ->whereIn('club_id', $clubIds)
-            ->when($selectedClubId > 0, fn($query) => $query->where('club_id', $selectedClubId))
+            ->when($activeClub, fn($query) => $query->where('club_id', $activeClub->id))
             ->when($dateFrom, fn($query) => $query->whereDate('session_date', '>=', $dateFrom))
             ->when($dateTo, fn($query) => $query->whereDate('session_date', '<=', $dateTo))
             ->orderByDesc('session_date')
-            ->orderByDesc('id')
-            ->paginate(12);
-        $sessions->appends($request->query());
+            ->latest('id')
+            ->paginate(12)
+            ->withQueryString();
 
-        return view('training.index', [
+        return \Inertia\Inertia::render('Training/Index', [
             'clubs' => $clubs,
             'sessions' => $sessions,
             'filters' => [
-                'club' => $selectedClubId > 0 ? $selectedClubId : null,
+                'club_id' => $activeClub?->id,
                 'range' => $rangeFilter,
                 'date' => $selectedDate,
                 'from' => $dateFrom,
                 'to' => $dateTo,
             ],
-            'prefillClubId' => $selectedClubId > 0
-                ? $selectedClubId
-                : ($clubs->first()?->id ?? 0),
+            'prefillClubId' => $activeClub?->id,
             'prefillDate' => now()->toDateString(),
         ]);
     }

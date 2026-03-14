@@ -16,7 +16,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, TeamStrengthCalculator $calculator): View
+    public function index(Request $request, TeamStrengthCalculator $calculator): \Inertia\Response
     {
         $allowedDashboardVariants = ['modern', 'compact', 'classic'];
         $requestedDashboardVariant = strtolower((string) $request->query('variant'));
@@ -292,7 +292,7 @@ class DashboardController extends Controller
             }
         }
 
-        return view('dashboard', [
+        return \Inertia\Inertia::render('Dashboard', [
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'activeLineup' => $activeLineup,

@@ -51,4 +51,11 @@ class TrainingSession extends Model
             ->withPivot(['role', 'stamina_delta', 'morale_delta', 'overall_delta'])
             ->withTimestamps();
     }
+
+    protected function sessionDateFormatted(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn () => $this->session_date?->format('d.m.Y')
+        );
+    }
 }

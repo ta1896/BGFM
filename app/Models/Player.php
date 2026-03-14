@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 class Player extends Model
 {
     use HasFactory;
+    
+    protected $appends = ['photo_url', 'full_name', 'display_position'];
 
     protected $fillable = [
         'club_id',

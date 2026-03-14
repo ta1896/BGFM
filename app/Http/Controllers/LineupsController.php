@@ -18,17 +18,27 @@ class LineupsController extends Controller
     //  INDEX
     // ────────────────────────────────────────────────────────
 
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
         /** @var Club $club */
         $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
 
-        // Fallback
-        if (!$club) {
-            $club = $this->resolveClub($request);
+        // Find next match to show directly
+        $nextMatch = GameMatch::query()
+            ->where(function ($query) use ($club): void {
+                $query->where('home_club_id', $club->id)
+                    ->orWhere('away_club_id', $club->id);
+            })
+            ->whereIn('status', ['scheduled', 'live'])
+            ->where('kickoff_at', '>=', now()->subHours(4))
+            ->orderBy('kickoff_at')
+            ->first();
+
+        if ($nextMatch) {
+            return $this->match($request, $nextMatch);
         }
 
-        // 1. Fetch upcoming matches for the club
+        // 1. Fetch upcoming matches for the club (as backup if no match selected)
         $matches = GameMatch::query()
             ->where(function ($query) use ($club): void {
                 $query->where('home_club_id', $club->id)
@@ -40,11 +50,15 @@ class LineupsController extends Controller
                 'homeClub',
                 'awayClub',
                 'lineups' => function ($q) use ($club) {
-                    $q->where('club_id', $club->id);
+                    $q->where('club_id', $club->id)->latest();
                 }
             ])
             ->orderBy('kickoff_at')
-            ->get();
+            ->get()
+            ->map(function ($m) {
+                $m->kickoff_at_formatted = $m->kickoff_at->format('d.m.Y • H:i');
+                return $m;
+            });
 
         // 2. Fetch templates
         $templates = $club->lineups()
@@ -54,14 +68,8 @@ class LineupsController extends Controller
             ->orderBy('name')
             ->get();
 
-        // 3. User clubs for the switcher
-        $userClubs = $request->user()->isAdmin()
-            ? Club::where('is_cpu', false)->orderBy('name')->get()
-            : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->get();
-
-        return view('lineups.index', [
+        return \Inertia\Inertia::render('Lineups/Index', [
             'club' => $club,
-            'userClubs' => $userClubs,
             'matches' => $matches,
             'templates' => $templates,
         ]);
@@ -75,11 +83,6 @@ class LineupsController extends Controller
     {
         /** @var Club $club */
         $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
-
-        // Fallback
-        if (!$club) {
-            $club = $this->resolveClub($request);
-        }
 
         // Verify match belongs to club
         if ($match->home_club_id !== $club->id && $match->away_club_id !== $club->id) {
@@ -111,12 +114,13 @@ class LineupsController extends Controller
     //  CREATE
     // ────────────────────────────────────────────────────────
 
-    public function create(Request $request): View
+    public function create(Request $request): \Inertia\Response
     {
-        $club = $this->resolveClub($request);
+        /** @var Club $club */
+        $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
 
-        return view('lineups.create', [
-            'clubs' => collect([$club]),
+        return \Inertia\Inertia::render('Lineups/Create', [
+            'club' => $club,
         ]);
     }
 
@@ -180,7 +184,7 @@ class LineupsController extends Controller
         Lineup $lineup,
         FormationPlannerService $planner,
         TeamStrengthCalculator $calculator
-    ): View {
+    ): \Inertia\Response {
         $this->authorizeLineup($request, $lineup);
         $lineup->load(['club.user', 'players', 'match.homeClub', 'match.awayClub']);
 
@@ -189,7 +193,12 @@ class LineupsController extends Controller
             ->whereIn('status', ['active', 'transfer_listed'])
             ->orderByDesc('overall')
             ->orderByDesc('potential')
-            ->get();
+            ->get()
+            ->map(function($p) {
+                // Ensure photo_url is available
+                $p->append('photo_url');
+                return $p;
+            });
 
         $templates = $club->lineups()
             ->whereNull('match_id')
@@ -239,9 +248,14 @@ class LineupsController extends Controller
             ->whereIn('status', ['scheduled', 'live'])
             ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path'])
             ->orderBy('kickoff_at')
-            ->get();
+            ->get()
+            ->map(function($m) {
+                $m->match_date = $m->kickoff_at?->format('d.m.Y');
+                $m->match_time = $m->kickoff_at?->format('H:i');
+                return $m;
+            });
 
-        return view('lineups.edit', [
+        return \Inertia\Inertia::render('Lineups/Edit', [
             'lineup' => $lineup,
             'club' => $club,
             'clubPlayers' => $clubPlayers,
@@ -255,17 +269,17 @@ class LineupsController extends Controller
             'maxBenchPlayers' => $maxBenchPlayers,
             'mentality' => $draft['mentality'] ?? ($lineup->mentality ?? 'normal'),
             'aggression' => $draft['aggression'] ?? ($lineup->aggression ?? 'normal'),
-            'line_height' => $draft['line_height'] ?? ($lineup->line_height ?? 'normal'),
+            'lineHeight' => $draft['line_height'] ?? ($lineup->line_height ?? 'normal'),
             'attackFocus' => $draft['attack_focus'] ?? ($lineup->attack_focus ?? 'center'),
-            'offside_trap' => $draft['offside_trap'] ?? ($lineup->offside_trap ?? false),
-            'time_wasting' => $draft['time_wasting'] ?? ($lineup->time_wasting ?? false),
-            'captainPlayerId' => $draft['captain_player_id'] ?? $lineup->players->firstWhere('pivot.is_captain', true)?->id,
+            'offsideTrap' => (bool) ($draft['offside_trap'] ?? $lineup->offside_trap),
+            'timeWasting' => (bool) ($draft['time_wasting'] ?? $lineup->time_wasting),
+            'captainPlayerId' => (int) ($draft['captain_player_id'] ?? $lineup->players->firstWhere('pivot.is_captain', true)?->id),
             'setPieces' => [
-                'penalty_taker_player_id' => $draft['penalty_taker_player_id'] ?? $lineup->penalty_taker_player_id,
-                'free_kick_near_player_id' => $draft['free_kick_near_player_id'] ?? $lineup->free_kick_near_player_id,
-                'free_kick_far_player_id' => $draft['free_kick_far_player_id'] ?? $lineup->free_kick_far_player_id,
-                'corner_left_taker_player_id' => $draft['corner_left_taker_player_id'] ?? $lineup->corner_left_taker_player_id,
-                'corner_right_taker_player_id' => $draft['corner_right_taker_player_id'] ?? $lineup->corner_right_taker_player_id,
+                'penalty_taker_player_id' => (int) ($draft['penalty_taker_player_id'] ?? $lineup->penalty_taker_player_id),
+                'free_kick_near_player_id' => (int) ($draft['free_kick_near_player_id'] ?? $lineup->free_kick_near_player_id),
+                'free_kick_far_player_id' => (int) ($draft['free_kick_far_player_id'] ?? $lineup->free_kick_far_player_id),
+                'corner_left_taker_player_id' => (int) ($draft['corner_left_taker_player_id'] ?? $lineup->corner_left_taker_player_id),
+                'corner_right_taker_player_id' => (int) ($draft['corner_right_taker_player_id'] ?? $lineup->corner_right_taker_player_id),
             ],
             'metrics' => $metrics,
             'positionFit' => [
@@ -374,11 +388,11 @@ class LineupsController extends Controller
                 'is_template' => true,
                 'is_active' => false,
                 'notes' => 'Aus Aufstellung gespeichert',
-                'penalty_taker_player_id' => $validated['penalty_taker_player_id'] ?? null,
-                'free_kick_near_player_id' => $validated['free_kick_near_player_id'] ?? null,
-                'free_kick_far_player_id' => $validated['free_kick_far_player_id'] ?? null,
-                'corner_left_taker_player_id' => $validated['corner_left_taker_player_id'] ?? null,
-                'corner_right_taker_player_id' => $validated['corner_right_taker_player_id'] ?? null,
+                'penalty_taker_player_id' => ($validated['penalty_taker_player_id'] ?? 0) ?: null,
+                'free_kick_near_player_id' => ($validated['free_kick_near_player_id'] ?? 0) ?: null,
+                'free_kick_far_player_id' => ($validated['free_kick_far_player_id'] ?? 0) ?: null,
+                'corner_left_taker_player_id' => ($validated['corner_left_taker_player_id'] ?? 0) ?: null,
+                'corner_right_taker_player_id' => ($validated['corner_right_taker_player_id'] ?? 0) ?: null,
             ];
 
             if ($template) {
@@ -412,11 +426,11 @@ class LineupsController extends Controller
             'attack_focus' => $validated['attack_focus'] ?? 'center',
             'offside_trap' => isset($validated['offside_trap']),
             'time_wasting' => isset($validated['time_wasting']),
-            'penalty_taker_player_id' => $validated['penalty_taker_player_id'] ?? null,
-            'free_kick_near_player_id' => $validated['free_kick_near_player_id'] ?? null,
-            'free_kick_far_player_id' => $validated['free_kick_far_player_id'] ?? null,
-            'corner_left_taker_player_id' => $validated['corner_left_taker_player_id'] ?? null,
-            'corner_right_taker_player_id' => $validated['corner_right_taker_player_id'] ?? null,
+            'penalty_taker_player_id' => ($validated['penalty_taker_player_id'] ?? 0) ?: null,
+            'free_kick_near_player_id' => ($validated['free_kick_near_player_id'] ?? 0) ?: null,
+            'free_kick_far_player_id' => ($validated['free_kick_far_player_id'] ?? 0) ?: null,
+            'corner_left_taker_player_id' => ($validated['corner_left_taker_player_id'] ?? 0) ?: null,
+            'corner_right_taker_player_id' => ($validated['corner_right_taker_player_id'] ?? 0) ?: null,
         ]);
 
         $this->syncPlayersFromRequest($lineup, $planner, $validated, $request);

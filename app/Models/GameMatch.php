@@ -158,4 +158,18 @@ class GameMatch extends Model
     {
         return $this->hasMany(Lineup::class, 'match_id');
     }
+
+    protected function kickoffAtFormatted(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn () => $this->kickoff_at?->format('d.m. H:i')
+        );
+    }
+
+    protected function stadiumName(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn () => $this->stadiumClub?->stadium?->name ?? $this->stadiumClub?->name ?? 'Neutraler Platz'
+        );
+    }
 }

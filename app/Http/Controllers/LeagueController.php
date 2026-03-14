@@ -15,7 +15,7 @@ use Illuminate\View\View;
 
 class LeagueController extends Controller
 {
-    public function matches(Request $request): View
+    public function matches(Request $request): \Inertia\Response
     {
         $competitionSeason = $this->resolveCompetitionSeason($request);
         $isAdmin = $request->user()->isAdmin();
@@ -50,7 +50,6 @@ class LeagueController extends Controller
             if (!$value) {
                 return null;
             }
-
             try {
                 return Carbon::createFromFormat('Y-m-d', $value)->toDateString();
             } catch (\Throwable) {
@@ -88,26 +87,36 @@ class LeagueController extends Controller
             ->when($dateFrom, fn($query) => $query->whereDate('kickoff_at', '>=', $dateFrom))
             ->when($dateTo, fn($query) => $query->whereDate('kickoff_at', '<=', $dateTo))
             ->when($scopeFilter === 'upcoming', fn($query) => $query->where('kickoff_at', '>=', now())->where('status', 'scheduled'))
-            ->with(['homeClub', 'awayClub', 'competitionSeason.competition', 'stadiumClub'])
+            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path', 'competitionSeason.competition', 'stadiumClub:id,name'])
             ->orderBy('kickoff_at', 'asc');
 
         $hasActiveFilters = $selectedClubId > 0 || $statusFilter !== '' || $scopeFilter !== '' || $typeFilter !== '' || $dayFilter !== null || $dateFrom !== null || $dateTo !== null;
 
+        $rawMatches = $matchesQuery->get()->map(function ($m) {
+            $m->kickoff_formatted = $m->kickoff_at?->format('d.m.Y H:i');
+            $m->kickoff_date = $m->kickoff_at?->format('Y-m-d');
+            $m->kickoff_day_label = $m->kickoff_at?->locale('de')->isoFormat('dddd, D. MMMM');
+            return $m;
+        });
+
         if ($competitionSeason && !$hasActiveFilters && !$typeFilter) {
-            $matches = $matchesQuery->get()->groupBy('matchday');
+            $matchesByGroup = $rawMatches->groupBy('matchday')->map->values();
             $groupType = 'matchday';
         } else {
-            $matches = $matchesQuery->get()->groupBy(fn($m) => $m->kickoff_at?->format('Y-m-d'));
+            $matchesByGroup = $rawMatches->groupBy('kickoff_date')->map->values();
             $groupType = 'date';
         }
 
-        return view('leagues.matches', [
+        $activeClub = app()->has('activeClub') ? app('activeClub') : ($userClubs->first() ?? null);
+
+        return \Inertia\Inertia::render('League/Matches', [
             'competitionSeasons' => CompetitionSeason::with(['competition', 'season'])->orderByDesc('id')->get(),
             'activeCompetitionSeason' => $competitionSeason,
-            'matchesByDay' => $matches,
+            'matchesByGroup' => $matchesByGroup,
             'groupType' => $groupType,
-            'ownedClubIds' => $ownedClubIds,
+            'ownedClubIds' => $ownedClubIds->values(),
             'clubFilterOptions' => $clubFilterOptions,
+            'activeClub' => $activeClub,
             'filters' => [
                 'competition_season' => $request->query('competition_season'),
                 'club' => $selectedClubId > 0 ? $selectedClubId : null,
@@ -122,7 +131,7 @@ class LeagueController extends Controller
         ]);
     }
 
-    public function table(Request $request, LeagueTableService $tableService): View
+    public function table(Request $request, LeagueTableService $tableService): \Inertia\Response
     {
         $competitionSeason = $this->resolveCompetitionSeason($request);
 
@@ -130,13 +139,16 @@ class LeagueController extends Controller
             $tableService->rebuild($competitionSeason);
         }
 
-        return view('leagues.table', [
+        $table = $competitionSeason ? $tableService->table($competitionSeason) : collect();
+        $ownedClubIds = $request->user()->clubs()->pluck('id')->all();
+
+        return \Inertia\Inertia::render('League/Table', [
             'competitionSeasons' => CompetitionSeason::with(['competition', 'season'])->orderByDesc('id')->get(),
             'competitions' => Competition::orderBy('name')->get(),
-            'seasons' => Season::orderByDesc('id')->get(),
+            'seasons' => Season::orderBy('name')->get(),
             'activeCompetitionSeason' => $competitionSeason,
-            'table' => $competitionSeason ? $tableService->table($competitionSeason) : collect(),
-            'ownedClubIds' => $request->user()->clubs()->pluck('id')->all(),
+            'table' => $table->values(),
+            'ownedClubIds' => $ownedClubIds,
         ]);
     }
 

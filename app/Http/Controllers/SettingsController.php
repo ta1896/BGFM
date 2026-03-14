@@ -8,7 +8,7 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
         $user = $request->user();
 
@@ -19,14 +19,19 @@ class SettingsController extends Controller
         }
 
         try {
-            $passkeys = $user->webAuthnCredentials;
+            $passkeys = $user->webAuthnCredentials->map(function ($credential) {
+                return [
+                    'id' => $credential->id,
+                    'alias' => $credential->alias,
+                    'created_at_formatted' => $credential->created_at->format('d.m.Y H:i'),
+                ];
+            });
         } catch (\Illuminate\Database\QueryException $e) {
             $passkeys = collect();
             session()->flash('error', 'Database migration missing for WebAuthn. Please run "php artisan migrate".');
         }
 
-        return view('settings.index', [
-            'user' => $user,
+        return \Inertia\Inertia::render('Settings/Index', [
             'userClubs' => $userClubs,
             'passkeys' => $passkeys,
         ]);

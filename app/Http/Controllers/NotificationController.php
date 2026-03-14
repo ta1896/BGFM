@@ -9,15 +9,28 @@ use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
         $notifications = $request->user()
             ->gameNotifications()
             ->with('club')
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->through(function ($n) {
+                return [
+                    'id' => $n->id,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'seen_at' => $n->seen_at,
+                    'created_at_formatted' => $n->created_at->format('d.m.Y H:i'),
+                    'action_url' => $n->action_url,
+                    'club' => $n->club,
+                ];
+            });
 
-        return view('notifications.index', ['notifications' => $notifications]);
+        return \Inertia\Inertia::render('Notifications/Index', [
+            'notifications' => $notifications
+        ]);
     }
 
     public function markSeen(Request $request, GameNotification $notification): RedirectResponse

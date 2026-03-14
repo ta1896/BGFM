@@ -11,25 +11,25 @@ use Illuminate\View\View;
 
 class TrainingCampController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
         $clubs = $request->user()->isAdmin()
             ? Club::orderBy('name')->get()
             : $request->user()->clubs()->orderBy('name')->get();
 
-        $clubIds = $clubs->pluck('id')->all();
-
-        // Use active club to filter if present, otherwise show all authorized camps
-        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
 
         $camps = TrainingCamp::query()
             ->with('club')
             ->when($activeClub, fn($q) => $q->where('club_id', $activeClub->id))
-            ->when(!$activeClub, fn($q) => $q->whereIn('club_id', $clubIds))
-            ->orderByDesc('id')
-            ->paginate(15);
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('training-camps.index', [
+        return \Inertia\Inertia::render('TrainingCamps/Index', [
             'clubs' => $clubs,
             'camps' => $camps,
         ]);

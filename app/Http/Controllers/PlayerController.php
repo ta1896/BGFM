@@ -14,28 +14,43 @@ class PlayerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
-        $clubId = (int) $request->query('club');
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin() 
+            ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
 
         $playerQuery = Player::query()
-            ->whereHas('club', fn($query) => $query->where('user_id', $request->user()->id))
-            ->with('club')
+            ->with(['club'])
             ->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")
             ->orderByDesc('overall');
 
-        if ($clubId > 0) {
-            $playerQuery->where('club_id', $clubId);
+        if ($activeClub) {
+            $playerQuery->where('club_id', $activeClub->id);
+        } elseif (!$request->user()->isAdmin()) {
+            $playerQuery->whereHas('club', fn($query) => $query->where('user_id', $request->user()->id));
         }
 
-        $players = $playerQuery->get();
+        $players = $playerQuery->get()->map(function($p) {
+            $p->append('photo_url');
+            $p->market_value_formatted = number_format($p->market_value, 0, ',', '.') . ' €';
+            $p->display_position = $p->position; // Or use a translation map
+            return $p;
+        });
 
         $squadStats = [
             'count' => $players->count(),
             'avg_age' => $players->isNotEmpty() ? round($players->avg('age'), 1) : 0,
             'avg_rating' => $players->isNotEmpty() ? round($players->avg('overall'), 1) : 0,
             'total_value' => $players->sum('market_value'),
+            'total_value_formatted' => number_format($players->sum('market_value'), 0, ',', '.') . ' €',
             'avg_value' => $players->isNotEmpty() ? $players->avg('market_value') : 0,
+            'avg_value_formatted' => number_format($players->isNotEmpty() ? $players->avg('market_value') : 0, 0, ',', '.') . ' €',
             'injured_count' => $players->where('is_injured', true)->count(),
             'suspended_count' => $players->where('is_suspended', true)->count(),
         ];
@@ -53,11 +68,11 @@ class PlayerController extends Controller
                 default => 99,
             });
 
-        return view('players.index', [
+        return \Inertia\Inertia::render('Players/Index', [
             'groupedPlayers' => $groupedPlayers,
             'squadStats' => $squadStats,
             'clubs' => $request->user()->clubs()->orderBy('name')->get(),
-            'activeClubId' => $clubId,
+            'activeClubId' => $activeClub?->id,
         ]);
     }
 
@@ -109,40 +124,53 @@ class PlayerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Player $player): View
+    public function show(Request $request, Player $player): \Inertia\Response
     {
-        // Removed ensureOwnership to allow public viewing
-
         $player->load([
             'club.stadium',
             'club.user',
             'seasonCompetitionStatistics.season',
         ]);
 
+        $player->append('photo_url');
+        
+        // Add formatted value for easy display
+        $player->market_value_formatted = number_format($player->market_value, 0, ',', '.') . ' €';
+
         $currentSeasonStats = $player->seasonCompetitionStatistics
-            ->filter(fn($stat) => $stat->season_id === ($player->club->season_id ?? 0));
+            ->filter(fn($stat) => $stat->season_id === ($player->club->season_id ?? 0))
+            ->values();
 
         // Use season stats for career history, sorted by season desc
         $careerStats = $player->seasonCompetitionStatistics
-            ->sortByDesc(fn($stat) => $stat->season->start_date ?? '');
+            ->sortByDesc(fn($stat) => $stat->season?->start_date ?? '')
+            ->values();
 
         // Fetch recent matches
         $recentMatches = \App\Models\MatchPlayerStat::query()
             ->where('player_id', $player->id)
-            ->with(['match.homeClub', 'match.awayClub', 'match.competitionSeason.competition'])
+            ->with(['match.homeClub:id,name,short_name,logo_path', 'match.awayClub:id,name,short_name,logo_path', 'match.competitionSeason.competition'])
             ->whereHas('match', fn($query) => $query->where('status', 'played'))
             ->orderByDesc(
                 \App\Models\GameMatch::select('kickoff_at')
                     ->whereColumn('matches.id', 'match_player_stats.match_id')
             )
             ->take(10)
-            ->get();
+            ->get()
+            ->map(function($stat) {
+                if ($stat->match) {
+                    $stat->match->kickoff_date_formatted = $stat->match->kickoff_at?->format('d.m.y');
+                }
+                return $stat;
+            });
 
-        return view('players.show', [
+        return \Inertia\Inertia::render('Players/Show', [
             'player' => $player,
             'currentSeasonStats' => $currentSeasonStats,
             'careerStats' => $careerStats,
             'recentMatches' => $recentMatches,
+            'isOwner' => $player->club && $request->user()->id === $player->club->user_id,
+            'positions' => array_keys($this->positions()),
         ]);
     }
 

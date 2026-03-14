@@ -10,19 +10,33 @@ use Illuminate\View\View;
 
 class StadiumController extends Controller
 {
-    public function index(Request $request, StadiumService $stadiumService): View
+    public function index(Request $request, StadiumService $stadiumService): \Inertia\Response
     {
-        $clubs = $request->user()->clubs()->orderBy('name')->get();
-        $activeClub = $clubs->firstWhere('id', (int) $request->query('club')) ?? $clubs->first();
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin() 
+            ? \App\Models\Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
 
         $stadium = null;
         $projects = collect();
         if ($activeClub) {
             $stadium = $stadiumService->ensureForClub($activeClub);
-            $projects = $stadium->projects()->latest('id')->limit(12)->get();
+            $projects = $stadium->projects()
+                ->latest('id')
+                ->limit(12)
+                ->get()
+                ->map(function ($p) {
+                    $p->started_on_formatted = $p->started_on?->format('d.m.Y');
+                    $p->completes_on_formatted = $p->completes_on?->format('d.m.Y');
+                    return $p;
+                });
         }
 
-        return view('stadium.index', [
+        return \Inertia\Inertia::render('Stadium/Index', [
             'clubs' => $clubs,
             'activeClub' => $activeClub,
             'stadium' => $stadium,
