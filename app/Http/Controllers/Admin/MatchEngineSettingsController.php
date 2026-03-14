@@ -8,11 +8,12 @@ use App\Services\MatchEngine\EngineConfiguration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class MatchEngineSettingsController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
         $settings = SimulationSetting::where('key', 'like', 'match_engine.%')
             ->get()
@@ -31,7 +32,7 @@ class MatchEngineSettingsController extends Controller
             'match_engine.home_advantage' => EngineConfiguration::HOME_ADVANTAGE_STRENGTH,
         ];
 
-        return view('admin.match-engine.settings', [
+        return Inertia::render('Admin/MatchEngine/Settings', [
             'settings' => $settings->merge($defaults) // Merge to ensure we have all keys
         ]);
     }
@@ -50,65 +51,31 @@ class MatchEngineSettingsController extends Controller
             'settings.match_engine_home_advantage' => 'required|numeric|min:1.0|max:1.5',
         ]);
 
+        $map = [
+            'match_engine_duration'               => 'match_engine.duration',
+            'match_engine_chance_probability'     => 'match_engine.chance_probability',
+            'match_engine_goal_conversion'        => 'match_engine.goal_conversion',
+            'match_engine_tactic_attack_bonus'    => 'match_engine.tactic_attack_bonus',
+            'match_engine_tactic_defense_penalty' => 'match_engine.tactic_defense_penalty',
+            'match_engine_counter_attack_bonus'   => 'match_engine.counter_attack_bonus',
+            'match_engine_yellow_card_chance'     => 'match_engine.yellow_card_chance',
+            'match_engine_red_card_chance'        => 'match_engine.red_card_chance',
+            'match_engine_home_advantage'         => 'match_engine.home_advantage',
+        ];
+
         foreach ($validated['settings'] as $key => $value) {
-            // Convert form name (underscores) back to dot notation if needed or just use the key
-            // The form will send 'match_engine_duration', we want 'match_engine.duration'
-            $dbKey = str_replace('_', '.', $key); // e.g. match.engine.duration -> match_engine.duration... wait
-        // Actually, let's just manual map or fix the form names.
-        // Let's rely on the form sending clearer keys or handle mapping here.
-
-        // Re-mapping logic:
-        // "match_engine_duration" -> "match_engine.duration" isn't direct.
-        // Let's assume input names are 'match_engine.duration' (dots are allowed in input names but Laravel converts to arrays)
-
-        // If I use name="settings[match_engine.duration]", Laravel validates against settings.match_engine.duration
-
-        }
-
-        // Simpler approach:
-        $inputs = $request->input('settings');
-        foreach ($inputs as $key => $value) {
-            // key comes in as "match_engine_duration" due to PHP variable naming rules in some contexts,
-            // but in Request it should be preserved if I use array syntax correctly.
-            // Let's use simple names in form like "match_engine_duration" and map here.
-
-            $realKey = str_replace('_', '.', $key);
-            // match_engine_duration -> match.engine.duration (Wrong)
-            // match_engine_tactic_attack_bonus -> match.engine.tactic.attack.bonus (Wrong)
-
-            // Hard map is safer
-            $map = [
-                'match_engine_duration' => 'match_engine.duration',
-                'match_engine_chance_probability' => 'match_engine.chance_probability',
-                'match_engine_goal_conversion' => 'match_engine.goal_conversion',
-                'match_engine_tactic_attack_bonus' => 'match_engine.tactic_attack_bonus',
-                'match_engine_tactic_defense_penalty' => 'match_engine.tactic_defense_penalty',
-                'match_engine_counter_attack_bonus' => 'match_engine.counter_attack_bonus',
-                'match_engine_yellow_card_chance' => 'match_engine.yellow_card_chance',
-                'match_engine_red_card_chance' => 'match_engine.red_card_chance',
-                'match_engine_home_advantage' => 'match_engine.home_advantage',
-            ];
-
             if (isset($map[$key])) {
                 SimulationSetting::updateOrCreate(
-                ['key' => $map[$key]],
-                ['value' => (string)$value]
+                    ['key' => $map[$key]],
+                    ['value' => (string)$value]
                 );
+                
+                // Clear specific cache key
+                Cache::forget('match_engine_settings.' . str_replace('match_engine.', '', $map[$key]));
             }
         }
 
-        // Clear Cache
-        Cache::forget('match_engine_settings.duration');
-        Cache::forget('match_engine_settings.chance_probability');
-        Cache::forget('match_engine_settings.goal_conversion');
-        Cache::forget('match_engine_settings.tactic_attack_bonus');
-        Cache::forget('match_engine_settings.tactic_defense_penalty');
-        Cache::forget('match_engine_settings.counter_attack_bonus');
-        Cache::forget('match_engine_settings.yellow_card_chance');
-        Cache::forget('match_engine_settings.red_card_chance');
-        Cache::forget('match_engine_settings.home_advantage');
-
         return redirect()->route('admin.match-engine.index')
-            ->with('status', 'Match Engine Configuration Saved.');
+            ->with('status', 'Match-Engine Konfiguration gespeichert.');
     }
 }
