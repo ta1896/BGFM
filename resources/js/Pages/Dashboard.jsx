@@ -5,7 +5,7 @@ import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import { 
     Calendar, Trophy, Users, ChartBar, TrendUp, 
     ArrowRight, Bell, WarningCircle, Info, Bank,
-    Smiley, SmileySad
+    Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText
 } from '@phosphor-icons/react';
 import Skeleton from '@/Components/Skeleton';
 
@@ -79,7 +79,7 @@ export default function Dashboard(props) {
         activeClubReadyForNextMatch, opponentReadyForNextMatch,
         clubRank, clubPoints, recentForm, weekDays,
         todayMatchesCount, unreadNotificationsCount,
-        assistantTasks, metrics
+        assistantTasks, metrics, squadPulse, managerDecisions
     } = props;
 
     if (!activeClub) {
@@ -332,6 +332,111 @@ export default function Dashboard(props) {
                                                 </div>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {squadPulse && (squadPulse.manual_roles_count > 0 || squadPulse.promise_pressure_count > 0) && (
+                            <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Squad Pulse</h3>
+                                <div className="space-y-4">
+                                    {squadPulse.manual_roles_count > 0 && (
+                                        <div>
+                                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-200">
+                                                <FlagPennant size={12} weight="fill" />
+                                                {squadPulse.manual_roles_count} manuelle Rollen
+                                            </div>
+                                            <div className="space-y-2">
+                                                {squadPulse.manual_role_players.map((player) => (
+                                                    <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-fuchsia-400/30">
+                                                        <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
+                                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-200">{player.squad_role}</div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {squadPulse.promise_pressure_count > 0 && (
+                                        <div>
+                                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">
+                                                <Handshake size={12} weight="fill" />
+                                                {squadPulse.promise_pressure_count} Promise-Konflikte
+                                            </div>
+                                            <div className="space-y-2">
+                                                {squadPulse.pressure_players.map((player) => (
+                                                    <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-amber-400/30">
+                                                        <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
+                                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-200">
+                                                                {player.promise_status === 'broken' ? 'Gebrochen' : 'Kritisch'} / Mood {player.happiness}%
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+
+                        {managerDecisions && managerDecisions.length > 0 && (
+                            <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Manager Decisions</h3>
+                                <div className="space-y-3">
+                                    {managerDecisions.map((decision, idx) => (
+                                        <Link
+                                            key={`${decision.kind}-${decision.player_id}-${idx}`}
+                                            href={route('players.show', decision.player_id)}
+                                            className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
+                                        >
+                                            <img src={decision.photo_url} alt={decision.player_name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <div className="text-[11px] font-black uppercase tracking-[0.06em] text-white">{decision.title}</div>
+                                                        <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{decision.player_name}</div>
+                                                    </div>
+                                                    <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                                        decision.accent === 'emerald'
+                                                            ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+                                                            : decision.accent === 'rose'
+                                                                ? 'border border-rose-400/20 bg-rose-400/10 text-rose-200'
+                                                                : decision.accent === 'fuchsia'
+                                                                    ? 'border border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-200'
+                                                                    : decision.accent === 'amber'
+                                                                        ? 'border border-amber-400/20 bg-amber-400/10 text-amber-200'
+                                                                        : 'border border-cyan-400/20 bg-cyan-400/10 text-cyan-200'
+                                                    }`}>
+                                                        {decision.impact_label}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">{decision.summary}</p>
+                                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                    <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                                        decision.evaluation?.accent === 'emerald'
+                                                            ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+                                                            : decision.evaluation?.accent === 'rose'
+                                                                ? 'border border-rose-400/20 bg-rose-400/10 text-rose-200'
+                                                                : decision.evaluation?.accent === 'amber'
+                                                                    ? 'border border-amber-400/20 bg-amber-400/10 text-amber-200'
+                                                                    : 'border border-slate-400/20 bg-slate-400/10 text-slate-200'
+                                                    }`}>
+                                                        {decision.evaluation?.label || 'Neutral'}
+                                                    </span>
+                                                    <div className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                                                    <ChatCircleText size={11} weight="fill" />
+                                                    {decision.created_at}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </section>

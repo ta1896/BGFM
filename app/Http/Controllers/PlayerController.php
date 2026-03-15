@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\MatchPlayerStat;
 use App\Models\Player;
+use App\Models\PlayerConversation;
 use App\Models\PlayerPlaytimePromise;
 use App\Services\InjuryManagementService;
+use App\Services\PlayerConversationService;
 use App\Services\PlayerLoadService;
 use App\Services\PlayerMoraleService;
 use App\Services\SquadHierarchyService;
@@ -32,7 +34,7 @@ class PlayerController extends Controller
         }
 
         $playerQuery = Player::query()
-            ->with(['club'])
+            ->with(['club', 'playtimePromises'])
             ->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")
             ->orderByDesc('overall');
 
@@ -46,6 +48,11 @@ class PlayerController extends Controller
             $p->append('photo_url');
             $p->market_value_formatted = number_format($p->market_value, 0, ',', '.') . ' €';
             $p->display_position = $p->position; // Or use a translation map
+            $activePromise = $p->playtimePromises
+                ->sortByDesc('id')
+                ->first(fn ($promise) => in_array($promise->status, ['active', 'at_risk', 'broken', 'fulfilled'], true));
+            $p->role_override_active = (bool) $p->role_override_active;
+            $p->promise_status = $activePromise?->status;
             return $p;
         });
 
@@ -253,6 +260,8 @@ class PlayerController extends Controller
         InjuryManagementService $injuryManagementService,
     ): \Inertia\Response
     {
+        $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
+
         $squadHierarchyService->refreshForClub($player->club);
 
         $player->load([
@@ -261,6 +270,7 @@ class PlayerController extends Controller
             'playtimePromises',
             'injuries',
             'recoveryLogs' => fn ($query) => $query->latest('day')->limit(7),
+            'conversations' => fn ($query) => $query->latest('id')->limit(8),
         ]);
 
         $injury = $injuryManagementService->syncCurrentInjury($player);
@@ -275,6 +285,74 @@ class PlayerController extends Controller
             ->take(1)
             ->values()
             ->map(fn($stat) => $this->mapSeasonStat($stat))
+            ->all();
+
+        $managerDecisions = collect();
+
+        if ($player->role_override_active && $player->role_override_set_at) {
+            $managerDecisions->push([
+                'kind' => 'role_override',
+                'title' => 'Rolle manuell gesetzt',
+                'accent' => 'fuchsia',
+                'impact_label' => $this->roleLabel($player->squad_role),
+                'summary' => 'Manager hat die automatische Kaderrolle bewusst ueberschrieben.',
+                'created_at' => $player->role_override_set_at?->format('d.m.Y H:i'),
+                'sort_at' => $player->role_override_set_at?->toIso8601String(),
+                'evaluation' => $this->decisionEvaluation($player, 'role_override'),
+            ]);
+        }
+
+        foreach ($player->playtimePromises as $promise) {
+            $managerDecisions->push([
+                'kind' => 'promise',
+                'title' => 'Spielzeitversprechen',
+                'accent' => match ($promise->status) {
+                    'broken' => 'rose',
+                    'at_risk' => 'amber',
+                    'fulfilled' => 'emerald',
+                    default => 'cyan',
+                },
+                'impact_label' => strtoupper((string) $promise->status),
+                'summary' => sprintf(
+                    '%d%% Einsatzzeit zugesagt, aktuell %d%% erfuellt.',
+                    (int) $promise->expected_minutes_share,
+                    (int) $promise->fulfilled_ratio
+                ),
+                'created_at' => $promise->created_at?->format('d.m.Y H:i'),
+                'sort_at' => $promise->created_at?->toIso8601String(),
+                'evaluation' => $this->decisionEvaluation($player, 'promise', $promise->status),
+            ]);
+        }
+
+        if ($conversationsEnabled) {
+            foreach ($player->conversations as $conversation) {
+                $managerDecisions->push([
+                    'kind' => 'conversation',
+                    'title' => 'Gespraech: ' . $this->conversationTopicLabel($conversation->topic),
+                    'accent' => match ($conversation->outcome) {
+                        'breakthrough' => 'emerald',
+                        'positive' => 'cyan',
+                        'steady' => 'slate',
+                        default => 'rose',
+                    },
+                    'impact_label' => strtoupper((string) $conversation->outcome),
+                    'summary' => $conversation->summary,
+                    'created_at' => $conversation->created_at?->format('d.m.Y H:i'),
+                    'sort_at' => $conversation->created_at?->toIso8601String(),
+                    'evaluation' => $this->decisionEvaluation($player, 'conversation'),
+                ]);
+            }
+        }
+
+        $managerDecisions = $managerDecisions
+            ->filter(fn ($entry) => !empty($entry['sort_at']))
+            ->sortByDesc('sort_at')
+            ->values()
+            ->map(function (array $entry) {
+                unset($entry['sort_at']);
+
+                return $entry;
+            })
             ->all();
 
         // Use season stats for career history, sorted by season desc
@@ -395,6 +473,20 @@ class PlayerController extends Controller
                     'sharpness_after' => (int) $log->sharpness_after,
                     'injury_risk' => (int) $log->injury_risk,
                 ])->values()->all(),
+                'conversations' => $conversationsEnabled ? $player->conversations->map(fn (PlayerConversation $conversation) => [
+                    'topic' => $conversation->topic,
+                    'topic_label' => $this->conversationTopicLabel($conversation->topic),
+                    'approach' => $conversation->approach,
+                    'approach_label' => $this->conversationApproachLabel($conversation->approach),
+                    'outcome' => $conversation->outcome,
+                    'happiness_delta' => (int) $conversation->happiness_delta,
+                    'happiness_after' => (int) $conversation->happiness_after,
+                    'manager_message' => $conversation->manager_message,
+                    'player_response' => $conversation->player_response,
+                    'summary' => $conversation->summary,
+                    'created_at' => $conversation->created_at?->format('d.m.Y H:i'),
+                ])->values()->all() : [],
+                'manager_decisions' => $managerDecisions,
             ],
         ]);
     }
@@ -552,6 +644,105 @@ class PlayerController extends Controller
             ->with('status', 'Spielzeitversprechen wurde gespeichert.');
     }
 
+    public function storeConversation(
+        Request $request,
+        Player $player,
+        PlayerConversationService $conversationService,
+    ): RedirectResponse {
+        $this->ensureOwnership($request, $player);
+
+        if (!(bool) config('simulation.features.player_conversations_enabled', false)) {
+            return back()->withErrors([
+                'conversation' => 'Spielergespraeche sind aktuell in den Game-Einstellungen deaktiviert.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'topic' => ['required', 'in:role,playtime,load,morale'],
+            'approach' => ['required', 'in:supportive,honest,demanding,protective'],
+            'manager_message' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $conversationService->logConversation($player->fresh()->loadMissing(['club', 'playtimePromises', 'injuries']), (int) $request->user()->id, $validated);
+
+        return back()->with('status', 'Spielergespraech wurde protokolliert.');
+    }
+
+    public function updateHierarchyRole(
+        Request $request,
+        Player $player,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+    ): RedirectResponse {
+        $this->ensureOwnership($request, $player);
+
+        $validated = $request->validate([
+            'squad_role' => ['required', 'in:auto,star_player,important_first_team,rotation,prospect,backup,surplus'],
+        ]);
+
+        $role = $validated['squad_role'];
+
+        if ($role === 'auto') {
+            $player->forceFill([
+                'role_override_active' => false,
+                'role_override_set_at' => null,
+            ])->save();
+
+            $club = $player->club()->firstOrFail();
+            $squadHierarchyService->refreshForClub($club);
+            $player = $player->fresh();
+        } else {
+            $player->forceFill([
+                'squad_role' => $role,
+                'team_status' => $squadHierarchyService->teamStatusForRole($role),
+                'expected_playtime' => $squadHierarchyService->expectedPlaytimeForRole($role),
+                'role_override_active' => true,
+                'role_override_set_at' => now(),
+            ])->save();
+        }
+
+        $playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
+
+        return back()->with('status', $role === 'auto' ? 'Rolle wurde auf Automatik zurueckgesetzt.' : 'Kaderrolle wurde angepasst.');
+    }
+
+    public function storeQuickPromise(
+        Request $request,
+        Player $player,
+        PlayerMoraleService $playerMoraleService,
+    ): RedirectResponse {
+        $this->ensureOwnership($request, $player);
+
+        $validated = $request->validate([
+            'template' => ['required', 'in:starter,rotation,development'],
+        ]);
+
+        [$promiseType, $expectedMinutesShare, $weeks] = match ($validated['template']) {
+            'starter' => ['starter', 78, 8],
+            'rotation' => ['regular_rotation', 52, 6],
+            default => ['youth_path', 30, 10],
+        };
+
+        $player->playtimePromises()
+            ->whereIn('status', ['active', 'at_risk'])
+            ->update(['status' => 'replaced']);
+
+        PlayerPlaytimePromise::create([
+            'player_id' => $player->id,
+            'club_id' => $player->club_id,
+            'promise_type' => $promiseType,
+            'expected_minutes_share' => $expectedMinutesShare,
+            'deadline_at' => now()->addWeeks($weeks),
+            'status' => 'active',
+            'fulfilled_ratio' => $this->resolveFulfilledRatio($player),
+            'notes' => 'Schnellversprechen aus der Hierarchieansicht.',
+        ]);
+
+        $playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
+
+        return back()->with('status', 'Spielzeitversprechen wurde direkt gesetzt.');
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -700,6 +891,8 @@ class PlayerController extends Controller
             'team_status' => $player->team_status,
             'team_status_label' => $this->teamStatusLabel($player->team_status),
             'expected_playtime' => (int) $player->expected_playtime,
+            'role_override_active' => (bool) $player->role_override_active,
+            'role_override_set_at' => $player->role_override_set_at?->format('d.m.Y H:i'),
             'recent_minutes_share' => $recentMinutesShare,
             'happiness' => (int) $player->happiness,
             'happiness_trend' => (int) $player->happiness_trend,
@@ -839,5 +1032,44 @@ class PlayerController extends Controller
         $averageMinutes = (float) $recentStats->avg('minutes_played');
 
         return max(0, min(100, (int) round(($averageMinutes / 90) * 100)));
+    }
+
+    private function conversationTopicLabel(string $topic): string
+    {
+        return match ($topic) {
+            'role' => 'Rolle',
+            'playtime' => 'Spielzeit',
+            'load' => 'Belastung',
+            'morale' => 'Stimmung',
+            default => $topic,
+        };
+    }
+
+    private function conversationApproachLabel(string $approach): string
+    {
+        return match ($approach) {
+            'supportive' => 'Supportiv',
+            'honest' => 'Offen',
+            'demanding' => 'Hart',
+            'protective' => 'Vorsichtig',
+            default => $approach,
+        };
+    }
+
+    private function decisionEvaluation(Player $player, string $kind, ?string $promiseStatus = null): array
+    {
+        return match ($kind) {
+            'promise' => match ($promiseStatus) {
+                'fulfilled' => ['label' => 'Hat geholfen', 'accent' => 'emerald'],
+                'broken' => ['label' => 'Hat verschaerft', 'accent' => 'rose'],
+                default => ['label' => 'Noch offen', 'accent' => 'amber'],
+            },
+            'role_override' => $player->happiness >= 55
+                ? ['label' => 'Hat geholfen', 'accent' => 'emerald']
+                : ($player->happiness < 45 ? ['label' => 'Hat verschaerft', 'accent' => 'rose'] : ['label' => 'Neutral', 'accent' => 'slate']),
+            default => $player->happiness >= 60
+                ? ['label' => 'Hat geholfen', 'accent' => 'emerald']
+                : ($player->happiness < 45 ? ['label' => 'Hat verschaerft', 'accent' => 'rose'] : ['label' => 'Neutral', 'accent' => 'slate']),
+        };
     }
 }

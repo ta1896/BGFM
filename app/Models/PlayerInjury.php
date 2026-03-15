@@ -21,6 +21,10 @@ class PlayerInjury extends Model
         'actual_return_at',
         'status',
         'source',
+        'rehab_intensity',
+        'return_phase',
+        'setback_risk',
+        'notes',
     ];
 
     protected function casts(): array
@@ -29,6 +33,7 @@ class PlayerInjury extends Model
             'started_at' => 'datetime',
             'expected_return_at' => 'datetime',
             'actual_return_at' => 'datetime',
+            'setback_risk' => 'integer',
         ];
     }
 

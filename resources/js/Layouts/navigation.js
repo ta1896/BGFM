@@ -54,6 +54,7 @@ export function getManagerMenuGroups({ hasManagedClub }) {
                 { route: 'players.index', label: 'Kader', active: 'players.*' },
                 { route: 'squad-hierarchy.index', label: 'Hierarchie', active: 'squad-hierarchy.index' },
                 { route: 'training.index', label: 'Training', active: 'training.*' },
+                { route: 'medical.index', label: 'Medical', active: 'medical.*' },
                 { route: 'training-camps.index', label: 'Trainingslager', active: 'training-camps.*' },
             ],
         },
@@ -72,6 +73,7 @@ export function getManagerMenuGroups({ hasManagedClub }) {
             label: 'Markt',
             items: [
                 { route: 'contracts.index', label: 'Vertraege', active: 'contracts.*' },
+                { route: 'scouting.index', label: 'Scouting', active: 'scouting.*' },
                 { route: 'clubs.index', label: 'Vereins-Suche', active: 'clubs.*' },
             ],
         },

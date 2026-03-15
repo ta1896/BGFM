@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import {
     PlayerCareerTab,
     PlayerCustomizeTab,
@@ -11,6 +11,8 @@ import {
 } from '@/Pages/Players/components/ShowSections';
 
 export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics }) {
+    const { features } = usePage().props;
+    const playerConversationsEnabled = !!features?.player_conversations_enabled;
     const [activeTab, setActiveTab] = useState('overview');
     const { data, setData, patch, processing } = useForm({
         market_value: player.market_value,
@@ -24,6 +26,11 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
         expected_minutes_share: player.expected_playtime || 50,
         deadline_at: '',
         notes: '',
+    });
+    const conversationForm = useForm({
+        topic: 'morale',
+        approach: 'supportive',
+        manager_message: '',
     });
 
     const handleUpdate = (event) => {
@@ -40,6 +47,13 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
         });
     };
 
+    const handleConversationSubmit = (event) => {
+        event.preventDefault();
+        conversationForm.post(route('players.conversations.store', player.id), {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title={player.full_name} />
@@ -51,7 +65,7 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                     {activeTab === 'overview' && <PlayerOverviewTab player={player} squadDynamics={squadDynamics} />}
                     {activeTab === 'career' && <PlayerCareerTab careerStats={careerStats} />}
                     {activeTab === 'matches' && <PlayerMatchesTab player={player} recentMatches={recentMatches} />}
-                    {activeTab === 'history' && <PlayerHistoryTab squadDynamics={squadDynamics} />}
+                    {activeTab === 'history' && <PlayerHistoryTab squadDynamics={squadDynamics} playerConversationsEnabled={playerConversationsEnabled} />}
                     {activeTab === 'customize' && (
                         <PlayerCustomizeTab
                             isOwner={isOwner}
@@ -62,6 +76,11 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                             onSubmit={handleUpdate}
                             promiseForm={promiseForm}
                             onPromiseSubmit={handlePromiseSubmit}
+                            conversationForm={conversationForm}
+                            onConversationSubmit={handleConversationSubmit}
+                            player={player}
+                            squadDynamics={squadDynamics}
+                            playerConversationsEnabled={playerConversationsEnabled}
                         />
                     )}
                 </div>

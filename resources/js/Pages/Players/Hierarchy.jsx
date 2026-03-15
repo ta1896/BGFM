@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal } from '@/Components/PageReveal';
 import {
@@ -12,6 +12,10 @@ import {
     UsersThree,
     ArrowsClockwise,
     Funnel,
+    ChatCircleText,
+    X,
+    Handshake,
+    FlagPennant,
 } from '@phosphor-icons/react';
 
 const levelStyles = {
@@ -59,9 +63,27 @@ const fitStyles = {
     critical: 'border-rose-400/25 bg-rose-400/10 text-rose-200',
 };
 
+const signalStyles = {
+    manual: 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-200',
+    promise: 'border-amber-400/25 bg-amber-400/10 text-amber-200',
+};
+
 export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary, hierarchyInsights }) {
+    const { features } = usePage().props;
+    const playerConversationsEnabled = !!features?.player_conversations_enabled;
     const [activeFilter, setActiveFilter] = useState('all');
     const [tooltip, setTooltip] = useState(null);
+    const conversationForm = useForm({
+        topic: 'morale',
+        approach: 'supportive',
+        manager_message: '',
+    });
+    const roleForm = useForm({
+        squad_role: 'rotation',
+    });
+    const promiseForm = useForm({
+        template: 'rotation',
+    });
 
     const allPlayers = useMemo(
         () => hierarchyLevels.flatMap((level) => level.players.map((player) => ({ ...player, levelLabel: level.label }))),
@@ -194,13 +216,16 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                                                                 type="button"
                                                                 onMouseEnter={(event) => updateTooltip(setTooltip, player, event)}
                                                                 onMouseMove={(event) => updateTooltip(setTooltip, player, event)}
-                                                                onMouseLeave={() => setTooltip(null)}
+                                                                onMouseLeave={() => clearTooltip(setTooltip)}
                                                                 onFocus={(event) => updateTooltip(setTooltip, player, event)}
-                                                                onBlur={() => setTooltip(null)}
+                                                                onBlur={() => clearTooltip(setTooltip)}
+                                                                onClick={(event) => pinTooltip(setTooltip, player, event)}
                                                                 className={`min-w-0 rounded-2xl border p-2.5 text-left transition-all ${
                                                                     tooltip?.player?.id === player.id
                                                                         ? 'border-[var(--accent-primary)] bg-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
-                                                                        : 'border-white/8 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
+                                                                        : player.role_override_active
+                                                                            ? 'border-fuchsia-400/35 bg-fuchsia-400/[0.05] hover:border-fuchsia-300/60 hover:bg-fuchsia-400/[0.07]'
+                                                                            : 'border-white/8 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
                                                                 }`}
                                                             >
                                                                 <div className="flex items-start gap-3">
@@ -227,6 +252,16 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                                                                             </span>
                                                                         </div>
                                                                         <div className="mt-2 flex flex-wrap items-start gap-1.5">
+                                                                            {player.role_override_active && (
+                                                                                <Tag className={signalStyles.manual} compact>
+                                                                                    Manuell
+                                                                                </Tag>
+                                                                            )}
+                                                                            {player.promise && (
+                                                                                <Tag className={signalStyles.promise} compact>
+                                                                                    Promise
+                                                                                </Tag>
+                                                                            )}
                                                                             <Tag className={moodStyles[player.mood.status]} compact>
                                                                                 {player.mood.label}
                                                                             </Tag>
@@ -281,7 +316,41 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
             </div>
 
             {tooltip?.player && (
-                <PlayerTooltip tooltip={tooltip} />
+                <PlayerTooltip
+                    tooltip={tooltip}
+                    onClose={() => setTooltip(null)}
+                    onQuickConversation={(payload) => {
+                        conversationForm.transform(() => payload).post(route('players.conversations.store', tooltip.player.id), {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setTooltip((current) => current ? { ...current, pinned: false } : current);
+                                conversationForm.reset();
+                            },
+                        });
+                    }}
+                    processing={conversationForm.processing}
+                    playerConversationsEnabled={playerConversationsEnabled}
+                    roleForm={roleForm}
+                    promiseForm={promiseForm}
+                    onRoleChange={(payload) => {
+                        roleForm.transform(() => payload).post(route('players.hierarchy-role.update', tooltip.player.id), {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setTooltip((current) => current ? { ...current, pinned: false } : current);
+                                roleForm.reset();
+                            },
+                        });
+                    }}
+                    onQuickPromise={(payload) => {
+                        promiseForm.transform(() => payload).post(route('players.quick-promise.store', tooltip.player.id), {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setTooltip((current) => current ? { ...current, pinned: false } : current);
+                                promiseForm.reset();
+                            },
+                        });
+                    }}
+                />
             )}
         </AuthenticatedLayout>
     );
@@ -370,9 +439,10 @@ function RadarPanel({ title, items, emptyLabel, tone, setTooltip }) {
                             type="button"
                             onMouseEnter={(event) => updateTooltip(setTooltip, player, event)}
                             onMouseMove={(event) => updateTooltip(setTooltip, player, event)}
-                            onMouseLeave={() => setTooltip(null)}
+                            onMouseLeave={() => clearTooltip(setTooltip)}
                             onFocus={(event) => updateTooltip(setTooltip, player, event)}
-                            onBlur={() => setTooltip(null)}
+                            onBlur={() => clearTooltip(setTooltip)}
+                            onClick={(event) => pinTooltip(setTooltip, player, event)}
                             className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:border-white/20 hover:bg-white/[0.05]"
                         >
                             <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
@@ -413,22 +483,74 @@ function matchesFilter(player, filter) {
 }
 
 function updateTooltip(setTooltip, player, event) {
+    setTooltip((current) => {
+        if (current?.pinned && current.player?.id === player.id) {
+            return current;
+        }
+
+        return {
+            player,
+            x: event.clientX,
+            y: event.clientY,
+            pinned: false,
+        };
+    });
+}
+
+function pinTooltip(setTooltip, player, event) {
     setTooltip({
         player,
         x: event.clientX,
         y: event.clientY,
+        pinned: true,
     });
 }
 
-function PlayerTooltip({ tooltip }) {
-    const { player, x, y } = tooltip;
+function clearTooltip(setTooltip) {
+    setTooltip((current) => current?.pinned ? current : null);
+}
+
+function PlayerTooltip({ tooltip, onClose, onQuickConversation, processing, playerConversationsEnabled, roleForm, promiseForm, onRoleChange, onQuickPromise }) {
+    const { player, x, y, pinned } = tooltip;
+    const quickActions = [
+        {
+            label: 'Beruhigen',
+            helper: 'Stimmung',
+            payload: { topic: 'morale', approach: 'supportive', manager_message: '' },
+            className: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+        },
+        {
+            label: 'Rolle klaeren',
+            helper: 'Rolle',
+            payload: { topic: 'role', approach: 'honest', manager_message: '' },
+            className: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200',
+        },
+        {
+            label: 'Last senken',
+            helper: 'Belastung',
+            payload: { topic: 'load', approach: 'protective', manager_message: '' },
+            className: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
+        },
+    ];
+    const roleActions = [
+        { label: 'Auto', helper: 'System', payload: { squad_role: 'auto' }, className: 'border-white/10 bg-white/[0.05] text-slate-200' },
+        { label: 'Star', helper: 'Toprolle', payload: { squad_role: 'star_player' }, className: 'border-amber-400/20 bg-amber-400/10 text-amber-200' },
+        { label: 'Stamm', helper: 'Kernrolle', payload: { squad_role: 'important_first_team' }, className: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200' },
+        { label: 'Rotation', helper: 'Breite', payload: { squad_role: 'rotation' }, className: 'border-sky-400/20 bg-sky-400/10 text-sky-200' },
+        { label: 'Talent', helper: 'Aufbau', payload: { squad_role: 'prospect' }, className: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' },
+    ];
+    const promiseActions = [
+        { label: 'Starter zusagen', helper: '8 Wochen', payload: { template: 'starter' }, className: 'border-amber-400/20 bg-amber-400/10 text-amber-200' },
+        { label: 'Rotation zusagen', helper: '6 Wochen', payload: { template: 'rotation' }, className: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200' },
+        { label: 'Entwicklungspfad', helper: '10 Wochen', payload: { template: 'development' }, className: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' },
+    ];
 
     return (
         <div
-            className="pointer-events-none fixed z-[80] hidden w-[320px] rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,16,30,0.98),rgba(8,12,24,0.98))] p-4 shadow-[0_24px_80px_rgba(2,6,23,0.55)] xl:block"
+            className="fixed z-[80] hidden w-[320px] rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,16,30,0.98),rgba(8,12,24,0.98))] p-4 shadow-[0_24px_80px_rgba(2,6,23,0.55)] xl:block"
             style={{
                 left: Math.min(x + 18, window.innerWidth - 340),
-                top: Math.min(y + 18, window.innerHeight - 420),
+                top: Math.min(y + 18, window.innerHeight - 620),
             }}
         >
             <div className="mb-4 flex items-start gap-4">
@@ -447,8 +569,18 @@ function PlayerTooltip({ tooltip }) {
                     <div className="mt-2 flex flex-wrap gap-2">
                         <Tag className="border-white/10 bg-white/[0.05] text-slate-200">{player.position}</Tag>
                         <Tag className="border-white/10 bg-white/[0.05] text-slate-200">{player.squad_role_label}</Tag>
+                        {player.role_override_active && <Tag className={signalStyles.manual}>Manuell gesetzt</Tag>}
                     </div>
                 </div>
+                {pinned && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:text-white"
+                    >
+                        <X size={14} weight="bold" />
+                    </button>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -484,6 +616,91 @@ function PlayerTooltip({ tooltip }) {
                     </div>
                 </div>
             )}
+
+            {playerConversationsEnabled && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        <ChatCircleText size={14} weight="bold" />
+                        Schnellgespraech
+                    </div>
+                    <div className="grid gap-2">
+                        {quickActions.map((action) => (
+                            <button
+                                key={action.label}
+                                type="button"
+                                disabled={processing}
+                                onClick={() => onQuickConversation(action.payload)}
+                                className={`flex items-center justify-between rounded-2xl border px-3 py-2 text-left transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 ${action.className}`}
+                            >
+                                <span>
+                                    <span className="block text-[10px] font-black uppercase tracking-[0.14em]">{action.helper}</span>
+                                    <span className="mt-0.5 block text-xs font-black text-white">{action.label}</span>
+                                </span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.14em]">
+                                    {processing ? '...' : 'Start'}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <FlagPennant size={14} weight="bold" />
+                    Rolle setzen
+                </div>
+                {player.role_override_active && (
+                    <div className="mb-3 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-200">
+                        Override aktiv{player.role_override_set_at ? ` seit ${player.role_override_set_at}` : ''}
+                    </div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                    {roleActions.map((action) => (
+                        <button
+                            key={action.label}
+                            type="button"
+                            disabled={roleForm.processing}
+                            onClick={() => onRoleChange(action.payload)}
+                            className={`flex items-center justify-between rounded-2xl border px-3 py-2 text-left transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 ${action.className}`}
+                        >
+                            <span>
+                                <span className="block text-[10px] font-black uppercase tracking-[0.14em]">{action.helper}</span>
+                                <span className="mt-0.5 block text-xs font-black text-white">{action.label}</span>
+                            </span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.14em]">
+                                {roleForm.processing ? '...' : 'Set'}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <Handshake size={14} weight="bold" />
+                    Quick Promise
+                </div>
+                <div className="grid gap-2">
+                    {promiseActions.map((action) => (
+                        <button
+                            key={action.label}
+                            type="button"
+                            disabled={promiseForm.processing}
+                            onClick={() => onQuickPromise(action.payload)}
+                            className={`flex items-center justify-between rounded-2xl border px-3 py-2 text-left transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 ${action.className}`}
+                        >
+                            <span>
+                                <span className="block text-[10px] font-black uppercase tracking-[0.14em]">{action.helper}</span>
+                                <span className="mt-0.5 block text-xs font-black text-white">{action.label}</span>
+                            </span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.14em]">
+                                {promiseForm.processing ? '...' : 'Set'}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }

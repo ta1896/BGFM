@@ -29,15 +29,22 @@ class SquadHierarchyService
             };
 
             $player->forceFill([
-                'squad_role' => $role,
                 'leadership_level' => $leadership,
-                'team_status' => $this->teamStatusForRole($role),
-                'expected_playtime' => $this->expectedPlaytimeForRole($role),
-            ])->save();
+            ]);
+
+            if (!$player->role_override_active) {
+                $player->forceFill([
+                    'squad_role' => $role,
+                    'team_status' => $this->teamStatusForRole($role),
+                    'expected_playtime' => $this->expectedPlaytimeForRole($role),
+                ]);
+            }
+
+            $player->save();
         }
     }
 
-    private function teamStatusForRole(string $role): string
+    public function teamStatusForRole(string $role): string
     {
         return match ($role) {
             'star_player' => 'leader',
@@ -49,7 +56,7 @@ class SquadHierarchyService
         };
     }
 
-    private function expectedPlaytimeForRole(string $role): int
+    public function expectedPlaytimeForRole(string $role): int
     {
         return match ($role) {
             'star_player' => 85,

@@ -62,4 +62,33 @@ class InjuryManagementService
             'expected_return' => $injury->expected_return_at?->format('d.m.Y'),
         ];
     }
+
+    public function updateRehabPlan(Player $player, array $data): void
+    {
+        $injury = $player->injuries()
+            ->where('status', 'active')
+            ->latest('started_at')
+            ->first();
+
+        if ($injury) {
+            $setbackRisk = match ($data['rehab_intensity']) {
+                'high' => 52,
+                'medium' => 28,
+                default => 14,
+            };
+
+            $injury->forceFill([
+                'rehab_intensity' => $data['rehab_intensity'],
+                'return_phase' => $data['return_phase'],
+                'setback_risk' => $setbackRisk,
+                'notes' => $data['notes'] ?? null,
+            ])->save();
+
+            $player->forceFill([
+                'medical_status' => in_array($data['return_phase'], ['partial', 'full'], true) ? 'monitoring' : 'rehab',
+                'fatigue' => max(0, (int) $player->fatigue - ($data['rehab_intensity'] === 'low' ? 10 : 4)),
+                'sharpness' => min(100, (int) $player->sharpness + ($data['return_phase'] === 'full' ? 8 : 4)),
+            ])->save();
+        }
+    }
 }

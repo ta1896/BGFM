@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import {
     ArrowLeft,
+    ChatCircleText,
     Camera,
     ChartBar,
     ClockCounterClockwise,
@@ -388,64 +389,163 @@ function MiniStat({ label, value }) {
     );
 }
 
-export function PlayerHistoryTab({ squadDynamics }) {
+export function PlayerHistoryTab({ squadDynamics, playerConversationsEnabled = false }) {
     return (
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
             <div className="sim-card p-8">
                 <div className="mb-6 flex items-center gap-4">
-                    <ClockCounterClockwise size={24} weight="duotone" className="text-slate-300" />
-                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Belastungsverlauf</h3>
+                    <ChatCircleText size={24} weight="duotone" className="text-amber-400" />
+                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Manager Timeline</h3>
                 </div>
-                <div className="space-y-3">
-                    {squadDynamics?.recovery?.length ? squadDynamics.recovery.map((entry) => (
-                        <div key={entry.day} className="flex items-center justify-between rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 px-4 py-3">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{entry.day}</span>
-                            <div className="flex items-center gap-4 text-xs font-black">
-                                <span className="text-amber-400">Fatigue {entry.fatigue_after}</span>
-                                <span className="text-emerald-400">Sharp {entry.sharpness_after}</span>
-                                <span className="text-rose-400">Risk {entry.injury_risk}%</span>
+                <div className="space-y-4">
+                    {squadDynamics?.manager_decisions?.length ? squadDynamics.manager_decisions.map((decision, index) => (
+                        <div key={`${decision.kind}-${decision.created_at}-${index}`} className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-wider text-white">{decision.title}</p>
+                                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{decision.created_at}</p>
+                                </div>
+                                <div className="flex flex-wrap justify-end gap-2">
+                                    <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${decisionAccentClasses(decision.accent)}`}>
+                                        {decision.impact_label}
+                                    </span>
+                                    <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${decisionAccentClasses(decision.evaluation?.accent || 'slate')}`}>
+                                        {decision.evaluation?.label || 'Neutral'}
+                                    </span>
+                                </div>
                             </div>
+                            <p className="mt-4 text-sm leading-relaxed text-slate-300">{decision.summary}</p>
                         </div>
                     )) : (
-                        <p className="text-sm font-medium text-[var(--text-muted)]">Noch keine Recovery-Logs vorhanden.</p>
+                        <p className="text-sm font-medium text-[var(--text-muted)]">Noch keine Manager-Entscheidungen dokumentiert.</p>
                     )}
                 </div>
             </div>
 
-            <div className="sim-card p-8">
-                <div className="mb-6 flex items-center gap-4">
-                    <UsersThree size={24} weight="duotone" className="text-cyan-400" />
-                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
+            <div className="space-y-8">
+                <div className="sim-card p-8">
+                    <div className="mb-6 flex items-center gap-4">
+                        <UsersThree size={24} weight="duotone" className="text-cyan-400" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {squadDynamics?.promises?.length ? squadDynamics.promises.map((promise, index) => (
+                            <div key={`${promise.promise_type}-${index}`} className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-black uppercase tracking-wider text-white">{promise.promise_type}</span>
+                                    <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${promise.status === 'broken' ? 'bg-rose-500/10 text-rose-300' : promise.status === 'at_risk' ? 'bg-amber-500/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300'}`}>{promise.status}</span>
+                                </div>
+                                <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                                    <span>Ziel {promise.expected_minutes_share}%</span>
+                                    <span>Erfuellt {promise.fulfilled_ratio}%</span>
+                                    <span>{promise.deadline_at || 'offen'}</span>
+                                </div>
+                            </div>
+                        )) : (
+                            <p className="text-sm font-medium text-[var(--text-muted)]">Keine aktiven Versprechen hinterlegt.</p>
+                        )}
+                    </div>
                 </div>
-                <div className="space-y-3">
-                    {squadDynamics?.promises?.length ? squadDynamics.promises.map((promise, index) => (
-                        <div key={`${promise.promise_type}-${index}`} className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 p-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-black uppercase tracking-wider text-white">{promise.promise_type}</span>
-                                <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${promise.status === 'at_risk' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>{promise.status}</span>
+
+                <div className="sim-card p-8">
+                    <div className="mb-6 flex items-center gap-4">
+                        <ClockCounterClockwise size={24} weight="duotone" className="text-slate-300" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Belastungsverlauf</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {squadDynamics?.recovery?.length ? squadDynamics.recovery.map((entry) => (
+                            <div key={entry.day} className="flex items-center justify-between rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 px-4 py-3">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{entry.day}</span>
+                                <div className="flex items-center gap-4 text-xs font-black">
+                                    <span className="text-amber-400">Fatigue {entry.fatigue_after}</span>
+                                    <span className="text-emerald-400">Sharp {entry.sharpness_after}</span>
+                                    <span className="text-rose-400">Risk {entry.injury_risk}%</span>
+                                </div>
                             </div>
-                            <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                                <span>Ziel {promise.expected_minutes_share}%</span>
-                                <span>Erfuellt {promise.fulfilled_ratio}%</span>
-                                <span>{promise.deadline_at || 'offen'}</span>
-                            </div>
-                        </div>
-                    )) : (
-                        <p className="text-sm font-medium text-[var(--text-muted)]">Keine aktiven Versprechen hinterlegt.</p>
-                    )}
+                        )) : (
+                            <p className="text-sm font-medium text-[var(--text-muted)]">Noch keine Recovery-Logs vorhanden.</p>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {playerConversationsEnabled && (
+                <div className="xl:col-span-2 sim-card p-8">
+                    <div className="mb-6 flex items-center gap-4">
+                        <ChatCircleText size={24} weight="duotone" className="text-amber-400" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Gespraechsverlauf</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {squadDynamics?.conversations?.length ? squadDynamics.conversations.map((conversation, index) => (
+                            <div key={`${conversation.topic}-${conversation.created_at}-${index}`} className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <span className="block text-xs font-black uppercase tracking-wider text-white">{conversation.topic_label}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{conversation.approach_label}</span>
+                                    </div>
+                                    <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${
+                                        conversation.outcome === 'breakthrough'
+                                            ? 'bg-emerald-500/10 text-emerald-300'
+                                            : conversation.outcome === 'positive'
+                                              ? 'bg-cyan-500/10 text-cyan-300'
+                                              : conversation.outcome === 'steady'
+                                                ? 'bg-slate-500/10 text-slate-300'
+                                                : 'bg-rose-500/10 text-rose-300'
+                                    }`}>
+                                        {conversation.outcome}
+                                    </span>
+                                </div>
+                                <p className="mt-3 text-xs font-medium leading-relaxed text-slate-300">{conversation.summary}</p>
+                                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{conversation.player_response}</p>
+                                <div className="mt-3 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                    <span>{conversation.created_at}</span>
+                                    <span className={conversation.happiness_delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                        {conversation.happiness_delta >= 0 ? '+' : ''}{conversation.happiness_delta} Mood
+                                    </span>
+                                </div>
+                            </div>
+                        )) : (
+                            <p className="text-sm font-medium text-[var(--text-muted)]">Noch keine Gespraeche dokumentiert.</p>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-export function PlayerCustomizeTab({ isOwner, data, setData, positions, processing, onSubmit, promiseForm, onPromiseSubmit }) {
+function decisionAccentClasses(accent) {
+    return {
+        emerald: 'bg-emerald-500/10 text-emerald-300',
+        cyan: 'bg-cyan-500/10 text-cyan-300',
+        amber: 'bg-amber-500/10 text-amber-300',
+        rose: 'bg-rose-500/10 text-rose-300',
+        fuchsia: 'bg-fuchsia-500/10 text-fuchsia-300',
+        slate: 'bg-slate-500/10 text-slate-300',
+    }[accent] || 'bg-slate-500/10 text-slate-300';
+}
+
+export function PlayerCustomizeTab({
+    isOwner,
+    data,
+    setData,
+    positions,
+    processing,
+    onSubmit,
+    promiseForm,
+    onPromiseSubmit,
+    conversationForm,
+    onConversationSubmit,
+    player,
+    squadDynamics,
+    playerConversationsEnabled = false,
+}) {
     if (!isOwner) {
         return null;
     }
 
     return (
-        <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.25fr_0.9fr_0.9fr]">
             <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-10 backdrop-blur-xl">
             <div className="mb-10 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-6">
                 <IdentificationBadge size={32} weight="duotone" className="text-cyan-400" />
@@ -559,6 +659,77 @@ export function PlayerCustomizeTab({ isOwner, data, setData, positions, processi
                     </button>
                 </form>
             </div>
+
+            {playerConversationsEnabled && (
+                <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-8 backdrop-blur-xl">
+                    <div className="mb-8 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-5">
+                        <ChatCircleText size={28} weight="duotone" className="text-cyan-400" />
+                        <div>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielergespraech</h3>
+                            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Direkter Eingriff in Stimmung und Rollenakzeptanz</p>
+                        </div>
+                    </div>
+
+                    <div className="mb-6 grid grid-cols-3 gap-3 text-center">
+                        <QuickBadge label="Mood" value={`${player.happiness}%`} tone={player.happiness >= 60 ? 'good' : 'warn'} />
+                        <QuickBadge label="Load" value={`${player.fatigue}%`} tone={player.fatigue <= 45 ? 'good' : 'warn'} />
+                        <QuickBadge
+                            label="Promise"
+                            value={squadDynamics?.promises?.[0] ? `${squadDynamics.promises[0].fulfilled_ratio}%` : '-'}
+                            tone={squadDynamics?.promises?.[0]?.status === 'at_risk' || squadDynamics?.promises?.[0]?.status === 'broken' ? 'bad' : 'good'}
+                        />
+                    </div>
+
+                    <form onSubmit={onConversationSubmit} className="space-y-5">
+                        <Field label="Thema">
+                            <select value={conversationForm.data.topic} onChange={(event) => conversationForm.setData('topic', event.target.value)} className="sim-select w-full uppercase text-xs">
+                                <option value="morale">Stimmung</option>
+                                <option value="role">Rolle</option>
+                                <option value="playtime">Spielzeit</option>
+                                <option value="load">Belastung</option>
+                            </select>
+                        </Field>
+
+                        <Field label="Ansatz">
+                            <select value={conversationForm.data.approach} onChange={(event) => conversationForm.setData('approach', event.target.value)} className="sim-select w-full uppercase text-xs">
+                                <option value="supportive">Supportiv</option>
+                                <option value="honest">Offen</option>
+                                <option value="protective">Vorsichtig</option>
+                                <option value="demanding">Hart</option>
+                            </select>
+                        </Field>
+
+                        <Field label="Manager-Notiz">
+                            <textarea
+                                value={conversationForm.data.manager_message}
+                                onChange={(event) => conversationForm.setData('manager_message', event.target.value)}
+                                className="sim-input-indigo min-h-32 w-full"
+                                placeholder="Optionaler Gespraechsvermerk fuer die Akte"
+                            />
+                        </Field>
+
+                        <button type="submit" disabled={conversationForm.processing} className="sim-btn-primary flex w-full items-center justify-center gap-3 px-6 py-4">
+                            <ChatCircleText size={18} weight="bold" />
+                            <span className="text-xs font-black uppercase tracking-widest">Gespraech fuehren</span>
+                        </button>
+                    </form>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function QuickBadge({ label, value, tone = 'good' }) {
+    const toneClasses = tone === 'bad'
+        ? 'border-rose-500/20 bg-rose-500/10 text-rose-300'
+        : tone === 'warn'
+            ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+            : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300';
+
+    return (
+        <div className={`rounded-2xl border px-3 py-3 ${toneClasses}`}>
+            <span className="block text-[9px] font-black uppercase tracking-widest opacity-80">{label}</span>
+            <span className="mt-1 block text-sm font-black text-white">{value}</span>
         </div>
     );
 }

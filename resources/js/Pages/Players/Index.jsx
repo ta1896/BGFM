@@ -11,10 +11,14 @@ import {
     ChartLineUp,
     SortAscending,
     Crown,
+    Handshake,
+    FlagPennant,
 } from '@phosphor-icons/react';
 
 const PlayerListItem = ({ player }) => (
-    <div className="sim-card-soft p-4 bg-[var(--bg-pillar)]/40 border-[var(--border-muted)] hover:border-[var(--accent-primary)]/30 transition-all group relative overflow-hidden hover:-translate-y-0.5">
+    <div className={`sim-card-soft p-4 bg-[var(--bg-pillar)]/40 border-[var(--border-muted)] transition-all group relative overflow-hidden hover:-translate-y-0.5 ${
+        player.role_override_active ? 'ring-1 ring-fuchsia-400/30 hover:border-fuchsia-400/40' : 'hover:border-[var(--accent-primary)]/30'
+    }`}>
         <div className="flex items-center gap-4 relative z-10">
             <div className="relative shrink-0">
                 {player.photo_url ? (
@@ -51,6 +55,29 @@ const PlayerListItem = ({ player }) => (
                 <div className="text-xs font-black text-emerald-400">{player.market_value_formatted}</div>
             </div>
         </div>
+
+        {(player.role_override_active || player.promise_status) && (
+            <div className="mt-3 flex flex-wrap gap-2">
+                {player.role_override_active && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-fuchsia-200">
+                        <FlagPennant size={11} weight="fill" />
+                        Manuelle Rolle
+                    </span>
+                )}
+                {player.promise_status && (
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                        player.promise_status === 'broken'
+                            ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
+                            : player.promise_status === 'at_risk'
+                                ? 'border-amber-400/20 bg-amber-400/10 text-amber-200'
+                                : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200'
+                    }`}>
+                        <Handshake size={11} weight="fill" />
+                        {player.promise_status === 'broken' ? 'Promise gebrochen' : player.promise_status === 'at_risk' ? 'Promise kritisch' : 'Promise aktiv'}
+                    </span>
+                )}
+            </div>
+        )}
 
         <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
             <Metric label="PAC" value={player.pace} />

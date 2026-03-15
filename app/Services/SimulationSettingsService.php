@@ -63,6 +63,9 @@ class SimulationSettingsService
                     config('simulation.lineup.max_bench_players', 5)
                 ),
             ],
+            'features' => [
+                'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),
+            ],
             'observers' => [
                 'match_finished' => [
                     'enabled' => (bool) config('simulation.observers.match_finished.enabled', true),
@@ -100,6 +103,7 @@ class SimulationSettingsService
             'simulation.lineup.max_bench_players' => $this->normalizeMaxBenchPlayers(
                 data_get($payload, 'lineup.max_bench_players', 5)
             ),
+            'simulation.features.player_conversations_enabled' => (bool) data_get($payload, 'features.player_conversations_enabled', false),
             'simulation.observers.match_finished.enabled' => (bool) data_get($payload, 'observers.match_finished.enabled', true),
             'simulation.observers.match_finished.rebuild_match_player_stats' => (bool) data_get($payload, 'observers.match_finished.rebuild_match_player_stats', true),
             'simulation.observers.match_finished.aggregate_player_competition_stats' => (bool) data_get($payload, 'observers.match_finished.aggregate_player_competition_stats', true),

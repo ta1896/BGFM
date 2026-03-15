@@ -194,6 +194,16 @@ class Club extends Model
         return $this->hasMany(ClubAchievement::class);
     }
 
+    public function scoutingWatchlists(): HasMany
+    {
+        return $this->hasMany(ScoutingWatchlist::class);
+    }
+
+    public function scoutingReports(): HasMany
+    {
+        return $this->hasMany(ScoutingReport::class);
+    }
+
     public function getLogoUrlAttribute(): string
     {
         if (!$this->logo_path) {

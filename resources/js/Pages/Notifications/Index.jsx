@@ -43,6 +43,13 @@ export default function Notifications({ notifications }) {
                 badge: 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
                 label: 'Versprechen erfuellt',
             },
+            conversation_tense: {
+                accent: 'border-l-fuchsia-500',
+                iconWrap: 'border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_18px_rgba(217,70,239,0.12)]',
+                icon: WarningCircle,
+                badge: 'border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-200',
+                label: 'Kabinenkonflikt',
+            },
         };
 
         if (seenAt) {

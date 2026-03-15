@@ -38,6 +38,7 @@ class GeneralSimulationSettingsController extends Controller
             'simulation.live_changes.planned_substitutions.min_minutes_ahead'     => ['required', 'integer', 'min:1', 'max:30'],
             'simulation.live_changes.planned_substitutions.min_interval_minutes'  => ['required', 'integer', 'min:1', 'max:30'],
             'simulation.lineup.max_bench_players'                                 => ['required', 'integer', 'min:1', 'max:10'],
+            'simulation.features.player_conversations_enabled'                    => ['required', 'boolean'],
             'simulation.observers.match_finished.enabled'                         => ['required', 'boolean'],
             'simulation.observers.match_finished.rebuild_match_player_stats'      => ['required', 'boolean'],
             'simulation.observers.match_finished.aggregate_player_competition_stats' => ['required', 'boolean'],

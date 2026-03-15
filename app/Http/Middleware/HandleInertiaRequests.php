@@ -59,6 +59,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => session('status'),
             ],
+            'features' => [
+                'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),
+            ],
         ];
     }
 

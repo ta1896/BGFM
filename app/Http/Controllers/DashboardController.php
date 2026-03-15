@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Models\PlayerConversation;
 use App\Models\SeasonClubStatistic;
 use App\Models\TrainingSession;
 use App\Services\InjuryManagementService;
@@ -76,6 +77,14 @@ class DashboardController extends Controller
         $assistantTasks = [];
         $selectedCompetitionSeasonId = null;
         $squadAlerts = [];
+        $squadPulse = [
+            'manual_roles_count' => 0,
+            'promise_pressure_count' => 0,
+            'manual_role_players' => [],
+            'pressure_players' => [],
+        ];
+        $managerDecisions = [];
+        $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
 
         if ($activeClub) {
             $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
@@ -313,6 +322,20 @@ class DashboardController extends Controller
             $brokenPromiseCount = $activeClub->players->filter(
                 fn ($player) => $player->playtimePromises->where('status', 'broken')->isNotEmpty()
             )->count();
+            $manualRolePlayers = $activeClub->players
+                ->filter(fn ($player) => (bool) $player->role_override_active)
+                ->sortByDesc('overall')
+                ->take(4)
+                ->values();
+            $pressurePlayers = $activeClub->players
+                ->filter(function ($player): bool {
+                    $promise = $player->playtimePromises->sortByDesc('id')->first();
+
+                    return $promise && in_array($promise->status, ['at_risk', 'broken'], true);
+                })
+                ->sortBy('happiness')
+                ->take(4)
+                ->values();
 
             $squadAlerts = [
                 'unhappy_count' => $unhappyCount,
@@ -320,6 +343,100 @@ class DashboardController extends Controller
                 'promise_count' => $promiseCount,
                 'broken_promise_count' => $brokenPromiseCount,
             ];
+            $squadPulse = [
+                'manual_roles_count' => $manualRolePlayers->count(),
+                'promise_pressure_count' => $pressurePlayers->count(),
+                'manual_role_players' => $manualRolePlayers->map(fn ($player) => [
+                    'id' => $player->id,
+                    'full_name' => $player->full_name,
+                    'photo_url' => $player->photo_url,
+                    'squad_role' => $player->squad_role,
+                ])->all(),
+                'pressure_players' => $pressurePlayers->map(function ($player) {
+                    $promise = $player->playtimePromises->sortByDesc('id')->first();
+
+                    return [
+                        'id' => $player->id,
+                        'full_name' => $player->full_name,
+                        'photo_url' => $player->photo_url,
+                        'promise_status' => $promise?->status,
+                        'happiness' => (int) $player->happiness,
+                    ];
+                })->all(),
+            ];
+            $conversationDecisions = $conversationsEnabled
+                ? PlayerConversation::query()
+                    ->where('club_id', $activeClub->id)
+                    ->with('player')
+                    ->latest('id')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn (PlayerConversation $conversation) => [
+                        'kind' => 'conversation',
+                        'title' => 'Gespraech: '.$this->conversationTopicLabel($conversation->topic),
+                        'player_name' => $conversation->player?->full_name ?? 'Spieler',
+                        'player_id' => $conversation->player_id,
+                        'photo_url' => $conversation->player?->photo_url,
+                        'accent' => $conversation->happiness_delta >= 0 ? 'emerald' : 'rose',
+                        'impact_label' => ($conversation->happiness_delta >= 0 ? '+' : '').$conversation->happiness_delta.' Mood',
+                        'summary' => $conversation->summary ?: $conversation->player_response,
+                        'created_at' => $conversation->created_at?->format('d.m H:i'),
+                        'evaluation' => $this->decisionEvaluation($conversation->player, 'conversation'),
+                    ])
+                : collect();
+            $roleDecisions = $activeClub->players
+                ->filter(fn ($player) => (bool) $player->role_override_active && $player->role_override_set_at)
+                ->sortByDesc('role_override_set_at')
+                ->take(5)
+                ->map(fn ($player) => [
+                    'kind' => 'role_override',
+                    'title' => 'Rolle manuell gesetzt',
+                    'player_name' => $player->full_name,
+                    'player_id' => $player->id,
+                    'photo_url' => $player->photo_url,
+                    'accent' => 'fuchsia',
+                    'impact_label' => strtoupper((string) $player->squad_role),
+                    'summary' => 'Systematik wurde fuer diesen Spieler bewusst ueberschrieben.',
+                    'created_at' => $player->role_override_set_at?->format('d.m H:i'),
+                    'evaluation' => $this->decisionEvaluation($player, 'role_override'),
+                ]);
+            $promiseDecisions = $activeClub->players
+                ->map(function ($player) {
+                    $promise = $player->playtimePromises
+                        ->sortByDesc('id')
+                        ->first(fn ($item) => in_array($item->status, ['active', 'at_risk', 'broken', 'fulfilled'], true));
+
+                    if (!$promise) {
+                        return null;
+                    }
+
+                    return [
+                        'kind' => 'promise',
+                        'title' => 'Spielzeitversprechen',
+                        'player_name' => $player->full_name,
+                        'player_id' => $player->id,
+                        'photo_url' => $player->photo_url,
+                        'accent' => match ($promise->status) {
+                            'broken' => 'rose',
+                            'at_risk' => 'amber',
+                            default => 'cyan',
+                        },
+                        'impact_label' => strtoupper((string) $promise->status),
+                        'summary' => 'Ziel: '.$promise->expected_minutes_share.'% Minuten, aktuell '.$promise->fulfilled_ratio.'%.',
+                        'created_at' => $promise->created_at?->format('d.m H:i'),
+                        'evaluation' => $this->decisionEvaluation($player, 'promise', $promise->status),
+                    ];
+                })
+                ->filter()
+                ->sortByDesc('created_at')
+                ->take(5);
+            $managerDecisions = $conversationDecisions
+                ->concat($roleDecisions)
+                ->concat($promiseDecisions)
+                ->sortByDesc('created_at')
+                ->take(7)
+                ->values()
+                ->all();
 
             if ($unhappyCount > 0) {
                 $assistantTasks[] = [
@@ -383,6 +500,40 @@ class DashboardController extends Controller
             'trainingPlanComplete' => $trainingPlanComplete,
             'assistantTasks' => $assistantTasks,
             'squadAlerts' => $squadAlerts,
+            'squadPulse' => $squadPulse,
+            'managerDecisions' => $managerDecisions,
         ]);
+    }
+
+    private function conversationTopicLabel(string $topic): string
+    {
+        return match ($topic) {
+            'role' => 'Rolle',
+            'playtime' => 'Spielzeit',
+            'load' => 'Belastung',
+            'morale' => 'Stimmung',
+            default => $topic,
+        };
+    }
+
+    private function decisionEvaluation($player, string $kind, ?string $promiseStatus = null): array
+    {
+        if (!$player) {
+            return ['label' => 'Neutral', 'accent' => 'slate'];
+        }
+
+        return match ($kind) {
+            'promise' => match ($promiseStatus) {
+                'fulfilled' => ['label' => 'Hat geholfen', 'accent' => 'emerald'],
+                'broken' => ['label' => 'Hat verschaerft', 'accent' => 'rose'],
+                default => ['label' => 'Noch offen', 'accent' => 'amber'],
+            },
+            'role_override' => $player->happiness >= 55 && $player->expected_playtime <= 100
+                ? ['label' => 'Hat geholfen', 'accent' => 'emerald']
+                : ($player->happiness < 45 ? ['label' => 'Hat verschaerft', 'accent' => 'rose'] : ['label' => 'Neutral', 'accent' => 'slate']),
+            default => $player->happiness >= 60
+                ? ['label' => 'Hat geholfen', 'accent' => 'emerald']
+                : ($player->happiness < 45 ? ['label' => 'Hat verschaerft', 'accent' => 'rose'] : ['label' => 'Neutral', 'accent' => 'slate']),
+        };
     }
 }

@@ -47,6 +47,8 @@ class Player extends Model
         'leadership_level',
         'team_status',
         'expected_playtime',
+        'role_override_active',
+        'role_override_set_at',
         'happiness',
         'happiness_trend',
         'fatigue',
@@ -77,6 +79,8 @@ class Player extends Model
             'last_training_at' => 'datetime',
             'injury_matches_remaining' => 'integer',
             'expected_playtime' => 'integer',
+            'role_override_active' => 'boolean',
+            'role_override_set_at' => 'datetime',
             'happiness' => 'integer',
             'happiness_trend' => 'integer',
             'fatigue' => 'integer',
@@ -176,6 +180,21 @@ class Player extends Model
     public function recoveryLogs(): HasMany
     {
         return $this->hasMany(PlayerRecoveryLog::class);
+    }
+
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(PlayerConversation::class);
+    }
+
+    public function scoutingReports(): HasMany
+    {
+        return $this->hasMany(ScoutingReport::class);
+    }
+
+    public function scoutingWatchlists(): HasMany
+    {
+        return $this->hasMany(ScoutingWatchlist::class);
     }
 
     public function getFullNameAttribute(): string

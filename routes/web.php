@@ -18,6 +18,8 @@ use App\Http\Controllers\MatchCenterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MedicalController;
+use App\Http\Controllers\ScoutingController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
@@ -52,6 +54,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/players/hierarchy', [PlayerController::class, 'hierarchy'])->name('squad-hierarchy.index');
             Route::resource('players', PlayerController::class)->only(['index', 'show', 'update']);
             Route::post('/players/{player}/playtime-promise', [PlayerController::class, 'storePlaytimePromise'])->name('players.playtime-promise.store');
+            Route::post('/players/{player}/conversation', [PlayerController::class, 'storeConversation'])->name('players.conversations.store');
+            Route::post('/players/{player}/hierarchy-role', [PlayerController::class, 'updateHierarchyRole'])->name('players.hierarchy-role.update');
+            Route::post('/players/{player}/quick-promise', [PlayerController::class, 'storeQuickPromise'])->name('players.quick-promise.store');
             Route::resource('lineups', LineupsController::class);
             Route::post('/lineups/{lineup}/activate', [LineupsController::class, 'activate'])->name('lineups.activate');
             Route::get('/matches', [LeagueController::class, 'matches'])->name('league.matches');
@@ -84,6 +89,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/training', [TrainingController::class, 'index'])->name('training.index');
             Route::post('/training', [TrainingController::class, 'store'])->name('training.store');
             Route::post('/training/{session}/apply', [TrainingController::class, 'apply'])->name('training.apply');
+            Route::get('/medical', [MedicalController::class, 'index'])->name('medical.index');
+            Route::post('/medical/{player}/plan', [MedicalController::class, 'updatePlan'])->name('medical.plan.update');
             Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
@@ -92,6 +99,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');
             Route::get('/teams/compare', [App\Http\Controllers\TeamComparisonController::class, 'index'])->name('teams.compare');
             Route::get('/statistics', [App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
+            Route::get('/scouting', [ScoutingController::class, 'index'])->name('scouting.index');
+            Route::post('/scouting/{player}/watchlist', [ScoutingController::class, 'storeWatchlist'])->name('scouting.watchlist.store');
+            Route::delete('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'destroyWatchlist'])->name('scouting.watchlist.destroy');
+            Route::post('/scouting/{player}/report', [ScoutingController::class, 'generateReport'])->name('scouting.report.generate');
         }
     );
 });

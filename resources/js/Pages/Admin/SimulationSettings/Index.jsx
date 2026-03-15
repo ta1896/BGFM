@@ -72,6 +72,9 @@ export default function Index({ simulationSettings: s }) {
             lineup: {
                 max_bench_players: s?.lineup?.max_bench_players ?? 5,
             },
+            features: {
+                player_conversations_enabled: s?.features?.player_conversations_enabled ?? false,
+            },
             observers: {
                 match_finished: {
                     enabled:                              s?.observers?.match_finished?.enabled                              ?? true,
@@ -110,6 +113,7 @@ export default function Index({ simulationSettings: s }) {
     const sc = data.simulation.scheduler;
     const pf = data.simulation.position_fit;
     const lc = data.simulation.live_changes.planned_substitutions;
+    const ft = data.simulation.features;
     const ob = data.simulation.observers.match_finished;
 
     return (
@@ -250,6 +254,20 @@ export default function Index({ simulationSettings: s }) {
                             />
                             <p className="text-[10px] text-slate-600 mt-2">Größe der Ersatzbank für alle Wettbewerbe (1–10).</p>
                         </div>
+                    </div>
+                </div>
+
+                <div className="sim-card p-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-fuchsia-400 mb-5 flex items-center gap-2">
+                        <Gear size={14} /> Gameplay Features
+                    </h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                        <Toggle
+                            label="Spielergespraeche aktivieren"
+                            desc="Nur wenn aktiv, wirken Gespraeche in Hierarchie, Spielerprofil und Manager-Historie."
+                            checked={ft.player_conversations_enabled}
+                            onChange={() => setNested('simulation.features.player_conversations_enabled', !ft.player_conversations_enabled)}
+                        />
                     </div>
                 </div>
 

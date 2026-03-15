@@ -109,6 +109,10 @@ return [
         'max_bench_players' => 5,
     ],
 
+    'features' => [
+        'player_conversations_enabled' => false,
+    ],
+
     'cup' => [
         'away_goals_rule' => true,
         'two_legged' => [
