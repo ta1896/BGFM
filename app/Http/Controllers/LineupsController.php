@@ -300,6 +300,13 @@ class LineupsController extends Controller
                 'medical_status' => $player->medical_status,
                 'injury_risk' => $playerLoadService->injuryRisk($player),
                 'promise_pressure' => max(0, optional($player->playtimePromises->sortByDesc('id')->first())->expected_minutes_share - optional($player->playtimePromises->sortByDesc('id')->first())->fulfilled_ratio),
+                'selection_warning' => $player->medical_status === 'rehab'
+                    ? 'rehab'
+                    : ($playerLoadService->injuryRisk($player) >= 75
+                        ? 'risk'
+                        : (max(0, optional($player->playtimePromises->sortByDesc('id')->first())->expected_minutes_share - optional($player->playtimePromises->sortByDesc('id')->first())->fulfilled_ratio) >= 20
+                            ? 'promise'
+                            : null)),
                 'photo_url' => $player->photo_url,
             ])->values()->all(),
             'clubMatches' => $clubMatches->map(fn ($match) => [

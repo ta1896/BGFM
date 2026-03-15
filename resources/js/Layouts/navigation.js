@@ -64,6 +64,7 @@ export function getManagerMenuGroups({ hasManagedClub }) {
                 { route: 'league.matches', label: 'Spiele', active: 'league.matches' },
                 { route: 'league.table', label: 'Tabelle', active: 'league.table' },
                 { route: 'statistics.index', label: 'Statistiken', active: 'statistics.*' },
+                { route: 'awards.index', label: 'Awards', active: 'awards.*' },
                 { route: 'teams.compare', label: 'Vergleich', active: 'teams.*' },
                 { route: 'team-of-the-day.index', label: 'Team der Woche', active: 'team-of-the-day.*' },
                 { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*' },

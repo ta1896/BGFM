@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\PlayerConversation;
+use App\Models\ScoutingWatchlist;
 use App\Models\SeasonClubStatistic;
 use App\Models\TrainingSession;
 use App\Services\InjuryManagementService;
@@ -84,6 +85,10 @@ class DashboardController extends Controller
             'pressure_players' => [],
         ];
         $managerDecisions = [];
+        $scoutingDesk = [
+            'watchlist_count' => 0,
+            'priority_targets' => [],
+        ];
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
 
         if ($activeClub) {
@@ -364,6 +369,37 @@ class DashboardController extends Controller
                     ];
                 })->all(),
             ];
+            $watchlistEntries = ScoutingWatchlist::query()
+                ->where('club_id', $activeClub->id)
+                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(1)])
+                ->latest('updated_at')
+                ->get();
+            $scoutingDesk = [
+                'watchlist_count' => $watchlistEntries->count(),
+                'priority_targets' => $watchlistEntries
+                    ->sortByDesc(fn ($entry) => match ($entry->priority) {
+                        'high' => 3,
+                        'medium' => 2,
+                        default => 1,
+                    })
+                    ->take(3)
+                    ->map(function ($entry) {
+                        $report = $entry->reports->first();
+
+                        return [
+                            'id' => $entry->player?->id,
+                            'name' => $entry->player?->full_name,
+                            'photo_url' => $entry->player?->photo_url,
+                            'club_name' => $entry->player?->club?->name,
+                            'priority' => $entry->priority,
+                            'status' => $entry->status,
+                            'confidence' => $report?->confidence,
+                            'overall_band' => $report ? $report->overall_min.'-'.$report->overall_max : null,
+                        ];
+                    })
+                    ->values()
+                    ->all(),
+            ];
             $conversationDecisions = $conversationsEnabled
                 ? PlayerConversation::query()
                     ->where('club_id', $activeClub->id)
@@ -501,6 +537,7 @@ class DashboardController extends Controller
             'assistantTasks' => $assistantTasks,
             'squadAlerts' => $squadAlerts,
             'squadPulse' => $squadPulse,
+            'scoutingDesk' => $scoutingDesk,
             'managerDecisions' => $managerDecisions,
         ]);
     }

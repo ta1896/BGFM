@@ -107,6 +107,22 @@ class ScoutingController extends Controller
         return back()->with('status', 'Spieler wurde auf die Watchlist gesetzt.');
     }
 
+    public function updateWatchlist(Request $request, ScoutingWatchlist $watchlist): RedirectResponse
+    {
+        $club = $this->resolveManagedClub($request);
+        abort_unless($club && $watchlist->club_id === $club->id, 403);
+
+        $validated = $request->validate([
+            'priority' => ['required', 'in:low,medium,high'],
+            'status' => ['required', 'in:watching,priority,negotiating'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $watchlist->update($validated);
+
+        return back()->with('status', 'Watchlist-Eintrag aktualisiert.');
+    }
+
     public function destroyWatchlist(Request $request, ScoutingWatchlist $watchlist): RedirectResponse
     {
         $club = $this->resolveManagedClub($request);

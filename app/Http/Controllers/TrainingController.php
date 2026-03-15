@@ -95,6 +95,11 @@ class TrainingController extends Controller
                     'id' => $player->id,
                     'name' => $player->full_name,
                 ])->values()->all(),
+                'medical_summary' => [
+                    'risk_count' => $activeClub->players->filter(fn ($player) => $playerLoadService->injuryRisk($player) >= 60)->count(),
+                    'rehab_count' => $activeClub->players->where('medical_status', 'rehab')->count(),
+                    'monitoring_count' => $activeClub->players->whereIn('medical_status', ['monitoring', 'risk'])->count(),
+                ],
                 'load_rows' => $activeClub->players
                     ->sortByDesc('overall')
                     ->map(fn ($player) => [

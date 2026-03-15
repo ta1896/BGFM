@@ -110,6 +110,42 @@ export default function Index({ club, targets, watchlist }) {
                                     {entry.latest_report && <Tag tone="emerald">{entry.latest_report.confidence}% sicher</Tag>}
                                 </div>
 
+                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                    <QuickSelect
+                                        label="Prioritaet"
+                                        value={entry.priority}
+                                        options={['low', 'medium', 'high']}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
+                                            priority: value,
+                                            status: entry.status,
+                                            notes: entry.notes || '',
+                                        }, { preserveScroll: true })}
+                                    />
+                                    <QuickSelect
+                                        label="Status"
+                                        value={entry.status}
+                                        options={['watching', 'priority', 'negotiating']}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
+                                            priority: entry.priority,
+                                            status: value,
+                                            notes: entry.notes || '',
+                                        }, { preserveScroll: true })}
+                                    />
+                                    <div>
+                                        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Notiz</div>
+                                        <input
+                                            defaultValue={entry.notes || ''}
+                                            onBlur={(event) => router.patch(route('scouting.watchlist.update', entry.id), {
+                                                priority: entry.priority,
+                                                status: entry.status,
+                                                notes: event.target.value,
+                                            }, { preserveScroll: true })}
+                                            className="sim-input w-full"
+                                            placeholder="Scout-Notiz"
+                                        />
+                                    </div>
+                                </div>
+
                                 {entry.latest_report ? (
                                     <div className="mt-4 grid gap-3 md:grid-cols-2">
                                         <ReportBox label="OVR" value={entry.latest_report.overall_band} />
@@ -164,6 +200,19 @@ function ReportBox({ label, value }) {
         <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)]/50 px-4 py-3">
             <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
             <div className="mt-1 text-sm font-black text-white">{value}</div>
+        </div>
+    );
+}
+
+function QuickSelect({ label, value, options, onChange }) {
+    return (
+        <div>
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
+            <select value={value} onChange={(event) => onChange(event.target.value)} className="sim-select w-full">
+                {options.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                ))}
+            </select>
         </div>
     );
 }

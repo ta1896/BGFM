@@ -79,7 +79,7 @@ export default function Dashboard(props) {
         activeClubReadyForNextMatch, opponentReadyForNextMatch,
         clubRank, clubPoints, recentForm, weekDays,
         todayMatchesCount, unreadNotificationsCount,
-        assistantTasks, metrics, squadPulse, managerDecisions
+        assistantTasks, metrics, squadPulse, scoutingDesk, managerDecisions
     } = props;
 
     if (!activeClub) {
@@ -434,6 +434,38 @@ export default function Dashboard(props) {
                                                     <ChatCircleText size={11} weight="fill" />
                                                     {decision.created_at}
                                                     </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
+                            <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Scouting Desk</h3>
+                                    <Link href={route('scouting.index')} className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 hover:text-white">
+                                        {scoutingDesk.watchlist_count} Watchlist
+                                    </Link>
+                                </div>
+                                <div className="space-y-3">
+                                    {scoutingDesk.priority_targets.map((target) => (
+                                        <Link
+                                            key={target.id}
+                                            href={route('scouting.index')}
+                                            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
+                                        >
+                                            <img src={target.photo_url} alt={target.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
+                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
+                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
+                                                    {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
                                                 </div>
                                             </div>
                                         </Link>

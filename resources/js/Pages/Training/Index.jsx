@@ -125,6 +125,16 @@ export default function Training({ sessions, club, prefillDate }) {
                     </PageReveal>
                 )}
 
+                {(club.medical_summary?.risk_count > 0 || club.medical_summary?.rehab_count > 0) && (
+                    <PageReveal delay={95}>
+                        <StatusMessage variant="warning">
+                            {club.medical_summary.rehab_count > 0 ? `${club.medical_summary.rehab_count} Spieler in Reha. ` : ''}
+                            {club.medical_summary.risk_count > 0 ? `${club.medical_summary.risk_count} Spieler mit hohem Verletzungsrisiko. ` : ''}
+                            Belastung und Rueckkehrplaene im Medical Center pruefen.
+                        </StatusMessage>
+                    </PageReveal>
+                )}
+
                 <PageReveal delay={110}>
                     <SectionCard title="Belastungssteuerung" icon={Heartbeat}>
                         <div className="overflow-x-auto">
@@ -164,6 +174,11 @@ export default function Training({ sessions, club, prefillDate }) {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                        <div className="px-6 pb-6 pt-2">
+                            <a href={route('medical.index')} className="text-[10px] font-black uppercase tracking-widest text-cyan-300 hover:text-white">
+                                Zum Medical Center
+                            </a>
                         </div>
                     </SectionCard>
                 </PageReveal>

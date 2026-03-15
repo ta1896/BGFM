@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LineupController as AdminLineupController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\SimulationController as AdminSimulationController;
+use App\Http\Controllers\AwardsController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
@@ -99,8 +100,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');
             Route::get('/teams/compare', [App\Http\Controllers\TeamComparisonController::class, 'index'])->name('teams.compare');
             Route::get('/statistics', [App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
+            Route::get('/awards', [AwardsController::class, 'index'])->name('awards.index');
             Route::get('/scouting', [ScoutingController::class, 'index'])->name('scouting.index');
             Route::post('/scouting/{player}/watchlist', [ScoutingController::class, 'storeWatchlist'])->name('scouting.watchlist.store');
+            Route::patch('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'updateWatchlist'])->name('scouting.watchlist.update');
             Route::delete('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'destroyWatchlist'])->name('scouting.watchlist.destroy');
             Route::post('/scouting/{player}/report', [ScoutingController::class, 'generateReport'])->name('scouting.report.generate');
         }
