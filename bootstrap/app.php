@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\SetActiveClub::class,
+            \App\Http\Middleware\TrackManagerPresence::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 

@@ -15,6 +15,7 @@ use App\Http\Controllers\FreeClubController;
 use App\Http\Controllers\FriendlyMatchController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LineupsController;
+use App\Http\Controllers\ManagerLiveController;
 use App\Http\Controllers\MatchCenterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
@@ -95,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
+            Route::get('/manager-live', [ManagerLiveController::class, 'index'])->name('manager-live.index');
             Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
             Route::get('/team-of-the-day', [TeamOfTheDayController::class, 'index'])->name('team-of-the-day.index');
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');

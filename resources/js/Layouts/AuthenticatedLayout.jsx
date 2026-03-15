@@ -4,13 +4,14 @@ import { CaretDown, Gear, SignOut, List, X, Bell, Users } from '@phosphor-icons/
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import UserAvatar from '@/Components/UserAvatar';
 import AppHeader from '@/Components/layout/AppHeader';
+import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
 import { findActiveMenuLabel, getManagerMenuGroups } from '@/Layouts/navigation';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const { auth, activeClub, userClubs = [], flash } = usePage().props;
+    const { auth, activeClub, userClubs = [], flash, live } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
@@ -123,6 +124,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             </div>
 
                             <div className="flex items-center gap-4">
+                                <LiveMatchesIndicator count={live?.matches_count ?? 0} />
                                 <ThemeSwitcher />
                                 <button className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition">
                                     <Bell size={20} />

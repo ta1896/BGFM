@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Models\ManagerPresence;
 use App\Models\PlayerConversation;
 use App\Models\ScoutingWatchlist;
 use App\Models\SeasonClubStatistic;
@@ -89,6 +90,8 @@ class DashboardController extends Controller
             'watchlist_count' => 0,
             'priority_targets' => [],
         ];
+        $liveMatches = [];
+        $onlineManagers = [];
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
 
         if ($activeClub) {
@@ -269,6 +272,53 @@ class DashboardController extends Controller
             ->gameNotifications()
             ->whereNull('seen_at')
             ->count();
+
+        $liveMatches = GameMatch::query()
+            ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
+            ->where('status', 'live')
+            ->orderByDesc('live_minute')
+            ->limit(6)
+            ->get()
+            ->map(function (GameMatch $match): array {
+                return [
+                    'id' => $match->id,
+                    'live_minute' => (int) ($match->live_minute ?? 0),
+                    'home_score' => (int) ($match->home_score ?? 0),
+                    'away_score' => (int) ($match->away_score ?? 0),
+                    'home_club' => $match->homeClub ? [
+                        'id' => $match->homeClub->id,
+                        'name' => $match->homeClub->name,
+                        'logo_url' => $match->homeClub->logo_url,
+                    ] : null,
+                    'away_club' => $match->awayClub ? [
+                        'id' => $match->awayClub->id,
+                        'name' => $match->awayClub->name,
+                        'logo_url' => $match->awayClub->logo_url,
+                    ] : null,
+                ];
+            })
+            ->all();
+
+        $onlineManagers = ManagerPresence::query()
+            ->with(['user:id,name', 'club:id,name,logo_path'])
+            ->where('last_seen_at', '>=', now()->subMinutes(5))
+            ->whereHas('user', fn ($query) => $query->where('is_admin', false))
+            ->orderByDesc('last_seen_at')
+            ->limit(5)
+            ->get()
+            ->map(function (ManagerPresence $presence): array {
+                return [
+                    'id' => $presence->id,
+                    'manager' => $presence->user?->name,
+                    'club' => $presence->club ? [
+                        'name' => $presence->club->name,
+                        'logo_url' => $presence->club->logo_url,
+                    ] : null,
+                    'activity_label' => $presence->activity_label,
+                    'last_seen_label' => $presence->last_seen_at?->diffForHumans(),
+                ];
+            })
+            ->all();
 
         if ($activeClub) {
             if (!$activeLineup) {
@@ -539,6 +589,8 @@ class DashboardController extends Controller
             'squadPulse' => $squadPulse,
             'scoutingDesk' => $scoutingDesk,
             'managerDecisions' => $managerDecisions,
+            'liveMatches' => $liveMatches,
+            'onlineManagers' => $onlineManagers,
         ]);
     }
 

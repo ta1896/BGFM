@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\GameMatch;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Club;
@@ -58,6 +59,9 @@ class HandleInertiaRequests extends Middleware
             'userClubs' => fn () => $this->sharedUserClubs($request, $isAdmin),
             'flash' => [
                 'status' => session('status'),
+            ],
+            'live' => [
+                'matches_count' => fn () => $user ? GameMatch::query()->where('status', 'live')->count() : 0,
             ],
             'features' => [
                 'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),

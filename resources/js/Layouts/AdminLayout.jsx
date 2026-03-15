@@ -4,13 +4,14 @@ import { SignOut, List, X, ArrowLeft } from '@phosphor-icons/react';
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import UserAvatar from '@/Components/UserAvatar';
 import AppHeader from '@/Components/layout/AppHeader';
+import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
 import { findActiveMenuLabel, getAdminMenuGroups } from '@/Layouts/navigation';
 
 export default function AdminLayout({ header, children }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, live } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const currentRoute = route().current();
@@ -79,6 +80,7 @@ export default function AdminLayout({ header, children }) {
                             </div>
 
                             <div className="flex items-center gap-4">
+                                <LiveMatchesIndicator count={live?.matches_count ?? 0} />
                                 <ThemeSwitcher />
                                 <button className="lg:hidden p-2 text-[var(--text-muted)]" onClick={() => setSidebarOpen((open) => !open)}>
                                     {sidebarOpen ? <X size={24} /> : <List size={24} />}

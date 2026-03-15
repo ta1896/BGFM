@@ -5,7 +5,7 @@ import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import { 
     Calendar, Trophy, Users, ChartBar, TrendUp, 
     ArrowRight, Bell, WarningCircle, Info, Bank,
-    Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText
+    Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, PlayCircle
 } from '@phosphor-icons/react';
 import Skeleton from '@/Components/Skeleton';
 
@@ -79,7 +79,7 @@ export default function Dashboard(props) {
         activeClubReadyForNextMatch, opponentReadyForNextMatch,
         clubRank, clubPoints, recentForm, weekDays,
         todayMatchesCount, unreadNotificationsCount,
-        assistantTasks, metrics, squadPulse, scoutingDesk, managerDecisions
+        assistantTasks, metrics, squadPulse, scoutingDesk, managerDecisions, liveMatches, onlineManagers
     } = props;
 
     if (!activeClub) {
@@ -441,6 +441,79 @@ export default function Dashboard(props) {
                                 </div>
                             </section>
                         )}
+
+                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Live Matches</h3>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">
+                                    <Broadcast size={12} weight="fill" />
+                                    {liveMatches?.length || 0} aktiv
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                {liveMatches && liveMatches.length > 0 ? liveMatches.map((match) => (
+                                    <Link
+                                        key={match.id}
+                                        href={route('matches.show', match.id)}
+                                        className="block rounded-2xl border border-emerald-400/15 bg-emerald-400/5 px-4 py-3 transition-colors hover:border-emerald-300/30"
+                                    >
+                                        <div className="mb-2 flex items-center justify-between gap-3">
+                                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-200">
+                                                <PlayCircle size={10} weight="fill" />
+                                                {match.live_minute}'
+                                            </span>
+                                            <span className="text-xs font-black uppercase tracking-[0.14em] text-white">{match.home_score}:{match.away_score}</span>
+                                        </div>
+                                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{match.home_club?.name}</div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200">vs</div>
+                                            <div className="truncate text-right text-[11px] font-black uppercase tracking-[0.06em] text-white">{match.away_club?.name}</div>
+                                        </div>
+                                    </Link>
+                                )) : (
+                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                                        Derzeit laeuft kein Match live.
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
+                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Manager Online</h3>
+                                <Link href={route('manager-live.index')} className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 hover:text-white">
+                                    Alle ansehen
+                                </Link>
+                            </div>
+                            <div className="space-y-3">
+                                {onlineManagers && onlineManagers.length > 0 ? onlineManagers.map((manager) => (
+                                    <Link
+                                        key={manager.id}
+                                        href={route('manager-live.index')}
+                                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
+                                    >
+                                        {manager.club?.logo_url ? (
+                                            <img src={manager.club.logo_url} alt={manager.club.name} className="h-10 w-10 rounded-xl border border-white/10 object-contain p-1" />
+                                        ) : (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+                                                <UsersThree size={18} className="text-[var(--text-muted)]" />
+                                            </div>
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{manager.manager}</div>
+                                            <div className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{manager.activity_label}</div>
+                                        </div>
+                                        <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">
+                                            {manager.last_seen_label}
+                                        </div>
+                                    </Link>
+                                )) : (
+                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                                        Aktuell ist kein Manager online.
+                                    </div>
+                                )}
+                            </div>
+                        </section>
 
                         {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
                             <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
