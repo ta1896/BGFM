@@ -81,7 +81,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
         <AuthenticatedLayout>
             <Head title="Kaderhierarchie" />
 
-            <div className="mx-auto max-w-[1680px] space-y-10">
+            <div className="mx-auto max-w-[1680px] space-y-6">
                 <PageHeader
                     eyebrow="Squad Dynamics"
                     title="Kaderhierarchie"
@@ -90,7 +90,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                             <select
                                 value={activeClub?.id ?? ''}
                                 onChange={(event) => router.get(route('squad-hierarchy.index'), { club: event.target.value })}
-                                className="sim-select min-w-[220px] py-3 text-xs font-black uppercase tracking-[0.18em]"
+                                className="sim-select min-w-[220px] py-2.5 text-[11px] font-black uppercase tracking-[0.16em]"
                             >
                                 {clubs.map((club) => (
                                     <option key={club.id} value={club.id}>
@@ -100,7 +100,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                             </select>
                             <Link
                                 href={route('players.index')}
-                                className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-white"
+                                className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)] transition-colors hover:text-white"
                             >
                                 Zur Kaderliste
                             </Link>
@@ -108,17 +108,17 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                     }
                 />
 
-                <div className="space-y-6">
-                    <PageReveal className="space-y-5">
-                        <div className="grid gap-4 md:grid-cols-4">
+                <div className="space-y-4">
+                    <PageReveal className="space-y-4">
+                        <div className="grid gap-3 md:grid-cols-4">
                             <SummaryCard icon={Smiley} label="Zufrieden" value={summary.satisfied_count} tone="emerald" />
                             <SummaryCard icon={WarningCircle} label="Unruhig" value={summary.unsettled_count} tone="rose" />
                             <SummaryCard icon={ShieldCheck} label="Rolle passt" value={summary.fair_role_count} tone="cyan" />
                             <SummaryCard icon={TrendUp} label="Kritisch" value={summary.critical_role_count} tone="amber" />
                         </div>
 
-                        <div className="sim-card border-[var(--border-pillar)] bg-[var(--bg-content)]/80 p-4">
-                            <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                        <div className="sim-card border-[var(--border-pillar)] bg-[var(--bg-content)]/80 p-3.5">
+                            <div className="mb-2.5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                                 <Funnel size={14} weight="bold" />
                                 Fokusfilter
                             </div>
@@ -133,7 +133,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                                         key={value}
                                         type="button"
                                         onClick={() => setActiveFilter(value)}
-                                        className={`rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
+                                        className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-colors ${
                                             activeFilter === value
                                                 ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
                                                 : 'border-white/10 bg-white/[0.03] text-[var(--text-muted)] hover:text-white'
@@ -145,49 +145,49 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                             </div>
                         </div>
 
-                        <div className="sim-card overflow-hidden border-[var(--border-pillar)] bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_34%),linear-gradient(180deg,rgba(12,18,34,0.95),rgba(7,12,26,0.96))] p-6">
-                            <div className="mb-6 flex items-center justify-between gap-4">
+                        <div className="sim-card overflow-hidden border-[var(--border-pillar)] bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_34%),linear-gradient(180deg,rgba(12,18,34,0.95),rgba(7,12,26,0.96))] p-4">
+                            <div className="mb-4 flex items-center justify-between gap-4">
                                 <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">Pyramide</div>
-                                    <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Kabinenordnung & Rollendruck</h2>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Pyramide</div>
+                                    <h2 className="text-xl font-black uppercase italic tracking-tight text-white">Kabinenordnung & Rollendruck</h2>
                                 </div>
                                 {activeClub && (
-                                    <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2">
-                                        <img src={activeClub.logo_url} alt={activeClub.name} className="h-10 w-10 object-contain" />
+                                    <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                                        <img src={activeClub.logo_url} alt={activeClub.name} className="h-8 w-8 object-contain" />
                                         <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktiver Verein</div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Aktiver Verein</div>
                                             <div className="text-sm font-black uppercase tracking-[0.08em] text-white">{activeClub.name}</div>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {filteredLevels.map((level, index) => {
                                     const style = levelStyles[level.key] ?? levelStyles.fringe;
 
                                     return (
                                         <div key={level.key} className="flex justify-center">
                                             <section
-                                                className={`w-full ${style.width} rounded-[28px] border bg-gradient-to-b ${style.tone} ${style.border} ${style.glow} px-5 py-5`}
+                                                className={`w-full ${style.width} rounded-[26px] border bg-gradient-to-b ${style.tone} ${style.border} ${style.glow} px-4 py-4`}
                                             >
-                                                <div className="mb-4 flex items-center justify-between gap-4">
+                                                <div className="mb-3 flex items-center justify-between gap-4">
                                                     <div>
-                                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                                                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                                                             Ebene {index + 1}
                                                         </div>
-                                                        <div className="text-lg font-black uppercase tracking-tight text-white">{level.label}</div>
+                                                        <div className="text-base font-black uppercase tracking-tight text-white">{level.label}</div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">Spieler</div>
-                                                        <div className="text-2xl font-black text-white">{level.players.length}</div>
+                                                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Spieler</div>
+                                                        <div className="text-xl font-black text-white">{level.players.length}</div>
                                                     </div>
                                                 </div>
 
-                                                <p className="mb-4 max-w-2xl text-sm font-medium leading-relaxed text-slate-300">{level.description}</p>
+                                                <p className="mb-3 max-w-2xl text-[13px] font-medium leading-relaxed text-slate-300">{level.description}</p>
 
                                                 {level.players.length ? (
-                                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                                                         {level.players.map((player) => (
                                                             <button
                                                                 key={player.id}
@@ -197,7 +197,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                                                                 onMouseLeave={() => setTooltip(null)}
                                                                 onFocus={(event) => updateTooltip(setTooltip, player, event)}
                                                                 onBlur={() => setTooltip(null)}
-                                                                className={`min-w-0 rounded-2xl border p-3 text-left transition-all ${
+                                                                className={`min-w-0 rounded-2xl border p-2.5 text-left transition-all ${
                                                                     tooltip?.player?.id === player.id
                                                                         ? 'border-[var(--accent-primary)] bg-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
                                                                         : 'border-white/8 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
@@ -208,25 +208,25 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                                                                         <img
                                                                             src={player.photo_url}
                                                                             alt={player.full_name}
-                                                                            className="h-14 w-14 rounded-2xl border border-white/10 object-cover"
+                                                                            className="h-12 w-12 rounded-xl border border-white/10 object-cover"
                                                                         />
-                                                                        <div className="absolute -bottom-1 -right-1 flex h-6 min-w-6 items-center justify-center rounded-lg bg-slate-950 px-1 text-[10px] font-black text-amber-300">
+                                                                        <div className="absolute -bottom-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-md bg-slate-950 px-1 text-[9px] font-black text-amber-300">
                                                                             {player.overall}
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="min-w-0 flex-1 overflow-hidden">
-                                                                        <div className="truncate text-sm font-black tracking-[0.03em] text-white">
+                                                                        <div className="truncate text-[13px] font-black tracking-[0.02em] text-white">
                                                                             {player.full_name}
                                                                         </div>
-                                                                        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-black tracking-[0.1em] text-[var(--text-muted)]">
+                                                                        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-black tracking-[0.08em] text-[var(--text-muted)]">
                                                                             <span className="uppercase">{player.position}</span>
                                                                             <span className="text-slate-600">/</span>
-                                                                            <span className="min-w-0 flex-1 text-[9px] uppercase leading-relaxed [overflow-wrap:anywhere]">
+                                                                            <span className="min-w-0 flex-1 uppercase leading-relaxed [overflow-wrap:anywhere]">
                                                                                 {player.squad_role_label}
                                                                             </span>
                                                                         </div>
-                                                                        <div className="mt-3 flex flex-wrap items-start gap-2">
+                                                                        <div className="mt-2 flex flex-wrap items-start gap-1.5">
                                                                             <Tag className={moodStyles[player.mood.status]} compact>
                                                                                 {player.mood.label}
                                                                             </Tag>
@@ -253,7 +253,7 @@ export default function Hierarchy({ clubs, activeClub, hierarchyLevels, summary,
                     </PageReveal>
 
                     <PageReveal delay={90}>
-                        <div className="grid gap-5 xl:grid-cols-3">
+                        <div className="grid gap-3 xl:grid-cols-3">
                             <RadarPanel
                                 title="Kapitaensgruppe"
                                 items={hierarchyInsights.captain_group}
@@ -296,14 +296,14 @@ function SummaryCard({ icon: Icon, label, value, tone }) {
     };
 
     return (
-        <div className="sim-card border-[var(--border-pillar)] bg-[var(--bg-content)]/80 p-4">
-            <div className="mb-3 flex items-center gap-3">
-                <div className={`rounded-xl border p-2 ${toneMap[tone]}`}>
-                    <Icon size={18} weight="duotone" />
+        <div className="sim-card border-[var(--border-pillar)] bg-[var(--bg-content)]/80 p-3.5">
+            <div className="mb-2.5 flex items-center gap-2.5">
+                <div className={`rounded-lg border p-2 ${toneMap[tone]}`}>
+                    <Icon size={16} weight="duotone" />
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</div>
+                <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
             </div>
-            <div className="text-3xl font-black uppercase tracking-tight text-white">{value}</div>
+            <div className="text-[28px] font-black uppercase tracking-tight text-white">{value}</div>
         </div>
     );
 }
@@ -360,8 +360,8 @@ function RadarPanel({ title, items, emptyLabel, tone, setTooltip }) {
     };
 
     return (
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">{title}</div>
+        <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-3.5">
+            <div className="mb-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{title}</div>
             {items?.length ? (
                 <div className="space-y-2">
                     {items.map((player) => (
@@ -375,11 +375,11 @@ function RadarPanel({ title, items, emptyLabel, tone, setTooltip }) {
                             onBlur={() => setTooltip(null)}
                             className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:border-white/20 hover:bg-white/[0.05]"
                         >
-                            <img src={player.photo_url} alt={player.full_name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                            <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
                             <div className="min-w-0 flex-1">
-                                <div className="truncate text-xs font-black uppercase tracking-[0.08em] text-white">{player.full_name}</div>
+                                <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
                                 <div className="mt-1 flex items-center gap-2">
-                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] ${toneMap[tone]}`}>
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] ${toneMap[tone]}`}>
                                         {player.mood?.label ?? player.role_fit?.label ?? player.leadership_label}
                                     </span>
                                 </div>
