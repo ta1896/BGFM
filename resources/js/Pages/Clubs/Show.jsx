@@ -17,8 +17,8 @@ export default function Show({ auth, club, seasons, activeSeason, overallStats, 
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-white/10 rounded-lg p-2.5 flex items-center justify-center">
-                            {club.logo_path ? (
-                                <img src={`/storage/${club.logo_path.replace('public/', '')}`} alt="" className="max-w-full max-h-full object-contain" />
+                            {club.logo_url ? (
+                                <img src={club.logo_url} alt="" className="max-w-full max-h-full object-contain" />
                             ) : (
                                 <Shield size={48} weight="fill" className="text-white/20" />
                             )}

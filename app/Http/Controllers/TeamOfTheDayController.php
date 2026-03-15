@@ -7,8 +7,9 @@ use App\Models\TeamOfTheDay;
 use App\Services\TeamOfTheDayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
 
 class TeamOfTheDayController extends Controller
 {

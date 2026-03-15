@@ -247,7 +247,7 @@ class LineupsController extends Controller
                     ->orWhere('away_club_id', $club->id);
             })
             ->whereIn('status', ['scheduled', 'live'])
-            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path'])
+            ->with(['homeClub', 'awayClub'])
             ->orderBy('kickoff_at')
             ->get()
             ->map(function($m) {

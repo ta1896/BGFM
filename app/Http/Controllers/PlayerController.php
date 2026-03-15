@@ -129,7 +129,7 @@ class PlayerController extends Controller
     public function show(Request $request, Player $player): \Inertia\Response
     {
         $player->load([
-            'club:id,user_id,season_id,name,logo_path',
+            'club',
             'seasonCompetitionStatistics.season:id,name,start_date',
         ]);
 
@@ -138,7 +138,8 @@ class PlayerController extends Controller
         $player->market_value_formatted = number_format($player->market_value, 0, ',', '.') . ' €';
 
         $currentSeasonStats = $player->seasonCompetitionStatistics
-            ->filter(fn($stat) => $stat->season_id === ($player->club->season_id ?? 0))
+            ->sortByDesc(fn($stat) => $stat->season?->start_date ?? '')
+            ->take(1)
             ->values()
             ->map(fn($stat) => $this->mapSeasonStat($stat))
             ->all();
@@ -153,7 +154,7 @@ class PlayerController extends Controller
         // Fetch recent matches
         $recentMatches = \App\Models\MatchPlayerStat::query()
             ->where('player_id', $player->id)
-            ->with(['match.homeClub:id,name,short_name,logo_path', 'match.awayClub:id,name,short_name,logo_path', 'match.competitionSeason.competition'])
+            ->with(['match.homeClub', 'match.awayClub', 'match.competitionSeason.competition'])
             ->whereHas('match', fn($query) => $query->where('status', 'played'))
             ->orderByDesc(
                 \App\Models\GameMatch::select('kickoff_at')

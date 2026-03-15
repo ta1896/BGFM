@@ -472,7 +472,7 @@ Artisan::command(
             if ($match->competition_season_id) {
                 $competitionSeason = \App\Models\CompetitionSeason::query()->find((int) $match->competition_season_id);
                 if ($competitionSeason) {
-                    $service->rebuildLeagueTable($competitionSeason);
+                    $service->rebuild($competitionSeason);
                     $rebuiltLeagueSeasons++;
                 }
             }
@@ -486,14 +486,14 @@ Artisan::command(
                 return 1;
             }
 
-            $service->rebuildLeagueTable($competitionSeason);
+            $service->rebuild($competitionSeason);
             $rebuiltLeagueSeasons++;
         }
 
         if ($all) {
             $seasons = \App\Models\CompetitionSeason::query()->get();
             foreach ($seasons as $season) {
-                $service->rebuildLeagueTable($season);
+                $service->rebuild($season);
             }
             $rebuiltLeagueSeasons += $seasons->count();
 

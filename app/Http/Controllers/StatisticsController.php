@@ -36,7 +36,7 @@ class StatisticsController extends Controller
 
         if ($seasonId) {
             // Get all match IDs for this season
-            $matchIds = DB::table('game_matches')
+            $matchIds = DB::table('matches')
                 ->where('competition_season_id', $seasonId)
                 ->where('status', 'played')
                 ->pluck('id');

@@ -11,7 +11,6 @@ use App\Services\LeagueTableService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
 
 class LeagueController extends Controller
 {
@@ -91,16 +90,46 @@ class LeagueController extends Controller
             ->when($dateFrom, fn($query) => $query->whereDate('kickoff_at', '>=', $dateFrom))
             ->when($dateTo, fn($query) => $query->whereDate('kickoff_at', '<=', $dateTo))
             ->when($scopeFilter === 'upcoming', fn($query) => $query->where('kickoff_at', '>=', now())->where('status', 'scheduled'))
-            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path', 'competitionSeason.competition', 'stadiumClub:id,name'])
+            ->with(['homeClub', 'awayClub', 'competitionSeason.competition', 'stadiumClub:id,name'])
             ->orderBy('kickoff_at', 'asc');
 
         $hasActiveFilters = $selectedClubId > 0 || $statusFilter !== '' || $scopeFilter !== '' || $typeFilter !== '' || $dayFilter !== null || $dateFrom !== null || $dateTo !== null;
 
-        $rawMatches = $matchesQuery->get()->map(function ($m) {
-            $m->kickoff_formatted = $m->kickoff_at?->format('d.m.Y H:i');
-            $m->kickoff_date = $m->kickoff_at?->format('Y-m-d');
-            $m->kickoff_day_label = $m->kickoff_at?->locale('de')->isoFormat('dddd, D. MMMM');
-            return $m;
+        $rawMatches = $matchesQuery->get()->map(function ($match) {
+            return [
+                'id' => $match->id,
+                'matchday' => $match->matchday,
+                'status' => $match->status,
+                'type' => $match->type,
+                'home_club_id' => $match->home_club_id,
+                'away_club_id' => $match->away_club_id,
+                'home_score' => $match->home_score,
+                'away_score' => $match->away_score,
+                'kickoff_formatted' => $match->kickoff_at?->format('d.m.Y H:i'),
+                'kickoff_date' => $match->kickoff_at?->format('Y-m-d'),
+                'kickoff_day_label' => $match->kickoff_at?->locale('de')->isoFormat('dddd, D. MMMM'),
+                'competition_season' => $match->competitionSeason ? [
+                    'competition' => [
+                        'code' => $match->competitionSeason->competition?->code,
+                        'name' => $match->competitionSeason->competition?->name,
+                    ],
+                ] : null,
+                'stadium_club' => $match->stadiumClub ? [
+                    'name' => $match->stadiumClub->name,
+                ] : null,
+                'home_club' => $match->homeClub ? [
+                    'id' => $match->homeClub->id,
+                    'name' => $match->homeClub->name,
+                    'short_name' => $match->homeClub->short_name,
+                    'logo_url' => $match->homeClub->logo_url,
+                ] : null,
+                'away_club' => $match->awayClub ? [
+                    'id' => $match->awayClub->id,
+                    'name' => $match->awayClub->name,
+                    'short_name' => $match->awayClub->short_name,
+                    'logo_url' => $match->awayClub->logo_url,
+                ] : null,
+            ];
         });
 
         if ($competitionSeason && !$hasActiveFilters && !$typeFilter) {
@@ -120,7 +149,11 @@ class LeagueController extends Controller
             'groupType' => $groupType,
             'ownedClubIds' => $ownedClubIds->values(),
             'clubFilterOptions' => $clubFilterOptions,
-            'activeClub' => $activeClub,
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'logo_url' => $activeClub->logo_url,
+            ] : null,
             'filters' => [
                 'competition_season' => $request->query('competition_season'),
                 'club' => $selectedClubId > 0 ? $selectedClubId : null,

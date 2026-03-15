@@ -6,7 +6,8 @@
         "build": "vite build",
         "dev": "vite",
         "test": "vitest",
-        "test:run": "vitest run"
+        "test:run": "vitest run",
+        "test:backend": "powershell -ExecutionPolicy Bypass -File scripts/test-backend.ps1"
     },
     "devDependencies": {
         "@rollup/rollup-win32-x64-msvc": "^4.59.0",

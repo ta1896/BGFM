@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\GameNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class NotificationController extends Controller
 {

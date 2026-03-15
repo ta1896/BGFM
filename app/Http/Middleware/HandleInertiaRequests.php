@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Club;
+use Illuminate\Support\Collection;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -81,7 +82,7 @@ class HandleInertiaRequests extends Middleware
             ->all();
     }
 
-    private function resolveUserClubs(Request $request, bool $isAdmin)
+    private function resolveUserClubs(Request $request, bool $isAdmin): Collection
     {
         $user = $request->user();
 
@@ -93,13 +94,13 @@ class HandleInertiaRequests extends Middleware
             return Club::query()
                 ->where('is_cpu', false)
                 ->orderBy('name')
-                ->get(['id', 'name', 'logo_path']);
+                ->get();
         }
 
         return $user->clubs()
             ->where('is_cpu', false)
             ->orderBy('name')
-            ->get(['id', 'name', 'logo_path']);
+            ->get();
     }
 
     private function formatClubForShare(Club $club): array

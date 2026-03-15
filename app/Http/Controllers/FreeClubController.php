@@ -24,7 +24,7 @@ class FreeClubController extends Controller
                     'id' => $club->id,
                     'name' => $club->name,
                     'short_name' => $club->short_name,
-                    'logo_url' => $club->logo_path ? asset('storage/' . str_replace('public/', '', $club->logo_path)) : null,
+                    'logo_url' => $club->logo_url,
                     'country' => $club->country,
                     'league' => $club->league,
                     'reputation' => $club->reputation,
@@ -71,4 +71,3 @@ class FreeClubController extends Controller
             ->with('status', 'Verein uebernommen: '.$club->name);
     }
 }
-

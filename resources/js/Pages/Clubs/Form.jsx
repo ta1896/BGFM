@@ -100,7 +100,7 @@ export default function Form({ club, rolePlayers = [] }) {
                                     <div className="group relative">
                                         <input type="file" onChange={(event) => setData('logo', event.target.files[0])} className="absolute inset-0 z-10 cursor-pointer opacity-0" accept="image/*" />
                                         <div className="flex items-center gap-4 rounded-xl border-2 border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-4 transition-all group-hover:border-[var(--accent-primary)]/50">
-                                            {isEdit && club.logo_path && !data.logo && (
+                                            {isEdit && club.logo_url && !data.logo && (
                                                 <img src={club.logo_url} className="h-10 w-10 rounded-lg bg-[var(--sim-shell-bg)] p-1 object-contain" alt="Logo" />
                                             )}
                                             {data.logo && (

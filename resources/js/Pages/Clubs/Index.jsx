@@ -41,8 +41,8 @@ export default function Index({ auth, clubs }) {
                                     <div className="p-6 flex-1">
                                         <div className="flex justify-between items-start mb-6">
                                             <div className="w-16 h-16 bg-[var(--bg-content)] rounded-lg border border-[var(--border-pillar)] flex items-center justify-center overflow-hidden">
-                                                {club.logo_path ? (
-                                                    <img src={`/storage/${club.logo_path.replace('public/', '')}`} alt="" className="max-w-full max-h-full object-contain" />
+                                                {club.logo_url ? (
+                                                    <img src={club.logo_url} alt="" className="max-w-full max-h-full object-contain" />
                                                 ) : (
                                                     <Shield size={32} weight="fill" className="text-slate-700" />
                                                 )}
