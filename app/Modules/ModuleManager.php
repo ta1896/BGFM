@@ -32,7 +32,7 @@ class ModuleManager
             return;
         }
 
-        foreach ($this->enabledModules() as $module) {
+        foreach ($this->enabledModules(false) as $module) {
             foreach ($module['providers'] as $providerClass) {
                 if (is_string($providerClass) && class_exists($providerClass)) {
                     $app->register($providerClass);
@@ -88,6 +88,60 @@ class ModuleManager
         ];
     }
 
+    public function adminRegistry(): array
+    {
+        $stateMap = $this->moduleStateMap();
+
+        return $this->discoveredModules()
+            ->map(function (array $module) use ($stateMap): array {
+                $databaseEnabled = array_key_exists($module['key'], $stateMap) ? (bool) $stateMap[$module['key']] : null;
+                $effectiveEnabled = $databaseEnabled ?? (bool) $module['enabled_by_default'];
+
+                return [
+                    'key' => $module['key'],
+                    'name' => $module['name'],
+                    'version' => $module['version'],
+                    'description' => $module['description'],
+                    'enabled' => $effectiveEnabled,
+                    'enabled_by_default' => (bool) $module['enabled_by_default'],
+                    'source' => $databaseEnabled === null ? 'manifest' : 'database',
+                    'has_routes' => (bool) ($module['route_path'] && $this->files->exists($module['route_path'])),
+                    'has_migrations' => (bool) ($module['migration_path'] && $this->files->isDirectory($module['migration_path'])),
+                    'provider_count' => count($module['providers']),
+                    'manager_navigation_groups' => count($module['frontend']['manager_navigation'] ?? []),
+                    'admin_navigation_groups' => count($module['frontend']['admin_navigation'] ?? []),
+                    'dashboard_widget_count' => count($module['frontend']['dashboard_widgets'] ?? []),
+                    'module_path' => $module['module_path'],
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    public function setEnabled(string $key, bool $enabled): void
+    {
+        if (!$this->hasModuleTable()) {
+            return;
+        }
+
+        $module = $this->discoveredModules()->firstWhere('key', $key);
+
+        if (!$module) {
+            return;
+        }
+
+        SystemModule::query()->updateOrCreate(
+            ['key' => $module['key']],
+            [
+                'name' => $module['name'],
+                'version' => $module['version'],
+                'description' => $module['description'],
+                'enabled' => $enabled,
+                'module_path' => $module['module_path'],
+            ]
+        );
+    }
+
     public function discoveredModules(): Collection
     {
         if ($this->discovered !== null) {
@@ -131,9 +185,9 @@ class ModuleManager
         return $this->discovered = $modules->sortBy('name')->values();
     }
 
-    public function enabledModules(): Collection
+    public function enabledModules(bool $useDatabaseState = true): Collection
     {
-        $stateMap = $this->moduleStateMap();
+        $stateMap = $useDatabaseState ? $this->moduleStateMap() : [];
 
         return $this->discoveredModules()
             ->filter(function (array $module) use ($stateMap): bool {

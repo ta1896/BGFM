@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ClubController as AdminClubController;
 use App\Http\Controllers\Admin\CompetitionController as AdminCompetitionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LineupController as AdminLineupController;
+use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\SimulationController as AdminSimulationController;
 use App\Http\Controllers\AwardsController;
@@ -121,6 +122,8 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/modules', [AdminModuleController::class, 'index'])->name('modules.index');
+        Route::patch('/modules/{module}', [AdminModuleController::class, 'update'])->name('modules.update');
         Route::resource('competitions', AdminCompetitionController::class);
         Route::post('/competitions/{competition}/add-season', [AdminCompetitionController::class, 'addSeason'])->name('competitions.add-season');
         Route::resource('seasons', \App\Http\Controllers\Admin\SeasonController::class);

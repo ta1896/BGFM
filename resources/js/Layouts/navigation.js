@@ -96,6 +96,7 @@ export function getAdminMenuGroups() {
             label: 'System',
             items: [
                 { route: 'admin.dashboard', label: 'ACP Uebersicht', active: 'admin.dashboard' },
+                { route: 'admin.modules.index', label: 'Module', active: 'admin.modules.*' },
             ],
         },
         bg_data: {
