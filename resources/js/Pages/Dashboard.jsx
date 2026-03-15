@@ -3,11 +3,28 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import { 
-    Calendar, Trophy, Users, ChartBar, TrendUp, 
-    ArrowRight, Bell, WarningCircle, Info, Bank,
-    Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, PlayCircle
+    Calendar, Trophy, Users, ChartBar,
+    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning
 } from '@phosphor-icons/react';
-import Skeleton from '@/Components/Skeleton';
+
+const taskTone = {
+    warning: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
+    info: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200',
+};
+
+const taskPriorityTone = {
+    sofort: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
+    heute: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
+    beobachten: 'border-slate-400/20 bg-slate-400/10 text-slate-200',
+};
+
+const accentTone = {
+    emerald: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+    amber: 'border-amber-400/20 bg-amber-400/10 text-amber-200',
+    rose: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
+    cyan: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200',
+    slate: 'border-slate-400/20 bg-slate-400/10 text-slate-200',
+};
 
 const StatCard = ({ label, value, subValue, icon: Icon, color = 'amber' }) => (
     <div className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 relative overflow-hidden group hover:border-[var(--accent-primary)]/30 transition-all shadow-xl">
@@ -140,7 +157,8 @@ export default function Dashboard(props) {
         activeClubReadyForNextMatch, opponentReadyForNextMatch,
         clubRank, clubPoints, recentForm, weekDays,
         todayMatchesCount, unreadNotificationsCount,
-        assistantTasks, metrics, squadPulse, scoutingDesk, managerDecisions, liveMatches, onlineManagers
+        dashboardVariant, assistantTasks, todayFocus, clubPulseOverview, comparisonStats, quickActions,
+        squadPulse, scoutingDesk, managerDecisions, liveMatches, onlineManagers
     } = props;
 
     if (!activeClub) {
@@ -193,12 +211,8 @@ export default function Dashboard(props) {
                         />
                     ) : (
                         <div className="bg-[var(--bg-pillar)]/40 backdrop-blur-md rounded-2xl border border-[var(--border-muted)] p-6 shadow-xl h-[104px]">
-                            <div className="flex items-center gap-4">
-                                <Skeleton variant="rect" className="h-12 w-12 rounded-xl" />
-                                <div className="space-y-2">
-                                    <Skeleton variant="text" className="w-20" />
-                                    <Skeleton variant="text" className="w-24 h-6" />
-                                </div>
+                            <div className="flex h-full items-center">
+                                <p className="text-sm font-bold text-[var(--text-muted)]">Ligadaten werden geladen</p>
                             </div>
                         </div>
                     )}
@@ -224,9 +238,8 @@ export default function Dashboard(props) {
                     {/* Left Column (Main Info) */}
                     <PageReveal className="lg:col-span-8 space-y-8" delay={90}>
                         
-                        {/* Weekly Overview */}
                         <section>
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Weekly Overview</h3>
                                  <div className="flex gap-4">
                                      <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-gray-500">
@@ -245,37 +258,57 @@ export default function Dashboard(props) {
                         </section>
 
                         {/* Next Match Card */}
-                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-8 shadow-2xl relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+                        <section className="relative overflow-hidden rounded-3xl border border-amber-400/15 bg-[linear-gradient(145deg,rgba(26,21,13,0.96),rgba(12,18,31,0.98))] p-6 shadow-[0_30px_60px_-35px_rgba(217,177,92,0.4)]">
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,177,92,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_30%)]" />
                             
-                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-500 mb-8">Next Fixture</h3>
+                            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">Next Fixture</h3>
+                                    <div className="mt-2 text-2xl font-black tracking-tight text-white">{nextMatchTypeLabel || 'Matchday'}</div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {['modern', 'compact', 'classic'].map((variant) => (
+                                        <Link
+                                            key={variant}
+                                            href={`${route('dashboard')}?variant=${variant}`}
+                                            className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${
+                                                dashboardVariant === variant
+                                                    ? 'border-amber-300/25 bg-amber-300/12 text-amber-100'
+                                                    : 'border-white/10 bg-white/[0.03] text-[var(--text-muted)] hover:border-white/20 hover:text-white'
+                                            }`}
+                                        >
+                                            {variant}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
                             
                             {nextMatch ? (
-                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-12 relative z-10">                                     <div className="text-center group">
-                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-4 transition group-hover:border-amber-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
+                                <div className="relative z-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto_1fr] lg:items-center">                                     <div className="text-center group">
+                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-white/10 bg-black/20 p-4 transition group-hover:border-amber-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.home_club.logo_url} alt={nextMatch.home_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-[var(--text-main)] mb-1 uppercase tracking-tight italic">{nextMatch.home_club.name}</p>
-                                         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Host</span>
+                                         <p className="mb-1 text-xl font-bold uppercase tracking-tight text-[var(--text-main)]">{nextMatch.home_club.name}</p>
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-amber-100/60">Host</span>
                                     </div>
 
-                                    <div className="text-center flex flex-col items-center gap-4">
-                                         <div className="px-4 py-1.5 rounded-full bg-[var(--bg-content)] border border-[var(--border-pillar)]">
-                                             <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em]">{nextMatchTypeLabel}</span>
+                                    <div className="flex flex-col items-center gap-4 text-center">
+                                         <div className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-1.5">
+                                             <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-100">{nextMatch.kickoff_at_formatted}</span>
                                          </div>
-                                         <span className="text-5xl font-black text-slate-800/50 italic italic italic italic">VS</span>
-                                         <div className="text-center">
-                                             <p className="text-sm font-bold text-white mb-1">{nextMatch.kickoff_at_formatted}</p>
-                                             <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase">{nextMatch.stadium_name || 'Neutral Venue'}</p>
+                                         <span className="text-5xl font-black tracking-[0.2em] text-amber-200/30">VS</span>
+                                         <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Austragungsort</p>
+                                             <p className="mt-1 text-sm font-bold text-white">{nextMatch.stadium_name || 'Neutral Venue'}</p>
                                          </div>
                                     </div>
 
                                      <div className="text-center group">
-                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-4 transition group-hover:border-amber-600/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
+                                         <div className="mx-auto mb-4 h-20 w-20 rounded-2xl border border-white/10 bg-black/20 p-4 transition group-hover:border-amber-600/50 group-hover:shadow-[0_0_30px_-10px_rgba(217,177,92,0.4)]">
                                             <img className="h-full w-full object-contain" src={nextMatch.away_club.logo_url} alt={nextMatch.away_club.name} />
                                          </div>
-                                         <p className="text-xl font-bold text-[var(--text-main)] mb-1 uppercase tracking-tight italic">{nextMatch.away_club.name}</p>
-                                         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Guest</span>
+                                         <p className="mb-1 text-xl font-bold uppercase tracking-tight text-[var(--text-main)]">{nextMatch.away_club.name}</p>
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-amber-100/60">Guest</span>
                                     </div>
                                 </div>
                             ) : (
@@ -285,13 +318,13 @@ export default function Dashboard(props) {
                             )}
 
                             {nextMatch && (
-                                <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-                                    <div className="flex gap-4">
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${activeClubReadyForNextMatch ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : 'border-rose-500/20 bg-rose-500/5 text-rose-400'}`}>
+                                <div className="relative z-10 mt-8 flex flex-col justify-between gap-6 xl:flex-row xl:items-center">
+                                    <div className="flex flex-wrap gap-3">
+                                        <div className={`flex items-center gap-2 rounded-full border px-3 py-2 ${activeClubReadyForNextMatch ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/20 bg-rose-500/10 text-rose-300'}`}>
                                             <div className={`h-2 w-2 rounded-full ${activeClubReadyForNextMatch ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                                             <span className="text-[10px] font-bold uppercase">Lineup Ready</span>
                                         </div>
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${opponentReadyForNextMatch ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : 'border-rose-500/20 bg-rose-500/5 text-rose-400'}`}>
+                                        <div className={`flex items-center gap-2 rounded-full border px-3 py-2 ${opponentReadyForNextMatch ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/20 bg-rose-500/10 text-rose-300'}`}>
                                             <div className={`h-2 w-2 rounded-full ${opponentReadyForNextMatch ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                                             <span className="text-[10px] font-bold uppercase">Opponent Ready</span>
                                         </div>
@@ -299,11 +332,187 @@ export default function Dashboard(props) {
                                     
                                     <Link 
                                         href={route('matches.show', nextMatch?.id)} 
-                                        className="sim-btn-primary px-10 py-3 shadow-xl shadow-amber-900/10 w-full md:w-auto text-center"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-300/12 px-8 py-3 text-center text-sm font-black uppercase tracking-[0.16em] text-amber-100 transition-colors hover:border-amber-200/35 hover:text-white md:w-auto"
                                     >
                                         Match Center
+                                        <ArrowRight size={14} weight="bold" />
                                     </Link>
                                 </div>
+                            )}
+                        </section>
+
+                        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/40 p-5 shadow-xl">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Club Pulse</div>
+                                        <div className="mt-1 text-lg font-black text-white">Management-Ampeln</div>
+                                    </div>
+                                    <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
+                                        Live
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {clubPulseOverview?.map((item) => (
+                                        <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{item.label}</div>
+                                            <div className="mt-2 flex items-end gap-2">
+                                                <div className="text-2xl font-black text-white">{item.value}</div>
+                                                <div className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.suffix}</div>
+                                            </div>
+                                            <div className={`mt-3 inline-flex rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${accentTone[item.tone] || accentTone.slate}`}>
+                                                {item.tone}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/40 p-5 shadow-xl">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Quick Actions</div>
+                                        <div className="mt-1 text-lg font-black text-white">Direkt springen</div>
+                                    </div>
+                                    <Lightning size={18} className="text-amber-300" weight="fill" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {quickActions?.map((action) => (
+                                        <Link key={action.label} href={action.url} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+                                            <div className={`inline-flex rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${accentTone[action.tone] || accentTone.slate}`}>
+                                                {action.label}
+                                            </div>
+                                            <div className="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">{action.description}</div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        </section>
+
+                        {dashboardVariant !== 'classic' && (
+                            <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                {comparisonStats?.map((item) => (
+                                    <div key={item.label} className="rounded-2xl border border-white/10 bg-[var(--bg-pillar)]/35 p-4 shadow-xl">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.label}</div>
+                                        <div className="mt-2 flex items-end gap-2">
+                                            <div className="text-2xl font-black text-white">{item.display}</div>
+                                            <span className="pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.suffix}</span>
+                                        </div>
+                                        <div className={`mt-3 inline-flex rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${accentTone[item.tone] || accentTone.slate}`}>
+                                            Vergleich
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
+                        )}
+
+                        <section className="rounded-3xl border border-amber-400/15 bg-[linear-gradient(155deg,rgba(29,24,14,0.96),rgba(13,20,33,0.96))] p-6 shadow-[0_25px_50px_-30px_rgba(217,177,92,0.4)]">
+                            <div className="mb-4 flex items-start justify-between gap-4">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/75">Heute im Verein</div>
+                                    <div className="mt-2 text-2xl font-black tracking-tight text-white">Dein Tagesfokus</div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {todayFocus?.map((item, idx) => (
+                                    <Link
+                                        key={`${item.label}-${idx}`}
+                                        href={item.url}
+                                        className="rounded-2xl border border-white/10 bg-black/15 p-4 transition-colors hover:border-white/20"
+                                    >
+                                        <div className="mb-3 flex items-center justify-between gap-3">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.label}</div>
+                                            <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${accentTone[item.tone] || accentTone.slate}`}>
+                                                {item.cta}
+                                            </span>
+                                        </div>
+                                        <div className="text-lg font-black text-white">{item.value}</div>
+                                        <div className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.detail}</div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
+                                <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Scouting Desk</h3>
+                                        <Link href={route('scouting.index')} className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 hover:text-white">
+                                            {scoutingDesk.watchlist_count} Watchlist
+                                        </Link>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {scoutingDesk.priority_targets.map((target) => (
+                                            <Link
+                                                key={target.id}
+                                                href={route('scouting.index')}
+                                                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
+                                            >
+                                                <img src={target.photo_url} alt={target.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
+                                                        {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {squadPulse && (squadPulse.manual_roles_count > 0 || squadPulse.promise_pressure_count > 0) && (
+                                <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Squad Pulse</h3>
+                                    <div className="space-y-4">
+                                        {squadPulse.manual_roles_count > 0 && (
+                                            <div>
+                                                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-200">
+                                                    <FlagPennant size={12} weight="fill" />
+                                                    {squadPulse.manual_roles_count} manuelle Rollen
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {squadPulse.manual_role_players.map((player) => (
+                                                        <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-fuchsia-400/30">
+                                                            <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
+                                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-200">{player.squad_role}</div>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {squadPulse.promise_pressure_count > 0 && (
+                                            <div>
+                                                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">
+                                                    <Handshake size={12} weight="fill" />
+                                                    {squadPulse.promise_pressure_count} Promise-Konflikte
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {squadPulse.pressure_players.map((player) => (
+                                                        <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-amber-400/30">
+                                                            <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
+                                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-200">
+                                                                    {player.promise_status === 'broken' ? 'Gebrochen' : 'Kritisch'} / Mood {player.happiness}%
+                                                                </div>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
                             )}
                         </section>
                     </PageReveal>
@@ -311,40 +520,24 @@ export default function Dashboard(props) {
                     {/* Right Column (Sidebar Widgets) */}
                     <PageReveal className="lg:col-span-4 space-y-8" delay={180}>
                         
-                        {/* Squad Metrics */}
-                        <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl leading-none">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-6 font-mono">Squad Strength</h3>
-                            <div className="space-y-6">
-                                {metrics ? (
-                                    [
-                                        { label: 'Attack', value: metrics?.attack || 0, color: 'amber' },
-                                        { label: 'Midfield', value: metrics?.midfield || 0, color: 'amber' },
-                                        { label: 'Defense', value: metrics?.defense || 0, color: 'amber' },
-                                        { label: 'Chemistry', value: metrics?.chemistry || 0, color: 'amber' },
-                                    ].map((item, id) => (
-                                        <div key={id}>
-                                            <div className="flex justify-between items-end mb-2">
-                                                 <span className="text-sm font-bold text-[var(--text-main)]">{item.label}</span>
-                                                <span className={`text-lg font-black text-${item.color}-400`}>{item.value}</span>
-                                            </div>
-                                            <div className="h-2 w-full bg-[var(--bg-content)] rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full bg-${item.color}-500 shadow-[0_0_10px_rgba(var(--${item.color}-rgb),0.5)] transition-[width] duration-700`}
-                                                    style={{ width: `${item.value}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    [1, 2, 3, 4].map((i) => (
-                                        <div key={i} className="space-y-2">
-                                            <div className="flex justify-between">
-                                                <Skeleton variant="text" className="w-16" />
-                                                <Skeleton variant="text" className="w-8" />
-                                            </div>
-                                            <Skeleton variant="rect" className="h-2 w-full" />
-                                        </div>
-                                    ))
+                        <section className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live Matches</div>
+                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveMatches?.length || 0}</div>
+                                </div>
+                                <Link href={route('live-ticker.index')} className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-white">
+                                    <Broadcast size={12} weight="fill" />
+                                    Live-Ticker
+                                </Link>
+                            </div>
+                            <div className="space-y-3">
+                                {liveMatches && liveMatches.length > 0 ? liveMatches.map((match) => (
+                                    <LiveMatchRow key={match.id} match={match} />
+                                )) : (
+                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                                        Derzeit laeuft kein Match live.
+                                    </div>
                                 )}
                             </div>
                         </section>
@@ -375,74 +568,46 @@ export default function Dashboard(props) {
                         {assistantTasks && assistantTasks.length > 0 && (
                             <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-fuchsia-500/20 p-6 shadow-xl relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-fuchsia-500" />
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-fuchsia-400 mb-4">Suggestions</h3>
-                                <div className="space-y-4">
+                                <div className="mb-4 flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-fuchsia-400">Suggestions</h3>
+                                        <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">Kompakte Spielleitung fuer Matchday, Kader und Postfach.</p>
+                                    </div>
+                                    <div className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-200">
+                                        {assistantTasks.length} offen
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
                                     {assistantTasks.map((task, idx) => (
-                                        <div key={idx} className="bg-[var(--bg-content)]/40 rounded-xl p-4 border border-[var(--border-muted)]">
-                                            <div className="flex items-start gap-3">
-                                                <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.kind === 'warning' ? 'bg-rose-500' : 'bg-amber-500'}`} />
-                                                <div>
-                                                     <p className="text-sm font-bold text-[var(--text-main)] mb-1 text-[var(--text-main)]">{task.label}</p>
-                                                    <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3">{task.description}</p>
-                                                    <Link 
-                                                        href={task.url}
-                                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 hover:text-amber-400 transition-colors inline-flex items-center gap-1"
-                                                    >
-                                                        {task.cta} <ArrowRight size={12} weight="bold" />
-                                                    </Link>
+                                        <div key={idx} className="rounded-2xl border border-[var(--border-muted)] bg-[var(--bg-content)]/40 p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                                                        <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${taskPriorityTone[task.priority] || taskPriorityTone.beobachten}`}>
+                                                            {task.priority || 'beobachten'}
+                                                        </span>
+                                                        <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${taskTone[task.kind] || taskTone.info}`}>
+                                                            {task.domain || 'system'}
+                                                        </span>
+                                                        {task.metric ? (
+                                                            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/80">
+                                                                {task.metric}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                    <p className="text-sm font-bold text-[var(--text-main)]">{task.label}</p>
+                                                    <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{task.description}</p>
                                                 </div>
+                                                <Link 
+                                                    href={task.url}
+                                                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200 transition-colors hover:border-amber-300/35 hover:text-white"
+                                                >
+                                                    {task.cta}
+                                                    <ArrowRight size={12} weight="bold" />
+                                                </Link>
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {squadPulse && (squadPulse.manual_roles_count > 0 || squadPulse.promise_pressure_count > 0) && (
-                            <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Squad Pulse</h3>
-                                <div className="space-y-4">
-                                    {squadPulse.manual_roles_count > 0 && (
-                                        <div>
-                                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-200">
-                                                <FlagPennant size={12} weight="fill" />
-                                                {squadPulse.manual_roles_count} manuelle Rollen
-                                            </div>
-                                            <div className="space-y-2">
-                                                {squadPulse.manual_role_players.map((player) => (
-                                                    <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-fuchsia-400/30">
-                                                        <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
-                                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-200">{player.squad_role}</div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {squadPulse.promise_pressure_count > 0 && (
-                                        <div>
-                                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">
-                                                <Handshake size={12} weight="fill" />
-                                                {squadPulse.promise_pressure_count} Promise-Konflikte
-                                            </div>
-                                            <div className="space-y-2">
-                                                {squadPulse.pressure_players.map((player) => (
-                                                    <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-amber-400/30">
-                                                        <img src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
-                                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-200">
-                                                                {player.promise_status === 'broken' ? 'Gebrochen' : 'Kritisch'} / Mood {player.happiness}%
-                                                            </div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </section>
                         )}
@@ -503,83 +668,28 @@ export default function Dashboard(props) {
                             </section>
                         )}
 
-                        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                            <div className="rounded-3xl border border-cyan-400/12 bg-[linear-gradient(160deg,rgba(10,20,35,0.94),rgba(8,15,28,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(14,165,233,0.35)]">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Online Manager</div>
-                                        <div className="mt-1 text-3xl font-black tracking-tight text-white">{onlineManagers?.length || 0}</div>
-                                    </div>
-                                    <Link href={route('manager-live.index')} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100 transition-colors hover:border-cyan-200/35 hover:text-white">
-                                        <UsersThree size={12} weight="fill" />
-                                        Manager Online
-                                    </Link>
+                        <section className="rounded-3xl border border-cyan-400/12 bg-[linear-gradient(160deg,rgba(10,20,35,0.94),rgba(8,15,28,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(14,165,233,0.35)]">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Online Manager</div>
+                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{onlineManagers?.length || 0}</div>
                                 </div>
-                                <div className="space-y-3">
-                                    {onlineManagers && onlineManagers.length > 0 ? onlineManagers.map((manager) => (
-                                        <ManagerLiveRow key={manager.id} manager={manager} />
-                                    )) : (
-                                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                                            Aktuell ist kein Manager online.
-                                        </div>
-                                    )}
-                                </div>
+                                <Link href={route('manager-live.index')} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100 transition-colors hover:border-cyan-200/35 hover:text-white">
+                                    <UsersThree size={12} weight="fill" />
+                                    Manager Online
+                                </Link>
                             </div>
-
-                            <div className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live Matches</div>
-                                        <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveMatches?.length || 0}</div>
+                            <div className="space-y-3">
+                                {onlineManagers && onlineManagers.length > 0 ? onlineManagers.map((manager) => (
+                                    <ManagerLiveRow key={manager.id} manager={manager} />
+                                )) : (
+                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                                        Aktuell ist kein Manager online.
                                     </div>
-                                    <Link href={route('live-ticker.index')} className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-white">
-                                        <Broadcast size={12} weight="fill" />
-                                        Live-Ticker
-                                    </Link>
-                                </div>
-                                <div className="space-y-3">
-                                    {liveMatches && liveMatches.length > 0 ? liveMatches.map((match) => (
-                                        <LiveMatchRow key={match.id} match={match} />
-                                    )) : (
-                                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                                            Derzeit laeuft kein Match live.
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </section>
 
-                        {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
-                            <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Scouting Desk</h3>
-                                    <Link href={route('scouting.index')} className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 hover:text-white">
-                                        {scoutingDesk.watchlist_count} Watchlist
-                                    </Link>
-                                </div>
-                                <div className="space-y-3">
-                                    {scoutingDesk.priority_targets.map((target) => (
-                                        <Link
-                                            key={target.id}
-                                            href={route('scouting.index')}
-                                            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
-                                        >
-                                            <img src={target.photo_url} alt={target.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
-                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
-                                                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
-                                                    {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
                     </PageReveal>
                 </div>
             </div>

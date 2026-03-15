@@ -90,6 +90,10 @@ class DashboardController extends Controller
             'watchlist_count' => 0,
             'priority_targets' => [],
         ];
+        $todayFocus = [];
+        $clubPulseOverview = [];
+        $comparisonStats = [];
+        $quickActions = [];
         $liveMatches = [];
         $onlineManagers = [];
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
@@ -324,6 +328,9 @@ class DashboardController extends Controller
             if (!$activeLineup) {
                 $assistantTasks[] = [
                     'kind' => 'warning',
+                    'priority' => 'sofort',
+                    'domain' => 'kader',
+                    'metric' => '0 aktiv',
                     'label' => 'Keine aktive Aufstellung',
                     'description' => 'Lege eine aktive Aufstellung fest, damit das Team spielbereit ist.',
                     'url' => route('lineups.index'),
@@ -334,6 +341,9 @@ class DashboardController extends Controller
             if ($nextMatch && !$activeClubReadyForNextMatch) {
                 $assistantTasks[] = [
                     'kind' => 'warning',
+                    'priority' => 'sofort',
+                    'domain' => 'matchday',
+                    'metric' => 'Lineup fehlt',
                     'label' => 'Naechstes Spiel ohne Setup',
                     'description' => 'Fuer die naechste Partie ist noch keine einsatzfaehige Match-Aufstellung hinterlegt.',
                     'url' => route('matches.lineup.edit', ['match' => $nextMatch->id, 'club' => $activeClub->id]),
@@ -342,6 +352,9 @@ class DashboardController extends Controller
             } elseif ($nextMatch) {
                 $assistantTasks[] = [
                     'kind' => 'info',
+                    'priority' => 'heute',
+                    'domain' => 'matchday',
+                    'metric' => $nextMatch->kickoff_at?->format('d.m H:i'),
                     'label' => 'Naechstes Spiel vorbereiten',
                     'description' => 'Pruefe Taktik, Rollen und Bank fuer die anstehende Begegnung.',
                     'url' => route('matches.show', $nextMatch),
@@ -352,6 +365,9 @@ class DashboardController extends Controller
             if (!$trainingPlanComplete) {
                 $assistantTasks[] = [
                     'kind' => 'warning',
+                    'priority' => 'heute',
+                    'domain' => 'training',
+                    'metric' => $trainingGroupACount.'/'.$trainingGroupBCount.' Gruppen',
                     'label' => 'Trainingsplan unvollstaendig',
                     'description' => 'Plane diese Woche mindestens je eine Einheit fuer Gruppe A und Gruppe B.',
                     'url' => route('training.index', ['club' => $activeClub->id, 'range' => 'week']),
@@ -362,6 +378,9 @@ class DashboardController extends Controller
             if ($unreadNotificationsCount > 0) {
                 $assistantTasks[] = [
                     'kind' => 'info',
+                    'priority' => 'beobachten',
+                    'domain' => 'postfach',
+                    'metric' => $unreadNotificationsCount.' offen',
                     'label' => $unreadNotificationsCount . ' ungelesene Hinweise',
                     'description' => 'Match- und Verwaltungsupdates warten in der Inbox.',
                     'url' => route('notifications.index'),
@@ -527,6 +546,9 @@ class DashboardController extends Controller
             if ($unhappyCount > 0) {
                 $assistantTasks[] = [
                     'kind' => 'warning',
+                    'priority' => 'heute',
+                    'domain' => 'kader',
+                    'metric' => $unhappyCount.' Spieler',
                     'label' => $unhappyCount.' unzufriedene Spieler',
                     'description' => 'Rollen, Einsatzzeiten oder Belastung sorgen fuer Unruhe im Kader.',
                     'url' => route('players.index'),
@@ -537,6 +559,9 @@ class DashboardController extends Controller
             if ($promiseCount > 0) {
                 $assistantTasks[] = [
                     'kind' => $brokenPromiseCount > 0 ? 'warning' : 'info',
+                    'priority' => $brokenPromiseCount > 0 ? 'sofort' : 'beobachten',
+                    'domain' => 'versprechen',
+                    'metric' => $brokenPromiseCount > 0 ? $brokenPromiseCount.' gebrochen' : $promiseCount.' aktiv',
                     'label' => $brokenPromiseCount > 0
                         ? $brokenPromiseCount.' gebrochene Versprechen'
                         : $promiseCount.' laufende Spielzeitversprechen',
@@ -547,6 +572,129 @@ class DashboardController extends Controller
                     'cta' => 'Versprechen pruefen',
                 ];
             }
+
+            $formPoints = collect($recentForm)->sum(fn ($result) => match ($result) {
+                'W' => 3,
+                'D' => 1,
+                default => 0,
+            });
+            $trainingCoverage = min(100, (int) round((($trainingGroupACount > 0 ? 1 : 0) + ($trainingGroupBCount > 0 ? 1 : 0)) / 2 * 100));
+            $clubPulseOverview = [
+                [
+                    'label' => 'Stimmung',
+                    'value' => (int) $activeClub->fan_mood,
+                    'suffix' => '%',
+                    'tone' => $activeClub->fan_mood >= 70 ? 'emerald' : ($activeClub->fan_mood >= 45 ? 'amber' : 'rose'),
+                ],
+                [
+                    'label' => 'Belastungsrisiko',
+                    'value' => $riskCount,
+                    'suffix' => ' Spieler',
+                    'tone' => $riskCount === 0 ? 'emerald' : ($riskCount <= 2 ? 'amber' : 'rose'),
+                ],
+                [
+                    'label' => 'Promise-Druck',
+                    'value' => $promiseCount,
+                    'suffix' => ' offen',
+                    'tone' => $brokenPromiseCount > 0 ? 'rose' : ($promiseCount > 0 ? 'amber' : 'emerald'),
+                ],
+                [
+                    'label' => 'Inbox',
+                    'value' => $unreadNotificationsCount,
+                    'suffix' => ' offen',
+                    'tone' => $unreadNotificationsCount > 0 ? 'cyan' : 'slate',
+                ],
+            ];
+            $comparisonStats = [
+                [
+                    'label' => 'Fanmood vs Basis',
+                    'value' => ((int) $activeClub->fan_mood - 50),
+                    'display' => sprintf('%+d', (int) $activeClub->fan_mood - 50),
+                    'suffix' => ' zu neutral',
+                    'tone' => $activeClub->fan_mood >= 50 ? 'emerald' : 'rose',
+                ],
+                [
+                    'label' => 'Form letzte 5',
+                    'value' => $formPoints,
+                    'display' => $formPoints.'/15',
+                    'suffix' => ' Punkte',
+                    'tone' => $formPoints >= 9 ? 'emerald' : ($formPoints >= 5 ? 'amber' : 'rose'),
+                ],
+                [
+                    'label' => 'Trainingsbalance',
+                    'value' => $trainingCoverage,
+                    'display' => $trainingCoverage.'%',
+                    'suffix' => $trainingGroupACount.'/'.$trainingGroupBCount.' aktiv',
+                    'tone' => $trainingPlanComplete ? 'emerald' : 'amber',
+                ],
+                [
+                    'label' => 'Spielbereitschaft',
+                    'value' => $activeClubReadyForNextMatch ? 1 : 0,
+                    'display' => $activeClubReadyForNextMatch ? 'bereit' : 'offen',
+                    'suffix' => $opponentReadyForNextMatch ? ' Gegner bereit' : ' Gegner offen',
+                    'tone' => $activeClubReadyForNextMatch ? 'emerald' : 'rose',
+                ],
+            ];
+            $todayFocus = array_values(array_filter([
+                $nextMatch ? [
+                    'label' => 'Naechstes Spiel',
+                    'value' => $nextMatchTypeLabel,
+                    'detail' => $nextMatch->kickoff_at?->format('d.m H:i'),
+                    'tone' => 'amber',
+                    'url' => route('matches.show', $nextMatch),
+                    'cta' => 'Zum Match',
+                ] : null,
+                [
+                    'label' => 'Pflichtaktion',
+                    'value' => $assistantTasks[0]['label'] ?? 'Keine Eskalation',
+                    'detail' => $assistantTasks[0]['metric'] ?? 'Alles stabil',
+                    'tone' => ($assistantTasks[0]['priority'] ?? null) === 'sofort' ? 'rose' : 'cyan',
+                    'url' => $assistantTasks[0]['url'] ?? route('dashboard'),
+                    'cta' => $assistantTasks[0]['cta'] ?? 'Dashboard',
+                ],
+                [
+                    'label' => 'Live-Betrieb',
+                    'value' => count($liveMatches).' Live',
+                    'detail' => count($onlineManagers).' Manager online',
+                    'tone' => count($liveMatches) > 0 ? 'emerald' : 'slate',
+                    'url' => route('live-ticker.index'),
+                    'cta' => 'Live-Ticker',
+                ],
+                [
+                    'label' => 'Kaderdruck',
+                    'value' => $unhappyCount.' Unruhe',
+                    'detail' => $promiseCount.' Promises / '.$riskCount.' Risiko',
+                    'tone' => ($unhappyCount > 0 || $brokenPromiseCount > 0) ? 'rose' : ($promiseCount > 0 ? 'amber' : 'emerald'),
+                    'url' => route('players.index'),
+                    'cta' => 'Kader',
+                ],
+            ]));
+            $quickActions = [
+                [
+                    'label' => 'Aufstellung',
+                    'description' => 'Lineup und Rollen pruefen',
+                    'url' => route('lineups.index'),
+                    'tone' => 'amber',
+                ],
+                [
+                    'label' => 'Training',
+                    'description' => 'Wochenplan schliessen',
+                    'url' => route('training.index'),
+                    'tone' => 'cyan',
+                ],
+                [
+                    'label' => 'Medical',
+                    'description' => 'Risiken und Reha checken',
+                    'url' => route('medical.index'),
+                    'tone' => 'rose',
+                ],
+                [
+                    'label' => 'Scouting',
+                    'description' => 'Reports und Ziele pflegen',
+                    'url' => route('scouting.index'),
+                    'tone' => 'emerald',
+                ],
+            ];
         }
 
         return \Inertia\Inertia::render('Dashboard', [
@@ -584,7 +732,12 @@ class DashboardController extends Controller
             'trainingGroupACount' => $trainingGroupACount,
             'trainingGroupBCount' => $trainingGroupBCount,
             'trainingPlanComplete' => $trainingPlanComplete,
+            'dashboardVariant' => $dashboardVariant,
             'assistantTasks' => $assistantTasks,
+            'todayFocus' => $todayFocus,
+            'clubPulseOverview' => $clubPulseOverview,
+            'comparisonStats' => $comparisonStats,
+            'quickActions' => $quickActions,
             'squadAlerts' => $squadAlerts,
             'squadPulse' => $squadPulse,
             'scoutingDesk' => $scoutingDesk,
