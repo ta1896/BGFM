@@ -97,6 +97,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
             Route::get('/manager-live', [ManagerLiveController::class, 'index'])->name('manager-live.index');
+            Route::get('/live-ticker', [ManagerLiveController::class, 'ticker'])->name('live-ticker.index');
             Route::get('/finances', [FinanceController::class, 'index'])->name('finances.index');
             Route::get('/team-of-the-day', [TeamOfTheDayController::class, 'index'])->name('team-of-the-day.index');
             Route::post('/team-of-the-day/generate', [TeamOfTheDayController::class, 'generate'])->name('team-of-the-day.generate');

@@ -42,6 +42,7 @@ export function getManagerMenuGroups({ hasManagedClub }) {
             items: [
                 { route: 'dashboard', label: 'Dashboard', active: 'dashboard' },
                 { route: 'manager-live.index', label: 'Manager Live', active: 'manager-live.*' },
+                { route: 'live-ticker.index', label: 'Live-Ticker', active: 'live-ticker.*' },
                 { route: 'notifications.index', label: 'Postfach', active: 'notifications.*' },
                 { route: 'finances.index', label: 'Finanzen', active: 'finances.*' },
                 { route: 'sponsors.index', label: 'Sponsoren', active: 'sponsors.*' },

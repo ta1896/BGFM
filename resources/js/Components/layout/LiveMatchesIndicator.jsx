@@ -7,7 +7,7 @@ export default function LiveMatchesIndicator({ count = 0 }) {
 
     return (
         <Link
-            href={route('manager-live.index')}
+            href={route('live-ticker.index')}
             className={`group relative flex items-center gap-2 overflow-hidden rounded-xl border px-3 py-2 transition-all ${
                 isActive
                     ? 'border-rose-500/30 bg-gradient-to-br from-rose-700/90 via-rose-800/95 to-red-950 text-white shadow-[0_8px_24px_-12px_rgba(244,63,94,0.75)]'

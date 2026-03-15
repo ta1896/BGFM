@@ -64,6 +64,7 @@ class TrackManagerPresence
             str_starts_with($routeName, 'awards') => 'Bei den Awards',
             str_starts_with($routeName, 'friendlies') => 'Bei Freundschaftsspielen',
             str_starts_with($routeName, 'manager-live') => 'Beobachtet die Manager-Live-Ansicht',
+            str_starts_with($routeName, 'live-ticker') => 'Beobachtet den Live-Ticker',
             default => 'Navigiert durch den Verein',
         };
     }

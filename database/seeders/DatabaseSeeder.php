@@ -13,6 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(TestFactorySeeder::class);
         $this->call(MatchTickerTemplateSeeder::class);
+        $this->call(DemoFeatureSeeder::class);
     }
 }
-

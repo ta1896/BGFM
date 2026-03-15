@@ -11,6 +11,26 @@ class ManagerLiveController extends Controller
 {
     public function index(): Response
     {
+        [$onlineManagers, $liveMatches, $onlineWindowMinutes] = $this->liveData();
+
+        return Inertia::render('Managers/Online', [
+            'onlineManagers' => $onlineManagers,
+            'onlineWindowMinutes' => $onlineWindowMinutes,
+        ]);
+    }
+
+    public function ticker(): Response
+    {
+        [$onlineManagers, $liveMatches] = $this->liveData();
+
+        return Inertia::render('Managers/Ticker', [
+            'liveMatches' => $liveMatches,
+            'onlineManagersCount' => count($onlineManagers),
+        ]);
+    }
+
+    private function liveData(): array
+    {
         $onlineWindow = now()->subMinutes(5);
 
         $managers = ManagerPresence::query()
@@ -75,10 +95,6 @@ class ManagerLiveController extends Controller
             ])
             ->values();
 
-        return Inertia::render('Managers/Live', [
-            'onlineManagers' => $managers,
-            'liveMatches' => $liveMatches,
-            'onlineWindowMinutes' => 5,
-        ]);
+        return [$managers->all(), $liveMatches->all(), 5];
     }
 }

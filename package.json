@@ -5,6 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "seed:demo": "powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1",
+        "seed:demo:fresh": "powershell -ExecutionPolicy Bypass -File scripts/seed-demo-fresh.ps1",
         "test": "vitest",
         "test:run": "vitest run",
         "test:backend": "powershell -ExecutionPolicy Bypass -File scripts/test-backend.ps1"
