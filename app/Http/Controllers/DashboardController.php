@@ -69,6 +69,12 @@ class DashboardController extends Controller
         $clubRank = null;
         $clubPoints = null;
         $recentForm = [];
+        $recentMatchesSummary = [
+            'wins' => 0,
+            'draws' => 0,
+            'losses' => 0,
+            'matches' => [],
+        ];
         $nextMatchTypeLabel = null;
         $activeClubReadyForNextMatch = false;
         $opponentReadyForNextMatch = false;
@@ -151,6 +157,7 @@ class DashboardController extends Controller
             }
 
             $recentMatches = GameMatch::query()
+                ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
                 ->where('status', 'played')
                 ->where(function ($query) use ($activeClub) {
                     $query->where('home_club_id', $activeClub->id)
@@ -158,9 +165,10 @@ class DashboardController extends Controller
                 })
                 ->orderByRaw('COALESCE(played_at, kickoff_at) DESC')
                 ->limit(5)
-                ->get(['home_club_id', 'away_club_id', 'home_score', 'away_score']);
+                ->get(['id', 'home_club_id', 'away_club_id', 'home_score', 'away_score']);
 
             $recentForm = $recentMatches
+                ->take(5)
                 ->map(function (GameMatch $match) use ($activeClub): string {
                     $isHomeClub = (int) $match->home_club_id === (int) $activeClub->id;
                     $goalsFor = (int) ($isHomeClub ? $match->home_score : $match->away_score);
@@ -177,6 +185,51 @@ class DashboardController extends Controller
                     return 'D';
                 })
                 ->all();
+
+            $recentMatchesSummary = [
+                'wins' => $recentMatches->filter(function (GameMatch $match) use ($activeClub): bool {
+                    $isHomeClub = (int) $match->home_club_id === (int) $activeClub->id;
+                    $goalsFor = (int) ($isHomeClub ? $match->home_score : $match->away_score);
+                    $goalsAgainst = (int) ($isHomeClub ? $match->away_score : $match->home_score);
+
+                    return $goalsFor > $goalsAgainst;
+                })->count(),
+                'draws' => $recentMatches->filter(function (GameMatch $match) use ($activeClub): bool {
+                    $isHomeClub = (int) $match->home_club_id === (int) $activeClub->id;
+                    $goalsFor = (int) ($isHomeClub ? $match->home_score : $match->away_score);
+                    $goalsAgainst = (int) ($isHomeClub ? $match->away_score : $match->home_score);
+
+                    return $goalsFor === $goalsAgainst;
+                })->count(),
+                'losses' => $recentMatches->filter(function (GameMatch $match) use ($activeClub): bool {
+                    $isHomeClub = (int) $match->home_club_id === (int) $activeClub->id;
+                    $goalsFor = (int) ($isHomeClub ? $match->home_score : $match->away_score);
+                    $goalsAgainst = (int) ($isHomeClub ? $match->away_score : $match->home_score);
+
+                    return $goalsFor < $goalsAgainst;
+                })->count(),
+                'matches' => $recentMatches->map(function (GameMatch $match) use ($activeClub): array {
+                    $isHomeClub = (int) $match->home_club_id === (int) $activeClub->id;
+                    $goalsFor = (int) ($isHomeClub ? $match->home_score : $match->away_score);
+                    $goalsAgainst = (int) ($isHomeClub ? $match->away_score : $match->home_score);
+                    $result = $goalsFor > $goalsAgainst ? 'W' : ($goalsFor < $goalsAgainst ? 'L' : 'D');
+                    $opponent = $isHomeClub ? $match->awayClub : $match->homeClub;
+
+                    return [
+                        'id' => $match->id,
+                        'result' => $result,
+                        'result_label' => match ($result) {
+                            'W' => 'S',
+                            'L' => 'N',
+                            default => 'U',
+                        },
+                        'score' => $goalsFor.':'.$goalsAgainst,
+                        'opponent_name' => $opponent?->name,
+                        'opponent_logo_url' => $opponent?->logo_url,
+                        'is_home' => $isHomeClub,
+                    ];
+                })->values()->all(),
+            ];
 
             if ($recentForm === [] && !empty($latestClubStat?->form_last5)) {
                 $recentForm = str_split((string) $latestClubStat->form_last5);
@@ -728,6 +781,7 @@ class DashboardController extends Controller
             'clubRank' => $clubRank,
             'clubPoints' => $clubPoints,
             'recentForm' => $recentForm,
+            'recentMatchesSummary' => $recentMatchesSummary,
             'weekDays' => $weekDays,
             'trainingGroupACount' => $trainingGroupACount,
             'trainingGroupBCount' => $trainingGroupBCount,

@@ -24,16 +24,20 @@ class TrackManagerPresence
         }
 
         $club = app()->has('activeClub') ? app('activeClub') : $user->clubs()->first();
-        $matchId = (int) $request->route('match');
-        if ($matchId <= 0 && is_object($request->route('match'))) {
-            $matchId = (int) $request->route('match')->id;
+        $matchParameter = $request->route('match');
+        $matchId = null;
+
+        if (is_object($matchParameter) && isset($matchParameter->id)) {
+            $matchId = (int) $matchParameter->id;
+        } elseif (is_numeric($matchParameter)) {
+            $matchId = (int) $matchParameter;
         }
 
         ManagerPresence::query()->updateOrCreate(
             ['user_id' => $user->id],
             [
                 'club_id' => $club?->id,
-                'match_id' => $matchId > 0 ? $matchId : null,
+                'match_id' => $matchId && $matchId > 0 ? $matchId : null,
                 'route_name' => $routeName,
                 'path' => '/'.ltrim($request->path(), '/'),
                 'activity_label' => $this->activityLabel($routeName),
