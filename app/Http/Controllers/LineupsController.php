@@ -6,6 +6,9 @@ use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Services\FormationPlannerService;
+use App\Services\PlayerLoadService;
+use App\Services\PlayerMoraleService;
+use App\Services\SquadHierarchyService;
 use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -182,12 +185,16 @@ class LineupsController extends Controller
         Request $request,
         Lineup $lineup,
         FormationPlannerService $planner,
-        TeamStrengthCalculator $calculator
+        TeamStrengthCalculator $calculator,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+        PlayerLoadService $playerLoadService,
     ): \Inertia\Response {
         $this->authorizeLineup($request, $lineup);
         $lineup->load(['club.user', 'players', 'match.homeClub', 'match.awayClub']);
 
         $club = $lineup->club;
+        $squadHierarchyService->refreshForClub($club);
         $clubPlayers = $club->players()
             ->whereIn('status', ['active', 'transfer_listed'])
             ->orderByDesc('overall')
@@ -198,6 +205,8 @@ class LineupsController extends Controller
                 $p->append('photo_url');
                 return $p;
             });
+
+        $clubPlayers->each(fn ($player) => $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries'])));
 
         $templates = $club->lineups()
             ->whereNull('match_id')
@@ -284,6 +293,13 @@ class LineupsController extends Controller
                 'physical' => $player->physical,
                 'stamina' => $player->stamina,
                 'morale' => $player->morale,
+                'fatigue' => $player->fatigue,
+                'sharpness' => $player->sharpness,
+                'happiness' => $player->happiness,
+                'squad_role' => $player->squad_role,
+                'medical_status' => $player->medical_status,
+                'injury_risk' => $playerLoadService->injuryRisk($player),
+                'promise_pressure' => max(0, optional($player->playtimePromises->sortByDesc('id')->first())->expected_minutes_share - optional($player->playtimePromises->sortByDesc('id')->first())->fulfilled_ratio),
                 'photo_url' => $player->photo_url,
             ])->values()->all(),
             'clubMatches' => $clubMatches->map(fn ($match) => [

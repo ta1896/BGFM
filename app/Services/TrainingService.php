@@ -5,10 +5,20 @@ namespace App\Services;
 use App\Models\GameNotification;
 use App\Models\Player;
 use App\Models\TrainingSession;
+use App\Services\PlayerLoadService;
+use App\Services\PlayerMoraleService;
+use App\Services\SquadHierarchyService;
 use Illuminate\Support\Facades\DB;
 
 class TrainingService
 {
+    public function __construct(
+        private readonly PlayerLoadService $playerLoadService,
+        private readonly PlayerMoraleService $playerMoraleService,
+        private readonly SquadHierarchyService $squadHierarchyService,
+    ) {
+    }
+
     public function applySession(TrainingSession $session): void
     {
         if ($session->is_applied) {
@@ -30,7 +40,12 @@ class TrainingService
                     'overall' => max(1, min(99, $player->overall + $overallDelta)),
                     'last_training_at' => now(),
                 ]);
+
+                $this->playerLoadService->applyTrainingLoad($player->fresh(), $session, $staminaDelta);
+                $this->playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
             }
+
+            $this->squadHierarchyService->refreshForClub($session->club);
 
             $session->update([
                 'is_applied' => true,

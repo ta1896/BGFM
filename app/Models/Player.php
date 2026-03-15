@@ -43,6 +43,19 @@ class Player extends Model
         'loan_ends_on',
         'last_training_at',
         'injury_matches_remaining',
+        'squad_role',
+        'leadership_level',
+        'team_status',
+        'expected_playtime',
+        'happiness',
+        'happiness_trend',
+        'fatigue',
+        'sharpness',
+        'injury_proneness',
+        'match_load',
+        'training_load',
+        'medical_status',
+        'last_morale_reason',
         'suspension_matches_remaining',
         'suspension_league_remaining',
         'suspension_cup_national_remaining',
@@ -63,6 +76,14 @@ class Player extends Model
             'loan_ends_on' => 'date',
             'last_training_at' => 'datetime',
             'injury_matches_remaining' => 'integer',
+            'expected_playtime' => 'integer',
+            'happiness' => 'integer',
+            'happiness_trend' => 'integer',
+            'fatigue' => 'integer',
+            'sharpness' => 'integer',
+            'injury_proneness' => 'integer',
+            'match_load' => 'integer',
+            'training_load' => 'integer',
             'suspension_matches_remaining' => 'integer',
             'suspension_league_remaining' => 'integer',
             'suspension_cup_national_remaining' => 'integer',
@@ -140,6 +161,21 @@ class Player extends Model
     public function careerCompetitionStatistics(): HasMany
     {
         return $this->hasMany(PlayerCareerCompetitionStatistic::class);
+    }
+
+    public function playtimePromises(): HasMany
+    {
+        return $this->hasMany(PlayerPlaytimePromise::class);
+    }
+
+    public function injuries(): HasMany
+    {
+        return $this->hasMany(PlayerInjury::class);
+    }
+
+    public function recoveryLogs(): HasMany
+    {
+        return $this->hasMany(PlayerRecoveryLog::class);
     }
 
     public function getFullNameAttribute(): string

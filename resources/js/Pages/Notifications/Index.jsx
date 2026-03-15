@@ -13,10 +13,44 @@ import {
     Clock,
     Tray,
     Checks,
+    WarningCircle,
+    Trophy,
 } from '@phosphor-icons/react';
 
 export default function Notifications({ notifications }) {
     const { post } = useForm();
+
+    const notificationTheme = (type, seenAt) => {
+        const themes = {
+            promise_at_risk: {
+                accent: 'border-l-amber-400',
+                iconWrap: 'border border-amber-400/20 bg-amber-400/10 text-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.12)]',
+                icon: WarningCircle,
+                badge: 'border border-amber-400/20 bg-amber-400/10 text-amber-200',
+                label: 'Versprechen kritisch',
+            },
+            promise_broken: {
+                accent: 'border-l-rose-500',
+                iconWrap: 'border border-rose-500/20 bg-rose-500/10 text-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.12)]',
+                icon: WarningCircle,
+                badge: 'border border-rose-500/20 bg-rose-500/10 text-rose-200',
+                label: 'Versprechen gebrochen',
+            },
+            promise_fulfilled: {
+                accent: 'border-l-emerald-400',
+                iconWrap: 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.12)]',
+                icon: Trophy,
+                badge: 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+                label: 'Versprechen erfuellt',
+            },
+        };
+
+        if (seenAt) {
+            return null;
+        }
+
+        return themes[type] ?? null;
+    };
 
     const markAllSeen = () => {
         post(route('notifications.seen-all'), { preserveScroll: true });
@@ -58,17 +92,23 @@ export default function Notifications({ notifications }) {
                         </PageReveal>
                     ) : (
                         <StaggerGroup className="divide-y divide-slate-800/50">
-                            {notifications.data.map((notification) => (
-                                <article
-                                    key={notification.id}
-                                    className={`relative flex gap-6 p-6 transition-all ${
-                                        notification.seen_at ? 'bg-transparent opacity-50 grayscale-[0.5]' : 'border-l-4 border-l-cyan-500 bg-white/[0.02]'
-                                    }`}
-                                >
+                            {notifications.data.map((notification) => {
+                                const theme = notificationTheme(notification.type, notification.seen_at);
+                                const Icon = theme?.icon ?? (notification.seen_at ? EnvelopeOpen : Envelope);
+
+                                return (
+                                    <article
+                                        key={notification.id}
+                                        className={`relative flex gap-6 p-6 transition-all ${
+                                            notification.seen_at
+                                                ? 'bg-transparent opacity-50 grayscale-[0.5]'
+                                                : `border-l-4 ${theme?.accent ?? 'border-l-cyan-500'} bg-white/[0.02]`
+                                        }`}
+                                    >
                                     <div className="shrink-0 pt-1">
                                         {!notification.seen_at ? (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-                                                <Envelope size={20} weight="fill" />
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${theme?.iconWrap ?? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]'}`}>
+                                                <Icon size={20} weight="fill" />
                                             </div>
                                         ) : (
                                             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-slate-600">
@@ -79,9 +119,16 @@ export default function Notifications({ notifications }) {
 
                                     <div className="min-w-0 flex-1">
                                         <div className="mb-2 flex items-start justify-between gap-4">
-                                            <h3 className={`text-lg font-black uppercase italic tracking-tight ${!notification.seen_at ? 'text-white' : 'text-[var(--text-muted)]'}`}>
-                                                {notification.title}
-                                            </h3>
+                                            <div className="space-y-2">
+                                                <h3 className={`text-lg font-black uppercase italic tracking-tight ${!notification.seen_at ? 'text-white' : 'text-[var(--text-muted)]'}`}>
+                                                    {notification.title}
+                                                </h3>
+                                                {theme && (
+                                                    <div className={`inline-flex items-center rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] ${theme.badge}`}>
+                                                        {theme.label}
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2 whitespace-nowrap text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                                                 <Clock size={12} weight="bold" />
                                                 {notification.created_at_formatted}
@@ -122,8 +169,9 @@ export default function Notifications({ notifications }) {
                                             </div>
                                         </div>
                                     </div>
-                                </article>
-                            ))}
+                                    </article>
+                                );
+                            })}
                         </StaggerGroup>
                     )}
 

@@ -7,6 +7,7 @@ import {
     ClockCounterClockwise,
     Crown,
     FloppyDisk,
+    Heartbeat,
     IdentificationBadge,
     Info,
     Lightning,
@@ -17,6 +18,7 @@ import {
     Target,
     TrendUp,
     Trophy,
+    UsersThree,
     Warning,
 } from '@phosphor-icons/react';
 
@@ -172,7 +174,7 @@ function TabButton({ active, onClick, icon: Icon, children }) {
     );
 }
 
-export function PlayerOverviewTab({ player }) {
+export function PlayerOverviewTab({ player, squadDynamics }) {
     const stats = [
         { label: 'Tempo', value: player.pace, icon: Lightning, color: 'text-amber-500', gradient: 'from-amber-500/60' },
         { label: 'Schuss', value: player.shooting, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
@@ -236,6 +238,9 @@ export function PlayerOverviewTab({ player }) {
                     </div>
                     <ProgressBar label="Fitness" value={player.stamina} positive={player.stamina > 80} />
                     <ProgressBar label="Moral" value={player.morale} positive />
+                    <ProgressBar label="Zufriedenheit" value={player.happiness} positive={player.happiness >= 55} />
+                    <ProgressBar label="Sharpness" value={player.sharpness} positive={player.sharpness >= 60} />
+                    <ProgressBar label="Belastung" value={player.fatigue} positive={player.fatigue <= 45} />
                 </div>
 
                 <div className="sim-card border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-8">
@@ -246,6 +251,23 @@ export function PlayerOverviewTab({ player }) {
                     <div className="space-y-4">
                         <InfoRow label="Gehalt" value={new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(player.salary || 0)} />
                         <InfoRow label="Marktwert" value={player.market_value_formatted} />
+                        <InfoRow label="Kaderrolle" value={player.squad_role} />
+                        <InfoRow label="Hierarchie" value={player.leadership_level} />
+                        <InfoRow label="Erwartete Spielzeit" value={`${player.expected_playtime}%`} />
+                        <InfoRow label="Medizin" value={player.medical_status} />
+                    </div>
+                </div>
+
+                <div className="sim-card border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-8">
+                    <div className="mb-6 flex items-center gap-4">
+                        <Heartbeat size={24} weight="duotone" className="text-rose-400" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Dynamik</h3>
+                    </div>
+                    <div className="space-y-4">
+                        <InfoRow label="Verletzungsrisiko" value={`${player.injury_risk}%`} />
+                        <InfoRow label="Promise-Druck" value={`${player.promise_pressure}%`} />
+                        <InfoRow label="Grund" value={player.last_morale_reason || '-'} />
+                        {player.injury && <InfoRow label="Aktuelle Verletzung" value={`${player.injury.type} bis ${player.injury.expected_return || '?'}`} />}
                     </div>
                 </div>
             </div>
@@ -366,23 +388,65 @@ function MiniStat({ label, value }) {
     );
 }
 
-export function PlayerHistoryTab() {
+export function PlayerHistoryTab({ squadDynamics }) {
     return (
-        <div className="sim-card border-2 border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-20 text-center">
-            <ClockCounterClockwise size={48} weight="duotone" className="mx-auto mb-6 text-slate-700" />
-            <h3 className="mb-2 text-xl font-black uppercase tracking-tighter text-white italic">Entwicklungshistorie</h3>
-            <p className="text-sm font-medium text-[var(--text-muted)]">Die vollstaendige Transfer- und Attributshistorie wird in Kuerze freigeschaltet.</p>
+        <div className="grid gap-8 lg:grid-cols-2">
+            <div className="sim-card p-8">
+                <div className="mb-6 flex items-center gap-4">
+                    <ClockCounterClockwise size={24} weight="duotone" className="text-slate-300" />
+                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Belastungsverlauf</h3>
+                </div>
+                <div className="space-y-3">
+                    {squadDynamics?.recovery?.length ? squadDynamics.recovery.map((entry) => (
+                        <div key={entry.day} className="flex items-center justify-between rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 px-4 py-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{entry.day}</span>
+                            <div className="flex items-center gap-4 text-xs font-black">
+                                <span className="text-amber-400">Fatigue {entry.fatigue_after}</span>
+                                <span className="text-emerald-400">Sharp {entry.sharpness_after}</span>
+                                <span className="text-rose-400">Risk {entry.injury_risk}%</span>
+                            </div>
+                        </div>
+                    )) : (
+                        <p className="text-sm font-medium text-[var(--text-muted)]">Noch keine Recovery-Logs vorhanden.</p>
+                    )}
+                </div>
+            </div>
+
+            <div className="sim-card p-8">
+                <div className="mb-6 flex items-center gap-4">
+                    <UsersThree size={24} weight="duotone" className="text-cyan-400" />
+                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
+                </div>
+                <div className="space-y-3">
+                    {squadDynamics?.promises?.length ? squadDynamics.promises.map((promise, index) => (
+                        <div key={`${promise.promise_type}-${index}`} className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/50 p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black uppercase tracking-wider text-white">{promise.promise_type}</span>
+                                <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${promise.status === 'at_risk' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>{promise.status}</span>
+                            </div>
+                            <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                                <span>Ziel {promise.expected_minutes_share}%</span>
+                                <span>Erfuellt {promise.fulfilled_ratio}%</span>
+                                <span>{promise.deadline_at || 'offen'}</span>
+                            </div>
+                        </div>
+                    )) : (
+                        <p className="text-sm font-medium text-[var(--text-muted)]">Keine aktiven Versprechen hinterlegt.</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
 
-export function PlayerCustomizeTab({ isOwner, data, setData, positions, processing, onSubmit }) {
+export function PlayerCustomizeTab({ isOwner, data, setData, positions, processing, onSubmit, promiseForm, onPromiseSubmit }) {
     if (!isOwner) {
         return null;
     }
 
     return (
-        <div className="sim-card mx-auto max-w-3xl border-[var(--border-muted)] bg-[#0c1222]/80 p-10 backdrop-blur-xl">
+        <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.4fr_1fr]">
+            <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-10 backdrop-blur-xl">
             <div className="mb-10 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-6">
                 <IdentificationBadge size={32} weight="duotone" className="text-cyan-400" />
                 <div>
@@ -439,6 +503,62 @@ export function PlayerCustomizeTab({ isOwner, data, setData, positions, processi
                     </button>
                 </div>
             </form>
+            </div>
+
+            <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-8 backdrop-blur-xl">
+                <div className="mb-8 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-5">
+                    <UsersThree size={28} weight="duotone" className="text-amber-400" />
+                    <div>
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
+                        <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Aktive Erwartung fuer diesen Spieler</p>
+                    </div>
+                </div>
+
+                <form onSubmit={onPromiseSubmit} className="space-y-5">
+                    <Field label="Versprechen">
+                        <select value={promiseForm.data.promise_type} onChange={(event) => promiseForm.setData('promise_type', event.target.value)} className="sim-select w-full uppercase text-xs">
+                            <option value="starter">Stammspieler</option>
+                            <option value="regular_rotation">Regelmaessige Rotation</option>
+                            <option value="impact_sub">Joker-Rolle</option>
+                            <option value="youth_path">Entwicklungspfad</option>
+                        </select>
+                    </Field>
+
+                    <Field label="Erwartete Minutenquote">
+                        <input
+                            type="number"
+                            min="5"
+                            max="100"
+                            value={promiseForm.data.expected_minutes_share}
+                            onChange={(event) => promiseForm.setData('expected_minutes_share', event.target.value)}
+                            className="sim-input-indigo w-full"
+                        />
+                    </Field>
+
+                    <Field label="Deadline">
+                        <input
+                            type="date"
+                            value={promiseForm.data.deadline_at}
+                            onChange={(event) => promiseForm.setData('deadline_at', event.target.value)}
+                            className="sim-input-indigo w-full"
+                        />
+                    </Field>
+
+                    <Field label="Notiz">
+                        <textarea
+                            value={promiseForm.data.notes}
+                            onChange={(event) => promiseForm.setData('notes', event.target.value)}
+                            className="sim-input-indigo min-h-28 w-full"
+                            placeholder="z. B. Einsaetze ueber die naechsten 6 Wochen"
+                        />
+                    </Field>
+
+                    <button type="submit" disabled={promiseForm.processing} className="sim-btn-primary flex w-full items-center justify-center gap-3 px-6 py-4">
+                        <FloppyDisk size={18} weight="bold" />
+                        <span className="text-xs font-black uppercase tracking-widest">Versprechen setzen</span>
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }

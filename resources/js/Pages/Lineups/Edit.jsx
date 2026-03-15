@@ -55,6 +55,9 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                 <div className="overflow-hidden">
                     <p className="text-[11px] font-black text-white truncate">{player.last_name}</p>
                     <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{player.position_main}</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-amber-400">
+                        F {player.fatigue} | H {player.happiness} | R {player.injury_risk}
+                    </p>
                 </div>
             </div>
 

@@ -18,6 +18,7 @@ class NotificationController extends Controller
             ->through(function ($n) {
                 return [
                     'id' => $n->id,
+                    'type' => $n->type,
                     'title' => $n->title,
                     'message' => $n->message,
                     'seen_at' => $n->seen_at,

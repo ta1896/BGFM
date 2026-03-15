@@ -10,7 +10,7 @@ import {
     PlayerShowHeader,
 } from '@/Pages/Players/components/ShowSections';
 
-export default function Show({ player, careerStats, recentMatches, isOwner, positions }) {
+export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics }) {
     const [activeTab, setActiveTab] = useState('overview');
     const { data, setData, patch, processing } = useForm({
         market_value: player.market_value,
@@ -19,10 +19,23 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
         position_third: player.position_third || '',
         photo_url: '',
     });
+    const promiseForm = useForm({
+        promise_type: 'regular_rotation',
+        expected_minutes_share: player.expected_playtime || 50,
+        deadline_at: '',
+        notes: '',
+    });
 
     const handleUpdate = (event) => {
         event.preventDefault();
         patch(route('players.update', player.id), {
+            preserveScroll: true,
+        });
+    };
+
+    const handlePromiseSubmit = (event) => {
+        event.preventDefault();
+        promiseForm.post(route('players.playtime-promise.store', player.id), {
             preserveScroll: true,
         });
     };
@@ -35,10 +48,10 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                 <PlayerShowHeader player={player} isOwner={isOwner} activeTab={activeTab} onTabChange={setActiveTab} />
 
                 <div className="min-h-[500px]">
-                    {activeTab === 'overview' && <PlayerOverviewTab player={player} />}
+                    {activeTab === 'overview' && <PlayerOverviewTab player={player} squadDynamics={squadDynamics} />}
                     {activeTab === 'career' && <PlayerCareerTab careerStats={careerStats} />}
                     {activeTab === 'matches' && <PlayerMatchesTab player={player} recentMatches={recentMatches} />}
-                    {activeTab === 'history' && <PlayerHistoryTab />}
+                    {activeTab === 'history' && <PlayerHistoryTab squadDynamics={squadDynamics} />}
                     {activeTab === 'customize' && (
                         <PlayerCustomizeTab
                             isOwner={isOwner}
@@ -47,6 +60,8 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                             positions={positions}
                             processing={processing}
                             onSubmit={handleUpdate}
+                            promiseForm={promiseForm}
+                            onPromiseSubmit={handlePromiseSubmit}
                         />
                     )}
                 </div>

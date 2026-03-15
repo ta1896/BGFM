@@ -7,13 +7,22 @@ use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\SeasonClubStatistic;
 use App\Models\TrainingSession;
+use App\Services\InjuryManagementService;
+use App\Services\PlayerMoraleService;
+use App\Services\SquadHierarchyService;
 use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 class DashboardController extends Controller
 {
-    public function index(Request $request, TeamStrengthCalculator $calculator): \Inertia\Response
+    public function index(
+        Request $request,
+        TeamStrengthCalculator $calculator,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+        InjuryManagementService $injuryManagementService,
+    ): \Inertia\Response
     {
         $allowedDashboardVariants = ['modern', 'compact', 'classic'];
         $requestedDashboardVariant = strtolower((string) $request->query('variant'));
@@ -66,9 +75,17 @@ class DashboardController extends Controller
         $trainingPlanComplete = false;
         $assistantTasks = [];
         $selectedCompetitionSeasonId = null;
+        $squadAlerts = [];
 
         if ($activeClub) {
             $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
+            $squadHierarchyService->refreshForClub($activeClub);
+
+            $activeClub->loadMissing(['players.playtimePromises']);
+            $activeClub->players->each(function ($player) use ($playerMoraleService, $injuryManagementService): void {
+                $injuryManagementService->syncCurrentInjury($player);
+                $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
+            });
 
             $activeLineup = Lineup::query()
                 ->where('club_id', $activeClub->id)
@@ -287,6 +304,46 @@ class DashboardController extends Controller
                     'cta' => 'Inbox oeffnen',
                 ];
             }
+
+            $unhappyCount = $activeClub->players->where('happiness', '<', 45)->count();
+            $riskCount = $activeClub->players->where('fatigue', '>=', 70)->count();
+            $promiseCount = $activeClub->players->filter(
+                fn ($player) => $player->playtimePromises->whereIn('status', ['active', 'at_risk'])->isNotEmpty()
+            )->count();
+            $brokenPromiseCount = $activeClub->players->filter(
+                fn ($player) => $player->playtimePromises->where('status', 'broken')->isNotEmpty()
+            )->count();
+
+            $squadAlerts = [
+                'unhappy_count' => $unhappyCount,
+                'high_risk_count' => $riskCount,
+                'promise_count' => $promiseCount,
+                'broken_promise_count' => $brokenPromiseCount,
+            ];
+
+            if ($unhappyCount > 0) {
+                $assistantTasks[] = [
+                    'kind' => 'warning',
+                    'label' => $unhappyCount.' unzufriedene Spieler',
+                    'description' => 'Rollen, Einsatzzeiten oder Belastung sorgen fuer Unruhe im Kader.',
+                    'url' => route('players.index'),
+                    'cta' => 'Kader pruefen',
+                ];
+            }
+
+            if ($promiseCount > 0) {
+                $assistantTasks[] = [
+                    'kind' => $brokenPromiseCount > 0 ? 'warning' : 'info',
+                    'label' => $brokenPromiseCount > 0
+                        ? $brokenPromiseCount.' gebrochene Versprechen'
+                        : $promiseCount.' laufende Spielzeitversprechen',
+                    'description' => $brokenPromiseCount > 0
+                        ? 'Mindestens ein zugesagter Minutenanteil wurde verfehlt. Das drueckt sofort auf die Moral.'
+                        : 'Mehrere Spieler erwarten definierte Einsatzzeiten. Behalte die Rotation im Blick.',
+                    'url' => route('players.index'),
+                    'cta' => 'Versprechen pruefen',
+                ];
+            }
         }
 
         return \Inertia\Inertia::render('Dashboard', [
@@ -325,6 +382,7 @@ class DashboardController extends Controller
             'trainingGroupBCount' => $trainingGroupBCount,
             'trainingPlanComplete' => $trainingPlanComplete,
             'assistantTasks' => $assistantTasks,
+            'squadAlerts' => $squadAlerts,
         ]);
     }
 }

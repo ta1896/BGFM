@@ -125,6 +125,49 @@ export default function Training({ sessions, club, prefillDate }) {
                     </PageReveal>
                 )}
 
+                <PageReveal delay={110}>
+                    <SectionCard title="Belastungssteuerung" icon={Heartbeat}>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-[var(--border-muted)] text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                                        <th className="px-6 py-4">Spieler</th>
+                                        <th className="px-6 py-4">Pos</th>
+                                        <th className="px-6 py-4">Fatigue</th>
+                                        <th className="px-6 py-4">Sharpness</th>
+                                        <th className="px-6 py-4">Zufriedenheit</th>
+                                        <th className="px-6 py-4">Risiko</th>
+                                        <th className="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {club.load_rows?.map((row) => (
+                                        <tr key={row.id}>
+                                            <td className="px-6 py-4 text-sm font-black text-[var(--text-main)]">{row.name}</td>
+                                            <td className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{row.position}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-amber-400">{row.fatigue}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-emerald-400">{row.sharpness}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-cyan-400">{row.happiness}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-rose-400">{row.injury_risk}%</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
+                                                    row.medical_status === 'risk'
+                                                        ? 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+                                                        : row.medical_status === 'monitoring'
+                                                            ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                                                            : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                                }`}>
+                                                    {row.medical_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </SectionCard>
+                </PageReveal>
+
                 <PageReveal delay={140}>
                     <SectionCard title="Trainingseinheiten" icon={Calendar}>
                     <div className="overflow-x-auto">

@@ -4,15 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Club;
 use App\Models\TrainingSession;
+use App\Services\InjuryManagementService;
+use App\Services\PlayerLoadService;
+use App\Services\PlayerMoraleService;
+use App\Services\SquadHierarchyService;
 use App\Services\TrainingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
 
 class TrainingController extends Controller
 {
-    public function index(Request $request): \Inertia\Response
+    public function index(
+        Request $request,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+        PlayerLoadService $playerLoadService,
+        InjuryManagementService $injuryManagementService,
+    ): \Inertia\Response
     {
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
@@ -23,7 +32,12 @@ class TrainingController extends Controller
         }
 
         if ($activeClub) {
-            $activeClub->loadMissing(['players:id,club_id,name']);
+            $squadHierarchyService->refreshForClub($activeClub);
+            $activeClub->loadMissing(['players']);
+            $activeClub->players->each(function ($player) use ($playerMoraleService, $injuryManagementService): void {
+                $injuryManagementService->syncCurrentInjury($player);
+                $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
+            });
         }
 
         $normalizeDate = static function (?string $value): ?string {
@@ -79,8 +93,22 @@ class TrainingController extends Controller
                 'name' => $activeClub->name,
                 'players' => $activeClub->players->map(fn ($player) => [
                     'id' => $player->id,
-                    'name' => $player->name,
+                    'name' => $player->full_name,
                 ])->values()->all(),
+                'load_rows' => $activeClub->players
+                    ->sortByDesc('overall')
+                    ->map(fn ($player) => [
+                        'id' => $player->id,
+                        'name' => $player->full_name,
+                        'position' => $player->position_main ?: $player->position,
+                        'fatigue' => (int) $player->fatigue,
+                        'sharpness' => (int) $player->sharpness,
+                        'happiness' => (int) $player->happiness,
+                        'medical_status' => $player->medical_status,
+                        'injury_risk' => $playerLoadService->injuryRisk($player),
+                    ])
+                    ->values()
+                    ->all(),
             ] : null,
             'prefillDate' => now()->toDateString(),
         ]);

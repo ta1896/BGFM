@@ -10,6 +10,7 @@ import {
     CurrencyEur,
     ChartLineUp,
     SortAscending,
+    Crown,
 } from '@phosphor-icons/react';
 
 const PlayerListItem = ({ player }) => (
@@ -106,6 +107,15 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                                 <Plus size={24} weight="bold" />
                             </Link>
                         )}
+                        <Link
+                            href={route('squad-hierarchy.index')}
+                            className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-white"
+                        >
+                            <span className="flex items-center gap-2">
+                                <Crown size={16} weight="fill" className="text-amber-400" />
+                                Hierarchie
+                            </span>
+                        </Link>
                         </div>}
                     />
                 </div>

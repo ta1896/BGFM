@@ -3,9 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Club;
+use App\Models\MatchPlayerStat;
 use App\Models\Player;
+use App\Models\PlayerPlaytimePromise;
+use App\Services\InjuryManagementService;
+use App\Services\PlayerLoadService;
+use App\Services\PlayerMoraleService;
+use App\Services\SquadHierarchyService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class PlayerController extends Controller
@@ -89,6 +96,117 @@ class PlayerController extends Controller
         ]);
     }
 
+    public function hierarchy(
+        Request $request,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+        PlayerLoadService $playerLoadService,
+        InjuryManagementService $injuryManagementService,
+    ): \Inertia\Response {
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin()
+            ? Club::query()->where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
+
+        $levels = $this->hierarchyLevels();
+        $summary = [
+            'satisfied_count' => 0,
+            'unsettled_count' => 0,
+            'fair_role_count' => 0,
+            'critical_role_count' => 0,
+        ];
+        $allPlayers = collect();
+
+        if ($activeClub) {
+            $activeClub->loadMissing(['players.playtimePromises', 'players.injuries']);
+            $squadHierarchyService->refreshForClub($activeClub);
+
+            $activeClub->loadMissing(['players.playtimePromises', 'players.injuries']);
+
+            $minuteShares = MatchPlayerStat::query()
+                ->whereIn('player_id', $activeClub->players->pluck('id'))
+                ->latest('id')
+                ->get(['player_id', 'minutes_played'])
+                ->groupBy('player_id')
+                ->map(fn ($stats) => max(
+                    0,
+                    min(100, (int) round((((float) $stats->take(8)->avg('minutes_played')) / 90) * 100))
+                ));
+
+            foreach ($activeClub->players->sortByDesc('overall')->values() as $player) {
+                $injuryManagementService->syncCurrentInjury($player);
+                $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
+
+                $mappedPlayer = $this->mapHierarchyPlayer(
+                    $player->fresh()->loadMissing(['playtimePromises', 'injuries']),
+                    $playerLoadService,
+                    (int) ($minuteShares[$player->id] ?? 0)
+                );
+
+                $levels[$mappedPlayer['pyramid_level']]['players'][] = $mappedPlayer;
+
+                if ($mappedPlayer['mood']['status'] === 'happy') {
+                    $summary['satisfied_count']++;
+                }
+
+                if ($mappedPlayer['mood']['status'] === 'unsettled') {
+                    $summary['unsettled_count']++;
+                }
+
+                if ($mappedPlayer['role_fit']['status'] === 'aligned') {
+                    $summary['fair_role_count']++;
+                }
+
+                if ($mappedPlayer['role_fit']['status'] === 'critical') {
+                    $summary['critical_role_count']++;
+                }
+
+                $allPlayers->push($mappedPlayer);
+            }
+        }
+
+        return \Inertia\Inertia::render('Players/Hierarchy', [
+            'clubs' => $clubs->map(fn ($club) => [
+                'id' => $club->id,
+                'name' => $club->name,
+                'logo_url' => $club->logo_url,
+            ])->values()->all(),
+            'activeClub' => $activeClub ? [
+                'id' => $activeClub->id,
+                'name' => $activeClub->name,
+                'logo_url' => $activeClub->logo_url,
+            ] : null,
+            'hierarchyLevels' => array_values($levels),
+            'summary' => $summary,
+            'hierarchyInsights' => [
+                'captain_group' => $allPlayers
+                    ->where('leadership_level', 'captain_group')
+                    ->values()
+                    ->take(4)
+                    ->all(),
+                'unsettled_players' => $allPlayers
+                    ->where('mood.status', 'unsettled')
+                    ->sortBy('happiness')
+                    ->values()
+                    ->take(5)
+                    ->all(),
+                'role_conflicts' => $allPlayers
+                    ->filter(fn ($player) => in_array($player['role_fit']['status'], ['watching', 'critical'], true))
+                    ->sortBy([
+                        ['role_fit.status', 'desc'],
+                        ['happiness', 'asc'],
+                    ])
+                    ->values()
+                    ->take(5)
+                    ->all(),
+            ],
+        ]);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -126,12 +244,27 @@ class PlayerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Player $player): \Inertia\Response
+    public function show(
+        Request $request,
+        Player $player,
+        SquadHierarchyService $squadHierarchyService,
+        PlayerMoraleService $playerMoraleService,
+        PlayerLoadService $playerLoadService,
+        InjuryManagementService $injuryManagementService,
+    ): \Inertia\Response
     {
+        $squadHierarchyService->refreshForClub($player->club);
+
         $player->load([
             'club',
             'seasonCompetitionStatistics.season:id,name,start_date',
+            'playtimePromises',
+            'injuries',
+            'recoveryLogs' => fn ($query) => $query->latest('day')->limit(7),
         ]);
+
+        $injury = $injuryManagementService->syncCurrentInjury($player);
+        $morale = $playerMoraleService->refresh($player);
 
         
         // Add formatted value for easy display
@@ -223,12 +356,46 @@ class PlayerController extends Controller
                     'name' => $player->club->name,
                     'logo_url' => $player->club->logo_url,
                 ] : null,
+                'squad_role' => $player->squad_role,
+                'leadership_level' => $player->leadership_level,
+                'team_status' => $player->team_status,
+                'expected_playtime' => (int) $player->expected_playtime,
+                'happiness' => (int) $player->happiness,
+                'happiness_trend' => (int) $player->happiness_trend,
+                'fatigue' => (int) $player->fatigue,
+                'sharpness' => (int) $player->sharpness,
+                'training_load' => (int) $player->training_load,
+                'match_load' => (int) $player->match_load,
+                'medical_status' => $player->medical_status,
+                'last_morale_reason' => $player->last_morale_reason,
+                'injury_risk' => $playerLoadService->injuryRisk($player),
+                'promise_pressure' => $morale['promise_pressure'],
+                'injury' => $injury ? [
+                    'type' => $injury->injury_type,
+                    'severity' => $injury->severity,
+                    'expected_return' => $injury->expected_return_at?->format('d.m.Y'),
+                ] : null,
             ],
             'currentSeasonStats' => $currentSeasonStats,
             'careerStats' => $careerStats,
             'recentMatches' => $recentMatches,
             'isOwner' => $player->club && $request->user()->id === $player->club->user_id,
             'positions' => array_keys($this->positions()),
+            'squadDynamics' => [
+                'promises' => $player->playtimePromises->map(fn ($promise) => [
+                    'promise_type' => $promise->promise_type,
+                    'expected_minutes_share' => (int) $promise->expected_minutes_share,
+                    'fulfilled_ratio' => (int) $promise->fulfilled_ratio,
+                    'status' => $promise->status,
+                    'deadline_at' => $promise->deadline_at?->format('d.m.Y'),
+                ])->values()->all(),
+                'recovery' => $player->recoveryLogs->map(fn ($log) => [
+                    'day' => $log->day?->format('d.m'),
+                    'fatigue_after' => (int) $log->fatigue_after,
+                    'sharpness_after' => (int) $log->sharpness_after,
+                    'injury_risk' => (int) $log->injury_risk,
+                ])->values()->all(),
+            ],
         ]);
     }
 
@@ -349,6 +516,42 @@ class PlayerController extends Controller
             ->with('status', 'Spieler wurde aktualisiert.');
     }
 
+    public function storePlaytimePromise(
+        Request $request,
+        Player $player,
+        PlayerMoraleService $playerMoraleService,
+    ): RedirectResponse {
+        $this->ensureOwnership($request, $player);
+
+        $validated = $request->validate([
+            'promise_type' => ['required', 'in:starter,regular_rotation,impact_sub,youth_path'],
+            'expected_minutes_share' => ['required', 'integer', 'min:5', 'max:100'],
+            'deadline_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $player->playtimePromises()
+            ->whereIn('status', ['active', 'at_risk'])
+            ->update(['status' => 'replaced']);
+
+        PlayerPlaytimePromise::create([
+            'player_id' => $player->id,
+            'club_id' => $player->club_id,
+            'promise_type' => $validated['promise_type'],
+            'expected_minutes_share' => (int) $validated['expected_minutes_share'],
+            'deadline_at' => !empty($validated['deadline_at']) ? Carbon::parse($validated['deadline_at']) : now()->addWeeks(6),
+            'status' => 'active',
+            'fulfilled_ratio' => $this->resolveFulfilledRatio($player),
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
+
+        return redirect()
+            ->route('players.show', $player)
+            ->with('status', 'Spielzeitversprechen wurde gespeichert.');
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -434,5 +637,207 @@ class PlayerController extends Controller
             'red_cards' => (int) $stat->red_cards,
             'average_rating' => (float) $stat->average_rating,
         ];
+    }
+
+    private function hierarchyLevels(): array
+    {
+        return [
+            'apex' => [
+                'key' => 'apex',
+                'label' => 'Spitze',
+                'description' => 'Kabinenfuehrung und absolute Schluesselspieler.',
+                'players' => [],
+            ],
+            'core' => [
+                'key' => 'core',
+                'label' => 'Kern',
+                'description' => 'Tragende Stammspieler des Projekts.',
+                'players' => [],
+            ],
+            'rotation' => [
+                'key' => 'rotation',
+                'label' => 'Rotation',
+                'description' => 'Regelmaessige Optionen fuer Spieltag und Taktik.',
+                'players' => [],
+            ],
+            'development' => [
+                'key' => 'development',
+                'label' => 'Entwicklung',
+                'description' => 'Talente und Aufbauprofile mit Perspektive.',
+                'players' => [],
+            ],
+            'fringe' => [
+                'key' => 'fringe',
+                'label' => 'Rand',
+                'description' => 'Ergaenzungsspieler und Kandidaten fuer Gespraeche.',
+                'players' => [],
+            ],
+        ];
+    }
+
+    private function mapHierarchyPlayer(Player $player, PlayerLoadService $playerLoadService, int $recentMinutesShare): array
+    {
+        $activePromise = $player->playtimePromises
+            ->sortByDesc('id')
+            ->first(fn ($promise) => in_array($promise->status, ['active', 'at_risk', 'broken', 'fulfilled'], true));
+
+        $mood = $this->resolveHierarchyMood((int) $player->happiness);
+        $roleFit = $this->resolveRoleFit($player, $recentMinutesShare, $activePromise);
+
+        return [
+            'id' => $player->id,
+            'full_name' => $player->full_name,
+            'first_name' => $player->first_name,
+            'last_name' => $player->last_name,
+            'photo_url' => $player->photo_url,
+            'position' => $player->display_position,
+            'overall' => (int) $player->overall,
+            'age' => (int) $player->age,
+            'squad_role' => $player->squad_role,
+            'squad_role_label' => $this->roleLabel($player->squad_role),
+            'leadership_level' => $player->leadership_level,
+            'leadership_label' => $this->leadershipLabel($player->leadership_level),
+            'team_status' => $player->team_status,
+            'team_status_label' => $this->teamStatusLabel($player->team_status),
+            'expected_playtime' => (int) $player->expected_playtime,
+            'recent_minutes_share' => $recentMinutesShare,
+            'happiness' => (int) $player->happiness,
+            'happiness_trend' => (int) $player->happiness_trend,
+            'fatigue' => (int) $player->fatigue,
+            'sharpness' => (int) $player->sharpness,
+            'medical_status' => $player->medical_status,
+            'injury_risk' => $playerLoadService->injuryRisk($player),
+            'last_morale_reason' => $player->last_morale_reason,
+            'pyramid_level' => $this->resolvePyramidLevel($player),
+            'mood' => $mood,
+            'role_fit' => $roleFit,
+            'promise' => $activePromise ? [
+                'status' => $activePromise->status,
+                'expected_minutes_share' => (int) $activePromise->expected_minutes_share,
+                'fulfilled_ratio' => (int) $activePromise->fulfilled_ratio,
+                'deadline_at' => $activePromise->deadline_at?->format('d.m.Y'),
+            ] : null,
+        ];
+    }
+
+    private function resolvePyramidLevel(Player $player): string
+    {
+        if ($player->leadership_level === 'captain_group' || $player->squad_role === 'star_player') {
+            return 'apex';
+        }
+
+        if ($player->squad_role === 'important_first_team' || $player->leadership_level === 'senior_core') {
+            return 'core';
+        }
+
+        if ($player->squad_role === 'rotation') {
+            return 'rotation';
+        }
+
+        if ($player->squad_role === 'prospect') {
+            return 'development';
+        }
+
+        return 'fringe';
+    }
+
+    private function resolveHierarchyMood(int $happiness): array
+    {
+        return match (true) {
+            $happiness >= 72 => ['status' => 'happy', 'label' => 'Zufrieden'],
+            $happiness >= 50 => ['status' => 'steady', 'label' => 'Stabil'],
+            default => ['status' => 'unsettled', 'label' => 'Unruhig'],
+        };
+    }
+
+    private function resolveRoleFit(Player $player, int $recentMinutesShare, ?PlayerPlaytimePromise $promise): array
+    {
+        $delta = $recentMinutesShare - (int) $player->expected_playtime;
+        $status = match (true) {
+            $promise && $promise->status === 'broken' => 'critical',
+            $promise && $promise->status === 'at_risk' => 'watching',
+            $delta >= -8 => 'aligned',
+            $delta >= -20 => 'watching',
+            default => 'critical',
+        };
+
+        $label = match ($status) {
+            'aligned' => 'Rolle wirkt gerecht',
+            'watching' => 'Rolle beobachten',
+            default => 'Rolle wirkt nicht gerecht',
+        };
+
+        $reason = match ($status) {
+            'aligned' => 'Aktuelle Einsatzzeit passt weitgehend zur erwarteten Rolle.',
+            'watching' => 'Die Einsatzzeit liegt spuerbar unter der Rollenerwartung.',
+            default => 'Die aktuelle Rolle und die letzten Einsatzzeiten driften klar auseinander.',
+        };
+
+        if ($promise && $promise->status === 'broken') {
+            $reason = 'Ein Spielzeitversprechen wurde bereits gebrochen.';
+        } elseif ($promise && $promise->status === 'at_risk') {
+            $reason = 'Ein aktives Spielzeitversprechen steht unter Druck.';
+        }
+
+        return [
+            'status' => $status,
+            'label' => $label,
+            'reason' => $reason,
+            'delta' => $delta,
+        ];
+    }
+
+    private function roleLabel(?string $role): string
+    {
+        return match ($role) {
+            'star_player' => 'Schluesselspieler',
+            'important_first_team' => 'Wichtiger Stammspieler',
+            'rotation' => 'Rotationsspieler',
+            'prospect' => 'Perspektivspieler',
+            'backup' => 'Backup',
+            'surplus' => 'Randspieler',
+            default => 'Ohne Rolle',
+        };
+    }
+
+    private function leadershipLabel(?string $level): string
+    {
+        return match ($level) {
+            'captain_group' => 'Kapitaensgruppe',
+            'senior_core' => 'Senior Core',
+            'regular' => 'Kabinenstimme',
+            'low' => 'Im Hintergrund',
+            default => 'Keine',
+        };
+    }
+
+    private function teamStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            'leader' => 'Leader',
+            'core' => 'Kern',
+            'rotation' => 'Rotation',
+            'development' => 'Entwicklung',
+            'support' => 'Support',
+            'fringe' => 'Rand',
+            default => 'Offen',
+        };
+    }
+
+    private function resolveFulfilledRatio(Player $player): int
+    {
+        $recentStats = \App\Models\MatchPlayerStat::query()
+            ->where('player_id', $player->id)
+            ->latest('id')
+            ->limit(8)
+            ->get(['minutes_played']);
+
+        if ($recentStats->isEmpty()) {
+            return 0;
+        }
+
+        $averageMinutes = (float) $recentStats->avg('minutes_played');
+
+        return max(0, min(100, (int) round(($averageMinutes / 90) * 100)));
     }
 }
