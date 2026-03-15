@@ -17,8 +17,23 @@ class ScoutingWatchlist extends Model
         'created_by_user_id',
         'priority',
         'status',
+        'focus',
+        'progress',
+        'reports_requested',
+        'last_scouted_at',
+        'next_report_due_at',
         'notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'progress' => 'integer',
+            'reports_requested' => 'integer',
+            'last_scouted_at' => 'datetime',
+            'next_report_due_at' => 'datetime',
+        ];
+    }
 
     public function club(): BelongsTo
     {

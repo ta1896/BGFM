@@ -10,10 +10,16 @@ class ScoutingService
 {
     public function generateReport(Player $player, int $clubId, ?int $watchlistId, ?int $userId = null): ScoutingReport
     {
-        $confidence = random_int(42, 86);
+        $watchlist = $watchlistId
+            ? ScoutingWatchlist::query()->find($watchlistId)
+            : null;
+
+        $confidenceFloor = $watchlist ? max(45, min(88, 38 + (int) round($watchlist->progress * 0.45))) : 42;
+        $confidenceCeiling = $watchlist ? max($confidenceFloor, min(96, $confidenceFloor + 14)) : 86;
+        $confidence = random_int($confidenceFloor, $confidenceCeiling);
         $spread = max(3, (int) round((100 - $confidence) / 8));
 
-        return ScoutingReport::query()->create([
+        $report = ScoutingReport::query()->create([
             'club_id' => $clubId,
             'player_id' => $player->id,
             'watchlist_id' => $watchlistId,
@@ -33,6 +39,17 @@ class ScoutingService
             'personality_band' => $this->personalityBand($player),
             'summary' => $this->summary($player, $confidence),
         ]);
+
+        if ($watchlist) {
+            $watchlist->forceFill([
+                'progress' => min(100, max((int) $watchlist->progress, $confidence)),
+                'reports_requested' => (int) $watchlist->reports_requested + 1,
+                'last_scouted_at' => now(),
+                'next_report_due_at' => now()->addDays($watchlist->priority === 'high' ? 2 : 4),
+            ])->save();
+        }
+
+        return $report;
     }
 
     public function upsertWatchlist(Player $player, int $clubId, ?int $userId, array $data): ScoutingWatchlist
@@ -46,9 +63,41 @@ class ScoutingService
                 'created_by_user_id' => $userId,
                 'priority' => $data['priority'] ?? 'medium',
                 'status' => $data['status'] ?? 'watching',
+                'focus' => $data['focus'] ?? 'general',
+                'progress' => $data['progress'] ?? 0,
+                'next_report_due_at' => $data['next_report_due_at'] ?? now()->addDays(3),
                 'notes' => $data['notes'] ?? null,
             ]
         );
+    }
+
+    public function advanceWatchlist(ScoutingWatchlist $watchlist, ?int $userId = null): ?ScoutingReport
+    {
+        $gain = match ($watchlist->priority) {
+            'high' => random_int(24, 34),
+            'low' => random_int(10, 18),
+            default => random_int(16, 26),
+        };
+
+        if ($watchlist->focus === 'medical') {
+            $gain += 4;
+        }
+
+        if ($watchlist->focus === 'personality') {
+            $gain += 2;
+        }
+
+        $watchlist->forceFill([
+            'progress' => min(100, (int) $watchlist->progress + $gain),
+            'last_scouted_at' => now(),
+            'next_report_due_at' => now()->addDays($watchlist->priority === 'high' ? 2 : 4),
+        ])->save();
+
+        if ((int) $watchlist->progress < 55) {
+            return null;
+        }
+
+        return $this->generateReport($watchlist->player, $watchlist->club_id, $watchlist->id, $userId);
     }
 
     private function injuryRiskBand(Player $player): string

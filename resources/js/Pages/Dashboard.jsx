@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import { 
     Calendar, Trophy, Users, ChartBar,
-    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning
+    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit
 } from '@phosphor-icons/react';
 
 const taskTone = {
@@ -164,7 +164,7 @@ export default function Dashboard(props) {
         clubRank, clubPoints, recentForm, recentMatchesSummary, weekDays,
         todayMatchesCount, unreadNotificationsCount,
         dashboardVariant, assistantTasks, todayFocus, clubPulseOverview, comparisonStats, quickActions,
-        squadPulse, scoutingDesk, managerDecisions, liveMatches, onlineManagers
+        squadPulse, scoutingDesk, medicalDesk, managerDecisions, liveMatches, onlineManagers
     } = props;
 
     if (!activeClub) {
@@ -192,6 +192,18 @@ export default function Dashboard(props) {
     }
 
     const fanMood = Math.max(0, Math.min(100, parseInt(activeClub.fan_mood || 50)));
+
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            router.reload({
+                only: ['liveMatches', 'onlineManagers', 'todayMatchesCount', 'unreadNotificationsCount'],
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 12000);
+
+        return () => window.clearInterval(interval);
+    }, []);
 
     return (
         <AuthenticatedLayout>
@@ -439,7 +451,7 @@ export default function Dashboard(props) {
                             </div>
                         </section>
 
-                        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                             {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
                                 <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
                                     <div className="mb-4 flex items-center justify-between gap-3">
@@ -459,11 +471,62 @@ export default function Dashboard(props) {
                                                 <div className="min-w-0 flex-1">
                                                     <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
                                                     <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
+                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200/80">
+                                                        {target.focus} / {target.progress}% / ETA {target.next_report_due_at || '-'}
+                                                    </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
                                                     <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
                                                         {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {medicalDesk && (medicalDesk.injured_count > 0 || medicalDesk.monitoring_count > 0 || medicalDesk.return_count > 0) && (
+                                <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Medical Desk</h3>
+                                        <Link href={route('medical.index')} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-rose-200 hover:text-white">
+                                            <FirstAidKit size={12} weight="fill" />
+                                            {medicalDesk.injured_count} out
+                                        </Link>
+                                    </div>
+                                    <div className="mb-4 grid grid-cols-3 gap-2">
+                                        <MiniDeskStat label="Out" value={medicalDesk.injured_count} tone="rose" />
+                                        <MiniDeskStat label="Monitor" value={medicalDesk.monitoring_count} tone="amber" />
+                                        <MiniDeskStat label="Return" value={medicalDesk.return_count} tone="emerald" />
+                                    </div>
+                                    <div className="space-y-2.5">
+                                        {medicalDesk.critical_cases.map((player) => (
+                                            <Link
+                                                key={player.id}
+                                                href={route('players.show', player.id)}
+                                                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
+                                            >
+                                                <img src={player.photo_url} alt={player.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.name}</div>
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                                                        {player.availability_status || player.medical_status} / Fatigue {player.fatigue}%
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-[9px] font-black uppercase tracking-[0.14em] ${
+                                                        player.availability_status === 'available'
+                                                            ? 'text-emerald-200'
+                                                            : player.availability_status === 'limited' || player.availability_status === 'bench_only'
+                                                                ? 'text-amber-200'
+                                                                : 'text-rose-200'
+                                                    }`}>
+                                                        {player.availability_status || player.medical_status}
+                                                    </div>
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
+                                                        {player.expected_return ? `ETA ${player.expected_return}` : 'laufend'}
                                                     </div>
                                                 </div>
                                             </Link>
@@ -766,5 +829,24 @@ export default function Dashboard(props) {
                 .bg-gold-rgb { --gold-rgb: 217, 177, 92; }
             `}} />
         </AuthenticatedLayout>
+    );
+}
+
+function MiniDeskStat({ label, value, tone = 'slate' }) {
+    return (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</div>
+            <div className={`mt-2 text-xl font-black ${
+                tone === 'rose'
+                    ? 'text-rose-200'
+                    : tone === 'amber'
+                        ? 'text-amber-200'
+                        : tone === 'emerald'
+                            ? 'text-emerald-200'
+                            : 'text-white'
+            }`}>
+                {value}
+            </div>
+        </div>
     );
 }

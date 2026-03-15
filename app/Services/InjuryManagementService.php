@@ -38,7 +38,13 @@ class InjuryManagementService
         }
 
         $player->forceFill([
-            'medical_status' => $injury ? 'rehab' : ($player->medical_status === 'rehab' ? 'fit' : $player->medical_status),
+            'medical_status' => $injury
+                ? match ($injury->availability_status) {
+                    'available' => 'fit',
+                    'limited', 'bench_only' => 'monitoring',
+                    default => 'rehab',
+                }
+                : ($player->medical_status === 'rehab' ? 'fit' : $player->medical_status),
         ])->save();
 
         return $injury;
@@ -80,6 +86,7 @@ class InjuryManagementService
             $injury->forceFill([
                 'rehab_intensity' => $data['rehab_intensity'],
                 'return_phase' => $data['return_phase'],
+                'availability_status' => $this->defaultAvailabilityForPhase($data['return_phase']),
                 'setback_risk' => $setbackRisk,
                 'notes' => $data['notes'] ?? null,
             ])->save();
@@ -90,5 +97,64 @@ class InjuryManagementService
                 'sharpness' => min(100, (int) $player->sharpness + ($data['return_phase'] === 'full' ? 8 : 4)),
             ])->save();
         }
+    }
+
+    public function updateClearance(Player $player, array $data): void
+    {
+        $injury = $player->injuries()
+            ->where('status', 'active')
+            ->latest('started_at')
+            ->first();
+
+        if (!$injury) {
+            return;
+        }
+
+        $availability = $data['availability_status'];
+        $setbackRisk = match ($availability) {
+            'available' => max(4, (int) $injury->setback_risk - 18),
+            'limited' => max(8, (int) $injury->setback_risk - 10),
+            'bench_only' => max(12, (int) $injury->setback_risk - 4),
+            default => min(90, max(18, (int) $injury->setback_risk + 6)),
+        };
+
+        $injury->forceFill([
+            'availability_status' => $availability,
+            'return_phase' => $data['return_phase'] ?? $injury->return_phase,
+            'cleared_at' => $availability === 'available' ? now() : null,
+            'setback_risk' => $setbackRisk,
+            'notes' => trim(implode("\n", array_filter([
+                $injury->notes,
+                $data['notes'] ?? null,
+            ]))),
+        ])->save();
+
+        $player->forceFill([
+            'medical_status' => match ($availability) {
+                'available' => 'fit',
+                'limited', 'bench_only' => 'monitoring',
+                default => 'rehab',
+            },
+            'fatigue' => match ($availability) {
+                'available' => max(0, (int) $player->fatigue - 6),
+                'limited' => max(0, (int) $player->fatigue - 2),
+                'bench_only' => max(0, (int) $player->fatigue - 1),
+                default => (int) $player->fatigue,
+            },
+            'sharpness' => match ($availability) {
+                'available' => min(100, (int) $player->sharpness + 6),
+                'limited' => min(100, (int) $player->sharpness + 3),
+                default => (int) $player->sharpness,
+            },
+        ])->save();
+    }
+
+    private function defaultAvailabilityForPhase(string $phase): string
+    {
+        return match ($phase) {
+            'full' => 'limited',
+            'partial' => 'bench_only',
+            default => 'unavailable',
+        };
     }
 }

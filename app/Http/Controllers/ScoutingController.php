@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Club;
 use App\Models\Player;
+use App\Models\ScoutingReport;
 use App\Models\ScoutingWatchlist;
 use App\Services\ScoutingService;
 use Illuminate\Http\RedirectResponse;
@@ -42,7 +43,7 @@ class ScoutingController extends Controller
         if ($activeClub) {
             $watchlist = ScoutingWatchlist::query()
                 ->where('club_id', $activeClub->id)
-                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(1)])
+                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(3)])
                 ->latest('updated_at')
                 ->get();
         }
@@ -70,6 +71,11 @@ class ScoutingController extends Controller
                     'id' => $entry->id,
                     'priority' => $entry->priority,
                     'status' => $entry->status,
+                    'focus' => $entry->focus,
+                    'progress' => (int) $entry->progress,
+                    'reports_requested' => (int) $entry->reports_requested,
+                    'last_scouted_at' => $entry->last_scouted_at?->format('d.m.Y H:i'),
+                    'next_report_due_at' => $entry->next_report_due_at?->format('d.m.Y'),
                     'notes' => $entry->notes,
                     'player' => [
                         'id' => $entry->player?->id,
@@ -79,6 +85,7 @@ class ScoutingController extends Controller
                         'club_name' => $entry->player?->club?->name,
                     ],
                     'latest_report' => $report ? [
+                        'created_at' => $report->created_at?->format('d.m.Y H:i'),
                         'confidence' => (int) $report->confidence,
                         'overall_band' => $report->overall_min.'-'.$report->overall_max,
                         'potential_band' => $report->potential_min.'-'.$report->potential_max,
@@ -86,6 +93,11 @@ class ScoutingController extends Controller
                         'personality_band' => $report->personality_band,
                         'summary' => $report->summary,
                     ] : null,
+                    'report_history' => $entry->reports->map(fn (ScoutingReport $history) => [
+                        'id' => $history->id,
+                        'confidence' => (int) $history->confidence,
+                        'created_at' => $history->created_at?->format('d.m.Y H:i'),
+                    ])->values()->all(),
                 ];
             })->values()->all(),
         ]);
@@ -99,6 +111,7 @@ class ScoutingController extends Controller
         $validated = $request->validate([
             'priority' => ['required', 'in:low,medium,high'],
             'status' => ['required', 'in:watching,priority,negotiating'],
+            'focus' => ['nullable', 'in:general,tactical,medical,personality'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -115,6 +128,7 @@ class ScoutingController extends Controller
         $validated = $request->validate([
             'priority' => ['required', 'in:low,medium,high'],
             'status' => ['required', 'in:watching,priority,negotiating'],
+            'focus' => ['nullable', 'in:general,tactical,medical,personality'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -145,6 +159,16 @@ class ScoutingController extends Controller
         $scoutingService->generateReport($player, $club->id, $watchlist?->id, $request->user()->id);
 
         return back()->with('status', 'Scout-Report wurde aktualisiert.');
+    }
+
+    public function advanceWatchlist(Request $request, ScoutingWatchlist $watchlist, ScoutingService $scoutingService): RedirectResponse
+    {
+        $club = $this->resolveManagedClub($request);
+        abort_unless($club && $watchlist->club_id === $club->id, 403);
+
+        $report = $scoutingService->advanceWatchlist($watchlist->loadMissing('player'), $request->user()->id);
+
+        return back()->with('status', $report ? 'Scout-Mission abgeschlossen, neuer Report eingegangen.' : 'Scout-Mission wurde vorangetrieben.');
     }
 
     private function resolveManagedClub(Request $request): ?Club

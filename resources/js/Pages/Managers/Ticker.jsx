@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
 import LiveMatchCard from '@/Components/live/LiveMatchCard';
 import { PlayCircle, UsersThree } from '@phosphor-icons/react';
 
 export default function Ticker({ liveMatches = [], onlineManagersCount = 0 }) {
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            router.reload({ only: ['liveMatches', 'onlineManagersCount'], preserveState: true, preserveScroll: true });
+        }, 10000);
+
+        return () => window.clearInterval(interval);
+    }, []);
+
     return (
         <AuthenticatedLayout>
             <Head title="Live-Ticker" />

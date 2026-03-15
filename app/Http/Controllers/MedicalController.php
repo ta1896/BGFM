@@ -56,7 +56,9 @@ class MedicalController extends Controller
                         'expected_return' => $injury->expected_return_at?->format('d.m.Y'),
                         'rehab_intensity' => $injury->rehab_intensity ?: 'medium',
                         'return_phase' => $injury->return_phase ?: 'recovery',
+                        'availability_status' => $injury->availability_status ?: 'unavailable',
                         'setback_risk' => (int) $injury->setback_risk,
+                        'cleared_at' => $injury->cleared_at?->format('d.m.Y H:i'),
                         'notes' => $injury->notes,
                     ] : null,
                 ];
@@ -103,6 +105,21 @@ class MedicalController extends Controller
         $injuryManagementService->updateRehabPlan($player, $validated);
 
         return back()->with('status', 'Medical-Plan wurde aktualisiert.');
+    }
+
+    public function updateClearance(Request $request, Player $player, InjuryManagementService $injuryManagementService): RedirectResponse
+    {
+        $this->ensureOwnership($request, $player);
+
+        $validated = $request->validate([
+            'availability_status' => ['required', 'in:unavailable,bench_only,limited,available'],
+            'return_phase' => ['nullable', 'in:recovery,individual,partial,full'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $injuryManagementService->updateClearance($player, $validated);
+
+        return back()->with('status', 'Matchday-Freigabe wurde aktualisiert.');
     }
 
     private function ensureOwnership(Request $request, Player $player): void

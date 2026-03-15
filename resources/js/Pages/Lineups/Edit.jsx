@@ -60,13 +60,21 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                     </p>
                     {player.selection_warning && (
                         <p className={`mt-1 inline-flex rounded-full border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.14em] ${
-                            player.selection_warning === 'rehab'
+                            player.selection_warning === 'medical_hold'
+                                ? 'border-rose-400/25 bg-rose-500/12 text-rose-200'
+                                : player.selection_warning === 'rehab'
                                 ? 'border-rose-400/20 bg-rose-500/10 text-rose-300'
                                 : player.selection_warning === 'risk'
                                     ? 'border-amber-400/20 bg-amber-500/10 text-amber-300'
                                     : 'border-cyan-400/20 bg-cyan-500/10 text-cyan-300'
                         }`}>
-                            {player.selection_warning === 'rehab' ? 'Reha' : player.selection_warning === 'risk' ? 'Medical Risk' : 'Promise Druck'}
+                            {player.selection_warning === 'medical_hold'
+                                ? `Medical Hold${player.medical_clearance === 'bench_only' ? ' / Bank' : ''}`
+                                : player.selection_warning === 'rehab'
+                                    ? 'Reha'
+                                    : player.selection_warning === 'risk'
+                                        ? 'Medical Risk'
+                                        : 'Promise Druck'}
                         </p>
                     )}
                 </div>

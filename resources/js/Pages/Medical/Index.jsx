@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Heartbeat, WarningCircle, ShieldCheck, ArrowClockwise } from '@phosphor-icons/react';
+import { Heartbeat, WarningCircle, ShieldCheck, ArrowClockwise, Pulse, CheckCircle } from '@phosphor-icons/react';
 
 export default function Index({ club, medicalBoard }) {
     const form = useForm({
@@ -91,6 +91,11 @@ function MedicalRow({ player, processing, onSubmit }) {
         return_phase: player.injury?.return_phase || 'recovery',
         notes: player.injury?.notes || '',
     };
+    const clearanceForm = useForm({
+        availability_status: player.injury?.availability_status || 'unavailable',
+        return_phase: player.injury?.return_phase || 'recovery',
+        notes: player.injury?.notes || '',
+    });
 
     const [values, setValues] = React.useState(defaults);
 
@@ -134,7 +139,43 @@ function MedicalRow({ player, processing, onSubmit }) {
                 </Field>
             </div>
 
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 grid gap-4 rounded-2xl border border-emerald-400/15 bg-emerald-500/5 p-4 md:grid-cols-[1fr_1fr_auto]">
+                <Field label="Matchday-Freigabe">
+                    <select
+                        value={clearanceForm.data.availability_status}
+                        onChange={(e) => clearanceForm.setData('availability_status', e.target.value)}
+                        className="sim-select w-full"
+                    >
+                        <option value="unavailable">Nicht verfuegbar</option>
+                        <option value="bench_only">Nur Bank</option>
+                        <option value="limited">Belastet spielbar</option>
+                        <option value="available">Voll freigegeben</option>
+                    </select>
+                </Field>
+                <div className="flex items-end gap-3">
+                    <button
+                        type="button"
+                        disabled={clearanceForm.processing}
+                        onClick={() => clearanceForm.post(route('medical.clearance.update', player.id), { preserveScroll: true })}
+                        className="sim-btn-secondary w-full px-4 py-3 text-xs font-black uppercase tracking-widest"
+                    >
+                        {clearanceForm.processing ? 'Prueft...' : 'Freigabe setzen'}
+                    </button>
+                </div>
+                <div className="flex items-end justify-end">
+                    <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-right">
+                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Aktuell</div>
+                        <div className="mt-1 text-xs font-black uppercase tracking-[0.08em] text-white">{player.injury?.availability_status || 'unavailable'}</div>
+                        {player.injury?.cleared_at ? <div className="mt-1 text-[10px] text-emerald-200">seit {player.injury.cleared_at}</div> : null}
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-4 flex justify-between gap-4">
+                <div className="flex flex-wrap gap-2">
+                    <Badge tone="emerald">{availabilityLabel(player.injury?.availability_status)}</Badge>
+                    <Badge tone="cyan">Sharpness {player.sharpness}%</Badge>
+                </div>
                 <button type="button" disabled={processing} onClick={() => onSubmit(player.id, values)} className="sim-btn-primary px-6 py-3 text-xs font-black uppercase tracking-widest">
                     {processing ? 'Speichert...' : 'Plan setzen'}
                 </button>
@@ -151,7 +192,7 @@ function CompactMedicalRow({ player, emphasize = false }) {
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-black uppercase tracking-[0.06em] text-white">{player.name}</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                        {player.position} / {player.medical_status}
+                        {player.position} / {player.medical_status} / {availabilityLabel(player.injury?.availability_status)}
                     </div>
                 </div>
                 <div className="text-right text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
@@ -168,6 +209,7 @@ function Badge({ children, tone = 'rose' }) {
         rose: 'border-rose-400/20 bg-rose-500/10 text-rose-300',
         amber: 'border-amber-400/20 bg-amber-500/10 text-amber-300',
         cyan: 'border-cyan-400/20 bg-cyan-500/10 text-cyan-300',
+        emerald: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300',
     };
 
     return <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tones[tone]}`}>{children}</span>;
@@ -184,4 +226,17 @@ function Field({ label, children }) {
 
 function EmptyCopy({ text }) {
     return <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">{text}</div>;
+}
+
+function availabilityLabel(value) {
+    switch (value) {
+        case 'available':
+            return 'Voll freigegeben';
+        case 'limited':
+            return 'Belastet spielbar';
+        case 'bench_only':
+            return 'Nur Bank';
+        default:
+            return 'Nicht verfuegbar';
+    }
 }

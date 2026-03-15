@@ -93,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/training/{session}/apply', [TrainingController::class, 'apply'])->name('training.apply');
             Route::get('/medical', [MedicalController::class, 'index'])->name('medical.index');
             Route::post('/medical/{player}/plan', [MedicalController::class, 'updatePlan'])->name('medical.plan.update');
+            Route::post('/medical/{player}/clearance', [MedicalController::class, 'updateClearance'])->name('medical.clearance.update');
             Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
@@ -107,6 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/scouting', [ScoutingController::class, 'index'])->name('scouting.index');
             Route::post('/scouting/{player}/watchlist', [ScoutingController::class, 'storeWatchlist'])->name('scouting.watchlist.store');
             Route::patch('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'updateWatchlist'])->name('scouting.watchlist.update');
+            Route::post('/scouting/watchlist/{watchlist}/advance', [ScoutingController::class, 'advanceWatchlist'])->name('scouting.watchlist.advance');
             Route::delete('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'destroyWatchlist'])->name('scouting.watchlist.destroy');
             Route::post('/scouting/{player}/report', [ScoutingController::class, 'generateReport'])->name('scouting.report.generate');
         }

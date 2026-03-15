@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
 import ManagerPresenceCard from '@/Components/live/ManagerPresenceCard';
 import { Broadcast, UsersThree } from '@phosphor-icons/react';
 
 export default function Online({ onlineManagers = [], onlineWindowMinutes = 5 }) {
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            router.reload({ only: ['onlineManagers'], preserveState: true, preserveScroll: true });
+        }, 12000);
+
+        return () => window.clearInterval(interval);
+    }, []);
+
     return (
         <AuthenticatedLayout>
             <Head title="Manager Online" />

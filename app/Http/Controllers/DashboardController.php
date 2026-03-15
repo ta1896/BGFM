@@ -96,6 +96,12 @@ class DashboardController extends Controller
             'watchlist_count' => 0,
             'priority_targets' => [],
         ];
+        $medicalDesk = [
+            'injured_count' => 0,
+            'monitoring_count' => 0,
+            'return_count' => 0,
+            'critical_cases' => [],
+        ];
         $todayFocus = [];
         $clubPulseOverview = [];
         $comparisonStats = [];
@@ -515,12 +521,59 @@ class DashboardController extends Controller
                             'club_name' => $entry->player?->club?->name,
                             'priority' => $entry->priority,
                             'status' => $entry->status,
+                            'focus' => $entry->focus,
+                            'progress' => (int) $entry->progress,
+                            'next_report_due_at' => $entry->next_report_due_at?->format('d.m'),
                             'confidence' => $report?->confidence,
                             'overall_band' => $report ? $report->overall_min.'-'.$report->overall_max : null,
                         ];
                     })
                     ->values()
                     ->all(),
+            ];
+            $injuredPlayers = $activeClub->players
+                ->filter(fn ($player) => $player->injuries->where('status', 'active')->isNotEmpty())
+                ->values();
+            $medicalCases = $activeClub->players
+                ->filter(function ($player): bool {
+                    $injury = $player->injuries->where('status', 'active')->sortByDesc('id')->first();
+
+                    return $injury !== null
+                        || in_array((string) $player->medical_status, ['rehab', 'monitoring', 'risk'], true)
+                        || (int) $player->fatigue >= 70;
+                })
+                ->map(function ($player) {
+                    $injury = $player->injuries->where('status', 'active')->sortByDesc('id')->first();
+
+                    return [
+                        'id' => $player->id,
+                        'name' => $player->full_name,
+                        'photo_url' => $player->photo_url,
+                        'medical_status' => $player->medical_status,
+                        'fatigue' => (int) $player->fatigue,
+                        'availability_status' => $injury?->availability_status,
+                        'return_phase' => $injury?->return_phase,
+                        'expected_return' => $injury?->expected_return_at?->format('d.m'),
+                    ];
+                })
+                ->sortByDesc(function (array $player) {
+                    return match ($player['availability_status']) {
+                        'unavailable' => 5,
+                        'bench_only' => 4,
+                        default => $player['medical_status'] === 'rehab' ? 3 : ($player['fatigue'] >= 80 ? 2 : 1),
+                    };
+                })
+                ->take(3)
+                ->values();
+            $medicalDesk = [
+                'injured_count' => $injuredPlayers->count(),
+                'monitoring_count' => $activeClub->players->whereIn('medical_status', ['monitoring', 'risk'])->count(),
+                'return_count' => $injuredPlayers->filter(function ($player) {
+                    $injury = $player->injuries->where('status', 'active')->sortByDesc('id')->first();
+
+                    return $injury && in_array((string) $injury->availability_status, ['bench_only', 'limited', 'available'], true);
+                })->count(),
+                'critical_cases' => $medicalCases->all(),
             ];
             $conversationDecisions = $conversationsEnabled
                 ? PlayerConversation::query()
@@ -626,6 +679,21 @@ class DashboardController extends Controller
                 ];
             }
 
+            if ($medicalDesk['injured_count'] > 0 || $medicalDesk['monitoring_count'] > 0) {
+                $assistantTasks[] = [
+                    'kind' => $medicalDesk['return_count'] > 0 ? 'info' : 'warning',
+                    'priority' => $medicalDesk['injured_count'] > 1 ? 'heute' : 'beobachten',
+                    'domain' => 'medical',
+                    'metric' => $medicalDesk['injured_count'].' out / '.$medicalDesk['monitoring_count'].' monitor',
+                    'label' => $medicalDesk['return_count'] > 0 ? 'Rueckkehrfenster aktiv' : 'Medical Desk beobachten',
+                    'description' => $medicalDesk['return_count'] > 0
+                        ? 'Mehrere Spieler stehen zwischen Reha und Freigabe. Plane die Rueckkehr bewusst.'
+                        : 'Verletzungen und Belastung beeinflussen bereits die Matchday-Verfuegbarkeit.',
+                    'url' => route('medical.index'),
+                    'cta' => 'Medical Center',
+                ];
+            }
+
             $formPoints = collect($recentForm)->sum(fn ($result) => match ($result) {
                 'W' => 3,
                 'D' => 1,
@@ -721,6 +789,14 @@ class DashboardController extends Controller
                     'url' => route('players.index'),
                     'cta' => 'Kader',
                 ],
+                ($medicalDesk['injured_count'] > 0 || $medicalDesk['return_count'] > 0) ? [
+                    'label' => 'Medical',
+                    'value' => $medicalDesk['injured_count'].' verletzt',
+                    'detail' => $medicalDesk['return_count'].' Rueckkehrfenster / '.$medicalDesk['monitoring_count'].' Monitoring',
+                    'tone' => $medicalDesk['return_count'] > 0 ? 'amber' : 'rose',
+                    'url' => route('medical.index'),
+                    'cta' => 'Medical',
+                ] : null,
             ]));
             $quickActions = [
                 [
@@ -795,6 +871,7 @@ class DashboardController extends Controller
             'squadAlerts' => $squadAlerts,
             'squadPulse' => $squadPulse,
             'scoutingDesk' => $scoutingDesk,
+            'medicalDesk' => $medicalDesk,
             'managerDecisions' => $managerDecisions,
             'liveMatches' => $liveMatches,
             'onlineManagers' => $onlineManagers,

@@ -29,6 +29,7 @@ class ScoutingReport extends Model
         'injury_risk_band',
         'personality_band',
         'summary',
+        'created_at',
     ];
 
     public function club(): BelongsTo

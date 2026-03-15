@@ -3,12 +3,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Binoculars, MagnifyingGlass, Handshake, Star } from '@phosphor-icons/react';
+import { Binoculars, MagnifyingGlass, Handshake, Star, ClockCountdown, TrendUp } from '@phosphor-icons/react';
 
 export default function Index({ club, targets, watchlist }) {
     const watchlistForm = useForm({
         priority: 'medium',
         status: 'watching',
+        focus: 'general',
         notes: '',
     });
 
@@ -65,7 +66,7 @@ export default function Index({ club, targets, watchlist }) {
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => watchlistForm.transform(() => ({ priority: 'medium', status: 'watching', notes: '' })).post(route('scouting.watchlist.store', player.id), { preserveScroll: true })}
+                                        onClick={() => watchlistForm.transform(() => ({ priority: 'medium', status: 'watching', focus: 'general', notes: '' })).post(route('scouting.watchlist.store', player.id), { preserveScroll: true })}
                                         className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
                                     >
                                         Auf Watchlist
@@ -107,10 +108,11 @@ export default function Index({ club, targets, watchlist }) {
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     <Tag tone="cyan">{entry.priority}</Tag>
                                     <Tag tone="amber">{entry.status}</Tag>
+                                    <Tag tone="slate">{entry.focus}</Tag>
                                     {entry.latest_report && <Tag tone="emerald">{entry.latest_report.confidence}% sicher</Tag>}
                                 </div>
 
-                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                <div className="mt-4 grid gap-3 md:grid-cols-4">
                                     <QuickSelect
                                         label="Prioritaet"
                                         value={entry.priority}
@@ -118,6 +120,7 @@ export default function Index({ club, targets, watchlist }) {
                                         onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
                                             priority: value,
                                             status: entry.status,
+                                            focus: entry.focus,
                                             notes: entry.notes || '',
                                         }, { preserveScroll: true })}
                                     />
@@ -128,6 +131,18 @@ export default function Index({ club, targets, watchlist }) {
                                         onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
                                             priority: entry.priority,
                                             status: value,
+                                            focus: entry.focus,
+                                            notes: entry.notes || '',
+                                        }, { preserveScroll: true })}
+                                    />
+                                    <QuickSelect
+                                        label="Fokus"
+                                        value={entry.focus}
+                                        options={['general', 'tactical', 'medical', 'personality']}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
+                                            priority: entry.priority,
+                                            status: entry.status,
+                                            focus: value,
                                             notes: entry.notes || '',
                                         }, { preserveScroll: true })}
                                     />
@@ -138,12 +153,19 @@ export default function Index({ club, targets, watchlist }) {
                                             onBlur={(event) => router.patch(route('scouting.watchlist.update', entry.id), {
                                                 priority: entry.priority,
                                                 status: entry.status,
+                                                focus: entry.focus,
                                                 notes: event.target.value,
                                             }, { preserveScroll: true })}
                                             className="sim-input w-full"
                                             placeholder="Scout-Notiz"
                                         />
                                     </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                    <ReportBox label="Fortschritt" value={`${entry.progress}%`} />
+                                    <ReportBox label="Naechster Report" value={entry.next_report_due_at || '-'} />
+                                    <ReportBox label="Missionen" value={entry.reports_requested} />
                                 </div>
 
                                 {entry.latest_report ? (
@@ -155,6 +177,11 @@ export default function Index({ club, targets, watchlist }) {
                                         <div className="md:col-span-2 rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)]/50 px-4 py-3 text-sm text-[var(--text-muted)]">
                                             {entry.latest_report.summary}
                                         </div>
+                                        <div className="md:col-span-2 flex flex-wrap gap-2">
+                                            {entry.report_history?.map((report) => (
+                                                <Tag key={report.id} tone="slate">{report.created_at} / {report.confidence}%</Tag>
+                                            ))}
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-4 text-sm text-[var(--text-muted)]">
@@ -163,14 +190,24 @@ export default function Index({ club, targets, watchlist }) {
                                 )}
 
                                 <div className="mt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => router.post(route('scouting.report.generate', entry.player.id), {}, { preserveScroll: true })}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200"
-                                    >
-                                        <Handshake size={13} weight="bold" />
-                                        Report aktualisieren
-                                    </button>
+                                    <div className="flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => router.post(route('scouting.watchlist.advance', entry.id), {}, { preserveScroll: true })}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
+                                        >
+                                            <TrendUp size={13} weight="bold" />
+                                            Scout weiterschicken
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => router.post(route('scouting.report.generate', entry.player.id), {}, { preserveScroll: true })}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200"
+                                        >
+                                            <Handshake size={13} weight="bold" />
+                                            Express-Report
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )) : (
@@ -190,6 +227,7 @@ function Tag({ children, tone = 'cyan' }) {
         cyan: 'border-cyan-400/20 bg-cyan-500/10 text-cyan-200',
         amber: 'border-amber-400/20 bg-amber-500/10 text-amber-200',
         emerald: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200',
+        slate: 'border-slate-400/20 bg-slate-500/10 text-slate-200',
     };
 
     return <span className={`rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${tones[tone]}`}>{children}</span>;
