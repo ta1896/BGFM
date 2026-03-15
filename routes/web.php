@@ -106,6 +106,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/statistics', [App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
             Route::get('/awards', [AwardsController::class, 'index'])->name('awards.index');
             Route::get('/scouting', [ScoutingController::class, 'index'])->name('scouting.index');
+            Route::post('/scouting/discover', [ScoutingController::class, 'discoverTargets'])->name('scouting.discover');
             Route::post('/scouting/{player}/watchlist', [ScoutingController::class, 'storeWatchlist'])->name('scouting.watchlist.store');
             Route::patch('/scouting/watchlist/{watchlist}', [ScoutingController::class, 'updateWatchlist'])->name('scouting.watchlist.update');
             Route::post('/scouting/watchlist/{watchlist}/advance', [ScoutingController::class, 'advanceWatchlist'])->name('scouting.watchlist.advance');

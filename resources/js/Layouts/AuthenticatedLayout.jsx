@@ -8,17 +8,20 @@ import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
-import { findActiveMenuLabel, getManagerMenuGroups } from '@/Layouts/navigation';
+import { findActiveMenuLabel, getManagerMenuGroups, mergeMenuGroups } from '@/Layouts/navigation';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const { auth, activeClub, userClubs = [], flash, live } = usePage().props;
+    const { auth, activeClub, userClubs = [], flash, live, modules = {} } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
     const currentRoute = route().current();
 
     const hasManagedClub = auth.isAdmin || userClubs.length > 0;
-    const menuGroups = getManagerMenuGroups({ hasManagedClub });
+    const menuGroups = mergeMenuGroups(
+        getManagerMenuGroups({ hasManagedClub }),
+        modules.manager_navigation,
+    );
     const activeMenuLabel = findActiveMenuLabel(menuGroups, currentRoute, 'Dashboard');
 
     return (
@@ -40,19 +43,19 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             )}
             sidebar={(
-                <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 sim-sidebar-floating shadow-2xl`}>
+                <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 sim-sidebar-floating shadow-2xl flex h-full flex-col overflow-hidden`}>
                     <SidebarBrand href={route('dashboard')} badge="NW" title="NewGen" subtitle="Management Suite" />
 
                     <SidebarNavigation
                         menuGroups={menuGroups}
                         currentRoute={currentRoute}
-                        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar"
+                        className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar"
                         activeTextClassName="text-[var(--text-main)] bg-[var(--bg-content)]/50"
                         inactiveTextClassName="text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30"
                         labelClassName="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors"
                     />
 
-                    <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
+                    <div className="shrink-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                         {hasManagedClub && userClubs.length > 1 && (
                             <ClubSwitcher
                                 activeClub={activeClub}

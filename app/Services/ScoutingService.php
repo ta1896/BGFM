@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Club;
 use App\Models\GameNotification;
 use App\Models\Player;
+use App\Models\ScoutingDiscovery;
 use App\Models\ScoutingReport;
 use App\Models\ScoutingWatchlist;
 
@@ -146,6 +147,110 @@ class ScoutingService
         return $this->generateReport($watchlist->player, $watchlist->club_id, $watchlist->id, $userId);
     }
 
+    public function discoverTargets(Club $club, array $filters, ?int $userId = null): array
+    {
+        $market = (string) ($filters['market'] ?? 'domestic');
+        $position = (string) ($filters['position'] ?? 'all');
+        $ageBand = (string) ($filters['age_band'] ?? 'all');
+        $valueBand = (string) ($filters['value_band'] ?? 'all');
+        $discoveryLevel = (string) ($filters['discovery_level'] ?? 'experienced');
+        $search = trim((string) ($filters['search'] ?? ''));
+
+        $query = Player::query()
+            ->with('club')
+            ->where('club_id', '!=', $club->id)
+            ->when($search !== '', function ($builder) use ($search): void {
+                $builder->where(function ($inner) use ($search): void {
+                    $inner
+                        ->where('first_name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%');
+                });
+            });
+
+        $this->applyMarketScope($query, $club, $market);
+        $this->applyPositionScope($query, $position);
+        $this->applyAgeScope($query, $ageBand);
+        $this->applyValueScope($query, $valueBand);
+
+        $pool = $query
+            ->orderByDesc('potential')
+            ->orderByDesc('overall')
+            ->limit($this->discoveryPoolLimit($discoveryLevel))
+            ->get();
+
+        $leads = $pool
+            ->map(function (Player $player) use ($club, $position, $discoveryLevel): array {
+                $fitScore = $this->fitScore($player, $club, $position);
+                $fogPenalty = match ($discoveryLevel) {
+                    'junior' => random_int(7, 18),
+                    'elite' => random_int(0, 6),
+                    default => random_int(3, 10),
+                };
+
+                return [
+                    'player' => $player,
+                    'fit_score' => max(35, min(99, $fitScore - $fogPenalty + random_int(0, 8))),
+                    'market_band' => $this->marketValueBand((float) $player->market_value),
+                    'region_tag' => $this->regionTag($club, $player),
+                    'discovery_note' => $this->discoveryNote($player, $discoveryLevel),
+                ];
+            })
+            ->sortByDesc('fit_score')
+            ->take($this->discoveryLeadCount($discoveryLevel))
+            ->values();
+
+        $cost = $this->discoveryScanCost($market, $discoveryLevel);
+
+        $this->financeLedger->applyBudgetChange($club, -$cost, [
+            'user_id' => $userId,
+            'context_type' => 'transfer',
+            'reference_type' => 'scouting_discovery_scan',
+            'reference_id' => null,
+            'note' => sprintf('Scout-Zielmarkt Scan (%s/%s)', $discoveryLevel, $market),
+        ]);
+
+        $discoveryIds = [];
+        foreach ($leads as $lead) {
+            $discovery = ScoutingDiscovery::query()->updateOrCreate(
+                [
+                    'club_id' => $club->id,
+                    'player_id' => $lead['player']->id,
+                ],
+                [
+                    'created_by_user_id' => $userId,
+                    'market' => $market,
+                    'position_group' => $position,
+                    'age_band' => $ageBand,
+                    'value_band' => $valueBand,
+                    'discovery_level' => $discoveryLevel,
+                    'fit_score' => $lead['fit_score'],
+                    'market_band' => $lead['market_band'],
+                    'region_tag' => $lead['region_tag'],
+                    'discovery_note' => $lead['discovery_note'],
+                    'scanned_at' => now(),
+                ]
+            );
+
+            $discoveryIds[] = $discovery->id;
+        }
+
+        if ($userId && count($discoveryIds) > 0) {
+            GameNotification::query()->create([
+                'user_id' => $userId,
+                'club_id' => $club->id,
+                'type' => 'scouting_update',
+                'title' => 'Neue Scout-Leads',
+                'message' => sprintf('%d neue Kandidaten im %s-Markt identifiziert.', count($discoveryIds), $market),
+                'action_url' => route('scouting.index'),
+            ]);
+        }
+
+        return [
+            'count' => count($discoveryIds),
+            'cost' => $cost,
+        ];
+    }
+
     private function injuryRiskBand(Player $player): string
     {
         return match (true) {
@@ -276,5 +381,190 @@ class ScoutingService
         }
 
         return filled($club->country) && filled($player->club?->country) && $club->country === $player->club?->country;
+    }
+
+    private function discoveryPoolLimit(string $level): int
+    {
+        return match ($level) {
+            'junior' => 22,
+            'elite' => 54,
+            default => 36,
+        };
+    }
+
+    private function discoveryLeadCount(string $level): int
+    {
+        return match ($level) {
+            'junior' => 6,
+            'elite' => 12,
+            default => 9,
+        };
+    }
+
+    private function discoveryScanCost(string $market, string $level): float
+    {
+        $base = match ($market) {
+            'global' => 28000,
+            'continental' => 16000,
+            default => 8000,
+        };
+
+        $levelAdjust = match ($level) {
+            'elite' => 14000,
+            'junior' => -2500,
+            default => 4500,
+        };
+
+        return round(max(4000, $base + $levelAdjust), 2);
+    }
+
+    private function applyMarketScope($builder, ?Club $activeClub, string $market): void
+    {
+        if (!$activeClub?->country || $market === 'global') {
+            return;
+        }
+
+        if ($market === 'domestic') {
+            $builder->whereHas('club', fn ($clubQuery) => $clubQuery->where('country', $activeClub->country));
+
+            return;
+        }
+
+        if ($market === 'continental') {
+            $regionalPool = $this->regionalPoolForCountry($activeClub->country);
+            $builder->whereHas('club', function ($clubQuery) use ($activeClub, $regionalPool): void {
+                $clubQuery
+                    ->whereIn('country', $regionalPool)
+                    ->where('country', '!=', $activeClub->country);
+            });
+        }
+    }
+
+    private function applyPositionScope($builder, string $position): void
+    {
+        $map = [
+            'GK' => ['GK'],
+            'DEF' => ['LB', 'LWB', 'CB', 'RB', 'RWB', 'SW'],
+            'MID' => ['CDM', 'CM', 'CAM', 'LM', 'RM'],
+            'ATT' => ['LW', 'RW', 'CF', 'ST', 'LS', 'RS'],
+        ];
+
+        if (!isset($map[$position])) {
+            return;
+        }
+
+        $builder->whereIn('position', $map[$position]);
+    }
+
+    private function applyAgeScope($builder, string $ageBand): void
+    {
+        match ($ageBand) {
+            'u21' => $builder->where('age', '<=', 20),
+            '21_25' => $builder->whereBetween('age', [21, 25]),
+            '26_30' => $builder->whereBetween('age', [26, 30]),
+            '31_plus' => $builder->where('age', '>=', 31),
+            default => null,
+        };
+    }
+
+    private function applyValueScope($builder, string $valueBand): void
+    {
+        match ($valueBand) {
+            'budget' => $builder->where('market_value', '<=', 2500000),
+            'mid' => $builder->whereBetween('market_value', [2500001, 12000000]),
+            'premium' => $builder->whereBetween('market_value', [12000001, 30000000]),
+            'elite' => $builder->where('market_value', '>', 30000000),
+            default => null,
+        };
+    }
+
+    private function marketValueBand(float $value): string
+    {
+        return match (true) {
+            $value >= 30000000 => 'Elite',
+            $value >= 12000000 => 'Premium',
+            $value >= 2500000 => 'Mid',
+            default => 'Budget',
+        };
+    }
+
+    private function fitScore(Player $player, ?Club $activeClub, string $positionFilter): int
+    {
+        $base = (int) round(($player->overall * 0.55) + ($player->potential * 0.45));
+
+        if ($positionFilter !== 'all' && $this->positionMatchesGroup($player->position, $positionFilter)) {
+            $base += 8;
+        }
+
+        if ($activeClub && $this->isDomesticTarget($activeClub, $player)) {
+            $base += 4;
+        }
+
+        if ($player->age <= 23) {
+            $base += 5;
+        } elseif ($player->age >= 30) {
+            $base -= 4;
+        }
+
+        return max(35, min(99, $base));
+    }
+
+    private function regionTag(?Club $activeClub, Player $player): string
+    {
+        if (!$activeClub?->country || !$player->club?->country) {
+            return 'Unklar';
+        }
+
+        if ($activeClub->country === $player->club->country) {
+            return 'Domestic';
+        }
+
+        return in_array($player->club->country, $this->regionalPoolForCountry($activeClub->country), true)
+            ? 'Continental'
+            : 'Global';
+    }
+
+    private function discoveryNote(Player $player, string $discoveryLevel): string
+    {
+        $base = match (true) {
+            $player->potential >= 84 => 'Sehr hohe Decke',
+            $player->potential >= 76 => 'Klarer Entwicklungspfad',
+            default => 'Solides Profil',
+        };
+
+        $suffix = match ($discoveryLevel) {
+            'junior' => 'mit unsicherer Datenlage',
+            'elite' => 'mit starker Scout-Sicherheit',
+            default => 'mit brauchbarer Tendenz',
+        };
+
+        return $base.' '.$suffix;
+    }
+
+    private function regionalPoolForCountry(string $country): array
+    {
+        $europe = ['Deutschland', 'Frankreich', 'Spanien', 'Italien', 'England', 'Niederlande', 'Belgien', 'Portugal', 'Oesterreich', 'Schweiz'];
+        $americas = ['Brasilien', 'Argentinien', 'Uruguay', 'USA', 'Mexiko', 'Kolumbien'];
+
+        if (in_array($country, $europe, true)) {
+            return $europe;
+        }
+
+        if (in_array($country, $americas, true)) {
+            return $americas;
+        }
+
+        return [$country];
+    }
+
+    private function positionMatchesGroup(string $position, string $group): bool
+    {
+        return match ($group) {
+            'GK' => $position === 'GK',
+            'DEF' => in_array($position, ['LB', 'LWB', 'CB', 'RB', 'RWB', 'SW'], true),
+            'MID' => in_array($position, ['CDM', 'CM', 'CAM', 'LM', 'RM'], true),
+            'ATT' => in_array($position, ['LW', 'RW', 'CF', 'ST', 'LS', 'RS'], true),
+            default => true,
+        };
     }
 }

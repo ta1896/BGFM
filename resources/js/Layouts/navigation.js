@@ -22,6 +22,13 @@ export function findActiveMenuLabel(menuGroups, currentRoute, fallbackLabel) {
     return fallbackLabel;
 }
 
+export function mergeMenuGroups(baseGroups, extraGroups = {}) {
+    return {
+        ...baseGroups,
+        ...(extraGroups || {}),
+    };
+}
+
 export function getManagerMenuGroups({ hasManagedClub }) {
     if (!hasManagedClub) {
         return {

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\MakeModuleCommand;
+use App\Modules\ModuleManager;
 use App\Services\SimulationSettingsService;
 use App\Services\Simulation\Observers\ApplyMatchAvailabilityObserver;
 use App\Services\Simulation\Observers\AggregatePlayerCompetitionStatsObserver;
@@ -22,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(ModuleManager::class, fn ($app) => new ModuleManager($app['files']));
+
+        $this->app->make(ModuleManager::class)->registerProviders($this->app);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                MakeModuleCommand::class,
+            ]);
+        }
+
         $this->app->bind(MatchFinishedObserverPipeline::class, function ($app): MatchFinishedObserverPipeline {
             if (!(bool) config('simulation.observers.match_finished.enabled', true)) {
                 return new MatchFinishedObserverPipeline([]);
@@ -55,6 +67,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+
+        $this->app->make(ModuleManager::class)->boot($this);
 
         try {
             $this->app->make(SimulationSettingsService::class)->applyRuntimeOverrides();

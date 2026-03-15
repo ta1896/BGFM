@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Club;
 use App\Models\Player;
 use App\Models\PlayerInjury;
+use App\Models\ScoutingDiscovery;
 use App\Models\ScoutingWatchlist;
 use App\Models\User;
 use App\Services\InjuryManagementService;
@@ -106,6 +107,38 @@ class MedicalAndScoutingSystemsTest extends TestCase
             'reference_type' => 'scouting_mission',
             'reference_id' => $watchlist->id,
         ]);
+    }
+
+    public function test_discover_targets_creates_persisted_leads_and_charges_budget(): void
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $managerClub = $this->createClub($user, 'Discovery FC', false);
+        $cpu = User::factory()->create();
+        $targetClub = $this->createClub($cpu, 'Lead FC', true);
+
+        $this->createPlayer($targetClub, 'Lead', 'One', 'ST', 72);
+        $this->createPlayer($targetClub, 'Lead', 'Two', 'RW', 74);
+        $this->createPlayer($targetClub, 'Lead', 'Three', 'LW', 71);
+
+        $budgetBefore = (float) $managerClub->budget;
+
+        $result = app(ScoutingService::class)->discoverTargets($managerClub, [
+            'market' => 'domestic',
+            'position' => 'ATT',
+            'age_band' => 'all',
+            'value_band' => 'all',
+            'discovery_level' => 'experienced',
+        ], $user->id);
+
+        $managerClub->refresh();
+
+        $this->assertGreaterThan(0, $result['count']);
+        $this->assertLessThan($budgetBefore, (float) $managerClub->budget);
+        $this->assertDatabaseHas('club_financial_transactions', [
+            'club_id' => $managerClub->id,
+            'reference_type' => 'scouting_discovery_scan',
+        ]);
+        $this->assertGreaterThan(0, ScoutingDiscovery::query()->where('club_id', $managerClub->id)->count());
     }
 
     private function createClub(User $user, string $name, bool $isCpu): Club

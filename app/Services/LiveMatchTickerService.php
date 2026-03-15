@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\LiveOverviewUpdated;
+use App\Events\MatchStateUpdated;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
@@ -125,7 +127,10 @@ class LiveMatchTickerService
             );
         });
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function resume(GameMatch $match): GameMatch
@@ -155,7 +160,10 @@ class LiveMatchTickerService
             );
         }
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function setTacticalStyle(GameMatch $match, int $clubId, string $style): GameMatch
@@ -242,7 +250,10 @@ class LiveMatchTickerService
             );
         });
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function handleManagerShout(GameMatch $match, int $clubId, string $shout): GameMatch
@@ -276,7 +287,10 @@ class LiveMatchTickerService
             0.0  // xg
         );
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function makeSubstitution(
@@ -397,7 +411,10 @@ class LiveMatchTickerService
             $resolvedTargetSlot
         );
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function planSubstitution(
@@ -549,7 +566,10 @@ class LiveMatchTickerService
             ]
         );
 
-        return $this->loadState($match);
+        $state = $this->loadState($match);
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function tick(GameMatch $match, int $minutes = 1): GameMatch
@@ -558,7 +578,7 @@ class LiveMatchTickerService
             $this->competitionContextService->persistForMatch($match);
         }
 
-        return $this->simulationExecutor->run(
+        $state = $this->simulationExecutor->run(
             $match,
             $minutes,
             fn(GameMatch $match): GameMatch => $this->start($match),
@@ -572,6 +592,10 @@ class LiveMatchTickerService
                 $this->finish($match);
             },
         );
+
+        $this->broadcastLiveChanges($state);
+
+        return $state;
     }
 
     public function syncLiveLineupState(GameMatch $match, Club $club): void
@@ -2275,5 +2299,18 @@ class LiveMatchTickerService
         }
 
         return $match;
+    }
+
+    private function broadcastLiveChanges(GameMatch $match): void
+    {
+        broadcast(new MatchStateUpdated((int) $match->id, [
+            'matchId' => (int) $match->id,
+            'status' => (string) $match->status,
+            'live_minute' => (int) ($match->live_minute ?? 0),
+            'home_score' => (int) ($match->home_score ?? 0),
+            'away_score' => (int) ($match->away_score ?? 0),
+        ]));
+
+        broadcast(new LiveOverviewUpdated(app(LiveOverviewService::class)->overview()));
     }
 }

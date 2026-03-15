@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Lightning, Play } from '@phosphor-icons/react';
@@ -48,8 +48,6 @@ export default function Show({
         player_states,
         planned_substitutions,
     });
-    const pollingRef = useRef(null);
-
     const fetchState = useCallback(async () => {
         try {
             const res = await fetch(route('matches.live.state', id), {
@@ -79,12 +77,21 @@ export default function Show({
     }, [id]);
 
     useEffect(() => {
-        if (liveState.status === 'live') {
-            pollingRef.current = setInterval(fetchState, 8000);
+        if (!window.Echo) {
+            return undefined;
         }
 
-        return () => clearInterval(pollingRef.current);
-    }, [fetchState, liveState.status]);
+        const channelName = `match.${id}`;
+        const channel = window.Echo.channel(channelName);
+
+        channel.listen('.match.state.updated', () => {
+            fetchState();
+        });
+
+        return () => {
+            window.Echo.leaveChannel(channelName);
+        };
+    }, [fetchState, id]);
 
     const simulate = () => router.post(route('matches.simulate', id));
     const startLive = () => router.post(route('matches.live-start', id));

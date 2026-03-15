@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
+import useLiveOverview from '@/hooks/useLiveOverview';
 import { 
     Calendar, Trophy, Users, ChartBar,
     ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit
@@ -192,18 +193,7 @@ export default function Dashboard(props) {
     }
 
     const fanMood = Math.max(0, Math.min(100, parseInt(activeClub.fan_mood || 50)));
-
-    useEffect(() => {
-        const interval = window.setInterval(() => {
-            router.reload({
-                only: ['liveMatches', 'onlineManagers', 'todayMatchesCount', 'unreadNotificationsCount'],
-                preserveState: true,
-                preserveScroll: true,
-            });
-        }, 12000);
-
-        return () => window.clearInterval(interval);
-    }, []);
+    const liveOverview = useLiveOverview({ initialLiveMatches: liveMatches, initialOnlineManagers: onlineManagers });
 
     return (
         <AuthenticatedLayout>
@@ -604,7 +594,7 @@ export default function Dashboard(props) {
                             <div className="mb-4 flex items-center justify-between gap-3">
                                 <div>
                                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live Matches</div>
-                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveMatches?.length || 0}</div>
+                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.liveMatchesCount}</div>
                                 </div>
                                 <Link href={route('live-ticker.index')} className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-white">
                                     <Broadcast size={12} weight="fill" />
@@ -612,7 +602,7 @@ export default function Dashboard(props) {
                                 </Link>
                             </div>
                             <div className="space-y-3">
-                                {liveMatches && liveMatches.length > 0 ? liveMatches.map((match) => (
+                                {liveOverview.liveMatchesCount > 0 ? liveOverview.liveMatches.map((match) => (
                                     <LiveMatchRow key={match.id} match={match} />
                                 )) : (
                                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
@@ -813,7 +803,7 @@ export default function Dashboard(props) {
                             <div className="mb-4 flex items-center justify-between gap-3">
                                 <div>
                                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Online Manager</div>
-                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{onlineManagers?.length || 0}</div>
+                                    <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.onlineManagersCount}</div>
                                 </div>
                                 <Link href={route('manager-live.index')} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100 transition-colors hover:border-cyan-200/35 hover:text-white">
                                     <UsersThree size={12} weight="fill" />
@@ -821,7 +811,7 @@ export default function Dashboard(props) {
                                 </Link>
                             </div>
                             <div className="space-y-3">
-                                {onlineManagers && onlineManagers.length > 0 ? onlineManagers.map((manager) => (
+                                {liveOverview.onlineManagersCount > 0 ? liveOverview.onlineManagers.map((manager) => (
                                     <ManagerLiveRow key={manager.id} manager={manager} />
                                 )) : (
                                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">

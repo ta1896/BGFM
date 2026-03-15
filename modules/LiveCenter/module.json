@@ -1,0 +1,29 @@
+{
+    "key": "live-center",
+    "name": "LiveCenter",
+    "version": "1.0.0",
+    "description": "Adds live monitoring entry points to the manager shell.",
+    "enabled": true,
+    "providers": [],
+    "frontend": {
+        "manager_navigation": {
+            "mod_live_center": {
+                "label": "Live Center",
+                "items": [
+                    {
+                        "route": "manager-live.index",
+                        "label": "Manager Online",
+                        "active": "manager-live.*"
+                    },
+                    {
+                        "route": "live-ticker.index",
+                        "label": "Live-Ticker",
+                        "active": "live-ticker.*"
+                    }
+                ]
+            }
+        },
+        "admin_navigation": {},
+        "dashboard_widgets": []
+    }
+}

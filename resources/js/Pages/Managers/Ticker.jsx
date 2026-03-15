@@ -1,19 +1,14 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
 import LiveMatchCard from '@/Components/live/LiveMatchCard';
-import { PlayCircle, UsersThree } from '@phosphor-icons/react';
+import useLiveOverview from '@/hooks/useLiveOverview';
+import { UsersThree } from '@phosphor-icons/react';
 
 export default function Ticker({ liveMatches = [], onlineManagersCount = 0 }) {
-    useEffect(() => {
-        const interval = window.setInterval(() => {
-            router.reload({ only: ['liveMatches', 'onlineManagersCount'], preserveState: true, preserveScroll: true });
-        }, 10000);
-
-        return () => window.clearInterval(interval);
-    }, []);
+    const liveOverview = useLiveOverview({ initialLiveMatches: liveMatches });
 
     return (
         <AuthenticatedLayout>
@@ -29,19 +24,19 @@ export default function Ticker({ liveMatches = [], onlineManagersCount = 0 }) {
                     <div className="mb-5 flex items-center justify-between gap-3">
                         <div>
                             <div className="text-xs font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Live Matches</div>
-                            <div className="mt-1 text-2xl font-black uppercase tracking-tight text-white">{liveMatches.length}</div>
+                            <div className="mt-1 text-2xl font-black uppercase tracking-tight text-white">{liveOverview.liveMatchesCount}</div>
                         </div>
                         <Link
                             href={route('manager-live.index')}
                             className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200"
                         >
                             <UsersThree size={12} weight="fill" />
-                            {onlineManagersCount} Manager online
+                            {liveOverview.onlineManagersCount || onlineManagersCount} Manager online
                         </Link>
                     </div>
 
                     <div className="grid grid-cols-1 gap-3">
-                        {liveMatches.length > 0 ? liveMatches.map((match) => (
+                        {liveOverview.liveMatchesCount > 0 ? liveOverview.liveMatches.map((match) => (
                             <LiveMatchCard key={match.id} match={match} href={route('matches.show', match.id)} />
                         )) : (
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-[var(--text-muted)]">

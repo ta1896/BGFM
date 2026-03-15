@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Events\LiveOverviewUpdated;
 use App\Models\ManagerPresence;
 use Closure;
 use Illuminate\Http\Request;
@@ -44,6 +45,8 @@ class TrackManagerPresence
                 'last_seen_at' => now(),
             ]
         );
+
+        broadcast(new LiveOverviewUpdated(app(\App\Services\LiveOverviewService::class)->overview()));
 
         return $response;
     }

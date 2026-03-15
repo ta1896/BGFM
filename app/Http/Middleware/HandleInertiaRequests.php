@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\GameMatch;
+use App\Modules\ModuleManager;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Club;
@@ -66,6 +67,7 @@ class HandleInertiaRequests extends Middleware
             'features' => [
                 'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),
             ],
+            'modules' => fn () => app(ModuleManager::class)->frontendRegistry(),
         ];
     }
 

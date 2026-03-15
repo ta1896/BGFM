@@ -3,9 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar } from '@phosphor-icons/react';
+import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar, Target, SlidersHorizontal } from '@phosphor-icons/react';
 
-export default function Index({ club, targets, watchlist, scoutOptions }) {
+export default function Index({ club, discoveries, targets, watchlist, scoutOptions, filters, marketCounts }) {
     const watchlistForm = useForm({
         priority: 'medium',
         status: 'watching',
@@ -16,7 +16,14 @@ export default function Index({ club, targets, watchlist, scoutOptions }) {
         notes: '',
     });
 
-    const search = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('search') || '';
+    const search = filters?.search || '';
+
+    const applyFilters = (patch = {}) => {
+        router.get(route('scouting.index'), {
+            ...filters,
+            ...patch,
+        }, { preserveState: true, preserveScroll: true, replace: true });
+    };
 
     return (
         <AuthenticatedLayout>
@@ -32,7 +39,7 @@ export default function Index({ club, targets, watchlist, scoutOptions }) {
                                 defaultValue={search}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter') {
-                                        router.get(route('scouting.index'), { search: event.currentTarget.value }, { preserveState: true });
+                                        applyFilters({ search: event.currentTarget.value });
                                     }
                                 }}
                                 className="sim-input w-full pl-11"
@@ -47,11 +54,96 @@ export default function Index({ club, targets, watchlist, scoutOptions }) {
                                 Budget {new Intl.NumberFormat('de-DE').format(club.budget)}
                             </div>
                         )}
+                        <button
+                            type="button"
+                            onClick={() => router.post(route('scouting.discover'), filters, { preserveScroll: true })}
+                            className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
+                        >
+                            Markt scannen
+                        </button>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {scoutOptions.markets.map((market) => (
+                            <button
+                                key={market}
+                                type="button"
+                                onClick={() => applyFilters({ market })}
+                                className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${
+                                    filters.market === market
+                                        ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-200'
+                                        : 'border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 text-[var(--text-muted)]'
+                                }`}
+                            >
+                                {market} {marketCounts?.[market] ?? 0}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-4 xl:grid-cols-5">
+                        <QuickSelect label="Zielgruppe" value={filters.position} options={scoutOptions.positions} onChange={(value) => applyFilters({ position: value })} />
+                        <QuickSelect label="Alter" value={filters.age_band} options={scoutOptions.ageBands} onChange={(value) => applyFilters({ age_band: value })} />
+                        <QuickSelect label="Preisfenster" value={filters.value_band} options={scoutOptions.valueBands} onChange={(value) => applyFilters({ value_band: value })} />
+                        <QuickSelect label="Scout-Linse" value={filters.discovery_level} options={scoutOptions.levels} onChange={(value) => applyFilters({ discovery_level: value })} />
+                        <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)]/40 px-4 py-3">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                <SlidersHorizontal size={13} weight="bold" />
+                                Treffer
+                            </div>
+                            <div className="mt-2 text-lg font-black text-white">{targets.length}</div>
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
-                    <SectionCard title="Ziele" icon={Binoculars} bodyClassName="p-6 space-y-4">
+                    <SectionCard title="Discovery Board" icon={Target} bodyClassName="p-6 space-y-4 xl:col-span-2">
+                        {discoveries?.length ? (
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                {discoveries.map((entry) => (
+                                    <div key={entry.id} className="rounded-3xl border border-cyan-400/20 bg-cyan-500/5 p-5">
+                                        <div className="flex items-center gap-4">
+                                            <img src={entry.player.photo_url} alt={entry.player.name} className="h-14 w-14 rounded-2xl border border-white/10 object-cover" />
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-black uppercase tracking-[0.06em] text-white">{entry.player.name}</div>
+                                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                                    {entry.player.position} / {entry.player.age} / {entry.player.club_name}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            <Tag tone="cyan">{entry.region_tag}</Tag>
+                                            <Tag tone="amber">{entry.market_band}</Tag>
+                                            <Tag tone="emerald">{entry.fit_score}/99 Fit</Tag>
+                                        </div>
+                                        <p className="mt-3 text-sm text-[var(--text-muted)]">{entry.discovery_note}</p>
+                                        <div className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                            Gescannt {entry.scanned_at}
+                                        </div>
+                                        <div className="mt-4 flex flex-wrap gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => watchlistForm.post(route('scouting.watchlist.store', entry.player.id), { preserveScroll: true })}
+                                                className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
+                                            >
+                                                Als Lead merken
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => router.post(route('scouting.report.generate', entry.player.id), {}, { preserveScroll: true })}
+                                                className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-amber-200"
+                                            >
+                                                Report ziehen
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">
+                                Noch keine Scout-Leads fuer diesen Markt. Scanne den Zielmarkt, um entdeckte Kandidaten hier zu sammeln.
+                            </div>
+                        )}
+                    </SectionCard>
+
+                    <SectionCard title="Zielmarkt" icon={Binoculars} bodyClassName="p-6 space-y-4">
                         {targets.map((player) => (
                             <div key={player.id} className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30 p-5">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -62,14 +154,22 @@ export default function Index({ club, targets, watchlist, scoutOptions }) {
                                             <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                                                 {player.position} / {player.age} / {player.club_name}
                                             </div>
-                                            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">{player.potential_hint}</div>
-                                            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">{player.country || 'Unbekannt'}</div>
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                <Tag tone="amber">{player.potential_hint}</Tag>
+                                                <Tag tone="cyan">{player.region_tag}</Tag>
+                                                <Tag tone="slate">{player.country || 'Unbekannt'}</Tag>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Wert</div>
-                                        <div className="text-sm font-black text-white">{player.market_value}</div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Marktfenster</div>
+                                        <div className="text-sm font-black text-white">{player.market_band}</div>
                                     </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                    <InfoTile icon={Target} label="Scout-Fit" value={`${player.fit_score}/99`} />
+                                    <InfoTile icon={Binoculars} label="Ersteinschaetzung" value={player.discovery_note} />
                                 </div>
 
                                 <div className="mt-4 flex flex-wrap gap-3">
@@ -107,6 +207,11 @@ export default function Index({ club, targets, watchlist, scoutOptions }) {
                                 </div>
                             </div>
                         ))}
+                        {targets.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">
+                                Keine Kandidaten im aktuellen Zielmarkt gefunden.
+                            </div>
+                        )}
                     </SectionCard>
 
                     <SectionCard title="Watchlist" icon={Star} bodyClassName="p-6 space-y-4">

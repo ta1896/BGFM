@@ -8,15 +8,15 @@ import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
-import { findActiveMenuLabel, getAdminMenuGroups } from '@/Layouts/navigation';
+import { findActiveMenuLabel, getAdminMenuGroups, mergeMenuGroups } from '@/Layouts/navigation';
 
 export default function AdminLayout({ header, children }) {
-    const { auth, flash, live } = usePage().props;
+    const { auth, flash, live, modules = {} } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const currentRoute = route().current();
 
-    const menuGroups = getAdminMenuGroups();
+    const menuGroups = mergeMenuGroups(getAdminMenuGroups(), modules.admin_navigation);
     const activeMenuLabel = findActiveMenuLabel(menuGroups, currentRoute, 'Admin Dashboard');
 
     return (
@@ -25,7 +25,7 @@ export default function AdminLayout({ header, children }) {
             sidebarOpen={sidebarOpen}
             onCloseSidebar={() => setSidebarOpen(false)}
             sidebar={(
-                <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 sim-sidebar-floating shadow-2xl`}>
+                <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 sim-sidebar-floating shadow-2xl flex h-full flex-col overflow-hidden`}>
                     <SidebarBrand href={route('admin.dashboard')} badge="ACP" title="Control Panel" subtitle="System Admin" interactive={false} />
 
                     <div className="px-5 py-6">
@@ -41,13 +41,13 @@ export default function AdminLayout({ header, children }) {
                     <SidebarNavigation
                         menuGroups={menuGroups}
                         currentRoute={currentRoute}
-                        className="flex-1 overflow-y-auto px-3 py-2 space-y-1"
+                        className="min-h-0 flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar"
                         activeTextClassName="text-white bg-[var(--bg-content)]/50"
                         inactiveTextClassName="text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-content)]/30"
                         labelClassName="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-amber-500 transition-colors"
                     />
 
-                    <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
+                    <div className="shrink-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                         <div className="flex items-center gap-3">
                             <UserAvatar
                                 name={auth.user.name}

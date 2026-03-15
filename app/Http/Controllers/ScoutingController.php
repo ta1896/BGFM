@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Club;
 use App\Models\Player;
+use App\Models\ScoutingDiscovery;
 use App\Models\ScoutingReport;
 use App\Models\ScoutingWatchlist;
 use App\Services\ScoutingService;
@@ -25,7 +26,13 @@ class ScoutingController extends Controller
         }
 
         $search = trim((string) $request->query('search', ''));
-        $query = Player::query()
+        $market = (string) $request->query('market', 'domestic');
+        $position = (string) $request->query('position', 'all');
+        $ageBand = (string) $request->query('age_band', 'all');
+        $valueBand = (string) $request->query('value_band', 'all');
+        $discoveryLevel = (string) $request->query('discovery_level', 'experienced');
+
+        $playerQuery = Player::query()
             ->with(['club', 'injuries', 'recoveryLogs'])
             ->when($activeClub, fn ($builder) => $builder->where('club_id', '!=', $activeClub->id))
             ->when($search !== '', function ($builder) use ($search) {
@@ -34,10 +41,39 @@ class ScoutingController extends Controller
                         ->where('first_name', 'like', '%'.$search.'%')
                         ->orWhere('last_name', 'like', '%'.$search.'%');
                 });
-            })
-            ->orderByDesc('potential')
-            ->limit(20)
+            });
+
+        $this->applyMarketScope($playerQuery, $activeClub, $market);
+        $this->applyPositionScope($playerQuery, $position);
+        $this->applyAgeScope($playerQuery, $ageBand);
+        $this->applyValueScope($playerQuery, $valueBand);
+
+        $query = $playerQuery
+            ->orderByDesc($discoveryLevel === 'elite' ? 'potential' : 'overall')
+            ->orderBy('age')
+            ->limit(24)
             ->get();
+
+        $discoveries = collect();
+        if ($activeClub) {
+            $discoveries = ScoutingDiscovery::query()
+                ->where('club_id', $activeClub->id)
+                ->where('market', $market)
+                ->where('position_group', $position)
+                ->where('age_band', $ageBand)
+                ->where('value_band', $valueBand)
+                ->where('discovery_level', $discoveryLevel)
+                ->with('player.club')
+                ->latest('scanned_at')
+                ->limit(12)
+                ->get();
+        }
+
+        $marketCounts = [
+            'domestic' => $this->marketCount($activeClub, 'domestic'),
+            'continental' => $this->marketCount($activeClub, 'continental'),
+            'global' => $this->marketCount($activeClub, 'global'),
+        ];
 
         $watchlist = collect();
         if ($activeClub) {
@@ -60,7 +96,38 @@ class ScoutingController extends Controller
                 'regions' => ['domestic', 'continental', 'global'],
                 'types' => ['live', 'video', 'data'],
                 'focuses' => ['general', 'tactical', 'medical', 'personality'],
+                'markets' => ['domestic', 'continental', 'global'],
+                'positions' => ['all', 'GK', 'DEF', 'MID', 'ATT'],
+                'ageBands' => ['all', 'u21', '21_25', '26_30', '31_plus'],
+                'valueBands' => ['all', 'budget', 'mid', 'premium', 'elite'],
             ],
+            'filters' => [
+                'search' => $search,
+                'market' => $market,
+                'position' => $position,
+                'age_band' => $ageBand,
+                'value_band' => $valueBand,
+                'discovery_level' => $discoveryLevel,
+            ],
+            'marketCounts' => $marketCounts,
+            'discoveries' => $discoveries->map(fn (ScoutingDiscovery $entry) => [
+                'id' => $entry->id,
+                'fit_score' => (int) $entry->fit_score,
+                'market_band' => $entry->market_band,
+                'region_tag' => $entry->region_tag,
+                'discovery_note' => $entry->discovery_note,
+                'scanned_at' => $entry->scanned_at?->format('d.m.Y H:i'),
+                'player' => [
+                    'id' => $entry->player?->id,
+                    'name' => $entry->player?->full_name,
+                    'photo_url' => $entry->player?->photo_url,
+                    'position' => $entry->player?->display_position,
+                    'age' => (int) ($entry->player?->age ?? 0),
+                    'club_name' => $entry->player?->club?->name,
+                    'country' => $entry->player?->club?->country,
+                    'potential_hint' => $entry->player && $entry->player->potential >= 80 ? 'Elite-Profil' : ($entry->player && $entry->player->potential >= 72 ? 'Spannend' : 'Breite'),
+                ],
+            ])->values()->all(),
             'targets' => $query->map(fn (Player $player) => [
                 'id' => $player->id,
                 'name' => $player->full_name,
@@ -69,10 +136,13 @@ class ScoutingController extends Controller
                 'age' => (int) $player->age,
                 'club_name' => $player->club?->name,
                 'country' => $player->club?->country,
-                'market_value' => number_format((float) $player->market_value, 0, ',', '.').' EUR',
+                'market_band' => $this->marketValueBand((float) $player->market_value),
                 'potential_hint' => $player->potential >= 80 ? 'Elite-Profil' : ($player->potential >= 72 ? 'Spannend' : 'Breite'),
+                'fit_score' => $this->fitScore($player, $activeClub, $position),
+                'region_tag' => $this->regionTag($activeClub, $player),
+                'discovery_note' => $this->discoveryNote($player, $discoveryLevel),
             ])->values()->all(),
-            'watchlist' => $watchlist->map(function (ScoutingWatchlist $entry) {
+            'watchlist' => $watchlist->map(function (ScoutingWatchlist $entry) use ($activeClub, $scoutingService) {
                 $report = $entry->reports->first();
 
                 return [
@@ -124,6 +194,25 @@ class ScoutingController extends Controller
                 ];
             })->values()->all(),
         ]);
+    }
+
+    public function discoverTargets(Request $request, ScoutingService $scoutingService): RedirectResponse
+    {
+        $club = $this->resolveManagedClub($request);
+        abort_unless($club, 422);
+
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'market' => ['required', 'in:domestic,continental,global'],
+            'position' => ['required', 'in:all,GK,DEF,MID,ATT'],
+            'age_band' => ['required', 'in:all,u21,21_25,26_30,31_plus'],
+            'value_band' => ['required', 'in:all,budget,mid,premium,elite'],
+            'discovery_level' => ['required', 'in:junior,experienced,elite'],
+        ]);
+
+        $result = $scoutingService->discoverTargets($club, $validated, $request->user()->id);
+
+        return back()->with('status', sprintf('%d neue Scout-Leads gefunden. Kosten: %s EUR.', $result['count'], number_format((float) $result['cost'], 0, ',', '.')));
     }
 
     public function storeWatchlist(Request $request, Player $player, ScoutingService $scoutingService): RedirectResponse
@@ -211,5 +300,153 @@ class ScoutingController extends Controller
         return $request->user()->isAdmin()
             ? Club::query()->where('is_cpu', false)->orderBy('name')->first()
             : $request->user()->clubs()->where('is_cpu', false)->orderBy('name')->first();
+    }
+
+    private function applyMarketScope($builder, ?Club $activeClub, string $market): void
+    {
+        if (!$activeClub?->country || $market === 'global') {
+            return;
+        }
+
+        if ($market === 'domestic') {
+            $builder->whereHas('club', fn ($clubQuery) => $clubQuery->where('country', $activeClub->country));
+
+            return;
+        }
+
+        if ($market === 'continental') {
+            $regionalPool = $this->regionalPoolForCountry($activeClub->country);
+            $builder->whereHas('club', function ($clubQuery) use ($activeClub, $regionalPool): void {
+                $clubQuery
+                    ->whereIn('country', $regionalPool)
+                    ->where('country', '!=', $activeClub->country);
+            });
+        }
+    }
+
+    private function applyPositionScope($builder, string $position): void
+    {
+        $map = [
+            'GK' => ['GK'],
+            'DEF' => ['LB', 'LWB', 'CB', 'RB', 'RWB', 'SW'],
+            'MID' => ['CDM', 'CM', 'CAM', 'LM', 'RM'],
+            'ATT' => ['LW', 'RW', 'CF', 'ST', 'LS', 'RS'],
+        ];
+
+        if (!isset($map[$position])) {
+            return;
+        }
+
+        $builder->whereIn('position', $map[$position]);
+    }
+
+    private function applyAgeScope($builder, string $ageBand): void
+    {
+        match ($ageBand) {
+            'u21' => $builder->where('age', '<=', 20),
+            '21_25' => $builder->whereBetween('age', [21, 25]),
+            '26_30' => $builder->whereBetween('age', [26, 30]),
+            '31_plus' => $builder->where('age', '>=', 31),
+            default => null,
+        };
+    }
+
+    private function applyValueScope($builder, string $valueBand): void
+    {
+        match ($valueBand) {
+            'budget' => $builder->where('market_value', '<=', 2500000),
+            'mid' => $builder->whereBetween('market_value', [2500001, 12000000]),
+            'premium' => $builder->whereBetween('market_value', [12000001, 30000000]),
+            'elite' => $builder->where('market_value', '>', 30000000),
+            default => null,
+        };
+    }
+
+    private function marketCount(?Club $activeClub, string $market): int
+    {
+        $builder = Player::query();
+        if ($activeClub) {
+            $builder->where('club_id', '!=', $activeClub->id);
+        }
+
+        $this->applyMarketScope($builder, $activeClub, $market);
+
+        return (int) $builder->count();
+    }
+
+    private function marketValueBand(float $value): string
+    {
+        return match (true) {
+            $value <= 2500000 => 'Budgetfenster',
+            $value <= 12000000 => 'Mittleres Regal',
+            $value <= 30000000 => 'Premium-Ziel',
+            default => 'Elite-Markt',
+        };
+    }
+
+    private function fitScore(Player $player, ?Club $activeClub, string $position): int
+    {
+        $base = (int) round(($player->overall * 0.45) + ($player->potential * 0.35) + max(0, 30 - $player->age));
+
+        if ($activeClub && $player->club?->country === $activeClub->country) {
+            $base += 6;
+        }
+
+        if ($position !== 'all' && $this->positionMatchesGroup($player->position, $position)) {
+            $base += 8;
+        }
+
+        return min(99, max(45, $base));
+    }
+
+    private function regionTag(?Club $activeClub, Player $player): string
+    {
+        if (!$activeClub?->country || !$player->club?->country) {
+            return 'unbekannt';
+        }
+
+        if ($player->club->country === $activeClub->country) {
+            return 'inland';
+        }
+
+        return in_array($player->club->country, $this->regionalPoolForCountry($activeClub->country), true)
+            ? 'kontinental'
+            : 'global';
+    }
+
+    private function discoveryNote(Player $player, string $discoveryLevel): string
+    {
+        return match ($discoveryLevel) {
+            'elite' => $player->potential >= 80 ? 'Scout sieht klares Top-Potenzial.' : 'Scout erkennt belastbares Profil.',
+            'junior' => $player->age <= 22 ? 'Rohes Talent, mehr Beobachtung noetig.' : 'Erster Eindruck, noch unsicher.',
+            default => $player->overall >= 72 ? 'Soforthilfe moeglich, Details folgen.' : 'Entwicklungsspieler mit offenen Fragen.',
+        };
+    }
+
+    private function regionalPoolForCountry(string $country): array
+    {
+        $pools = [
+            'Deutschland' => ['Deutschland', 'Oesterreich', 'Schweiz', 'Niederlande', 'Belgien', 'Daenemark'],
+            'Oesterreich' => ['Deutschland', 'Oesterreich', 'Schweiz', 'Tschechien', 'Ungarn'],
+            'Schweiz' => ['Deutschland', 'Oesterreich', 'Schweiz', 'Frankreich', 'Italien'],
+            'England' => ['England', 'Schottland', 'Wales', 'Irland', 'Niederlande', 'Belgien'],
+            'Spanien' => ['Spanien', 'Portugal', 'Frankreich', 'Italien'],
+            'Italien' => ['Italien', 'Schweiz', 'Frankreich', 'Spanien', 'Oesterreich'],
+            'Frankreich' => ['Frankreich', 'Belgien', 'Niederlande', 'Schweiz', 'Spanien', 'Italien'],
+        ];
+
+        return $pools[$country] ?? [$country];
+    }
+
+    private function positionMatchesGroup(?string $position, string $group): bool
+    {
+        $groups = [
+            'GK' => ['GK'],
+            'DEF' => ['LB', 'LWB', 'CB', 'RB', 'RWB', 'SW'],
+            'MID' => ['CDM', 'CM', 'CAM', 'LM', 'RM'],
+            'ATT' => ['LW', 'RW', 'CF', 'ST', 'LS', 'RS'],
+        ];
+
+        return in_array((string) $position, $groups[$group] ?? [], true);
     }
 }
