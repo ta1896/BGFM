@@ -74,24 +74,37 @@ class MedicalAndScoutingSystemsTest extends TestCase
             'priority' => 'high',
             'status' => 'watching',
             'focus' => 'medical',
+            'scout_level' => 'elite',
+            'scout_region' => 'global',
+            'scout_type' => 'video',
             'progress' => 54,
             'reports_requested' => 0,
             'notes' => 'Initial tracking',
         ]);
 
+        $budgetBefore = (float) $managerClub->budget;
         $report = app(ScoutingService::class)->advanceWatchlist($watchlist->loadMissing('player'), $user->id);
 
+        $managerClub->refresh();
         $watchlist->refresh();
 
         $this->assertGreaterThanOrEqual(55, $watchlist->progress);
         $this->assertNotNull($watchlist->last_scouted_at);
         $this->assertNotNull($watchlist->next_report_due_at);
+        $this->assertGreaterThanOrEqual(0, $watchlist->mission_days_left);
+        $this->assertGreaterThan(0, (float) $watchlist->last_mission_cost);
         $this->assertGreaterThan(0, $watchlist->reports_requested);
         $this->assertNotNull($report);
+        $this->assertLessThan($budgetBefore, (float) $managerClub->budget);
         $this->assertDatabaseHas('scouting_reports', [
             'watchlist_id' => $watchlist->id,
             'player_id' => $player->id,
             'club_id' => $managerClub->id,
+        ]);
+        $this->assertDatabaseHas('club_financial_transactions', [
+            'club_id' => $managerClub->id,
+            'reference_type' => 'scouting_mission',
+            'reference_id' => $watchlist->id,
         ]);
     }
 

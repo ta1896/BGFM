@@ -18,8 +18,13 @@ class ScoutingWatchlist extends Model
         'priority',
         'status',
         'focus',
+        'scout_level',
+        'scout_region',
+        'scout_type',
         'progress',
         'reports_requested',
+        'mission_days_left',
+        'last_mission_cost',
         'last_scouted_at',
         'next_report_due_at',
         'notes',
@@ -30,6 +35,8 @@ class ScoutingWatchlist extends Model
         return [
             'progress' => 'integer',
             'reports_requested' => 'integer',
+            'mission_days_left' => 'integer',
+            'last_mission_cost' => 'decimal:2',
             'last_scouted_at' => 'datetime',
             'next_report_due_at' => 'datetime',
         ];

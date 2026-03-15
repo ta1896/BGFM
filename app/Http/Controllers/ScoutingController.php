@@ -14,7 +14,7 @@ use Inertia\Response;
 
 class ScoutingController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, ScoutingService $scoutingService): Response
     {
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
@@ -53,7 +53,14 @@ class ScoutingController extends Controller
                 'id' => $activeClub->id,
                 'name' => $activeClub->name,
                 'logo_url' => $activeClub->logo_url,
+                'budget' => (float) $activeClub->budget,
             ] : null,
+            'scoutOptions' => [
+                'levels' => ['junior', 'experienced', 'elite'],
+                'regions' => ['domestic', 'continental', 'global'],
+                'types' => ['live', 'video', 'data'],
+                'focuses' => ['general', 'tactical', 'medical', 'personality'],
+            ],
             'targets' => $query->map(fn (Player $player) => [
                 'id' => $player->id,
                 'name' => $player->full_name,
@@ -61,6 +68,7 @@ class ScoutingController extends Controller
                 'position' => $player->display_position,
                 'age' => (int) $player->age,
                 'club_name' => $player->club?->name,
+                'country' => $player->club?->country,
                 'market_value' => number_format((float) $player->market_value, 0, ',', '.').' EUR',
                 'potential_hint' => $player->potential >= 80 ? 'Elite-Profil' : ($player->potential >= 72 ? 'Spannend' : 'Breite'),
             ])->values()->all(),
@@ -72,8 +80,13 @@ class ScoutingController extends Controller
                     'priority' => $entry->priority,
                     'status' => $entry->status,
                     'focus' => $entry->focus,
+                    'scout_level' => $entry->scout_level,
+                    'scout_region' => $entry->scout_region,
+                    'scout_type' => $entry->scout_type,
                     'progress' => (int) $entry->progress,
                     'reports_requested' => (int) $entry->reports_requested,
+                    'mission_days_left' => (int) $entry->mission_days_left,
+                    'last_mission_cost' => (float) $entry->last_mission_cost,
                     'last_scouted_at' => $entry->last_scouted_at?->format('d.m.Y H:i'),
                     'next_report_due_at' => $entry->next_report_due_at?->format('d.m.Y'),
                     'notes' => $entry->notes,
@@ -83,7 +96,17 @@ class ScoutingController extends Controller
                         'photo_url' => $entry->player?->photo_url,
                         'position' => $entry->player?->display_position,
                         'club_name' => $entry->player?->club?->name,
+                        'country' => $entry->player?->club?->country,
                     ],
+                    'mission_preview' => $entry->player ? $scoutingService->previewMission(
+                        $activeClub,
+                        $entry->player,
+                        $entry->priority,
+                        $entry->focus,
+                        $entry->scout_level,
+                        $entry->scout_region,
+                        $entry->scout_type,
+                    ) : null,
                     'latest_report' => $report ? [
                         'created_at' => $report->created_at?->format('d.m.Y H:i'),
                         'confidence' => (int) $report->confidence,
@@ -112,6 +135,9 @@ class ScoutingController extends Controller
             'priority' => ['required', 'in:low,medium,high'],
             'status' => ['required', 'in:watching,priority,negotiating'],
             'focus' => ['nullable', 'in:general,tactical,medical,personality'],
+            'scout_level' => ['nullable', 'in:junior,experienced,elite'],
+            'scout_region' => ['nullable', 'in:domestic,continental,global'],
+            'scout_type' => ['nullable', 'in:live,video,data'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -129,6 +155,9 @@ class ScoutingController extends Controller
             'priority' => ['required', 'in:low,medium,high'],
             'status' => ['required', 'in:watching,priority,negotiating'],
             'focus' => ['nullable', 'in:general,tactical,medical,personality'],
+            'scout_level' => ['nullable', 'in:junior,experienced,elite'],
+            'scout_region' => ['nullable', 'in:domestic,continental,global'],
+            'scout_type' => ['nullable', 'in:live,video,data'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 

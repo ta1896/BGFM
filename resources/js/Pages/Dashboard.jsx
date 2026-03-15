@@ -460,6 +460,11 @@ export default function Dashboard(props) {
                                             {scoutingDesk.watchlist_count} Watchlist
                                         </Link>
                                     </div>
+                                    <div className="mb-4 grid grid-cols-3 gap-2">
+                                        <MiniDeskStat label="Faellig" value={scoutingDesk.due_reports_count} tone={scoutingDesk.due_reports_count > 0 ? 'amber' : 'emerald'} />
+                                        <MiniDeskStat label="Teuer" value={scoutingDesk.expensive_missions_count} tone={scoutingDesk.expensive_missions_count > 0 ? 'rose' : 'slate'} />
+                                        <MiniDeskStat label="Live" value={scoutingDesk.watchlist_count} tone="cyan" />
+                                    </div>
                                     <div className="space-y-3">
                                         {scoutingDesk.priority_targets.map((target) => (
                                             <Link
@@ -472,13 +477,19 @@ export default function Dashboard(props) {
                                                     <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
                                                     <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
                                                     <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200/80">
-                                                        {target.focus} / {target.progress}% / ETA {target.next_report_due_at || '-'}
+                                                        {target.focus} / {target.scout_level} / {target.scout_type}
+                                                    </div>
+                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                                        {target.progress}% / ETA {target.next_report_due_at || '-'} / {new Intl.NumberFormat('de-DE').format(target.last_mission_cost || 0)} EUR
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
                                                     <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
                                                         {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
+                                                    </div>
+                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                                                        {target.scout_region} / {target.mission_days_left || 0}d
                                                     </div>
                                                 </div>
                                             </Link>

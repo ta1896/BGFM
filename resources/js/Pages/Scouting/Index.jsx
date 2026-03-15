@@ -3,13 +3,16 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Binoculars, MagnifyingGlass, Handshake, Star, ClockCountdown, TrendUp } from '@phosphor-icons/react';
+import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar } from '@phosphor-icons/react';
 
-export default function Index({ club, targets, watchlist }) {
+export default function Index({ club, targets, watchlist, scoutOptions }) {
     const watchlistForm = useForm({
         priority: 'medium',
         status: 'watching',
         focus: 'general',
+        scout_level: 'experienced',
+        scout_region: 'domestic',
+        scout_type: 'live',
         notes: '',
     });
 
@@ -39,6 +42,11 @@ export default function Index({ club, targets, watchlist }) {
                         <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                             {watchlist.length} auf Watchlist
                         </div>
+                        {club && (
+                            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">
+                                Budget {new Intl.NumberFormat('de-DE').format(club.budget)}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -55,6 +63,7 @@ export default function Index({ club, targets, watchlist }) {
                                                 {player.position} / {player.age} / {player.club_name}
                                             </div>
                                             <div className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">{player.potential_hint}</div>
+                                            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">{player.country || 'Unbekannt'}</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -66,7 +75,18 @@ export default function Index({ club, targets, watchlist }) {
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => watchlistForm.transform(() => ({ priority: 'medium', status: 'watching', focus: 'general', notes: '' })).post(route('scouting.watchlist.store', player.id), { preserveScroll: true })}
+                                        onClick={() => watchlistForm
+                                            .transform((data) => ({
+                                                ...data,
+                                                priority: data.priority,
+                                                status: data.status,
+                                                focus: data.focus,
+                                                scout_level: data.scout_level,
+                                                scout_region: data.scout_region,
+                                                scout_type: data.scout_type,
+                                                notes: data.notes,
+                                            }))
+                                            .post(route('scouting.watchlist.store', player.id), { preserveScroll: true })}
                                         className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
                                     >
                                         Auf Watchlist
@@ -78,6 +98,12 @@ export default function Index({ club, targets, watchlist }) {
                                     >
                                         Report ziehen
                                     </button>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                    <QuickSelect label="Scout-Level" value={watchlistForm.data.scout_level} options={scoutOptions.levels} onChange={(value) => watchlistForm.setData('scout_level', value)} />
+                                    <QuickSelect label="Region" value={watchlistForm.data.scout_region} options={scoutOptions.regions} onChange={(value) => watchlistForm.setData('scout_region', value)} />
+                                    <QuickSelect label="Typ" value={watchlistForm.data.scout_type} options={scoutOptions.types} onChange={(value) => watchlistForm.setData('scout_type', value)} />
                                 </div>
                             </div>
                         ))}
@@ -109,6 +135,9 @@ export default function Index({ club, targets, watchlist }) {
                                     <Tag tone="cyan">{entry.priority}</Tag>
                                     <Tag tone="amber">{entry.status}</Tag>
                                     <Tag tone="slate">{entry.focus}</Tag>
+                                    <Tag tone="emerald">{entry.scout_level}</Tag>
+                                    <Tag tone="slate">{entry.scout_region}</Tag>
+                                    <Tag tone="cyan">{entry.scout_type}</Tag>
                                     {entry.latest_report && <Tag tone="emerald">{entry.latest_report.confidence}% sicher</Tag>}
                                 </div>
 
@@ -117,55 +146,63 @@ export default function Index({ club, targets, watchlist }) {
                                         label="Prioritaet"
                                         value={entry.priority}
                                         options={['low', 'medium', 'high']}
-                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
-                                            priority: value,
-                                            status: entry.status,
-                                            focus: entry.focus,
-                                            notes: entry.notes || '',
-                                        }, { preserveScroll: true })}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { priority: value }), { preserveScroll: true })}
                                     />
                                     <QuickSelect
                                         label="Status"
                                         value={entry.status}
                                         options={['watching', 'priority', 'negotiating']}
-                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
-                                            priority: entry.priority,
-                                            status: value,
-                                            focus: entry.focus,
-                                            notes: entry.notes || '',
-                                        }, { preserveScroll: true })}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { status: value }), { preserveScroll: true })}
                                     />
                                     <QuickSelect
                                         label="Fokus"
                                         value={entry.focus}
-                                        options={['general', 'tactical', 'medical', 'personality']}
-                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), {
-                                            priority: entry.priority,
-                                            status: entry.status,
-                                            focus: value,
-                                            notes: entry.notes || '',
-                                        }, { preserveScroll: true })}
+                                        options={scoutOptions.focuses}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { focus: value }), { preserveScroll: true })}
+                                    />
+                                    <QuickSelect
+                                        label="Scout-Level"
+                                        value={entry.scout_level}
+                                        options={scoutOptions.levels}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { scout_level: value }), { preserveScroll: true })}
+                                    />
+                                </div>
+
+                                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                    <QuickSelect
+                                        label="Region"
+                                        value={entry.scout_region}
+                                        options={scoutOptions.regions}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { scout_region: value }), { preserveScroll: true })}
+                                    />
+                                    <QuickSelect
+                                        label="Scout-Typ"
+                                        value={entry.scout_type}
+                                        options={scoutOptions.types}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { scout_type: value }), { preserveScroll: true })}
                                     />
                                     <div>
                                         <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Notiz</div>
                                         <input
                                             defaultValue={entry.notes || ''}
-                                            onBlur={(event) => router.patch(route('scouting.watchlist.update', entry.id), {
-                                                priority: entry.priority,
-                                                status: entry.status,
-                                                focus: entry.focus,
-                                                notes: event.target.value,
-                                            }, { preserveScroll: true })}
+                                            onBlur={(event) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { notes: event.target.value }), { preserveScroll: true })}
                                             className="sim-input w-full"
                                             placeholder="Scout-Notiz"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                <div className="mt-4 grid gap-3 md:grid-cols-4">
                                     <ReportBox label="Fortschritt" value={`${entry.progress}%`} />
                                     <ReportBox label="Naechster Report" value={entry.next_report_due_at || '-'} />
                                     <ReportBox label="Missionen" value={entry.reports_requested} />
+                                    <ReportBox label="Letzte Kosten" value={formatMoney(entry.last_mission_cost)} />
+                                </div>
+
+                                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                    <InfoTile icon={Wallet} label="Missionskosten" value={formatMoney(entry.mission_preview?.cost)} />
+                                    <InfoTile icon={GlobeHemisphereWest} label="Dauer" value={`${entry.mission_preview?.days || 0} Tage`} />
+                                    <InfoTile icon={entry.scout_type === 'data' ? ChartBar : entry.scout_type === 'video' ? VideoCamera : Binoculars} label="Scout-Push" value={`+${entry.mission_preview?.gain || 0}%`} />
                                 </div>
 
                                 {entry.latest_report ? (
@@ -251,6 +288,34 @@ function QuickSelect({ label, value, options, onChange }) {
                     <option key={option} value={option}>{option}</option>
                 ))}
             </select>
+        </div>
+    );
+}
+
+function buildWatchlistPayload(entry, patch = {}) {
+    return {
+        priority: patch.priority ?? entry.priority,
+        status: patch.status ?? entry.status,
+        focus: patch.focus ?? entry.focus,
+        scout_level: patch.scout_level ?? entry.scout_level,
+        scout_region: patch.scout_region ?? entry.scout_region,
+        scout_type: patch.scout_type ?? entry.scout_type,
+        notes: patch.notes ?? entry.notes ?? '',
+    };
+}
+
+function formatMoney(value) {
+    return `${new Intl.NumberFormat('de-DE').format(Number(value || 0))} EUR`;
+}
+
+function InfoTile({ icon: Icon, label, value }) {
+    return (
+        <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)]/50 px-4 py-3">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <Icon size={13} weight="bold" />
+                {label}
+            </div>
+            <div className="mt-2 text-sm font-black text-white">{value}</div>
         </div>
     );
 }
