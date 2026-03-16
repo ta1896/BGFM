@@ -1,0 +1,26 @@
+<svg width="1600" height="700" viewBox="0 0 1600 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="700" fill="#050812"/>
+  <ellipse cx="800" cy="628" rx="540" ry="54" fill="#0E1727"/>
+  <ellipse cx="800" cy="606" rx="430" ry="40" fill="#152338"/>
+  <path d="M208 525C277 439 391 371 530 338C624 316 728 306 800 304C872 306 976 316 1070 338C1209 371 1323 439 1392 525L1274 559C1221 498 1133 451 1026 423C933 399 856 392 800 391C744 392 667 399 574 423C467 451 379 498 326 559L208 525Z" fill="#132033"/>
+  <path d="M306 541C381 495 484 463 600 444C679 431 751 426 800 425C849 426 921 431 1000 444C1116 463 1219 495 1294 541" stroke="#2A3B55" stroke-width="20" stroke-linecap="round"/>
+  <path d="M390 506C453 474 535 452 626 438C690 428 750 423 800 422C850 423 910 428 974 438C1065 452 1147 474 1210 506" stroke="#87D4FF" stroke-opacity="0.18" stroke-width="8" stroke-linecap="round"/>
+  <rect x="509" y="496" width="582" height="93" rx="46.5" fill="#09111D"/>
+  <rect x="548" y="514" width="504" height="57" rx="28.5" fill="#0D1A2A"/>
+  <path d="M520 589H1080" stroke="#24405E" stroke-width="4" stroke-linecap="round"/>
+  <g opacity="0.32">
+    <circle cx="513" cy="210" r="6" fill="#8CE8FF"/>
+    <circle cx="584" cy="186" r="6" fill="#8CE8FF"/>
+    <circle cx="661" cy="170" r="6" fill="#8CE8FF"/>
+    <circle cx="742" cy="162" r="6" fill="#8CE8FF"/>
+    <circle cx="800" cy="160" r="6" fill="#8CE8FF"/>
+    <circle cx="858" cy="162" r="6" fill="#8CE8FF"/>
+    <circle cx="939" cy="170" r="6" fill="#8CE8FF"/>
+    <circle cx="1016" cy="186" r="6" fill="#8CE8FF"/>
+    <circle cx="1087" cy="210" r="6" fill="#8CE8FF"/>
+  </g>
+  <path d="M470 296C557 265 677 248 800 246C923 248 1043 265 1130 296" stroke="#304967" stroke-width="16" stroke-linecap="round"/>
+  <path d="M325 565H1275" stroke="#6FD6FF" stroke-opacity="0.16" stroke-width="6" stroke-linecap="round"/>
+  <path d="M690 530H910" stroke="#DDF7FF" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"/>
+  <rect x="736" y="514" width="128" height="33" rx="16.5" fill="#132439"/>
+</svg>

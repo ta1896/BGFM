@@ -214,6 +214,19 @@ class Club extends Model
             return $this->logo_path;
         }
 
-        return Storage::url($this->logo_path);
+        $normalizedPath = ltrim(preg_replace('#^public/#', '', $this->logo_path), '/');
+
+        if (Storage::disk('public')->exists($normalizedPath)) {
+            return Storage::disk('public')->url($normalizedPath);
+        }
+
+        // Legacy fallback: older uploads were stored on the default "local" disk.
+        if (Storage::disk('local')->exists($this->logo_path)) {
+            Storage::disk('public')->put($normalizedPath, Storage::disk('local')->get($this->logo_path));
+
+            return Storage::disk('public')->url($normalizedPath);
+        }
+
+        return asset('images/placeholders/club.svg');
     }
 }

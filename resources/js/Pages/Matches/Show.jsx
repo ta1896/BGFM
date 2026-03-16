@@ -3,17 +3,15 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Lightning, Play } from '@phosphor-icons/react';
 import {
-    isKeyEvent,
-    KeyEventsStrip,
+    HighlightsTab,
+    OverviewTab,
     LineupPitch,
-    MatchPulse,
-    ModulePanels,
     MatchTabs,
     PlayersTab,
-    PreviewTab,
     ScoreHero,
     StatsTab,
     TickerTab,
+    LiveTableTab,
 } from '@/Pages/Matches/components/MatchCenterSections';
 
 export default function Show({
@@ -37,18 +35,22 @@ export default function Show({
     planned_substitutions,
     comparison,
     can_simulate,
+    manageable_club_ids,
     module_panels,
+    live_table,
 }) {
-    const [tab, setTab] = useState(status === 'scheduled' ? 'preview' : status === 'live' ? 'ticker' : 'stats');
+    const [tab, setTab] = useState('ticker');
     const [liveState, setLiveState] = useState({
         status,
         live_minute,
+        display_minute: String(live_minute ?? 0),
         home_score,
         away_score,
         actions,
         team_states,
         player_states,
         planned_substitutions,
+        live_table,
     });
     const fetchState = useCallback(async () => {
         try {
@@ -68,12 +70,14 @@ export default function Show({
                 ...prev,
                 status: data.status,
                 live_minute: data.live_minute,
+                display_minute: data.display_minute ?? prev.display_minute,
                 home_score: data.home_score,
                 away_score: data.away_score,
                 actions: data.actions || prev.actions,
                 team_states: data.team_states || prev.team_states,
                 player_states: data.player_states || prev.player_states,
                 planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
+                live_table: data.live_table || prev.live_table,
             }));
         } catch {}
     }, [id]);
@@ -97,19 +101,51 @@ export default function Show({
 
     const simulate = () => router.post(route('matches.simulate', id));
     const startLive = () => router.post(route('matches.live-start', id));
+    const postMatchCommand = useCallback(async (routeName, payload) => {
+        try {
+            const response = await fetch(route(routeName, id), {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            setLiveState((prev) => ({
+                ...prev,
+                ...data,
+                actions: data.actions || prev.actions,
+                display_minute: data.display_minute ?? prev.display_minute,
+                team_states: data.team_states || prev.team_states,
+                player_states: data.player_states || prev.player_states,
+                planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
+                live_table: data.live_table || prev.live_table,
+            }));
+        } catch {}
+    }, [id]);
 
     const homeState = liveState.team_states?.[String(home_club?.id)];
     const awayState = liveState.team_states?.[String(away_club?.id)];
     const homeLineup = lineups?.[String(home_club?.id)];
     const awayLineup = lineups?.[String(away_club?.id)];
-    const keyActions = (liveState.actions || []).filter((action) => isKeyEvent(action.action_type));
     const allActions = liveState.actions || [];
+    const highlightCount = allActions.filter((action) => ['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution'].includes(action.action_type)).length;
 
     const tabs = [
-        { key: 'preview', label: 'Vorschau' },
         { key: 'ticker', label: 'Ticker', count: allActions.length },
+        { key: 'highlights', label: 'Highlight', count: highlightCount },
+        { key: 'overview', label: 'Uebersicht' },
         { key: 'lineup', label: 'Aufstellung' },
         { key: 'stats', label: 'Statistiken' },
+        ...(liveState.live_table?.rows?.length ? [{ key: 'live-table', label: 'Livetabelle' }] : []),
         ...(status !== 'scheduled' ? [{ key: 'players', label: 'Spieler' }] : []),
     ];
 
@@ -130,11 +166,13 @@ export default function Show({
                     away_score={liveState.away_score}
                     status={liveState.status}
                     live_minute={liveState.live_minute}
+                    display_minute={liveState.display_minute}
                     kickoff_formatted={kickoff_formatted}
                     competition={competition}
                     matchday={matchday}
                     weather={weather}
                     type={type}
+                    actions={allActions}
                 />
 
                 {can_simulate && liveState.status !== 'played' && (
@@ -150,28 +188,29 @@ export default function Show({
                     </div>
                 )}
 
-                <KeyEventsStrip actions={keyActions} />
-
-                {(liveState.status === 'live' || liveState.status === 'played') && (
-                    <MatchPulse
-                        homeClub={home_club}
-                        awayClub={away_club}
-                        homeState={homeState}
-                        awayState={awayState}
-                        livePlayerStates={liveState.player_states}
-                    />
-                )}
-
-                {module_panels?.length > 0 && (
-                    <ModulePanels panels={module_panels} />
-                )}
-
                 <MatchTabs entries={tabs} activeTab={tab} onChange={setTab} />
 
                 <div>
-                    {tab === 'preview' && <PreviewTab comparison={comparison} />}
+                    {tab === 'ticker' && <TickerTab actions={allActions} homeClubId={home_club?.id} status={liveState.status} />}
 
-                    {tab === 'ticker' && <TickerTab actions={allActions} homeClubId={home_club?.id} />}
+                    {tab === 'highlights' && <HighlightsTab actions={allActions} homeClubId={home_club?.id} />}
+
+                    {tab === 'overview' && (
+                        <OverviewTab
+                            status={liveState.status}
+                            homeClub={home_club}
+                            awayClub={away_club}
+                            homeState={homeState}
+                            awayState={awayState}
+                            livePlayerStates={liveState.player_states}
+                            manageableClubIds={manageable_club_ids}
+                            teamStates={liveState.team_states}
+                            onStyleChange={(clubId, tacticalStyle) => postMatchCommand('matches.live.style', { club_id: clubId, tactical_style: tacticalStyle })}
+                            onShout={(clubId, shout) => postMatchCommand('matches.live.shout', { club_id: clubId, shout })}
+                            modulePanels={module_panels}
+                            comparison={comparison}
+                        />
+                    )}
 
                     {tab === 'lineup' && (
                         <div className="sim-card p-6">
@@ -186,6 +225,8 @@ export default function Show({
                     )}
 
                     {tab === 'stats' && <StatsTab homeState={homeState} awayState={awayState} />}
+
+                    {tab === 'live-table' && <LiveTableTab liveTable={liveState.live_table} />}
 
                     {tab === 'players' && <PlayersTab clubs={[home_club, away_club]} finalStats={final_stats} />}
                 </div>

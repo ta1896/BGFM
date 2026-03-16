@@ -8,6 +8,8 @@
 
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#d9b15c">
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="alternate icon" href="/favicon.ico">
         <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
         <!-- Fonts -->

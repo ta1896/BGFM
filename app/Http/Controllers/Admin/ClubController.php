@@ -169,7 +169,7 @@ class ClubController extends Controller
     public function destroy(Club $club): RedirectResponse
     {
         if ($club->logo_path) {
-            Storage::delete($club->logo_path);
+            $this->deleteLogoFile($club->logo_path);
         }
 
         $club->delete();
@@ -227,14 +227,22 @@ class ClubController extends Controller
             return $validated;
         }
 
-        $path = $request->file('logo')->store('public/club-logos');
+        $path = $request->file('logo')->store('club-logos', 'public');
         $validated['logo_path'] = $path;
         unset($validated['logo']);
 
         if ($previousPath) {
-            Storage::delete($previousPath);
+            $this->deleteLogoFile($previousPath);
         }
 
         return $validated;
+    }
+
+    private function deleteLogoFile(string $path): void
+    {
+        $normalizedPath = ltrim(preg_replace('#^public/#', '', $path), '/');
+
+        Storage::disk('public')->delete($normalizedPath);
+        Storage::disk('local')->delete($path);
     }
 }
