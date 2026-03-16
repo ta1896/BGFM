@@ -23,10 +23,28 @@ export function findActiveMenuLabel(menuGroups, currentRoute, fallbackLabel) {
 }
 
 export function mergeMenuGroups(baseGroups, extraGroups = {}) {
-    return {
-        ...baseGroups,
-        ...(extraGroups || {}),
-    };
+    const merged = { ...(baseGroups || {}) };
+
+    for (const [key, group] of Object.entries(extraGroups || {})) {
+        if (!group || typeof group !== 'object') {
+            continue;
+        }
+
+        const targetGroupKey = group.target_group;
+        const items = Array.isArray(group.items) ? group.items : [];
+
+        if (targetGroupKey && merged[targetGroupKey]) {
+            merged[targetGroupKey] = {
+                ...merged[targetGroupKey],
+                items: [...(merged[targetGroupKey].items || []), ...items],
+            };
+            continue;
+        }
+
+        merged[key] = group;
+    }
+
+    return merged;
 }
 
 export function getManagerMenuGroups({ hasManagedClub }) {

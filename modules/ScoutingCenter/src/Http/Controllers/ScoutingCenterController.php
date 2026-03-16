@@ -18,6 +18,7 @@ class ScoutingCenterController extends Controller
 {
     public function index(Request $request, ScoutingService $scoutingService): Response
     {
+        $scoutSlots = max(1, min(6, (int) config('simulation.modules.scouting_center.scout_slots', 3)));
         $targetLimit = max(8, min(60, (int) config('simulation.modules.scouting_center.target_limit', 24)));
         $discoveryLimit = max(4, min(30, (int) config('simulation.modules.scouting_center.discovery_limit', 12)));
         $defaultMarket = (string) config('simulation.modules.scouting_center.default_market', 'domestic');
@@ -81,10 +82,12 @@ class ScoutingCenterController extends Controller
         ];
 
         $watchlist = collect();
+        $scouts = collect();
         if ($activeClub) {
+            $scouts = $scoutingService->availableScouts($activeClub, $request->user()?->id);
             $watchlist = ScoutingWatchlist::query()
                 ->where('club_id', $activeClub->id)
-                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(3)])
+                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(3), 'scout'])
                 ->latest('updated_at')
                 ->get();
         }
@@ -105,6 +108,7 @@ class ScoutingCenterController extends Controller
                 'positions' => ['all', 'GK', 'DEF', 'MID', 'ATT'],
                 'ageBands' => ['all', 'u21', '21_25', '26_30', '31_plus'],
                 'valueBands' => ['all', 'budget', 'mid', 'premium', 'elite'],
+                'slot_limit' => $scoutSlots,
             ],
             'filters' => [
                 'search' => $search,
@@ -116,12 +120,24 @@ class ScoutingCenterController extends Controller
             ],
             'marketCounts' => $marketCounts,
             'moduleSettings' => [
+                'scout_slots' => $scoutSlots,
                 'default_market' => $defaultMarket,
                 'default_discovery_level' => $defaultDiscoveryLevel,
                 'target_limit' => $targetLimit,
                 'discovery_limit' => $discoveryLimit,
                 'discovery_note_prefix' => (string) config('simulation.modules.scouting_center.discovery_note_prefix', ''),
             ],
+            'scoutStaff' => $scouts->map(fn ($scout) => [
+                'id' => $scout->id,
+                'name' => $scout->name,
+                'level' => $scout->level,
+                'specialty' => $scout->specialty,
+                'region' => $scout->region,
+                'status' => $scout->status,
+                'workload' => (int) $scout->workload,
+                'available_at' => $scout->available_at?->format('d.m.Y H:i'),
+                'active_watchlist_id' => $scout->active_watchlist_id,
+            ])->values()->all(),
             'discoveries' => $discoveries->map(fn (ScoutingDiscovery $entry) => [
                 'id' => $entry->id,
                 'fit_score' => (int) $entry->fit_score,
@@ -165,6 +181,7 @@ class ScoutingCenterController extends Controller
                     'scout_level' => $entry->scout_level,
                     'scout_region' => $entry->scout_region,
                     'scout_type' => $entry->scout_type,
+                    'scout_id' => $entry->scout_id,
                     'progress' => (int) $entry->progress,
                     'reports_requested' => (int) $entry->reports_requested,
                     'mission_days_left' => (int) $entry->mission_days_left,
@@ -180,6 +197,16 @@ class ScoutingCenterController extends Controller
                         'club_name' => $entry->player?->club?->name,
                         'country' => $entry->player?->club?->country,
                     ],
+                    'scout' => $entry->scout ? [
+                        'id' => $entry->scout->id,
+                        'name' => $entry->scout->name,
+                        'level' => $entry->scout->level,
+                        'specialty' => $entry->scout->specialty,
+                        'region' => $entry->scout->region,
+                        'status' => $entry->scout->status,
+                        'workload' => (int) $entry->scout->workload,
+                        'available_at' => $entry->scout->available_at?->format('d.m.Y H:i'),
+                    ] : null,
                     'mission_preview' => $entry->player ? $scoutingService->previewMission(
                         $activeClub,
                         $entry->player,
@@ -188,6 +215,7 @@ class ScoutingCenterController extends Controller
                         $entry->scout_level,
                         $entry->scout_region,
                         $entry->scout_type,
+                        $entry->scout,
                     ) : null,
                     'latest_report' => $report ? [
                         'created_at' => $report->created_at?->format('d.m.Y H:i'),
@@ -239,6 +267,7 @@ class ScoutingCenterController extends Controller
             'scout_level' => ['nullable', 'in:junior,experienced,elite'],
             'scout_region' => ['nullable', 'in:domestic,continental,global'],
             'scout_type' => ['nullable', 'in:live,video,data'],
+            'scout_id' => ['nullable', 'integer', 'exists:scouting_scouts,id'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -247,7 +276,7 @@ class ScoutingCenterController extends Controller
         return back()->with('status', 'Spieler wurde auf die Watchlist gesetzt.');
     }
 
-    public function updateWatchlist(Request $request, ScoutingWatchlist $watchlist): RedirectResponse
+    public function updateWatchlist(Request $request, ScoutingWatchlist $watchlist, ScoutingService $scoutingService): RedirectResponse
     {
         $club = $this->resolveManagedClub($request);
         abort_unless($club && $watchlist->club_id === $club->id, 403);
@@ -259,10 +288,15 @@ class ScoutingCenterController extends Controller
             'scout_level' => ['nullable', 'in:junior,experienced,elite'],
             'scout_region' => ['nullable', 'in:domestic,continental,global'],
             'scout_type' => ['nullable', 'in:live,video,data'],
+            'scout_id' => ['nullable', 'integer', 'exists:scouting_scouts,id'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $watchlist->update($validated);
+
+        if (array_key_exists('scout_id', $validated)) {
+            $scoutingService->assignScoutToWatchlist($watchlist->fresh(['club', 'player.club', 'scout']), $validated['scout_id']);
+        }
 
         return back()->with('status', 'Watchlist-Eintrag aktualisiert.');
     }

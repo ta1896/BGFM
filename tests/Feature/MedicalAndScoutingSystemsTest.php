@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\Player;
 use App\Models\PlayerInjury;
 use App\Models\ScoutingDiscovery;
+use App\Models\ScoutingScout;
 use App\Models\ScoutingWatchlist;
 use App\Models\User;
 use App\Services\InjuryManagementService;
@@ -106,6 +107,51 @@ class MedicalAndScoutingSystemsTest extends TestCase
             'club_id' => $managerClub->id,
             'reference_type' => 'scouting_mission',
             'reference_id' => $watchlist->id,
+        ]);
+    }
+
+    public function test_scout_pool_is_created_and_watchlist_gets_assigned_busy_scout(): void
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $managerClub = $this->createClub($user, 'Staff FC', false);
+        $cpu = User::factory()->create();
+        $targetClub = $this->createClub($cpu, 'Remote FC', true);
+        $player = $this->createPlayer($targetClub, 'Scout', 'Asset', 'MS', 73);
+
+        config(['simulation.modules.scouting_center.scout_slots' => 3]);
+
+        $service = app(ScoutingService::class);
+        $scouts = $service->ensureScoutPool($managerClub, $user->id);
+
+        $this->assertCount(3, $scouts);
+
+        $watchlist = $service->upsertWatchlist($player, $managerClub->id, $user->id, [
+            'priority' => 'medium',
+            'status' => 'watching',
+            'focus' => 'medical',
+            'scout_level' => 'experienced',
+            'scout_region' => 'continental',
+            'scout_type' => 'video',
+            'scout_id' => $scouts->last()->id,
+        ]);
+
+        $assignedScout = $service->assignScoutToWatchlist($watchlist->fresh(['club', 'player.club', 'scout']), $scouts->last()->id);
+
+        $this->assertSame((int) $scouts->last()->id, (int) $assignedScout->id);
+        $this->assertSame((int) $assignedScout->id, (int) $watchlist->fresh()->scout_id);
+
+        $service->advanceWatchlist($watchlist->fresh(['player', 'club', 'scout']), $user->id);
+
+        $assignedScout->refresh();
+
+        $this->assertSame('traveling', $assignedScout->status);
+        $this->assertSame((int) $watchlist->id, (int) $assignedScout->active_watchlist_id);
+        $this->assertNotNull($assignedScout->available_at);
+        $this->assertGreaterThan(0, (int) $assignedScout->workload);
+        $this->assertDatabaseHas('scouting_scouts', [
+            'club_id' => $managerClub->id,
+            'id' => $assignedScout->id,
+            'status' => 'traveling',
         ]);
     }
 

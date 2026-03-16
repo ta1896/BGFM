@@ -10,6 +10,7 @@
         "manager_navigation": {
             "mod_medical_center": {
                 "label": "Medical",
+                "target_group": "bg_team",
                 "items": [
                     {
                         "route": "medical.index",

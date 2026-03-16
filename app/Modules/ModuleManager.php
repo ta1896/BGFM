@@ -74,11 +74,11 @@ class ModuleManager
             $frontend = $module['frontend'];
             $managerNavigation = array_merge($managerNavigation, $frontend['manager_navigation'] ?? []);
             $adminNavigation = array_merge($adminNavigation, $frontend['admin_navigation'] ?? []);
-            $dashboardWidgets = array_merge($dashboardWidgets, $this->filterHookEntries($frontend['dashboard_widgets'] ?? []));
+            $dashboardWidgets = array_merge($dashboardWidgets, $this->normalizeDashboardWidgets($this->filterHookEntries($frontend['dashboard_widgets'] ?? [])));
             $settingsSections = array_merge($settingsSections, $this->settingsSectionsForModule($module));
             $playerActions = array_merge($playerActions, $this->normalizePlayerActions($this->filterHookEntries($frontend['player_actions'] ?? [])));
             $matchcenterPanels = array_merge($matchcenterPanels, $this->normalizeMatchcenterPanels($this->filterHookEntries($frontend['matchcenter_panels'] ?? [])));
-            $notifications = array_merge($notifications, $this->filterHookEntries($frontend['notifications'] ?? []));
+            $notifications = array_merge($notifications, $this->normalizeNotifications($this->filterHookEntries($frontend['notifications'] ?? [])));
         }
 
         return [
@@ -374,6 +374,38 @@ class ModuleManager
             ->all();
     }
 
+    private function normalizeDashboardWidgets(array $entries): array
+    {
+        $allowedPlacements = ['main', 'sidebar'];
+
+        return collect($entries)
+            ->map(function (array $entry) use ($allowedPlacements): ?array {
+                $route = $entry['route'] ?? null;
+                $title = trim((string) ($entry['title'] ?? ''));
+
+                if (!is_string($route) || $route === '' || $title === '') {
+                    return null;
+                }
+
+                $placement = (string) ($entry['placement'] ?? 'main');
+
+                return [
+                    'key' => (string) ($entry['key'] ?? Str::slug($title)),
+                    'title' => $title,
+                    'description' => trim((string) ($entry['description'] ?? '')),
+                    'route' => $route,
+                    'accent' => (string) ($entry['accent'] ?? 'slate'),
+                    'icon' => (string) ($entry['icon'] ?? 'gear'),
+                    'placement' => in_array($placement, $allowedPlacements, true) ? $placement : 'main',
+                    'priority' => (int) ($entry['priority'] ?? 999),
+                ];
+            })
+            ->filter()
+            ->sortBy('priority')
+            ->values()
+            ->all();
+    }
+
     private function normalizeMatchcenterPanels(array $entries): array
     {
         return collect($entries)
@@ -397,6 +429,31 @@ class ModuleManager
             })
             ->filter()
             ->sortBy('priority')
+            ->values()
+            ->all();
+    }
+
+    private function normalizeNotifications(array $entries): array
+    {
+        return collect($entries)
+            ->map(function (array $entry): ?array {
+                $type = $entry['type'] ?? null;
+                $label = trim((string) ($entry['label'] ?? ''));
+
+                if (!is_string($type) || $type === '' || $label === '') {
+                    return null;
+                }
+
+                return [
+                    'type' => $type,
+                    'label' => $label,
+                    'accent' => trim((string) ($entry['accent'] ?? 'border-l-slate-500')),
+                    'icon' => trim((string) ($entry['icon'] ?? 'gear')),
+                    'icon_wrap' => trim((string) ($entry['icon_wrap'] ?? 'border border-white/10 bg-white/[0.03] text-white')),
+                    'badge' => trim((string) ($entry['badge'] ?? 'border border-white/10 bg-white/[0.03] text-white')),
+                ];
+            })
+            ->filter()
             ->values()
             ->all();
     }

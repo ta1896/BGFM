@@ -7,13 +7,81 @@ use App\Models\GameNotification;
 use App\Models\Player;
 use App\Models\ScoutingDiscovery;
 use App\Models\ScoutingReport;
+use App\Models\ScoutingScout;
 use App\Models\ScoutingWatchlist;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class ScoutingService
 {
     public function __construct(
         private readonly ClubFinanceLedgerService $financeLedger,
     ) {
+    }
+
+    public function ensureScoutPool(Club $club, ?int $userId = null): Collection
+    {
+        $existing = ScoutingScout::query()
+            ->where('club_id', $club->id)
+            ->orderBy('id')
+            ->get();
+
+        $targetSlots = max(1, min(6, (int) config('simulation.modules.scouting_center.scout_slots', 3)));
+
+        if ($existing->count() >= $targetSlots) {
+            return $existing;
+        }
+
+        $templates = [
+            ['name' => 'Chief Scout', 'level' => 'elite', 'specialty' => 'general', 'region' => 'global'],
+            ['name' => 'Tactical Scout', 'level' => 'experienced', 'specialty' => 'tactical', 'region' => 'continental'],
+            ['name' => 'Medical Scout', 'level' => 'experienced', 'specialty' => 'medical', 'region' => 'domestic'],
+            ['name' => 'Data Scout', 'level' => 'experienced', 'specialty' => 'general', 'region' => 'global'],
+            ['name' => 'Youth Scout', 'level' => 'junior', 'specialty' => 'personality', 'region' => 'domestic'],
+            ['name' => 'Regional Scout', 'level' => 'junior', 'specialty' => 'general', 'region' => 'continental'],
+        ];
+
+        for ($index = $existing->count(); $index < $targetSlots; $index++) {
+            $template = $templates[$index] ?? [
+                'name' => 'Scout '.($index + 1),
+                'level' => 'experienced',
+                'specialty' => 'general',
+                'region' => 'domestic',
+            ];
+
+            ScoutingScout::query()->create([
+                'club_id' => $club->id,
+                'created_by_user_id' => $userId,
+                'name' => $template['name'],
+                'level' => $template['level'],
+                'specialty' => $template['specialty'],
+                'region' => $template['region'],
+                'status' => 'available',
+                'workload' => 0,
+            ]);
+        }
+
+        return ScoutingScout::query()
+            ->where('club_id', $club->id)
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function availableScouts(Club $club, ?int $userId = null): Collection
+    {
+        return $this->ensureScoutPool($club, $userId)
+            ->map(function (ScoutingScout $scout): ScoutingScout {
+                if ($scout->available_at && $scout->available_at->isPast() && $scout->status !== 'available') {
+                    $scout->forceFill([
+                        'status' => 'available',
+                        'active_watchlist_id' => null,
+                    ])->save();
+                }
+
+                return $scout->refresh();
+            })
+            ->sortBy(fn (ScoutingScout $scout) => sprintf('%s-%03d-%06d', $scout->status, (int) $scout->workload, (int) $scout->id))
+            ->values();
     }
 
     public function generateReport(Player $player, int $clubId, ?int $watchlistId, ?int $userId = null): ScoutingReport
@@ -87,8 +155,11 @@ class ScoutingService
 
     public function upsertWatchlist(Player $player, int $clubId, ?int $userId, array $data): ScoutingWatchlist
     {
+        $club = Club::query()->findOrFail($clubId);
+        $this->ensureScoutPool($club, $userId);
+
         $mission = $this->previewMission(
-            Club::query()->find($clubId),
+            $club,
             $player,
             $data['priority'] ?? 'medium',
             $data['focus'] ?? 'general',
@@ -97,7 +168,7 @@ class ScoutingService
             $data['scout_type'] ?? 'live',
         );
 
-        return ScoutingWatchlist::query()->updateOrCreate(
+        $watchlist = ScoutingWatchlist::query()->updateOrCreate(
             [
                 'club_id' => $clubId,
                 'player_id' => $player->id,
@@ -117,12 +188,19 @@ class ScoutingService
                 'notes' => $data['notes'] ?? null,
             ]
         );
+
+        if (array_key_exists('scout_id', $data)) {
+            $this->assignScoutToWatchlist($watchlist->fresh(['player', 'club']), $data['scout_id']);
+        }
+
+        return $watchlist->fresh();
     }
 
     public function advanceWatchlist(ScoutingWatchlist $watchlist, ?int $userId = null): ?ScoutingReport
     {
-        $watchlist->loadMissing(['player.club', 'club']);
-        $mission = $this->previewMission($watchlist->club, $watchlist->player, $watchlist->priority, $watchlist->focus, $watchlist->scout_level, $watchlist->scout_region, $watchlist->scout_type);
+        $watchlist->loadMissing(['player.club', 'club', 'scout']);
+        $assignedScout = $this->assignScoutToWatchlist($watchlist, $watchlist->scout_id);
+        $mission = $this->previewMission($watchlist->club, $watchlist->player, $watchlist->priority, $watchlist->focus, $watchlist->scout_level, $watchlist->scout_region, $watchlist->scout_type, $assignedScout);
 
         $this->financeLedger->applyBudgetChange($watchlist->club, -$mission['cost'], [
             'user_id' => $userId,
@@ -138,6 +216,13 @@ class ScoutingService
             'last_mission_cost' => $mission['cost'],
             'last_scouted_at' => now(),
             'next_report_due_at' => now()->addDays($mission['days']),
+        ])->save();
+
+        $assignedScout->forceFill([
+            'status' => 'traveling',
+            'active_watchlist_id' => $watchlist->id,
+            'workload' => min(100, max((int) $assignedScout->workload, 15) + 12),
+            'available_at' => now()->addDays($mission['days']),
         ])->save();
 
         if ((int) $watchlist->progress < 55) {
@@ -282,9 +367,47 @@ class ScoutingService
         return round(max(5000, $this->previewMission($watchlist->club, $watchlist->player, $watchlist->priority, $watchlist->focus, $watchlist->scout_level, $watchlist->scout_region, $watchlist->scout_type)['cost'] * 0.6), 2);
     }
 
-    public function previewMission(?Club $club, Player $player, string $priority, string $focus, string $level, string $region, string $type): array
+    public function previewMission(?Club $club, Player $player, string $priority, string $focus, string $level, string $region, string $type, ?ScoutingScout $scout = null): array
     {
-        return $this->missionProfile($priority, $focus, $level, $region, $type, $this->isDomesticTarget($club, $player));
+        $effectiveLevel = $scout?->level ?: $level;
+        $effectiveRegion = $scout?->region ?: $region;
+
+        return $this->missionProfile($priority, $focus, $effectiveLevel, $effectiveRegion, $type, $this->isDomesticTarget($club, $player), $scout);
+    }
+
+    public function assignScoutToWatchlist(ScoutingWatchlist $watchlist, mixed $preferredScoutId = null): ScoutingScout
+    {
+        $watchlist->loadMissing(['club', 'player.club', 'scout']);
+        $club = $watchlist->club;
+        $scouts = $this->availableScouts($club, $watchlist->created_by_user_id);
+
+        $preferredScout = null;
+        if ($preferredScoutId) {
+            $preferredScout = $scouts->first(fn (ScoutingScout $scout) => (int) $scout->id === (int) $preferredScoutId);
+        }
+
+        $currentScout = $watchlist->scout;
+        if ($currentScout && ($currentScout->status === 'available' || ($currentScout->available_at && $currentScout->available_at->isPast()))) {
+            $preferredScout = $currentScout->refresh();
+        }
+
+        $scout = $preferredScout ?: $this->selectScoutForWatchlist($watchlist, $scouts);
+
+        if (!$scout) {
+            throw ValidationException::withMessages([
+                'scout_id' => 'Aktuell ist kein Scout verfuegbar. Warte auf freie Slots oder stelle Scout-Konfiguration um.',
+            ]);
+        }
+
+        if ((int) $watchlist->scout_id !== (int) $scout->id) {
+            $watchlist->forceFill([
+                'scout_id' => $scout->id,
+                'scout_level' => $scout->level,
+                'scout_region' => $scout->region,
+            ])->save();
+        }
+
+        return $scout->refresh();
     }
 
     private function confidenceRange(?ScoutingWatchlist $watchlist, Player $player): array
@@ -327,7 +450,7 @@ class ScoutingService
         return max(2, $base + $typeAdjustment);
     }
 
-    private function missionProfile(string $priority, string $focus, string $level, string $region, string $type, bool $domesticTarget): array
+    private function missionProfile(string $priority, string $focus, string $level, string $region, string $type, bool $domesticTarget, ?ScoutingScout $scout = null): array
     {
         $baseGain = match ($priority) {
             'high' => 26,
@@ -366,12 +489,48 @@ class ScoutingService
             'tactical' => ['gain' => 2, 'cost' => 500],
             default => ['gain' => 0, 'cost' => 0],
         };
+        $specialtyAdjust = match ($scout?->specialty) {
+            'medical' => $focus === 'medical' ? ['gain' => 4, 'cost' => 800, 'days' => -1] : ['gain' => 0, 'cost' => 0, 'days' => 0],
+            'tactical' => $focus === 'tactical' ? ['gain' => 4, 'cost' => 600, 'days' => -1] : ['gain' => 0, 'cost' => 0, 'days' => 0],
+            'personality' => $focus === 'personality' ? ['gain' => 4, 'cost' => 500, 'days' => -1] : ['gain' => 0, 'cost' => 0, 'days' => 0],
+            default => ['gain' => $focus === 'general' ? 2 : 1, 'cost' => 0, 'days' => 0],
+        };
 
         return [
-            'gain' => max(8, $baseGain + $levelAdjust['gain'] + $regionAdjust['gain'] + $typeAdjust['gain'] + $focusAdjust['gain']),
-            'cost' => round(max(3000, $baseCost + $levelAdjust['cost'] + $regionAdjust['cost'] + $typeAdjust['cost'] + $focusAdjust['cost']), 2),
-            'days' => max(1, $baseDays + $levelAdjust['days'] + $regionAdjust['days'] + $typeAdjust['days']),
+            'gain' => max(8, $baseGain + $levelAdjust['gain'] + $regionAdjust['gain'] + $typeAdjust['gain'] + $focusAdjust['gain'] + $specialtyAdjust['gain']),
+            'cost' => round(max(3000, $baseCost + $levelAdjust['cost'] + $regionAdjust['cost'] + $typeAdjust['cost'] + $focusAdjust['cost'] + $specialtyAdjust['cost']), 2),
+            'days' => max(1, $baseDays + $levelAdjust['days'] + $regionAdjust['days'] + $typeAdjust['days'] + $specialtyAdjust['days']),
         ];
+    }
+
+    private function selectScoutForWatchlist(ScoutingWatchlist $watchlist, Collection $scouts): ?ScoutingScout
+    {
+        return $scouts
+            ->filter(function (ScoutingScout $scout): bool {
+                return $scout->status === 'available'
+                    || ($scout->available_at && $scout->available_at->isPast());
+            })
+            ->sortByDesc(function (ScoutingScout $scout) use ($watchlist): int {
+                $score = 0;
+
+                $score += match ($scout->level) {
+                    'elite' => 6,
+                    'experienced' => 4,
+                    default => 2,
+                };
+
+                $score += match (true) {
+                    $scout->specialty === $watchlist->focus => 4,
+                    $scout->specialty === 'general' => 2,
+                    default => 0,
+                };
+
+                $score += $scout->region === $watchlist->scout_region ? 2 : 0;
+                $score -= (int) floor($scout->workload / 20);
+
+                return $score;
+            })
+            ->first();
     }
 
     private function isDomesticTarget(?Club $club, Player $player): bool

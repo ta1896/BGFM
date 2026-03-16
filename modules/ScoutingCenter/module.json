@@ -10,6 +10,7 @@
         "manager_navigation": {
             "mod_scouting_center": {
                 "label": "Scouting",
+                "target_group": "bg_markt",
                 "items": [
                     {
                         "route": "scouting.index",
@@ -70,6 +71,16 @@
                         "default": 24,
                         "min": 8,
                         "max": 60,
+                        "step": 1
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.scout_slots",
+                        "label": "Scout-Slots",
+                        "description": "Wie viele Scouts dem Verein maximal zur Verfuegung stehen.",
+                        "type": "integer",
+                        "default": 3,
+                        "min": 1,
+                        "max": 6,
                         "step": 1
                     },
                     {

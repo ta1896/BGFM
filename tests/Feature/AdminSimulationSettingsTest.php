@@ -200,6 +200,25 @@ class AdminSimulationSettingsTest extends TestCase
             'enabled' => true,
             'providers' => [],
             'frontend' => [
+                'dashboard_widgets' => [
+                    [
+                        'key' => 'valid-widget',
+                        'title' => 'Widget Title',
+                        'route' => 'dashboard',
+                        'placement' => 'floating',
+                        'priority' => '7',
+                    ],
+                    [
+                        'key' => 'missing-widget-route',
+                        'title' => 'Widget Without Route',
+                    ],
+                    [
+                        'key' => 'hidden-widget',
+                        'title' => 'Hidden Widget',
+                        'route' => 'dashboard',
+                        'enabled_when' => 'simulation.modules.schema_lab.hidden_widget_enabled',
+                    ],
+                ],
                 'player_actions' => [
                     [
                         'key' => 'valid-action',
@@ -238,6 +257,18 @@ class AdminSimulationSettingsTest extends TestCase
                         'enabled_when' => 'simulation.modules.schema_lab.hidden_panel_enabled',
                     ],
                 ],
+                'notifications' => [
+                    [
+                        'type' => 'schema_notice',
+                        'label' => 'Schema Notice',
+                    ],
+                    [
+                        'type' => 'missing-label',
+                    ],
+                    [
+                        'label' => 'Missing Type',
+                    ],
+                ],
             ],
         ];
 
@@ -246,12 +277,19 @@ class AdminSimulationSettingsTest extends TestCase
         try {
             config([
                 'modules.paths' => [$basePath],
+                'simulation.modules.schema_lab.hidden_widget_enabled' => false,
                 'simulation.modules.schema_lab.hidden_action_enabled' => false,
                 'simulation.modules.schema_lab.hidden_panel_enabled' => false,
             ]);
 
             $manager = new ModuleManager($files);
             $registry = $manager->frontendRegistry();
+
+            $this->assertCount(1, $registry['dashboard_widgets']);
+            $this->assertSame('valid-widget', $registry['dashboard_widgets'][0]['key']);
+            $this->assertSame('Widget Title', $registry['dashboard_widgets'][0]['title']);
+            $this->assertSame('main', $registry['dashboard_widgets'][0]['placement']);
+            $this->assertSame(7, $registry['dashboard_widgets'][0]['priority']);
 
             $this->assertCount(1, $registry['player_actions']);
             $this->assertSame('valid-action', $registry['player_actions'][0]['key']);
@@ -265,6 +303,11 @@ class AdminSimulationSettingsTest extends TestCase
             $this->assertSame('valid-panel', $registry['matchcenter_panels'][0]['key']);
             $this->assertSame('Panel Title', $registry['matchcenter_panels'][0]['title']);
             $this->assertSame(5, $registry['matchcenter_panels'][0]['priority']);
+
+            $this->assertCount(1, $registry['notifications']);
+            $this->assertSame('schema_notice', $registry['notifications'][0]['type']);
+            $this->assertSame('Schema Notice', $registry['notifications'][0]['label']);
+            $this->assertSame('gear', $registry['notifications'][0]['icon']);
         } finally {
             $files->deleteDirectory($basePath);
         }

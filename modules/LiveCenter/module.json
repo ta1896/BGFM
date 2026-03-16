@@ -10,6 +10,7 @@
         "manager_navigation": {
             "mod_live_center": {
                 "label": "Live Center",
+                "target_group": "bg_wettbewerb",
                 "items": [
                     {
                         "route": "manager-live.index",

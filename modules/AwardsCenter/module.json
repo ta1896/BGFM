@@ -10,6 +10,7 @@
         "manager_navigation": {
             "mod_awards_center": {
                 "label": "Awards",
+                "target_group": "bg_wettbewerb",
                 "items": [
                     {
                         "route": "awards.index",

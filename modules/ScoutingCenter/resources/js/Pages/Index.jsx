@@ -3,9 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar, Target, SlidersHorizontal } from '@phosphor-icons/react';
+import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar, Target, SlidersHorizontal, UsersThree, ShieldCheck } from '@phosphor-icons/react';
 
-export default function Index({ club, discoveries, targets, watchlist, scoutOptions, filters, marketCounts }) {
+export default function Index({ club, discoveries, targets, watchlist, scoutOptions, filters, marketCounts, scoutStaff = [], moduleSettings = {} }) {
     const watchlistForm = useForm({
         priority: 'medium',
         status: 'watching',
@@ -13,6 +13,7 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
         scout_level: 'experienced',
         scout_region: 'domestic',
         scout_type: 'live',
+        scout_id: scoutStaff[0]?.id ? String(scoutStaff[0].id) : '',
         notes: '',
     });
 
@@ -93,6 +94,38 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                     </div>
                 </div>
 
+                <SectionCard title="Scout Staff" icon={UsersThree} bodyClassName="p-6 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="text-sm text-[var(--text-muted)]">
+                            {scoutStaff.length}/{scoutOptions.slot_limit || moduleSettings.scout_slots || 0} Scouts aktiv
+                        </div>
+                        <Tag tone="slate">Slots {moduleSettings.scout_slots || scoutOptions.slot_limit || scoutStaff.length}</Tag>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {scoutStaff.map((scout) => (
+                            <div key={scout.id} className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30 p-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-black uppercase tracking-[0.06em] text-white">{scout.name}</div>
+                                        <div className="mt-1 flex flex-wrap gap-2">
+                                            <Tag tone="emerald">{scout.level}</Tag>
+                                            <Tag tone="cyan">{scout.specialty}</Tag>
+                                            <Tag tone="slate">{scout.region}</Tag>
+                                        </div>
+                                    </div>
+                                    <Tag tone={scout.status === 'available' ? 'emerald' : 'amber'}>
+                                        {scout.status}
+                                    </Tag>
+                                </div>
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                    <InfoTile icon={ShieldCheck} label="Workload" value={`${scout.workload}%`} />
+                                    <InfoTile icon={TrendUp} label="Verfuegbar" value={scout.available_at || 'Jetzt'} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </SectionCard>
+
                 <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
                     <SectionCard title="Discovery Board" icon={Target} bodyClassName="p-6 space-y-4 xl:col-span-2">
                         {discoveries?.length ? (
@@ -117,10 +150,10 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                                         <div className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                                             Gescannt {entry.scanned_at}
                                         </div>
-                                        <div className="mt-4 flex flex-wrap gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => watchlistForm.post(route('scouting.watchlist.store', entry.player.id), { preserveScroll: true })}
+                                <div className="mt-4 flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => watchlistForm.post(route('scouting.watchlist.store', entry.player.id), { preserveScroll: true })}
                                                 className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
                                             >
                                                 Als Lead merken
@@ -204,6 +237,12 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                                     <QuickSelect label="Scout-Level" value={watchlistForm.data.scout_level} options={scoutOptions.levels} onChange={(value) => watchlistForm.setData('scout_level', value)} />
                                     <QuickSelect label="Region" value={watchlistForm.data.scout_region} options={scoutOptions.regions} onChange={(value) => watchlistForm.setData('scout_region', value)} />
                                     <QuickSelect label="Typ" value={watchlistForm.data.scout_type} options={scoutOptions.types} onChange={(value) => watchlistForm.setData('scout_type', value)} />
+                                    <QuickSelect
+                                        label="Scout"
+                                        value={watchlistForm.data.scout_id}
+                                        options={buildScoutOptions(scoutStaff)}
+                                        onChange={(value) => watchlistForm.setData('scout_id', value)}
+                                    />
                                 </div>
                             </div>
                         ))}
@@ -243,6 +282,7 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                                     <Tag tone="emerald">{entry.scout_level}</Tag>
                                     <Tag tone="slate">{entry.scout_region}</Tag>
                                     <Tag tone="cyan">{entry.scout_type}</Tag>
+                                    {entry.scout && <Tag tone="amber">{entry.scout.name}</Tag>}
                                     {entry.latest_report && <Tag tone="emerald">{entry.latest_report.confidence}% sicher</Tag>}
                                 </div>
 
@@ -286,6 +326,20 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                                         options={scoutOptions.types}
                                         onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { scout_type: value }), { preserveScroll: true })}
                                     />
+                                    <QuickSelect
+                                        label="Scout"
+                                        value={entry.scout_id ? String(entry.scout_id) : ''}
+                                        options={buildScoutOptions(scoutStaff)}
+                                        onChange={(value) => router.patch(route('scouting.watchlist.update', entry.id), buildWatchlistPayload(entry, { scout_id: value }), { preserveScroll: true })}
+                                    />
+                                </div>
+
+                                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                    <InfoTile icon={UsersThree} label="Scout" value={entry.scout ? `${entry.scout.name} / ${entry.scout.status}` : 'Auto-Zuweisung'} />
+                                    <InfoTile icon={ShieldCheck} label="Auslastung" value={entry.scout ? `${entry.scout.workload}%` : '-'} />
+                                </div>
+
+                                <div className="mt-3 grid gap-3 md:grid-cols-1">
                                     <div>
                                         <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Notiz</div>
                                         <input
@@ -390,7 +444,9 @@ function QuickSelect({ label, value, options, onChange }) {
             <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
             <select value={value} onChange={(event) => onChange(event.target.value)} className="sim-select w-full">
                 {options.map((option) => (
-                    <option key={option} value={option}>{option}</option>
+                    <option key={typeof option === 'string' ? option : option.value} value={typeof option === 'string' ? option : option.value}>
+                        {typeof option === 'string' ? option : option.label}
+                    </option>
                 ))}
             </select>
         </div>
@@ -405,8 +461,19 @@ function buildWatchlistPayload(entry, patch = {}) {
         scout_level: patch.scout_level ?? entry.scout_level,
         scout_region: patch.scout_region ?? entry.scout_region,
         scout_type: patch.scout_type ?? entry.scout_type,
+        scout_id: patch.scout_id ?? (entry.scout_id ? String(entry.scout_id) : ''),
         notes: patch.notes ?? entry.notes ?? '',
     };
+}
+
+function buildScoutOptions(scoutStaff) {
+    return [
+        { value: '', label: 'auto' },
+        ...scoutStaff.map((scout) => ({
+            value: String(scout.id),
+            label: `${scout.name} (${scout.level}/${scout.status})`,
+        })),
+    ];
 }
 
 function formatMoney(value) {

@@ -14,6 +14,7 @@ class ScoutingWatchlist extends Model
     protected $fillable = [
         'club_id',
         'player_id',
+        'scout_id',
         'created_by_user_id',
         'priority',
         'status',
@@ -50,6 +51,11 @@ class ScoutingWatchlist extends Model
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);
+    }
+
+    public function scout(): BelongsTo
+    {
+        return $this->belongsTo(ScoutingScout::class, 'scout_id');
     }
 
     public function reports(): HasMany
