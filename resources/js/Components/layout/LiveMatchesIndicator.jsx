@@ -6,6 +6,7 @@ import { subscribeToLiveOverview } from '@/lib/liveOverviewBus';
 export default function LiveMatchesIndicator({ count = 0 }) {
     const [liveCount, setLiveCount] = useState(count);
     const isActive = liveCount > 0;
+    const hasLiveTickerRoute = route().has('live-ticker.index');
 
     useEffect(() => {
         setLiveCount(count);
@@ -16,6 +17,10 @@ export default function LiveMatchesIndicator({ count = 0 }) {
             setLiveCount(Number(event.liveMatchesCount || 0));
         });
     }, []);
+
+    if (!hasLiveTickerRoute) {
+        return null;
+    }
 
     return (
         <Link

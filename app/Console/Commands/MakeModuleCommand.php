@@ -41,6 +41,10 @@ class MakeModuleCommand extends Command
                 'manager_navigation' => new \stdClass(),
                 'admin_navigation' => new \stdClass(),
                 'dashboard_widgets' => [],
+                'settings_sections' => [],
+                'player_actions' => [],
+                'matchcenter_panels' => [],
+                'notifications' => [],
             ],
         ];
 

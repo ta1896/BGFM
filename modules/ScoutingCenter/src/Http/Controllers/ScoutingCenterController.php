@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\ScoutingCenter\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\Player;
 use App\Models\ScoutingDiscovery;
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ScoutingController extends Controller
+class ScoutingCenterController extends Controller
 {
     public function index(Request $request, ScoutingService $scoutingService): Response
     {
@@ -84,7 +85,7 @@ class ScoutingController extends Controller
                 ->get();
         }
 
-        return Inertia::render('Scouting/Index', [
+        return Inertia::render('Modules/ScoutingCenter/Index', [
             'club' => $activeClub ? [
                 'id' => $activeClub->id,
                 'name' => $activeClub->name,

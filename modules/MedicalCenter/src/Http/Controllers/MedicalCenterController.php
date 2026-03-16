@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\MedicalCenter\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\Player;
 use App\Services\InjuryManagementService;
@@ -11,7 +12,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class MedicalController extends Controller
+class MedicalCenterController extends Controller
 {
     public function index(Request $request, InjuryManagementService $injuryManagementService, PlayerLoadService $playerLoadService): Response
     {
@@ -82,7 +83,7 @@ class MedicalController extends Controller
             }
         }
 
-        return Inertia::render('Medical/Index', [
+        return Inertia::render('Modules/MedicalCenter/Index', [
             'club' => $activeClub ? [
                 'id' => $activeClub->id,
                 'name' => $activeClub->name,

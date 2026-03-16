@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Modules\ModuleManager;
 use App\Models\GameNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function index(Request $request): \Inertia\Response
+    public function index(Request $request, ModuleManager $modules): \Inertia\Response
     {
         $notifications = $request->user()
             ->gameNotifications()
@@ -34,7 +35,8 @@ class NotificationController extends Controller
             ->withQueryString();
 
         return \Inertia\Inertia::render('Notifications/Index', [
-            'notifications' => $notifications
+            'notifications' => $notifications,
+            'moduleNotificationThemes' => $modules->frontendRegistry()['notifications'] ?? [],
         ]);
     }
 

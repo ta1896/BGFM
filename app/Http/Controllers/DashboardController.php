@@ -17,6 +17,7 @@ use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 class DashboardController extends Controller
 {
     public function index(
@@ -109,6 +110,7 @@ class DashboardController extends Controller
         $liveMatches = [];
         $onlineManagers = [];
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
+        $hasLiveTickerRoute = Route::has('live-ticker.index');
 
         if ($activeClub) {
             $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
@@ -815,8 +817,8 @@ class DashboardController extends Controller
                     'value' => count($liveMatches).' Live',
                     'detail' => count($onlineManagers).' Manager online',
                     'tone' => count($liveMatches) > 0 ? 'emerald' : 'slate',
-                    'url' => route('live-ticker.index'),
-                    'cta' => 'Live-Ticker',
+                    'url' => $hasLiveTickerRoute ? route('live-ticker.index') : route('dashboard'),
+                    'cta' => $hasLiveTickerRoute ? 'Live-Ticker' : 'Dashboard',
                 ],
                 [
                     'label' => 'Kaderdruck',

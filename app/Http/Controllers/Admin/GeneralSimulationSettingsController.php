@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\ModuleManager;
 use App\Services\SimulationSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,16 +12,17 @@ use Inertia\Response;
 
 class GeneralSimulationSettingsController extends Controller
 {
-    public function index(SimulationSettingsService $simulationSettings): Response
+    public function index(SimulationSettingsService $simulationSettings, ModuleManager $modules): Response
     {
         return Inertia::render('Admin/SimulationSettings/Index', [
             'simulationSettings' => $simulationSettings->adminSettings(),
+            'moduleSettingsSections' => $modules->frontendRegistry()['settings_sections'] ?? [],
         ]);
     }
 
-    public function update(Request $request, SimulationSettingsService $simulationSettings): RedirectResponse
+    public function update(Request $request, SimulationSettingsService $simulationSettings, ModuleManager $modules): RedirectResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'simulation.scheduler.interval_minutes'                               => ['required', 'integer', 'min:1', 'max:60'],
             'simulation.scheduler.default_limit'                                  => ['required', 'integer', 'min:0', 'max:500'],
             'simulation.scheduler.max_concurrency'                                => ['required', 'integer', 'min:1', 'max:50'],
@@ -45,12 +47,43 @@ class GeneralSimulationSettingsController extends Controller
             'simulation.observers.match_finished.apply_match_availability'        => ['required', 'boolean'],
             'simulation.observers.match_finished.update_competition_after_match'  => ['required', 'boolean'],
             'simulation.observers.match_finished.settle_match_finance'            => ['required', 'boolean'],
-        ]);
+        ];
+
+        $moduleFieldDefinitions = $modules->settingsFieldDefinitions();
+        foreach ($moduleFieldDefinitions as $key => $field) {
+            $rules[$key] = $this->rulesForModuleField($field);
+        }
+
+        $validated = $request->validate($rules);
 
         $simulationSettings->updateFromAdminPayload($validated['simulation']);
+        $simulationSettings->persistModuleFieldValues(
+            ['simulation' => $validated['simulation']],
+            $moduleFieldDefinitions
+        );
 
         return redirect()
             ->route('admin.simulation.settings.index')
             ->with('status', 'Simulationskonfiguration gespeichert und aktiviert.');
+    }
+
+    private function rulesForModuleField(array $field): array
+    {
+        $type = (string) ($field['type'] ?? 'boolean');
+
+        return match ($type) {
+            'integer' => [
+                'required',
+                'integer',
+                'min:'.(int) ($field['min'] ?? 0),
+                'max:'.(int) ($field['max'] ?? 1000),
+            ],
+            'number' => [
+                'required',
+                'numeric',
+                'between:'.(float) ($field['min'] ?? 0).','.(float) ($field['max'] ?? 1000),
+            ],
+            default => ['required', 'boolean'],
+        };
     }
 }

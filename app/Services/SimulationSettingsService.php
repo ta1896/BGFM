@@ -116,6 +116,22 @@ class SimulationSettingsService
         $this->applyRuntimeOverrides();
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, array<string, mixed>> $fieldDefinitions
+     */
+    public function persistModuleFieldValues(array $payload, array $fieldDefinitions): void
+    {
+        foreach ($fieldDefinitions as $key => $field) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+
+            $value = data_get($payload, $key, $field['default'] ?? null);
+            $this->set($key, $this->normalizeModuleFieldValue($value, $field));
+        }
+    }
+
     public function schedulerDefaultLimit(): int
     {
         return max(0, (int) config('simulation.scheduler.default_limit', 0));
@@ -305,5 +321,23 @@ class SimulationSettingsService
     private function normalizeMaxBenchPlayers(mixed $value): int
     {
         return max(1, min(10, (int) $value));
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     */
+    private function normalizeModuleFieldValue(mixed $value, array $field): mixed
+    {
+        return match ((string) ($field['type'] ?? 'boolean')) {
+            'integer' => max(
+                (int) ($field['min'] ?? 0),
+                min((int) ($field['max'] ?? 1000), (int) $value)
+            ),
+            'number' => max(
+                (float) ($field['min'] ?? 0),
+                min((float) ($field['max'] ?? 1000), (float) $value)
+            ),
+            default => (bool) $value,
+        };
     }
 }

@@ -7,6 +7,7 @@ import {
     KeyEventsStrip,
     LineupPitch,
     MatchPulse,
+    ModulePanels,
     MatchTabs,
     PlayersTab,
     PreviewTab,
@@ -36,6 +37,7 @@ export default function Show({
     planned_substitutions,
     comparison,
     can_simulate,
+    module_panels,
 }) {
     const [tab, setTab] = useState(status === 'scheduled' ? 'preview' : status === 'live' ? 'ticker' : 'stats');
     const [liveState, setLiveState] = useState({
@@ -158,6 +160,10 @@ export default function Show({
                         awayState={awayState}
                         livePlayerStates={liveState.player_states}
                     />
+                )}
+
+                {module_panels?.length > 0 && (
+                    <ModulePanels panels={module_panels} />
                 )}
 
                 <MatchTabs entries={tabs} activeTab={tab} onChange={setTab} />

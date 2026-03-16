@@ -6,6 +6,7 @@ import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import PageHeader from '@/Components/PageHeader';
 import EmptyState from '@/Components/EmptyState';
 import {
+    Binoculars,
     Envelope,
     EnvelopeOpen,
     CheckCircle,
@@ -15,13 +16,21 @@ import {
     Checks,
     WarningCircle,
     Trophy,
+    FirstAidKit,
 } from '@phosphor-icons/react';
 
-export default function Notifications({ notifications }) {
+const notificationIconMap = {
+    warningcircle: WarningCircle,
+    trophy: Trophy,
+    binoculars: Binoculars,
+    firstaidkit: FirstAidKit,
+};
+
+export default function Notifications({ notifications, moduleNotificationThemes = [] }) {
     const { post } = useForm();
 
     const notificationTheme = (type, seenAt) => {
-        const themes = {
+        const coreThemes = {
             promise_at_risk: {
                 accent: 'border-l-amber-400',
                 iconWrap: 'border border-amber-400/20 bg-amber-400/10 text-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.12)]',
@@ -52,11 +61,30 @@ export default function Notifications({ notifications }) {
             },
         };
 
+        const moduleThemes = Object.fromEntries(
+            (moduleNotificationThemes ?? [])
+                .filter((theme) => typeof theme?.type === 'string')
+                .map((theme) => {
+                    const iconKey = String(theme.icon ?? '').replace(/[^a-z]/gi, '').toLowerCase();
+
+                    return [
+                        theme.type,
+                        {
+                            accent: theme.accent ?? 'border-l-cyan-500',
+                            iconWrap: theme.icon_wrap ?? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-300',
+                            icon: notificationIconMap[iconKey] ?? Envelope,
+                            badge: theme.badge ?? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-200',
+                            label: theme.label ?? theme.type,
+                        },
+                    ];
+                })
+        );
+
         if (seenAt) {
             return null;
         }
 
-        return themes[type] ?? null;
+        return moduleThemes[type] ?? coreThemes[type] ?? null;
     };
 
     const markAllSeen = () => {

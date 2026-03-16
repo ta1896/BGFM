@@ -1,0 +1,56 @@
+{
+    "key": "awards-center",
+    "name": "AwardsCenter",
+    "version": "1.0.0",
+    "description": "Adds season awards and historical winners to the competition shell.",
+    "enabled": true,
+    "providers": [],
+    "routes": "routes/web.php",
+    "frontend": {
+        "manager_navigation": {
+            "mod_awards_center": {
+                "label": "Awards",
+                "items": [
+                    {
+                        "route": "awards.index",
+                        "label": "Awards",
+                        "active": "awards.*"
+                    }
+                ]
+            }
+        },
+        "admin_navigation": {},
+        "dashboard_widgets": [
+            {
+                "key": "awards-center-history",
+                "title": "Awards History",
+                "description": "Review seasonal winners and historical award races.",
+                "route": "awards.index",
+                "accent": "amber",
+                "icon": "trophy",
+                "placement": "main",
+                "priority": 50,
+                "enabled_when": "simulation.modules.awards_center.dashboard_widget_enabled"
+            }
+        ],
+        "settings_sections": [
+            {
+                "key": "awards-center-visibility",
+                "title": "Awards Center",
+                "description": "Control awards history visibility on the dashboard.",
+                "fields": [
+                    {
+                        "key": "simulation.modules.awards_center.dashboard_widget_enabled",
+                        "label": "Dashboard widget anzeigen",
+                        "description": "Zeigt den Awards-History-Block im Dashboard an.",
+                        "type": "boolean",
+                        "default": true
+                    }
+                ]
+            }
+        ],
+        "player_actions": [],
+        "matchcenter_panels": [],
+        "notifications": []
+    }
+}

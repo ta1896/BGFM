@@ -65,12 +65,20 @@ class ModuleManager
         $managerNavigation = [];
         $adminNavigation = [];
         $dashboardWidgets = [];
+        $settingsSections = [];
+        $playerActions = [];
+        $matchcenterPanels = [];
+        $notifications = [];
 
         foreach ($this->enabledModules() as $module) {
             $frontend = $module['frontend'];
             $managerNavigation = array_merge($managerNavigation, $frontend['manager_navigation'] ?? []);
             $adminNavigation = array_merge($adminNavigation, $frontend['admin_navigation'] ?? []);
-            $dashboardWidgets = array_merge($dashboardWidgets, $frontend['dashboard_widgets'] ?? []);
+            $dashboardWidgets = array_merge($dashboardWidgets, $this->filterHookEntries($frontend['dashboard_widgets'] ?? []));
+            $settingsSections = array_merge($settingsSections, $this->settingsSectionsForModule($module));
+            $playerActions = array_merge($playerActions, $this->filterHookEntries($frontend['player_actions'] ?? []));
+            $matchcenterPanels = array_merge($matchcenterPanels, $this->filterHookEntries($frontend['matchcenter_panels'] ?? []));
+            $notifications = array_merge($notifications, $this->filterHookEntries($frontend['notifications'] ?? []));
         }
 
         return [
@@ -85,6 +93,10 @@ class ModuleManager
             'manager_navigation' => $managerNavigation,
             'admin_navigation' => $adminNavigation,
             'dashboard_widgets' => $dashboardWidgets,
+            'settings_sections' => $settingsSections,
+            'player_actions' => $playerActions,
+            'matchcenter_panels' => $matchcenterPanels,
+            'notifications' => $notifications,
         ];
     }
 
@@ -111,11 +123,34 @@ class ModuleManager
                     'manager_navigation_groups' => count($module['frontend']['manager_navigation'] ?? []),
                     'admin_navigation_groups' => count($module['frontend']['admin_navigation'] ?? []),
                     'dashboard_widget_count' => count($module['frontend']['dashboard_widgets'] ?? []),
+                    'settings_section_count' => count($module['frontend']['settings_sections'] ?? []),
+                    'player_action_count' => count($module['frontend']['player_actions'] ?? []),
+                    'matchcenter_panel_count' => count($module['frontend']['matchcenter_panels'] ?? []),
+                    'notification_hook_count' => count($module['frontend']['notifications'] ?? []),
                     'module_path' => $module['module_path'],
                 ];
             })
             ->values()
             ->all();
+    }
+
+    public function settingsFieldDefinitions(): array
+    {
+        $fields = [];
+
+        foreach ($this->enabledModules() as $module) {
+            foreach ($this->settingsSectionsForModule($module) as $section) {
+                foreach (($section['fields'] ?? []) as $field) {
+                    if (!is_string($field['key'] ?? null)) {
+                        continue;
+                    }
+
+                    $fields[(string) $field['key']] = $field;
+                }
+            }
+        }
+
+        return $fields;
     }
 
     public function setEnabled(string $key, bool $enabled): void
@@ -174,7 +209,7 @@ class ModuleManager
                     'description' => (string) ($decoded['description'] ?? ''),
                     'enabled_by_default' => (bool) ($decoded['enabled'] ?? false),
                     'providers' => array_values(array_filter((array) ($decoded['providers'] ?? []), 'is_string')),
-                    'frontend' => is_array($decoded['frontend'] ?? null) ? $decoded['frontend'] : [],
+                    'frontend' => $this->normalizeFrontendRegistry($decoded['frontend'] ?? []),
                     'module_path' => $modulePath,
                     'route_path' => isset($decoded['routes']) ? $modulePath.DIRECTORY_SEPARATOR.(string) $decoded['routes'] : null,
                     'migration_path' => isset($decoded['migrations']) ? $modulePath.DIRECTORY_SEPARATOR.(string) $decoded['migrations'] : null,
@@ -258,5 +293,61 @@ class ModuleManager
         } catch (Throwable) {
             return $this->moduleTableAvailable = false;
         }
+    }
+
+    private function settingsSectionsForModule(array $module): array
+    {
+        return collect($module['frontend']['settings_sections'] ?? [])
+            ->filter(fn ($section) => is_array($section))
+            ->map(function (array $section) use ($module): array {
+                return [
+                    ...$section,
+                    'module_key' => $module['key'],
+                    'module_name' => $module['name'],
+                    'fields' => collect($section['fields'] ?? [])
+                        ->filter(fn ($field) => is_array($field) && is_string($field['key'] ?? null))
+                        ->map(function (array $field): array {
+                            return [
+                                ...$field,
+                                'value' => config((string) $field['key'], $field['default'] ?? null),
+                            ];
+                        })
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function filterHookEntries(array $entries): array
+    {
+        return collect($entries)
+            ->filter(fn ($entry) => is_array($entry))
+            ->filter(function (array $entry): bool {
+                $enabledWhen = $entry['enabled_when'] ?? null;
+                if (!is_string($enabledWhen) || $enabledWhen === '') {
+                    return true;
+                }
+
+                return (bool) config($enabledWhen, $entry['enabled_default'] ?? true);
+            })
+            ->values()
+            ->all();
+    }
+
+    private function normalizeFrontendRegistry(mixed $frontend): array
+    {
+        $frontend = is_array($frontend) ? $frontend : [];
+
+        return [
+            'manager_navigation' => is_array($frontend['manager_navigation'] ?? null) ? $frontend['manager_navigation'] : [],
+            'admin_navigation' => is_array($frontend['admin_navigation'] ?? null) ? $frontend['admin_navigation'] : [],
+            'dashboard_widgets' => array_values(is_array($frontend['dashboard_widgets'] ?? null) ? $frontend['dashboard_widgets'] : []),
+            'settings_sections' => array_values(is_array($frontend['settings_sections'] ?? null) ? $frontend['settings_sections'] : []),
+            'player_actions' => array_values(is_array($frontend['player_actions'] ?? null) ? $frontend['player_actions'] : []),
+            'matchcenter_panels' => array_values(is_array($frontend['matchcenter_panels'] ?? null) ? $frontend['matchcenter_panels'] : []),
+            'notifications' => array_values(is_array($frontend['notifications'] ?? null) ? $frontend['notifications'] : []),
+        ];
     }
 }

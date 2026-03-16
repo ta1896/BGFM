@@ -5,6 +5,7 @@
     "description": "Adds live monitoring entry points to the manager shell.",
     "enabled": true,
     "providers": [],
+    "routes": "routes/web.php",
     "frontend": {
         "manager_navigation": {
             "mod_live_center": {
@@ -24,6 +25,55 @@
             }
         },
         "admin_navigation": {},
-        "dashboard_widgets": []
+        "dashboard_widgets": [
+            {
+                "key": "live-center-overview",
+                "title": "Live Center",
+                "description": "Jump straight into online managers and the live ticker.",
+                "route": "live-ticker.index",
+                "accent": "cyan",
+                "icon": "broadcast",
+                "placement": "sidebar",
+                "priority": 20,
+                "enabled_when": "simulation.modules.live_center.dashboard_widget_enabled"
+            }
+        ],
+        "settings_sections": [
+            {
+                "key": "live-center-visibility",
+                "title": "Live Center",
+                "description": "Control dashboard and matchcenter visibility for live monitoring.",
+                "fields": [
+                    {
+                        "key": "simulation.modules.live_center.dashboard_widget_enabled",
+                        "label": "Dashboard widget anzeigen",
+                        "description": "Zeigt das Live-Center als Shortcut im Dashboard an.",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    {
+                        "key": "simulation.modules.live_center.match_panel_enabled",
+                        "label": "Matchcenter-Panel anzeigen",
+                        "description": "Blendet das Live-Center-Panel im Matchcenter ein.",
+                        "type": "boolean",
+                        "default": true
+                    }
+                ]
+            }
+        ],
+        "player_actions": [],
+        "matchcenter_panels": [
+            {
+                "key": "live-center-match-pulse",
+                "title": "Live Center",
+                "description": "Broadcast state, live minute, and manager controls for the current match.",
+                "route": "live-ticker.index",
+                "accent": "cyan",
+                "icon": "broadcast",
+                "priority": 20,
+                "enabled_when": "simulation.modules.live_center.match_panel_enabled"
+            }
+        ],
+        "notifications": []
     }
 }

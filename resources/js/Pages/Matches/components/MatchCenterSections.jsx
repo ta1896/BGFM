@@ -21,6 +21,7 @@ import {
     FirstAidKit,
     Cards,
     ArrowsCounterClockwise as Swap,
+    Broadcast,
 } from '@phosphor-icons/react';
 
 const ACTION_CONFIG = {
@@ -199,6 +200,81 @@ export const MatchPulse = ({ homeClub, awayClub, homeState, awayState, livePlaye
                     )}
                 </div>
             </div>
+        </div>
+    );
+};
+
+const panelAccentMap = {
+    cyan: 'border-cyan-400/20 bg-cyan-400/8 text-cyan-200',
+    amber: 'border-amber-400/20 bg-amber-400/8 text-amber-200',
+    rose: 'border-rose-400/20 bg-rose-400/8 text-rose-200',
+    emerald: 'border-emerald-400/20 bg-emerald-400/8 text-emerald-200',
+};
+
+const panelIconMap = {
+    broadcast: Broadcast,
+    firstAidKit: FirstAidKit,
+    trophy: Trophy,
+};
+
+export const ModulePanels = ({ panels = [] }) => {
+    if (panels.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="grid gap-4 lg:grid-cols-2">
+            {panels.map((panel) => {
+                const Icon = panelIconMap[panel.icon] || Star;
+                const tone = panelAccentMap[panel.accent] || panelAccentMap.cyan;
+
+                return (
+                    <div key={panel.key} className="sim-card p-5">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Module Panel</div>
+                                <div className="mt-1 text-lg font-black text-white">{panel.title}</div>
+                                <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{panel.description}</p>
+                            </div>
+                            <div className={`rounded-2xl border p-3 ${tone}`}>
+                                <Icon size={16} weight="duotone" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
+                            <div className="text-sm font-black uppercase tracking-[0.08em] text-white">{panel.data?.headline}</div>
+                            <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">{panel.data?.summary}</p>
+                        </div>
+
+                        {panel.data?.stats?.length > 0 && (
+                            <div className="mt-4 grid grid-cols-3 gap-3">
+                                {panel.data.stats.map((stat) => (
+                                    <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+                                        <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{stat.label}</div>
+                                        <div className="mt-2 text-xl font-black text-white">{stat.value}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {panel.data?.players?.length > 0 && (
+                            <div className="mt-4 space-y-2.5">
+                                {panel.data.players.map((player) => (
+                                    <div key={player.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+                                        <img src={player.photo_url} alt={player.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.name}</div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                                                {(player.availability_status || player.medical_status || 'fit')} / Fatigue {player.fatigue}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 };

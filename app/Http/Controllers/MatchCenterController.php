@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Models\ManagerPresence;
+use App\Models\Player;
+use App\Modules\ModuleManager;
 use App\Services\FormationPlannerService;
 use App\Services\LiveMatchTickerService;
 use App\Services\MatchSimulationService;
@@ -57,6 +60,7 @@ class MatchCenterController extends Controller
             'referee'           => $match->referee,
             'type'              => $match->type,
             'comparison'        => $comparison,
+            'module_panels'     => $this->modulePanelsPayload($match, $state),
         ]));
     }
 
@@ -461,6 +465,116 @@ class MatchCenterController extends Controller
                     ];
                 })
                 ->all(),
+        ];
+    }
+
+    private function modulePanelsPayload(GameMatch $match, array $state): array
+    {
+        $registry = app(ModuleManager::class)->frontendRegistry();
+        $definitions = collect($registry['matchcenter_panels'] ?? [])
+            ->sortBy(fn (array $panel) => (int) ($panel['priority'] ?? 999))
+            ->values();
+
+        if ($definitions->isEmpty()) {
+            return [];
+        }
+
+        $lineupPlayerIds = collect($state['lineups'] ?? [])
+            ->flatMap(function (array $lineup): array {
+                $starters = collect($lineup['starters'] ?? [])->pluck('id');
+                $bench = collect($lineup['bench'] ?? [])->pluck('id');
+
+                return $starters->merge($bench)->filter()->values()->all();
+            })
+            ->unique()
+            ->values();
+
+        $lineupPlayers = $lineupPlayerIds->isNotEmpty()
+            ? Player::query()
+                ->with(['injuries' => fn ($query) => $query->where('status', 'active')->latest('id')])
+                ->whereIn('id', $lineupPlayerIds)
+                ->get()
+                ->keyBy('id')
+            : collect();
+
+        $injuredOnPitchCount = collect($state['player_states'] ?? [])->where('is_injured', true)->count();
+        $sentOffCount = collect($state['player_states'] ?? [])->where('is_sent_off', true)->count();
+        $liveManagerCount = ManagerPresence::query()
+            ->where('match_id', $match->id)
+            ->where('last_seen_at', '>=', now()->subMinutes(5))
+            ->count();
+
+        return $definitions->map(function (array $panel) use ($match, $state, $lineupPlayers, $injuredOnPitchCount, $sentOffCount, $liveManagerCount): array {
+            $data = match ($panel['key'] ?? null) {
+                'live-center-match-pulse' => [
+                    'headline' => (($state['status'] ?? 'scheduled') === 'live' ? 'Live '.$state['live_minute'].'\'' : ($state['status_label'] ?? 'Matchday')),
+                    'summary' => $liveManagerCount > 0
+                        ? $liveManagerCount.' manager channels active on this fixture.'
+                        : 'No active manager presence detected for this fixture.',
+                    'stats' => [
+                        ['label' => 'Minute', 'value' => (int) ($state['live_minute'] ?? 0)],
+                        ['label' => 'Actions', 'value' => count($state['actions'] ?? [])],
+                        ['label' => 'Managers', 'value' => $liveManagerCount],
+                    ],
+                ],
+                'medical-center-match-risk' => $this->medicalMatchcenterPanelData($match, $lineupPlayers, $injuredOnPitchCount, $sentOffCount),
+                default => [
+                    'headline' => $panel['title'] ?? 'Module Panel',
+                    'summary' => $panel['description'] ?? '',
+                    'stats' => [],
+                ],
+            };
+
+            return array_merge($panel, ['data' => $data]);
+        })->all();
+    }
+
+    private function medicalMatchcenterPanelData(GameMatch $match, $lineupPlayers, int $injuredOnPitchCount, int $sentOffCount): array
+    {
+        $critical = $lineupPlayers
+            ->filter(function (Player $player): bool {
+                $injury = $player->injuries->first();
+
+                return in_array((string) $player->medical_status, ['rehab', 'monitoring', 'risk'], true)
+                    || in_array((string) ($injury?->availability_status), ['unavailable', 'bench_only', 'limited'], true)
+                    || (int) $player->fatigue >= 75;
+            })
+            ->sortByDesc(function (Player $player): int {
+                $injury = $player->injuries->first();
+
+                return match (true) {
+                    (string) ($injury?->availability_status) === 'unavailable' => 5,
+                    (string) ($injury?->availability_status) === 'bench_only' => 4,
+                    (string) ($injury?->availability_status) === 'limited' => 3,
+                    (string) $player->medical_status === 'risk' => 2,
+                    default => 1,
+                };
+            })
+            ->take(3)
+            ->values();
+
+        return [
+            'headline' => $critical->isNotEmpty() ? $critical->count().' medical flags' : 'Matchday green light',
+            'summary' => $critical->isNotEmpty()
+                ? 'Medical and fatigue warnings are active for selected lineup players.'
+                : 'No critical medical restrictions detected in the current lineup pool.',
+            'stats' => [
+                ['label' => 'Flags', 'value' => $critical->count()],
+                ['label' => 'On-pitch injuries', 'value' => $injuredOnPitchCount],
+                ['label' => 'Sent off', 'value' => $sentOffCount],
+            ],
+            'players' => $critical->map(function (Player $player): array {
+                $injury = $player->injuries->first();
+
+                return [
+                    'id' => $player->id,
+                    'name' => $player->full_name,
+                    'photo_url' => $player->photo_url,
+                    'medical_status' => $player->medical_status,
+                    'fatigue' => (int) $player->fatigue,
+                    'availability_status' => $injury?->availability_status,
+                ];
+            })->all(),
         ];
     }
 

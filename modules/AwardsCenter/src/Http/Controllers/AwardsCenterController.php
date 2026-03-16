@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\AwardsCenter\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\CompetitionSeason;
 use App\Models\SeasonAward;
 use App\Services\SeasonAwardsService;
@@ -9,7 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AwardsController extends Controller
+class AwardsCenterController extends Controller
 {
     public function index(Request $request, SeasonAwardsService $seasonAwardsService): Response
     {
@@ -43,7 +44,7 @@ class AwardsController extends Controller
             ->values()
             ->all();
 
-        return Inertia::render('Awards/Index', [
+        return Inertia::render('Modules/AwardsCenter/Index', [
             'competitionSeasons' => $competitionSeasons->map(fn ($item) => [
                 'id' => $item->id,
                 'label' => trim(($item->competition?->name ?? '').' - '.($item->season?->name ?? '')),

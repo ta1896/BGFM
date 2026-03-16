@@ -1,0 +1,98 @@
+{
+    "key": "medical-center",
+    "name": "MedicalCenter",
+    "version": "1.0.0",
+    "description": "Adds rehabilitation, clearance, and return-to-play workflows to the squad shell.",
+    "enabled": true,
+    "providers": [],
+    "routes": "routes/web.php",
+    "frontend": {
+        "manager_navigation": {
+            "mod_medical_center": {
+                "label": "Medical",
+                "items": [
+                    {
+                        "route": "medical.index",
+                        "label": "Medical",
+                        "active": "medical.*"
+                    }
+                ]
+            }
+        },
+        "admin_navigation": {},
+        "dashboard_widgets": [
+            {
+                "key": "medical-center-board",
+                "title": "Medical Center",
+                "description": "Review rehab, clearances, and return-to-play decisions.",
+                "route": "medical.index",
+                "accent": "rose",
+                "icon": "firstAidKit",
+                "placement": "sidebar",
+                "priority": 40,
+                "enabled_when": "simulation.modules.medical_center.dashboard_widget_enabled"
+            }
+        ],
+        "settings_sections": [
+            {
+                "key": "medical-center-visibility",
+                "title": "Medical Center",
+                "description": "Control dashboard and matchcenter visibility for medical risk signals.",
+                "fields": [
+                    {
+                        "key": "simulation.modules.medical_center.dashboard_widget_enabled",
+                        "label": "Dashboard widget anzeigen",
+                        "description": "Zeigt das Medical-Center im Dashboard an.",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    {
+                        "key": "simulation.modules.medical_center.match_panel_enabled",
+                        "label": "Matchcenter-Panel anzeigen",
+                        "description": "Blendet das Medical-Risk-Panel im Matchcenter ein.",
+                        "type": "boolean",
+                        "default": true
+                    }
+                ]
+            }
+        ],
+        "player_actions": [
+            {
+                "key": "medical-center-review",
+                "title": "Medical Center",
+                "description": "Springt mit Fokus auf den medizinischen Status dieses Spielers ins Medical Center.",
+                "route": "medical.index",
+                "method": "get",
+                "accent": "rose",
+                "icon": "firstAidKit",
+                "scope": "owned_only",
+                "placement": "overview",
+                "query": {
+                    "player": "{player_id}"
+                }
+            }
+        ],
+        "matchcenter_panels": [
+            {
+                "key": "medical-center-match-risk",
+                "title": "Medical Risk",
+                "description": "Highlights injured, limited, and high-risk players tied to this fixture.",
+                "route": "medical.index",
+                "accent": "rose",
+                "icon": "firstAidKit",
+                "priority": 40,
+                "enabled_when": "simulation.modules.medical_center.match_panel_enabled"
+            }
+        ],
+        "notifications": [
+            {
+                "type": "medical_alert",
+                "label": "Medical Alert",
+                "accent": "border-l-rose-500",
+                "icon": "firstAidKit",
+                "icon_wrap": "border border-rose-500/20 bg-rose-500/10 text-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.12)]",
+                "badge": "border border-rose-500/20 bg-rose-500/10 text-rose-200"
+            }
+        ]
+    }
+}

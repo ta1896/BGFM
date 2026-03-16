@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\LiveCenter\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Services\LiveOverviewService;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ManagerLiveController extends Controller
+class LiveCenterController extends Controller
 {
     public function index(LiveOverviewService $liveOverviewService): Response
     {
         $overview = $liveOverviewService->overview();
 
-        return Inertia::render('Managers/Online', [
+        return Inertia::render('Modules/LiveCenter/Online', [
             'onlineManagers' => $overview['onlineManagers'],
             'onlineWindowMinutes' => $overview['onlineWindowMinutes'],
         ]);
@@ -22,7 +23,7 @@ class ManagerLiveController extends Controller
     {
         $overview = $liveOverviewService->overview();
 
-        return Inertia::render('Managers/Ticker', [
+        return Inertia::render('Modules/LiveCenter/Ticker', [
             'liveMatches' => $overview['liveMatches'],
             'onlineManagersCount' => $overview['onlineManagersCount'],
         ]);

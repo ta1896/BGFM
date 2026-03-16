@@ -7,6 +7,7 @@ use App\Models\MatchPlayerStat;
 use App\Models\Player;
 use App\Models\PlayerConversation;
 use App\Models\PlayerPlaytimePromise;
+use App\Modules\ModuleManager;
 use App\Services\InjuryManagementService;
 use App\Services\PlayerConversationService;
 use App\Services\PlayerLoadService;
@@ -15,7 +16,9 @@ use App\Services\SquadHierarchyService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PlayerController extends Controller
 {
@@ -258,9 +261,11 @@ class PlayerController extends Controller
         PlayerMoraleService $playerMoraleService,
         PlayerLoadService $playerLoadService,
         InjuryManagementService $injuryManagementService,
+        ModuleManager $modules,
     ): \Inertia\Response
     {
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
         $squadHierarchyService->refreshForClub($player->club);
 
@@ -459,6 +464,7 @@ class PlayerController extends Controller
             'recentMatches' => $recentMatches,
             'isOwner' => $player->club && $request->user()->id === $player->club->user_id,
             'positions' => array_keys($this->positions()),
+            'modulePlayerActions' => $this->modulePlayerActionsPayload($modules, $player, $activeClub, $request->user()->isAdmin()),
             'squadDynamics' => [
                 'promises' => $player->playtimePromises->map(fn ($promise) => [
                     'promise_type' => $promise->promise_type,
@@ -793,6 +799,74 @@ class PlayerController extends Controller
             'HS' => 'Haengende Spitze',
             'RF' => 'Rechter Fluegel',
         ];
+    }
+
+    private function modulePlayerActionsPayload(ModuleManager $modules, Player $player, ?Club $activeClub, bool $isAdmin): array
+    {
+        return collect($modules->frontendRegistry()['player_actions'] ?? [])
+            ->filter(fn ($action) => is_array($action) && is_string($action['route'] ?? null))
+            ->filter(function (array $action) use ($player, $activeClub, $isAdmin): bool {
+                if (!Route::has((string) $action['route'])) {
+                    return false;
+                }
+
+                $scope = (string) ($action['scope'] ?? 'all');
+                $ownsPlayer = $isAdmin || ($activeClub && (int) $activeClub->id === (int) $player->club_id);
+
+                return match ($scope) {
+                    'owned_only' => $ownsPlayer,
+                    'external_only' => !$ownsPlayer,
+                    default => true,
+                };
+            })
+            ->map(function (array $action) use ($player): array {
+                $payload = collect((array) ($action['payload'] ?? []))
+                    ->map(fn ($value) => $this->replacePlayerTokens($value, $player))
+                    ->all();
+
+                $query = collect((array) ($action['query'] ?? []))
+                    ->map(fn ($value) => $this->replacePlayerTokens($value, $player))
+                    ->all();
+
+                $routeParameters = Route::getRoutes()
+                    ->getByName((string) $action['route'])
+                    ?->parameterNames() ?? [];
+
+                $parameters = $routeParameters !== []
+                    ? [(string) $player->getRouteKey()]
+                    : [];
+
+                if ($query !== []) {
+                    $parameters = array_merge($parameters, $query);
+                }
+
+                return [
+                    'key' => (string) ($action['key'] ?? Str::slug((string) $action['title'])),
+                    'title' => (string) ($action['title'] ?? 'Module Action'),
+                    'description' => (string) ($action['description'] ?? ''),
+                    'method' => strtolower((string) ($action['method'] ?? 'get')),
+                    'href' => route((string) $action['route'], $parameters),
+                    'payload' => $payload,
+                    'accent' => (string) ($action['accent'] ?? 'slate'),
+                    'icon' => (string) ($action['icon'] ?? 'gear'),
+                    'placement' => (string) ($action['placement'] ?? 'overview'),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function replacePlayerTokens(mixed $value, Player $player): mixed
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        return str_replace(
+            ['{player_id}', '{player_name}', '{club_id}'],
+            [(string) $player->id, $player->full_name, (string) $player->club_id],
+            $value
+        );
     }
 
     private function handlePhotoUpload(Request $request, array $validated, ?string $previousPath = null): array

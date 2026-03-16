@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Binoculars,
     ChatCircleText,
     Camera,
     ChartBar,
@@ -21,7 +22,24 @@ import {
     Trophy,
     UsersThree,
     Warning,
+    FirstAidKit,
+    Broadcast,
+    Gear,
 } from '@phosphor-icons/react';
+
+const moduleActionIconMap = {
+    binoculars: Binoculars,
+    firstAidKit: FirstAidKit,
+    broadcast: Broadcast,
+};
+
+const moduleActionAccentMap = {
+    emerald: 'border-emerald-500/20 bg-emerald-500/8 text-emerald-200',
+    rose: 'border-rose-500/20 bg-rose-500/8 text-rose-200',
+    amber: 'border-amber-500/20 bg-amber-500/8 text-amber-200',
+    cyan: 'border-cyan-500/20 bg-cyan-500/8 text-cyan-200',
+    slate: 'border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 text-slate-200',
+};
 
 export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
     return (
@@ -175,7 +193,7 @@ function TabButton({ active, onClick, icon: Icon, children }) {
     );
 }
 
-export function PlayerOverviewTab({ player, squadDynamics }) {
+export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
     const stats = [
         { label: 'Tempo', value: player.pace, icon: Lightning, color: 'text-amber-500', gradient: 'from-amber-500/60' },
         { label: 'Schuss', value: player.shooting, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
@@ -271,6 +289,10 @@ export function PlayerOverviewTab({ player, squadDynamics }) {
                         {player.injury && <InfoRow label="Aktuelle Verletzung" value={`${player.injury.type} bis ${player.injury.expected_return || '?'}`} />}
                     </div>
                 </div>
+
+                {modulePlayerActions.length > 0 && (
+                    <ModuleActionPanel actions={modulePlayerActions} onAction={onModuleAction} />
+                )}
             </div>
         </div>
     );
@@ -539,6 +561,8 @@ export function PlayerCustomizeTab({
     player,
     squadDynamics,
     playerConversationsEnabled = false,
+    modulePlayerActions = [],
+    onModuleAction,
 }) {
     if (!isOwner) {
         return null;
@@ -605,59 +629,65 @@ export function PlayerCustomizeTab({
             </form>
             </div>
 
-            <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-8 backdrop-blur-xl">
-                <div className="mb-8 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-5">
-                    <UsersThree size={28} weight="duotone" className="text-amber-400" />
-                    <div>
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
-                        <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Aktive Erwartung fuer diesen Spieler</p>
+            <div className="space-y-8">
+                <div className="sim-card border-[var(--border-muted)] bg-[#0c1222]/80 p-8 backdrop-blur-xl">
+                    <div className="mb-8 flex items-center gap-4 border-b border-[var(--border-pillar)] pb-5">
+                        <UsersThree size={28} weight="duotone" className="text-amber-400" />
+                        <div>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Spielzeitversprechen</h3>
+                            <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Aktive Erwartung fuer diesen Spieler</p>
+                        </div>
                     </div>
+
+                    <form onSubmit={onPromiseSubmit} className="space-y-5">
+                        <Field label="Versprechen">
+                            <select value={promiseForm.data.promise_type} onChange={(event) => promiseForm.setData('promise_type', event.target.value)} className="sim-select w-full uppercase text-xs">
+                                <option value="starter">Stammspieler</option>
+                                <option value="regular_rotation">Regelmaessige Rotation</option>
+                                <option value="impact_sub">Joker-Rolle</option>
+                                <option value="youth_path">Entwicklungspfad</option>
+                            </select>
+                        </Field>
+
+                        <Field label="Erwartete Minutenquote">
+                            <input
+                                type="number"
+                                min="5"
+                                max="100"
+                                value={promiseForm.data.expected_minutes_share}
+                                onChange={(event) => promiseForm.setData('expected_minutes_share', event.target.value)}
+                                className="sim-input-indigo w-full"
+                            />
+                        </Field>
+
+                        <Field label="Deadline">
+                            <input
+                                type="date"
+                                value={promiseForm.data.deadline_at}
+                                onChange={(event) => promiseForm.setData('deadline_at', event.target.value)}
+                                className="sim-input-indigo w-full"
+                            />
+                        </Field>
+
+                        <Field label="Notiz">
+                            <textarea
+                                value={promiseForm.data.notes}
+                                onChange={(event) => promiseForm.setData('notes', event.target.value)}
+                                className="sim-input-indigo min-h-28 w-full"
+                                placeholder="z. B. Einsaetze ueber die naechsten 6 Wochen"
+                            />
+                        </Field>
+
+                        <button type="submit" disabled={promiseForm.processing} className="sim-btn-primary flex w-full items-center justify-center gap-3 px-6 py-4">
+                            <FloppyDisk size={18} weight="bold" />
+                            <span className="text-xs font-black uppercase tracking-widest">Versprechen setzen</span>
+                        </button>
+                    </form>
                 </div>
 
-                <form onSubmit={onPromiseSubmit} className="space-y-5">
-                    <Field label="Versprechen">
-                        <select value={promiseForm.data.promise_type} onChange={(event) => promiseForm.setData('promise_type', event.target.value)} className="sim-select w-full uppercase text-xs">
-                            <option value="starter">Stammspieler</option>
-                            <option value="regular_rotation">Regelmaessige Rotation</option>
-                            <option value="impact_sub">Joker-Rolle</option>
-                            <option value="youth_path">Entwicklungspfad</option>
-                        </select>
-                    </Field>
-
-                    <Field label="Erwartete Minutenquote">
-                        <input
-                            type="number"
-                            min="5"
-                            max="100"
-                            value={promiseForm.data.expected_minutes_share}
-                            onChange={(event) => promiseForm.setData('expected_minutes_share', event.target.value)}
-                            className="sim-input-indigo w-full"
-                        />
-                    </Field>
-
-                    <Field label="Deadline">
-                        <input
-                            type="date"
-                            value={promiseForm.data.deadline_at}
-                            onChange={(event) => promiseForm.setData('deadline_at', event.target.value)}
-                            className="sim-input-indigo w-full"
-                        />
-                    </Field>
-
-                    <Field label="Notiz">
-                        <textarea
-                            value={promiseForm.data.notes}
-                            onChange={(event) => promiseForm.setData('notes', event.target.value)}
-                            className="sim-input-indigo min-h-28 w-full"
-                            placeholder="z. B. Einsaetze ueber die naechsten 6 Wochen"
-                        />
-                    </Field>
-
-                    <button type="submit" disabled={promiseForm.processing} className="sim-btn-primary flex w-full items-center justify-center gap-3 px-6 py-4">
-                        <FloppyDisk size={18} weight="bold" />
-                        <span className="text-xs font-black uppercase tracking-widest">Versprechen setzen</span>
-                    </button>
-                </form>
+                {modulePlayerActions.length > 0 && (
+                    <ModuleActionPanel actions={modulePlayerActions} onAction={onModuleAction} compact />
+                )}
             </div>
 
             {playerConversationsEnabled && (
@@ -730,6 +760,49 @@ function QuickBadge({ label, value, tone = 'good' }) {
         <div className={`rounded-2xl border px-3 py-3 ${toneClasses}`}>
             <span className="block text-[9px] font-black uppercase tracking-widest opacity-80">{label}</span>
             <span className="mt-1 block text-sm font-black text-white">{value}</span>
+        </div>
+    );
+}
+
+function ModuleActionPanel({ actions, onAction, compact = false }) {
+    return (
+        <div className="sim-card border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-8">
+            <div className="mb-6 flex items-center gap-4">
+                <Gear size={24} weight="duotone" className="text-cyan-300" />
+                <div>
+                    <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Module Actions</h3>
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Kontextaktionen aus aktiven Feature-Modulen</p>
+                </div>
+            </div>
+
+            <div className={`grid gap-4 ${compact ? '' : 'sm:grid-cols-2'}`}>
+                {actions.map((action) => {
+                    const Icon = moduleActionIconMap[action.icon] || Gear;
+                    const classes = moduleActionAccentMap[action.accent] || moduleActionAccentMap.slate;
+
+                    return (
+                        <button
+                            key={action.key}
+                            type="button"
+                            onClick={() => onAction?.(action)}
+                            className={`rounded-2xl border p-5 text-left transition hover:-translate-y-0.5 hover:border-white/20 ${classes}`}
+                        >
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-xl border border-white/10 bg-black/20 p-2">
+                                        <Icon size={18} weight="bold" />
+                                    </div>
+                                    <span className="text-sm font-black uppercase tracking-tight text-white">{action.title}</span>
+                                </div>
+                                <span className="rounded-full border border-white/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-white/70">
+                                    {action.method === 'post' ? 'Action' : 'Open'}
+                                </span>
+                            </div>
+                            <p className="text-xs leading-relaxed text-slate-300">{action.description}</p>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }

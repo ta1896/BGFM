@@ -1,10 +1,80 @@
-import React, { useState } from 'react';
+import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { 
     Gear, Timer, ArrowsLeftRight, Users, 
     ToggleLeft, ToggleRight, FloppyDisk, ChartBar
 } from '@phosphor-icons/react';
+
+function buildInitialSimulation(settings, moduleSettingsSections) {
+    const simulation = {
+        scheduler: {
+            interval_minutes:          settings?.scheduler?.interval_minutes ?? 1,
+            default_limit:             settings?.scheduler?.default_limit ?? 0,
+            max_concurrency:           settings?.scheduler?.max_concurrency ?? 5,
+            default_minutes_per_run:   settings?.scheduler?.default_minutes_per_run ?? 5,
+            default_types:             settings?.scheduler?.default_types ?? ['friendly', 'league', 'cup'],
+            claim_stale_after_seconds: settings?.scheduler?.claim_stale_after_seconds ?? 180,
+            runner_lock_seconds:       settings?.scheduler?.runner_lock_seconds ?? 120,
+        },
+        position_fit: {
+            main:       settings?.position_fit?.main       ?? 1.0,
+            second:     settings?.position_fit?.second     ?? 0.9,
+            third:      settings?.position_fit?.third      ?? 0.8,
+            foreign:    settings?.position_fit?.foreign    ?? 0.7,
+            foreign_gk: settings?.position_fit?.foreign_gk ?? 0.5,
+        },
+        live_changes: {
+            planned_substitutions: {
+                max_per_club:         settings?.live_changes?.planned_substitutions?.max_per_club         ?? 3,
+                min_minutes_ahead:    settings?.live_changes?.planned_substitutions?.min_minutes_ahead    ?? 2,
+                min_interval_minutes: settings?.live_changes?.planned_substitutions?.min_interval_minutes ?? 3,
+            }
+        },
+        lineup: {
+            max_bench_players: settings?.lineup?.max_bench_players ?? 5,
+        },
+        features: {
+            player_conversations_enabled: settings?.features?.player_conversations_enabled ?? false,
+        },
+        observers: {
+            match_finished: {
+                enabled:                              settings?.observers?.match_finished?.enabled                              ?? true,
+                rebuild_match_player_stats:           settings?.observers?.match_finished?.rebuild_match_player_stats           ?? true,
+                aggregate_player_competition_stats:   settings?.observers?.match_finished?.aggregate_player_competition_stats   ?? true,
+                apply_match_availability:             settings?.observers?.match_finished?.apply_match_availability             ?? true,
+                update_competition_after_match:       settings?.observers?.match_finished?.update_competition_after_match       ?? true,
+                settle_match_finance:                 settings?.observers?.match_finished?.settle_match_finance                 ?? true,
+            }
+        }
+    };
+
+    (moduleSettingsSections ?? []).forEach((section) => {
+        (section?.fields ?? []).forEach((field) => {
+            if (typeof field?.key !== 'string' || !field.key.startsWith('simulation.')) {
+                return;
+            }
+
+            const path = field.key.split('.');
+            let cursor = { simulation };
+
+            path.forEach((segment, index) => {
+                if (index === path.length - 1) {
+                    cursor[segment] = field.value ?? field.default ?? false;
+                    return;
+                }
+
+                if (!cursor[segment] || typeof cursor[segment] !== 'object') {
+                    cursor[segment] = {};
+                }
+
+                cursor = cursor[segment];
+            });
+        });
+    });
+
+    return simulation;
+}
 
 function SettingSlider({ label, desc, name, value, min, max, step = 0.01, onChange }) {
     return (
@@ -43,49 +113,9 @@ function Toggle({ label, desc, checked, onChange }) {
     );
 }
 
-export default function Index({ simulationSettings: s }) {
-    const { data, setData, put, processing, errors } = useForm({
-        simulation: {
-            scheduler: {
-                interval_minutes:          s?.scheduler?.interval_minutes ?? 1,
-                default_limit:             s?.scheduler?.default_limit ?? 0,
-                max_concurrency:           s?.scheduler?.max_concurrency ?? 5,
-                default_minutes_per_run:   s?.scheduler?.default_minutes_per_run ?? 5,
-                default_types:             s?.scheduler?.default_types ?? ['friendly', 'league', 'cup'],
-                claim_stale_after_seconds: s?.scheduler?.claim_stale_after_seconds ?? 180,
-                runner_lock_seconds:       s?.scheduler?.runner_lock_seconds ?? 120,
-            },
-            position_fit: {
-                main:       s?.position_fit?.main       ?? 1.0,
-                second:     s?.position_fit?.second     ?? 0.9,
-                third:      s?.position_fit?.third      ?? 0.8,
-                foreign:    s?.position_fit?.foreign    ?? 0.7,
-                foreign_gk: s?.position_fit?.foreign_gk ?? 0.5,
-            },
-            live_changes: {
-                planned_substitutions: {
-                    max_per_club:         s?.live_changes?.planned_substitutions?.max_per_club         ?? 3,
-                    min_minutes_ahead:    s?.live_changes?.planned_substitutions?.min_minutes_ahead    ?? 2,
-                    min_interval_minutes: s?.live_changes?.planned_substitutions?.min_interval_minutes ?? 3,
-                }
-            },
-            lineup: {
-                max_bench_players: s?.lineup?.max_bench_players ?? 5,
-            },
-            features: {
-                player_conversations_enabled: s?.features?.player_conversations_enabled ?? false,
-            },
-            observers: {
-                match_finished: {
-                    enabled:                              s?.observers?.match_finished?.enabled                              ?? true,
-                    rebuild_match_player_stats:           s?.observers?.match_finished?.rebuild_match_player_stats           ?? true,
-                    aggregate_player_competition_stats:   s?.observers?.match_finished?.aggregate_player_competition_stats   ?? true,
-                    apply_match_availability:             s?.observers?.match_finished?.apply_match_availability             ?? true,
-                    update_competition_after_match:       s?.observers?.match_finished?.update_competition_after_match       ?? true,
-                    settle_match_finance:                 s?.observers?.match_finished?.settle_match_finance                 ?? true,
-                }
-            }
-        }
+export default function Index({ simulationSettings: s, moduleSettingsSections = [] }) {
+    const { data, setData, put, processing } = useForm({
+        simulation: buildInitialSimulation(s, moduleSettingsSections),
     });
 
     const setNested = (path, value) => {
@@ -93,7 +123,13 @@ export default function Index({ simulationSettings: s }) {
         setData(prev => {
             const next = JSON.parse(JSON.stringify(prev));
             let obj = next;
-            for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') {
+                    obj[keys[i]] = {};
+                }
+
+                obj = obj[keys[i]];
+            }
             obj[keys[keys.length - 1]] = value;
             return next;
         });
@@ -270,6 +306,73 @@ export default function Index({ simulationSettings: s }) {
                         />
                     </div>
                 </div>
+
+                {moduleSettingsSections.length > 0 && (
+                    <div className="sim-card p-6">
+                        <div className="mb-6">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-cyan-300 flex items-center gap-2">
+                                <Gear size={14} /> Module Sections
+                            </h3>
+                            <p className="text-xs text-[var(--text-muted)] mt-1">Steuert modulare Dashboard-Widgets, Matchcenter-Panels und weitere Erweiterungen.</p>
+                        </div>
+
+                        <div className="grid gap-6 xl:grid-cols-2">
+                            {moduleSettingsSections.map((section) => (
+                                <div key={section.key} className="rounded-2xl border border-[var(--border-pillar)]/50 bg-[var(--bg-content)]/20 p-5">
+                                    <div className="mb-4">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300/80">
+                                            {section.module_name}
+                                        </p>
+                                        <h4 className="mt-1 text-lg font-black text-white">{section.title}</h4>
+                                        {section.description && (
+                                            <p className="mt-1 text-xs text-[var(--text-muted)]">{section.description}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {(section.fields ?? []).map((field) => {
+                                            const fieldValue = field.key
+                                                .split('.')
+                                                .reduce((carry, segment) => carry?.[segment], data);
+
+                                            if ((field.type ?? 'boolean') === 'boolean') {
+                                                return (
+                                                    <Toggle
+                                                        key={field.key}
+                                                        label={field.label}
+                                                        desc={field.description}
+                                                        checked={Boolean(fieldValue)}
+                                                        onChange={() => setNested(field.key, !fieldValue)}
+                                                    />
+                                                );
+                                            }
+
+                                            return (
+                                                <div key={field.key}>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                                        {field.label}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={field.min ?? 0}
+                                                        max={field.max ?? 1000}
+                                                        step={field.step ?? 1}
+                                                        value={fieldValue ?? field.default ?? 0}
+                                                        onChange={(e) => setNested(field.key, Number(e.target.value))}
+                                                        className="sim-input w-full"
+                                                    />
+                                                    {field.description && (
+                                                        <p className="text-[10px] text-slate-600 mt-1">{field.description}</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Observers */}
                 <div className="sim-card p-6">

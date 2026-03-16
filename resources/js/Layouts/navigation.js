@@ -48,8 +48,6 @@ export function getManagerMenuGroups({ hasManagedClub }) {
             label: 'Buero',
             items: [
                 { route: 'dashboard', label: 'Dashboard', active: 'dashboard' },
-                { route: 'manager-live.index', label: 'Manager Live', active: 'manager-live.*' },
-                { route: 'live-ticker.index', label: 'Live-Ticker', active: 'live-ticker.*' },
                 { route: 'notifications.index', label: 'Postfach', active: 'notifications.*' },
                 { route: 'finances.index', label: 'Finanzen', active: 'finances.*' },
                 { route: 'sponsors.index', label: 'Sponsoren', active: 'sponsors.*' },
@@ -63,7 +61,6 @@ export function getManagerMenuGroups({ hasManagedClub }) {
                 { route: 'players.index', label: 'Kader', active: 'players.*' },
                 { route: 'squad-hierarchy.index', label: 'Hierarchie', active: 'squad-hierarchy.index' },
                 { route: 'training.index', label: 'Training', active: 'training.*' },
-                { route: 'medical.index', label: 'Medical', active: 'medical.*' },
                 { route: 'training-camps.index', label: 'Trainingslager', active: 'training-camps.*' },
             ],
         },
@@ -73,7 +70,6 @@ export function getManagerMenuGroups({ hasManagedClub }) {
                 { route: 'league.matches', label: 'Spiele', active: 'league.matches' },
                 { route: 'league.table', label: 'Tabelle', active: 'league.table' },
                 { route: 'statistics.index', label: 'Statistiken', active: 'statistics.*' },
-                { route: 'awards.index', label: 'Awards', active: 'awards.*' },
                 { route: 'teams.compare', label: 'Vergleich', active: 'teams.*' },
                 { route: 'team-of-the-day.index', label: 'Team der Woche', active: 'team-of-the-day.*' },
                 { route: 'friendlies.index', label: 'Freundschaft', active: 'friendlies.*' },
@@ -83,7 +79,6 @@ export function getManagerMenuGroups({ hasManagedClub }) {
             label: 'Markt',
             items: [
                 { route: 'contracts.index', label: 'Vertraege', active: 'contracts.*' },
-                { route: 'scouting.index', label: 'Scouting', active: 'scouting.*' },
                 { route: 'clubs.index', label: 'Vereins-Suche', active: 'clubs.*' },
             ],
         },

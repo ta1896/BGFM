@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     PlayerCareerTab,
     PlayerCustomizeTab,
@@ -10,7 +10,7 @@ import {
     PlayerShowHeader,
 } from '@/Pages/Players/components/ShowSections';
 
-export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics }) {
+export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics, modulePlayerActions = [] }) {
     const { features } = usePage().props;
     const playerConversationsEnabled = !!features?.player_conversations_enabled;
     const [activeTab, setActiveTab] = useState('overview');
@@ -54,6 +54,20 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
         });
     };
 
+    const handleModuleAction = (action) => {
+        if (action.method === 'post') {
+            router.post(action.href, action.payload ?? {}, {
+                preserveScroll: true,
+            });
+
+            return;
+        }
+
+        router.visit(action.href, {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title={player.full_name} />
@@ -62,7 +76,14 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                 <PlayerShowHeader player={player} isOwner={isOwner} activeTab={activeTab} onTabChange={setActiveTab} />
 
                 <div className="min-h-[500px]">
-                    {activeTab === 'overview' && <PlayerOverviewTab player={player} squadDynamics={squadDynamics} />}
+                    {activeTab === 'overview' && (
+                        <PlayerOverviewTab
+                            player={player}
+                            squadDynamics={squadDynamics}
+                            modulePlayerActions={modulePlayerActions.filter((action) => action.placement === 'overview')}
+                            onModuleAction={handleModuleAction}
+                        />
+                    )}
                     {activeTab === 'career' && <PlayerCareerTab careerStats={careerStats} />}
                     {activeTab === 'matches' && <PlayerMatchesTab player={player} recentMatches={recentMatches} />}
                     {activeTab === 'history' && <PlayerHistoryTab squadDynamics={squadDynamics} playerConversationsEnabled={playerConversationsEnabled} />}
@@ -81,6 +102,8 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                             player={player}
                             squadDynamics={squadDynamics}
                             playerConversationsEnabled={playerConversationsEnabled}
+                            modulePlayerActions={modulePlayerActions.filter((action) => action.placement === 'customize' || action.placement === 'overview')}
+                            onModuleAction={handleModuleAction}
                         />
                     )}
                 </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import useLiveOverview from '@/hooks/useLiveOverview';
 import { 
@@ -92,10 +92,7 @@ const TimelineDay = ({ day }) => {
 };
 
 const ManagerLiveRow = ({ manager }) => (
-    <Link
-        href={route('manager-live.index')}
-        className="group flex items-center gap-3 rounded-2xl border border-cyan-400/10 bg-[linear-gradient(135deg,rgba(17,30,48,0.85),rgba(11,22,36,0.95))] px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-cyan-300/25 hover:shadow-[0_14px_30px_-18px_rgba(34,211,238,0.45)]"
-    >
+    <div className="group flex items-center gap-3 rounded-2xl border border-cyan-400/10 bg-[linear-gradient(135deg,rgba(17,30,48,0.85),rgba(11,22,36,0.95))] px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-cyan-300/25 hover:shadow-[0_14px_30px_-18px_rgba(34,211,238,0.45)]">
         <div className="relative">
             {manager.club?.logo_url ? (
                 <img src={manager.club.logo_url} alt={manager.club.name} className="h-11 w-11 rounded-2xl border border-white/10 bg-white/[0.04] object-contain p-1.5" />
@@ -122,12 +119,12 @@ const ManagerLiveRow = ({ manager }) => (
                 <span className="truncate">{manager.activity_label}</span>
             </div>
         </div>
-    </Link>
+    </div>
 );
 
 const LiveMatchRow = ({ match }) => (
     <Link
-        href={match?.id ? route('matches.show', match.id) : route('live-ticker.index')}
+        href={match?.id ? route('matches.show', match.id) : (route().has('live-ticker.index') ? route('live-ticker.index') : route('dashboard'))}
         className="group block rounded-2xl border border-emerald-400/10 bg-[linear-gradient(135deg,rgba(10,34,30,0.9),rgba(7,23,25,0.96))] px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-emerald-300/25 hover:shadow-[0_14px_30px_-18px_rgba(16,185,129,0.45)]"
     >
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -158,6 +155,54 @@ const formTone = {
     N: 'bg-red-600 text-white',
 };
 
+const moduleWidgetIconMap = {
+    broadcast: Broadcast,
+    trophy: Trophy,
+    binoculars: ChartBar,
+    firstAidKit: FirstAidKit,
+};
+
+function ModuleWidgetCard({ widget }) {
+    const Icon = moduleWidgetIconMap[widget.icon] || Lightning;
+
+    return (
+        <Link
+            href={route(widget.route)}
+            className={`group rounded-2xl border px-4 py-4 transition-all hover:-translate-y-0.5 ${
+                widget.accent === 'rose'
+                    ? 'border-rose-400/15 bg-rose-400/6 hover:border-rose-300/30'
+                    : widget.accent === 'emerald'
+                        ? 'border-emerald-400/15 bg-emerald-400/6 hover:border-emerald-300/30'
+                        : widget.accent === 'amber'
+                            ? 'border-amber-400/15 bg-amber-400/6 hover:border-amber-300/30'
+                            : 'border-cyan-400/15 bg-cyan-400/6 hover:border-cyan-300/30'
+            }`}
+        >
+            <div className="flex items-start gap-3">
+                <div className={`rounded-2xl border p-3 ${
+                    widget.accent === 'rose'
+                        ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
+                        : widget.accent === 'emerald'
+                            ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+                            : widget.accent === 'amber'
+                                ? 'border-amber-400/20 bg-amber-400/10 text-amber-200'
+                                : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200'
+                }`}>
+                    <Icon size={16} weight="duotone" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-white">{widget.title}</div>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{widget.description}</p>
+                    <div className="mt-3 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">
+                        Open
+                        <ArrowRight size={11} weight="bold" />
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
 export default function Dashboard(props) {
     const { 
         activeClub, nextMatch, nextMatchTypeLabel, 
@@ -167,6 +212,7 @@ export default function Dashboard(props) {
         dashboardVariant, assistantTasks, todayFocus, clubPulseOverview, comparisonStats, quickActions,
         squadPulse, scoutingDesk, medicalDesk, managerDecisions, liveMatches, onlineManagers
     } = props;
+    const { modules = {} } = usePage().props;
 
     if (!activeClub) {
         return (
@@ -194,6 +240,11 @@ export default function Dashboard(props) {
 
     const fanMood = Math.max(0, Math.min(100, parseInt(activeClub.fan_mood || 50)));
     const liveOverview = useLiveOverview({ initialLiveMatches: liveMatches, initialOnlineManagers: onlineManagers });
+    const hasManagerLiveRoute = route().has('manager-live.index');
+    const hasLiveTickerRoute = route().has('live-ticker.index');
+    const dashboardWidgets = [...(modules.dashboard_widgets || [])].sort((a, b) => (a.priority || 999) - (b.priority || 999));
+    const mainModuleWidgets = dashboardWidgets.filter((widget) => (widget.placement || 'main') === 'main');
+    const sidebarModuleWidgets = dashboardWidgets.filter((widget) => widget.placement === 'sidebar');
 
     return (
         <AuthenticatedLayout>
@@ -596,10 +647,12 @@ export default function Dashboard(props) {
                                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live Matches</div>
                                     <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.liveMatchesCount}</div>
                                 </div>
-                                <Link href={route('live-ticker.index')} className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-white">
-                                    <Broadcast size={12} weight="fill" />
-                                    Live-Ticker
-                                </Link>
+                                {hasLiveTickerRoute ? (
+                                    <Link href={route('live-ticker.index')} className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-white">
+                                        <Broadcast size={12} weight="fill" />
+                                        Live-Ticker
+                                    </Link>
+                                ) : null}
                             </div>
                             <div className="space-y-3">
                                 {liveOverview.liveMatchesCount > 0 ? liveOverview.liveMatches.map((match) => (
@@ -694,6 +747,25 @@ export default function Dashboard(props) {
                                 <p className="text-sm italic text-[var(--text-muted)]">Season just started</p>
                             )}
                         </section>
+
+                        {mainModuleWidgets.length > 0 && (
+                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Module Highlights</div>
+                                        <div className="mt-1 text-xl font-black text-white">Enabled feature surfaces</div>
+                                    </div>
+                                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                        {mainModuleWidgets.length} active
+                                    </div>
+                                </div>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    {mainModuleWidgets.map((widget) => (
+                                        <ModuleWidgetCard key={widget.key} widget={widget} />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                         {/* Assistant Suggestions */}
                         {assistantTasks && assistantTasks.length > 0 && (
@@ -805,10 +877,12 @@ export default function Dashboard(props) {
                                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Online Manager</div>
                                     <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.onlineManagersCount}</div>
                                 </div>
-                                <Link href={route('manager-live.index')} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100 transition-colors hover:border-cyan-200/35 hover:text-white">
-                                    <UsersThree size={12} weight="fill" />
-                                    Manager Online
-                                </Link>
+                                {hasManagerLiveRoute ? (
+                                    <Link href={route('manager-live.index')} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100 transition-colors hover:border-cyan-200/35 hover:text-white">
+                                        <UsersThree size={12} weight="fill" />
+                                        Manager Online
+                                    </Link>
+                                ) : null}
                             </div>
                             <div className="space-y-3">
                                 {liveOverview.onlineManagersCount > 0 ? liveOverview.onlineManagers.map((manager) => (
@@ -820,6 +894,22 @@ export default function Dashboard(props) {
                                 )}
                             </div>
                         </section>
+
+                        {sidebarModuleWidgets.length > 0 && (
+                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Module Shortcuts</div>
+                                        <div className="mt-1 text-lg font-black text-white">Sidebar hooks</div>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    {sidebarModuleWidgets.map((widget) => (
+                                        <ModuleWidgetCard key={widget.key} widget={widget} />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                     </PageReveal>
                 </div>

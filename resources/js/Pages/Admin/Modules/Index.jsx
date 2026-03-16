@@ -109,6 +109,10 @@ export default function Index({ modules }) {
                                     <StatPill label="Manager Navi" value={module.manager_navigation_groups} />
                                     <StatPill label="Admin Navi" value={module.admin_navigation_groups} />
                                     <StatPill label="Widgets" value={module.dashboard_widget_count} />
+                                    <StatPill label="Settings" value={module.settings_section_count} />
+                                    <StatPill label="Player Actions" value={module.player_action_count} />
+                                    <StatPill label="Matchcenter" value={module.matchcenter_panel_count} />
+                                    <StatPill label="Notify" value={module.notification_hook_count} />
                                     <StatPill label="Standard" value={module.enabled_by_default ? 'Ja' : 'Nein'} />
                                 </div>
 
