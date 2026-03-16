@@ -45,6 +45,50 @@
                         "description": "Zeigt das Scouting-Desk im Dashboard an.",
                         "type": "boolean",
                         "default": true
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.default_market",
+                        "label": "Standardmarkt",
+                        "description": "Voreinstellung fuer neu geoeffnete Scouting-Ansichten.",
+                        "type": "select",
+                        "default": "domestic",
+                        "options": ["domestic", "continental", "global"]
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.default_discovery_level",
+                        "label": "Standard-Scout-Linse",
+                        "description": "Welche Scout-Linse initial vorausgewaehlt wird.",
+                        "type": "select",
+                        "default": "experienced",
+                        "options": ["junior", "experienced", "elite"]
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.target_limit",
+                        "label": "Zielmarkt-Limit",
+                        "description": "Maximale Anzahl an Zielmarkt-Spielern pro Request.",
+                        "type": "integer",
+                        "default": 24,
+                        "min": 8,
+                        "max": 60,
+                        "step": 1
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.discovery_limit",
+                        "label": "Discovery-Board-Limit",
+                        "description": "Wie viele persistierte Scout-Leads pro Marktansicht gezeigt werden.",
+                        "type": "integer",
+                        "default": 12,
+                        "min": 4,
+                        "max": 30,
+                        "step": 1
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.discovery_note_prefix",
+                        "label": "Discovery-Prefix",
+                        "description": "Optionaler Text, der Scout-Einschaetzungen vorangestellt wird.",
+                        "type": "text",
+                        "default": "",
+                        "max_length": 80
                     }
                 ]
             }

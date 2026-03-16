@@ -337,6 +337,10 @@ class SimulationSettingsService
                 (float) ($field['min'] ?? 0),
                 min((float) ($field['max'] ?? 1000), (float) $value)
             ),
+            'select' => in_array((string) $value, array_map('strval', (array) ($field['options'] ?? [])), true)
+                ? (string) $value
+                : (string) ($field['default'] ?? ''),
+            'text' => mb_substr(trim((string) $value), 0, (int) ($field['max_length'] ?? 255)),
             default => (bool) $value,
         };
     }

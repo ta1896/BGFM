@@ -16,6 +16,7 @@ class MedicalCenterController extends Controller
 {
     public function index(Request $request, InjuryManagementService $injuryManagementService, PlayerLoadService $playerLoadService): Response
     {
+        $returnCandidateWindowDays = max(1, min(14, (int) config('simulation.modules.medical_center.return_candidate_window_days', 3)));
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
         if (!$activeClub) {
@@ -75,7 +76,7 @@ class MedicalCenterController extends Controller
                 if (
                     $injury &&
                     $injury->expected_return_at &&
-                    now()->diffInDays($injury->expected_return_at, false) <= 3
+                    now()->diffInDays($injury->expected_return_at, false) <= $returnCandidateWindowDays
                 ) {
                     $board['return_candidates'][] = $entry;
                     $board['summary']['rehab_count']++;
@@ -90,6 +91,9 @@ class MedicalCenterController extends Controller
                 'logo_url' => $activeClub->logo_url,
             ] : null,
             'medicalBoard' => $board,
+            'moduleSettings' => [
+                'return_candidate_window_days' => $returnCandidateWindowDays,
+            ],
         ]);
     }
 

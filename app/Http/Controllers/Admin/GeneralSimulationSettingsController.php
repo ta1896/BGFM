@@ -83,6 +83,16 @@ class GeneralSimulationSettingsController extends Controller
                 'numeric',
                 'between:'.(float) ($field['min'] ?? 0).','.(float) ($field['max'] ?? 1000),
             ],
+            'select' => [
+                'required',
+                'string',
+                'in:'.implode(',', array_map('strval', (array) ($field['options'] ?? []))),
+            ],
+            'text' => [
+                'nullable',
+                'string',
+                'max:'.(int) ($field['max_length'] ?? 255),
+            ],
             default => ['required', 'boolean'],
         };
     }

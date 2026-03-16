@@ -113,6 +113,10 @@ function Toggle({ label, desc, checked, onChange }) {
     );
 }
 
+function fieldValueFromData(data, key) {
+    return key.split('.').reduce((carry, segment) => carry?.[segment], data);
+}
+
 export default function Index({ simulationSettings: s, moduleSettingsSections = [] }) {
     const { data, setData, put, processing } = useForm({
         simulation: buildInitialSimulation(s, moduleSettingsSections),
@@ -331,9 +335,7 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
 
                                     <div className="space-y-3">
                                         {(section.fields ?? []).map((field) => {
-                                            const fieldValue = field.key
-                                                .split('.')
-                                                .reduce((carry, segment) => carry?.[segment], data);
+                                            const fieldValue = fieldValueFromData(data, field.key);
 
                                             if ((field.type ?? 'boolean') === 'boolean') {
                                                 return (
@@ -344,6 +346,50 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
                                                         checked={Boolean(fieldValue)}
                                                         onChange={() => setNested(field.key, !fieldValue)}
                                                     />
+                                                );
+                                            }
+
+                                            if (field.type === 'select') {
+                                                return (
+                                                    <div key={field.key}>
+                                                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                                            {field.label}
+                                                        </label>
+                                                        <select
+                                                            value={fieldValue ?? field.default ?? ''}
+                                                            onChange={(e) => setNested(field.key, e.target.value)}
+                                                            className="sim-select w-full"
+                                                        >
+                                                            {(field.options ?? []).map((option) => (
+                                                                <option key={option} value={option}>
+                                                                    {option}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        {field.description && (
+                                                            <p className="text-[10px] text-slate-600 mt-1">{field.description}</p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+
+                                            if (field.type === 'text') {
+                                                return (
+                                                    <div key={field.key}>
+                                                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                                            {field.label}
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            maxLength={field.max_length ?? 255}
+                                                            value={fieldValue ?? field.default ?? ''}
+                                                            onChange={(e) => setNested(field.key, e.target.value)}
+                                                            className="sim-input w-full"
+                                                        />
+                                                        {field.description && (
+                                                            <p className="text-[10px] text-slate-600 mt-1">{field.description}</p>
+                                                        )}
+                                                    </div>
                                                 );
                                             }
 

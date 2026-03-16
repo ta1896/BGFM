@@ -52,6 +52,16 @@
                         "description": "Blendet das Medical-Risk-Panel im Matchcenter ein.",
                         "type": "boolean",
                         "default": true
+                    },
+                    {
+                        "key": "simulation.modules.medical_center.return_candidate_window_days",
+                        "label": "Rueckkehrfenster (Tage)",
+                        "description": "Spieler innerhalb dieses Fensters erscheinen als Return Candidates.",
+                        "type": "integer",
+                        "default": 3,
+                        "min": 1,
+                        "max": 14,
+                        "step": 1
                     }
                 ]
             }

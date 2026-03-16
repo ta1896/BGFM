@@ -18,6 +18,10 @@ class ScoutingCenterController extends Controller
 {
     public function index(Request $request, ScoutingService $scoutingService): Response
     {
+        $targetLimit = max(8, min(60, (int) config('simulation.modules.scouting_center.target_limit', 24)));
+        $discoveryLimit = max(4, min(30, (int) config('simulation.modules.scouting_center.discovery_limit', 12)));
+        $defaultMarket = (string) config('simulation.modules.scouting_center.default_market', 'domestic');
+        $defaultDiscoveryLevel = (string) config('simulation.modules.scouting_center.default_discovery_level', 'experienced');
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
 
         if (!$activeClub) {
@@ -27,11 +31,11 @@ class ScoutingCenterController extends Controller
         }
 
         $search = trim((string) $request->query('search', ''));
-        $market = (string) $request->query('market', 'domestic');
+        $market = (string) $request->query('market', $defaultMarket);
         $position = (string) $request->query('position', 'all');
         $ageBand = (string) $request->query('age_band', 'all');
         $valueBand = (string) $request->query('value_band', 'all');
-        $discoveryLevel = (string) $request->query('discovery_level', 'experienced');
+        $discoveryLevel = (string) $request->query('discovery_level', $defaultDiscoveryLevel);
 
         $playerQuery = Player::query()
             ->with(['club', 'injuries', 'recoveryLogs'])
@@ -52,7 +56,7 @@ class ScoutingCenterController extends Controller
         $query = $playerQuery
             ->orderByDesc($discoveryLevel === 'elite' ? 'potential' : 'overall')
             ->orderBy('age')
-            ->limit(24)
+            ->limit($targetLimit)
             ->get();
 
         $discoveries = collect();
@@ -66,7 +70,7 @@ class ScoutingCenterController extends Controller
                 ->where('discovery_level', $discoveryLevel)
                 ->with('player.club')
                 ->latest('scanned_at')
-                ->limit(12)
+                ->limit($discoveryLimit)
                 ->get();
         }
 
@@ -111,6 +115,13 @@ class ScoutingCenterController extends Controller
                 'discovery_level' => $discoveryLevel,
             ],
             'marketCounts' => $marketCounts,
+            'moduleSettings' => [
+                'default_market' => $defaultMarket,
+                'default_discovery_level' => $defaultDiscoveryLevel,
+                'target_limit' => $targetLimit,
+                'discovery_limit' => $discoveryLimit,
+                'discovery_note_prefix' => (string) config('simulation.modules.scouting_center.discovery_note_prefix', ''),
+            ],
             'discoveries' => $discoveries->map(fn (ScoutingDiscovery $entry) => [
                 'id' => $entry->id,
                 'fit_score' => (int) $entry->fit_score,
@@ -417,11 +428,15 @@ class ScoutingCenterController extends Controller
 
     private function discoveryNote(Player $player, string $discoveryLevel): string
     {
-        return match ($discoveryLevel) {
+        $baseNote = match ($discoveryLevel) {
             'elite' => $player->potential >= 80 ? 'Scout sieht klares Top-Potenzial.' : 'Scout erkennt belastbares Profil.',
             'junior' => $player->age <= 22 ? 'Rohes Talent, mehr Beobachtung noetig.' : 'Erster Eindruck, noch unsicher.',
             default => $player->overall >= 72 ? 'Soforthilfe moeglich, Details folgen.' : 'Entwicklungsspieler mit offenen Fragen.',
         };
+
+        $prefix = trim((string) config('simulation.modules.scouting_center.discovery_note_prefix', ''));
+
+        return $prefix !== '' ? $prefix.' '.$baseNote : $baseNote;
     }
 
     private function regionalPoolForCountry(string $country): array

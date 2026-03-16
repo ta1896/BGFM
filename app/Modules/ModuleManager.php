@@ -76,8 +76,8 @@ class ModuleManager
             $adminNavigation = array_merge($adminNavigation, $frontend['admin_navigation'] ?? []);
             $dashboardWidgets = array_merge($dashboardWidgets, $this->filterHookEntries($frontend['dashboard_widgets'] ?? []));
             $settingsSections = array_merge($settingsSections, $this->settingsSectionsForModule($module));
-            $playerActions = array_merge($playerActions, $this->filterHookEntries($frontend['player_actions'] ?? []));
-            $matchcenterPanels = array_merge($matchcenterPanels, $this->filterHookEntries($frontend['matchcenter_panels'] ?? []));
+            $playerActions = array_merge($playerActions, $this->normalizePlayerActions($this->filterHookEntries($frontend['player_actions'] ?? [])));
+            $matchcenterPanels = array_merge($matchcenterPanels, $this->normalizeMatchcenterPanels($this->filterHookEntries($frontend['matchcenter_panels'] ?? [])));
             $notifications = array_merge($notifications, $this->filterHookEntries($frontend['notifications'] ?? []));
         }
 
@@ -332,6 +332,71 @@ class ModuleManager
 
                 return (bool) config($enabledWhen, $entry['enabled_default'] ?? true);
             })
+            ->values()
+            ->all();
+    }
+
+    private function normalizePlayerActions(array $entries): array
+    {
+        $allowedMethods = ['get', 'post', 'put', 'patch', 'delete'];
+        $allowedScopes = ['all', 'owned_only', 'external_only'];
+        $allowedPlacements = ['overview', 'customize', 'history'];
+
+        return collect($entries)
+            ->map(function (array $entry) use ($allowedMethods, $allowedScopes, $allowedPlacements): ?array {
+                $route = $entry['route'] ?? null;
+                $title = trim((string) ($entry['title'] ?? ''));
+
+                if (!is_string($route) || $route === '' || $title === '') {
+                    return null;
+                }
+
+                $method = strtolower((string) ($entry['method'] ?? 'get'));
+                $scope = (string) ($entry['scope'] ?? 'all');
+                $placement = (string) ($entry['placement'] ?? 'overview');
+
+                return [
+                    'key' => (string) ($entry['key'] ?? Str::slug($title)),
+                    'title' => $title,
+                    'description' => trim((string) ($entry['description'] ?? '')),
+                    'route' => $route,
+                    'method' => in_array($method, $allowedMethods, true) ? $method : 'get',
+                    'accent' => (string) ($entry['accent'] ?? 'slate'),
+                    'icon' => (string) ($entry['icon'] ?? 'gear'),
+                    'scope' => in_array($scope, $allowedScopes, true) ? $scope : 'all',
+                    'placement' => in_array($placement, $allowedPlacements, true) ? $placement : 'overview',
+                    'payload' => is_array($entry['payload'] ?? null) ? $entry['payload'] : [],
+                    'query' => is_array($entry['query'] ?? null) ? $entry['query'] : [],
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function normalizeMatchcenterPanels(array $entries): array
+    {
+        return collect($entries)
+            ->map(function (array $entry): ?array {
+                $key = $entry['key'] ?? null;
+                $title = trim((string) ($entry['title'] ?? ''));
+
+                if (!is_string($key) || $key === '' || $title === '') {
+                    return null;
+                }
+
+                return [
+                    'key' => $key,
+                    'title' => $title,
+                    'description' => trim((string) ($entry['description'] ?? '')),
+                    'route' => is_string($entry['route'] ?? null) ? (string) $entry['route'] : null,
+                    'accent' => (string) ($entry['accent'] ?? 'cyan'),
+                    'icon' => (string) ($entry['icon'] ?? 'gear'),
+                    'priority' => (int) ($entry['priority'] ?? 999),
+                ];
+            })
+            ->filter()
+            ->sortBy('priority')
             ->values()
             ->all();
     }

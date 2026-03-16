@@ -9,7 +9,7 @@ class LiveOverviewService
 {
     public function onlineWindowMinutes(): int
     {
-        return 5;
+        return max(1, min(30, (int) config('simulation.modules.live_center.online_window_minutes', 5)));
     }
 
     public function overview(): array
