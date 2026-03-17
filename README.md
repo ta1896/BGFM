@@ -6,6 +6,13 @@
 
 NewGen is a modern web-based football management game focused on live match presentation, club building, squad development, finances, transfers, and long-term progression.
 
+<p>
+  <a href="#feature-snapshot"><strong>Features</strong></a> ·
+  <a href="#quick-start"><strong>Quick Start</strong></a> ·
+  <a href="#demo-accounts"><strong>Demo Accounts</strong></a> ·
+  <a href="https://discord.gg/aSNkPYgHDJ"><strong>Discord</strong></a>
+</p>
+
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php&logoColor=white)](https://php.net)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=0b0f14)](https://react.dev)
@@ -18,24 +25,11 @@ NewGen is a modern web-based football management game focused on live match pres
 
 ---
 
-## Preview
-
-<p align="center">
-  <img src="public/images/hero.png" alt="NewGen preview" width="100%">
-</p>
-
-<p align="center">
-  <img src="public/images/mockup.png" alt="NewGen mockup" width="48%">
-  <img src="public/images/hero.png" alt="NewGen interface preview" width="48%">
-</p>
-
----
-
 ## Community
 
-Join the Discord community to share feedback, discuss features, and follow the progress of NewGen.
+Join the Discord community to share feedback, discuss features, and follow development.
 
-- Discord invite: https://discord.gg/aSNkPYgHDJ
+- Discord: https://discord.gg/aSNkPYgHDJ
 
 ---
 
@@ -64,23 +58,11 @@ NewGen aims to combine the long-term depth of a football manager with a stronger
 
 ---
 
-## Visual Highlights
+## At A Glance
 
-| Matchday UI | Product Preview |
+| Built For | Core Strength |
 | --- | --- |
-| ![Matchday UI](public/images/hero.png) | ![Product Preview](public/images/mockup.png) |
-
-These previews are currently based on the repository assets and can later be replaced with real in-game screenshots from the latest UI.
-
----
-
-## Product Direction
-
-The repository also contains broader product thinking around the future of the game:
-
-- [10 full Websoccer concepts](docs/WEBSOCCER_10_KONZEPTE.md)
-- [GitHub infographics / product maps](docs/WEBSOCCER_GITHUB_INFOGRAFIKEN.md)
-- [Open Websoccer parity planning](docs/OPEN_WEBSOCCER_PARITY_PLAN.md)
+| Browser-first football management | Live presentation, readable UI, long-term progression systems |
 
 ---
 
@@ -118,6 +100,8 @@ docs/                       Product notes, plans, and concept documents
 
 ## Quick Start
 
+Get the project running locally with Docker and Vite.
+
 ### Requirements
 
 - Docker Desktop
@@ -154,7 +138,7 @@ docker compose exec app php artisan migrate --seed
 npm run build
 ```
 
-App URL:
+Open the app:
 
 ```text
 http://localhost
