@@ -24,7 +24,8 @@ jobs:
             sudo git reset --hard
             sudo git pull origin main
             
-            # Install and build frontend assets
+            # Clean and build frontend assets
+            sudo rm -rf public/build
             sudo npm install
             sudo npm run build
             
