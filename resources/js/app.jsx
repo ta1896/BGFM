@@ -1,3 +1,4 @@
+// Deployment trigger: Updated Vite path and storage permissions
 import './bootstrap';
 import '../css/app.css';
 
