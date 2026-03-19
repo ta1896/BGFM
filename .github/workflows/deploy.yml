@@ -24,6 +24,10 @@ jobs:
             sudo git reset --hard
             sudo git pull origin main
             
+            # Install and build frontend assets
+            npm install
+            npm run build
+            
             # Rebuild and start container
             docker compose up -d --build
             
