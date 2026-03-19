@@ -28,6 +28,10 @@ jobs:
             sudo npm install
             sudo npm run build
             
+            # Fix permissions for Laravel
+            sudo chown -R 33:33 storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+            
             # Rebuild and start container
             docker compose up -d --build
             
