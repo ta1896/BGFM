@@ -11,6 +11,7 @@ use App\Models\ScoutingWatchlist;
 use App\Models\User;
 use App\Services\InjuryManagementService;
 use App\Services\ScoutingService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -185,6 +186,82 @@ class MedicalAndScoutingSystemsTest extends TestCase
             'reference_type' => 'scouting_discovery_scan',
         ]);
         $this->assertGreaterThan(0, ScoutingDiscovery::query()->where('club_id', $managerClub->id)->count());
+    }
+
+    public function test_discovery_scan_respects_cooldown_for_same_filter_set(): void
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $managerClub = $this->createClub($user, 'Cooldown FC', false);
+        $cpu = User::factory()->create();
+        $targetClub = $this->createClub($cpu, 'Cooldown Leads', true);
+
+        $this->createPlayer($targetClub, 'Lead', 'One', 'ST', 72);
+        $this->createPlayer($targetClub, 'Lead', 'Two', 'RW', 74);
+        $this->createPlayer($targetClub, 'Lead', 'Three', 'LW', 71);
+
+        config(['simulation.modules.scouting_center.scan_cooldown_minutes' => 60]);
+
+        $service = app(ScoutingService::class);
+        $filters = [
+            'market' => 'domestic',
+            'position' => 'ATT',
+            'age_band' => 'all',
+            'value_band' => 'all',
+            'discovery_level' => 'experienced',
+        ];
+
+        $service->discoverTargets($managerClub, $filters, $user->id);
+
+        $this->expectException(ValidationException::class);
+        $service->discoverTargets($managerClub, $filters, $user->id);
+    }
+
+    public function test_discovery_pool_rotates_into_new_leads_after_rotation_window(): void
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $managerClub = $this->createClub($user, 'Rotation FC', false);
+        $cpu = User::factory()->create();
+        $targetClub = $this->createClub($cpu, 'Rotation Leads', true);
+
+        foreach (range(1, 14) as $index) {
+            $this->createPlayer($targetClub, 'Lead', 'Pool '.$index, $index % 2 === 0 ? 'RW' : 'ST', 65 + $index);
+        }
+
+        config([
+            'simulation.modules.scouting_center.scan_cooldown_minutes' => 10,
+            'simulation.modules.scouting_center.rotation_window_minutes' => 30,
+        ]);
+
+        $service = app(ScoutingService::class);
+        $filters = [
+            'market' => 'domestic',
+            'position' => 'ATT',
+            'age_band' => 'all',
+            'value_band' => 'all',
+            'discovery_level' => 'experienced',
+        ];
+
+        $service->discoverTargets($managerClub, $filters, $user->id);
+        $firstIds = ScoutingDiscovery::query()
+            ->where('club_id', $managerClub->id)
+            ->pluck('player_id')
+            ->sort()
+            ->values()
+            ->all();
+        $firstCount = count($firstIds);
+
+        $this->travel(31)->minutes();
+
+        $service->discoverTargets($managerClub, $filters, $user->id);
+        $secondIds = ScoutingDiscovery::query()
+            ->where('club_id', $managerClub->id)
+            ->pluck('player_id')
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertNotSame($firstIds, $secondIds);
+        $this->assertGreaterThan($firstCount, count($secondIds));
     }
 
     private function createClub(User $user, string $name, bool $isCpu): Club

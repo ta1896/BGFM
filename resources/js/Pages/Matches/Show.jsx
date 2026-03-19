@@ -51,6 +51,7 @@ export default function Show({
         player_states,
         planned_substitutions,
         live_table,
+        module_panels,
     });
     const fetchState = useCallback(async () => {
         try {
@@ -78,6 +79,7 @@ export default function Show({
                 player_states: data.player_states || prev.player_states,
                 planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
                 live_table: data.live_table || prev.live_table,
+                module_panels: data.module_panels || prev.module_panels,
             }));
         } catch {}
     }, [id]);
@@ -128,6 +130,7 @@ export default function Show({
                 player_states: data.player_states || prev.player_states,
                 planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
                 live_table: data.live_table || prev.live_table,
+                module_panels: data.module_panels || prev.module_panels,
             }));
         } catch {}
     }, [id]);
@@ -207,7 +210,7 @@ export default function Show({
                             teamStates={liveState.team_states}
                             onStyleChange={(clubId, tacticalStyle) => postMatchCommand('matches.live.style', { club_id: clubId, tactical_style: tacticalStyle })}
                             onShout={(clubId, shout) => postMatchCommand('matches.live.shout', { club_id: clubId, shout })}
-                            modulePanels={module_panels}
+                            modulePanels={liveState.module_panels}
                             comparison={comparison}
                         />
                     )}

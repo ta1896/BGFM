@@ -14,6 +14,7 @@ use App\Services\InjuryManagementService;
 use App\Services\PlayerMoraleService;
 use App\Services\SquadHierarchyService;
 use App\Services\TeamStrengthCalculator;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -29,13 +30,17 @@ class DashboardController extends Controller
     ): \Inertia\Response
     {
         $allowedDashboardVariants = ['modern', 'compact', 'classic'];
+        $dashboardPreferences = $this->normalizedDashboardPreferences($request->user()->dashboard_preferences ?? []);
         $requestedDashboardVariant = strtolower((string) $request->query('variant'));
 
         if (in_array($requestedDashboardVariant, $allowedDashboardVariants, true)) {
-            $request->session()->put('dashboard.variant', $requestedDashboardVariant);
+            $dashboardPreferences['variant'] = $requestedDashboardVariant;
+            $request->user()->forceFill([
+                'dashboard_preferences' => $dashboardPreferences,
+            ])->save();
         }
 
-        $dashboardVariant = (string) $request->session()->get('dashboard.variant', 'modern');
+        $dashboardVariant = (string) ($dashboardPreferences['variant'] ?? 'modern');
         if (!in_array($dashboardVariant, $allowedDashboardVariants, true)) {
             $dashboardVariant = 'modern';
         }
@@ -914,7 +919,34 @@ class DashboardController extends Controller
             'managerDecisions' => $managerDecisions,
             'liveMatches' => $liveMatches,
             'onlineManagers' => $onlineManagers,
+            'dashboardPreferences' => $dashboardPreferences,
         ]);
+    }
+
+    public function updatePreferences(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'variant' => ['nullable', 'in:modern,compact,classic'],
+            'hidden_sections' => ['nullable', 'array'],
+            'hidden_sections.*' => ['string', 'max:80'],
+            'section_order' => ['nullable', 'array'],
+            'section_order.*' => ['string', 'max:80'],
+            'hidden_widgets' => ['nullable', 'array'],
+            'hidden_widgets.*' => ['string', 'max:120'],
+            'widget_order' => ['nullable', 'array'],
+            'widget_order.*' => ['string', 'max:120'],
+        ]);
+
+        $preferences = $this->normalizedDashboardPreferences(array_merge(
+            $request->user()->dashboard_preferences ?? [],
+            $validated
+        ));
+
+        $request->user()->forceFill([
+            'dashboard_preferences' => $preferences,
+        ])->save();
+
+        return back()->with('status', 'Dashboard preferences updated.');
     }
 
     private function conversationTopicLabel(string $topic): string
@@ -947,5 +979,50 @@ class DashboardController extends Controller
                 ? ['label' => 'Hat geholfen', 'accent' => 'emerald']
                 : ($player->happiness < 45 ? ['label' => 'Hat verschaerft', 'accent' => 'rose'] : ['label' => 'Neutral', 'accent' => 'slate']),
         };
+    }
+
+    private function normalizedDashboardPreferences(array $preferences): array
+    {
+        $allowedVariants = ['modern', 'compact', 'classic'];
+        $allowedSections = [
+            'priorities',
+            'control_center',
+            'last_matches',
+            'manager_decisions',
+            'live_matches',
+            'online_managers',
+            'module_highlights',
+            'module_shortcuts',
+        ];
+
+        $variant = strtolower((string) ($preferences['variant'] ?? 'modern'));
+        $variant = in_array($variant, $allowedVariants, true) ? $variant : 'modern';
+
+        $normalizeList = static function (array $items): array {
+            return collect($items)
+                ->map(fn ($item) => trim((string) $item))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        };
+
+        $sectionOrder = collect($normalizeList($preferences['section_order'] ?? []))
+            ->filter(fn ($key) => in_array($key, $allowedSections, true))
+            ->values()
+            ->all();
+
+        $missingSections = array_values(array_diff($allowedSections, $sectionOrder));
+
+        return [
+            'variant' => $variant,
+            'hidden_sections' => array_values(array_intersect(
+                $allowedSections,
+                $normalizeList($preferences['hidden_sections'] ?? [])
+            )),
+            'section_order' => array_values(array_merge($sectionOrder, $missingSections)),
+            'hidden_widgets' => $normalizeList($preferences['hidden_widgets'] ?? []),
+            'widget_order' => $normalizeList($preferences['widget_order'] ?? []),
+        ];
     }
 }

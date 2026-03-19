@@ -23,6 +23,7 @@
         "concurrently": "^9.0.1",
         "jsdom": "^26.1.0",
         "laravel-vite-plugin": "^2.0.0",
+        "playwright": "^1.58.2",
         "postcss": "^8.4.31",
         "rollup": "^4.59.0",
         "sharp": "^0.34.5",

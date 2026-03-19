@@ -9,7 +9,9 @@ use App\Models\ScoutingDiscovery;
 use App\Models\ScoutingReport;
 use App\Models\ScoutingScout;
 use App\Models\ScoutingWatchlist;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ScoutingService
@@ -240,6 +242,17 @@ class ScoutingService
         $valueBand = (string) ($filters['value_band'] ?? 'all');
         $discoveryLevel = (string) ($filters['discovery_level'] ?? 'experienced');
         $search = trim((string) ($filters['search'] ?? ''));
+        $scanState = $this->discoveryScanState($club, $filters);
+
+        if ($scanState['cooldown_active']) {
+            throw ValidationException::withMessages([
+                'market' => sprintf(
+                    'Neuer Markt-Scan in %d Min. moeglich. Naechstes Fenster: %s.',
+                    $scanState['minutes_remaining'],
+                    $scanState['next_scan_at']?->format('d.m.Y H:i')
+                ),
+            ]);
+        }
 
         $query = Player::query()
             ->with('club')
@@ -260,17 +273,23 @@ class ScoutingService
         $pool = $query
             ->orderByDesc('potential')
             ->orderByDesc('overall')
-            ->limit($this->discoveryPoolLimit($discoveryLevel))
+            ->limit(max($this->discoveryPoolLimit($discoveryLevel) * 3, 24))
             ->get();
 
+        $rotationBucket = $this->discoveryRotationBucket();
+        $rotationKey = $this->discoveryRotationKey($club, $filters, $rotationBucket);
+        $freshnessMap = $this->recentDiscoveryFreshness($club);
+
         $leads = $pool
-            ->map(function (Player $player) use ($club, $position, $discoveryLevel): array {
+            ->map(function (Player $player) use ($club, $position, $discoveryLevel, $freshnessMap, $rotationKey): array {
                 $fitScore = $this->fitScore($player, $club, $position);
                 $fogPenalty = match ($discoveryLevel) {
                     'junior' => random_int(7, 18),
                     'elite' => random_int(0, 6),
                     default => random_int(3, 10),
                 };
+                $freshnessPenalty = $freshnessMap->get($player->id, 0);
+                $rotationBoost = $this->rotationBoost($player->id, $rotationKey);
 
                 return [
                     'player' => $player,
@@ -278,9 +297,10 @@ class ScoutingService
                     'market_band' => $this->marketValueBand((float) $player->market_value),
                     'region_tag' => $this->regionTag($club, $player),
                     'discovery_note' => $this->discoveryNote($player, $discoveryLevel),
+                    'rotation_score' => max(10, $fitScore + $rotationBoost - $freshnessPenalty),
                 ];
             })
-            ->sortByDesc('fit_score')
+            ->sortByDesc('rotation_score')
             ->take($this->discoveryLeadCount($discoveryLevel))
             ->values();
 
@@ -333,6 +353,34 @@ class ScoutingService
         return [
             'count' => count($discoveryIds),
             'cost' => $cost,
+            'rotation_bucket' => $rotationBucket,
+        ];
+    }
+
+    public function discoveryScanState(Club $club, array $filters): array
+    {
+        $cooldownMinutes = $this->discoveryScanCooldownMinutes();
+        $lastScanAt = ScoutingDiscovery::query()
+            ->where('club_id', $club->id)
+            ->where('market', (string) ($filters['market'] ?? 'domestic'))
+            ->where('position_group', (string) ($filters['position'] ?? 'all'))
+            ->where('age_band', (string) ($filters['age_band'] ?? 'all'))
+            ->where('value_band', (string) ($filters['value_band'] ?? 'all'))
+            ->where('discovery_level', (string) ($filters['discovery_level'] ?? 'experienced'))
+            ->max('scanned_at');
+
+        $lastScanAt = $lastScanAt ? Carbon::parse($lastScanAt) : null;
+        $nextScanAt = $lastScanAt?->copy()->addMinutes($cooldownMinutes);
+        $cooldownActive = $nextScanAt ? $nextScanAt->isFuture() : false;
+
+        return [
+            'cooldown_minutes' => $cooldownMinutes,
+            'rotation_window_minutes' => $this->discoveryRotationWindowMinutes(),
+            'last_scan_at' => $lastScanAt,
+            'next_scan_at' => $nextScanAt,
+            'cooldown_active' => $cooldownActive,
+            'minutes_remaining' => $cooldownActive ? now()->diffInMinutes($nextScanAt) : 0,
+            'rotation_bucket' => $this->discoveryRotationBucket(),
         ];
     }
 
@@ -558,6 +606,64 @@ class ScoutingService
             'elite' => 12,
             default => 9,
         };
+    }
+
+    private function discoveryScanCooldownMinutes(): int
+    {
+        return max(10, min(480, (int) config('simulation.modules.scouting_center.scan_cooldown_minutes', 45)));
+    }
+
+    private function discoveryRotationWindowMinutes(): int
+    {
+        return max(30, min(1440, (int) config('simulation.modules.scouting_center.rotation_window_minutes', 180)));
+    }
+
+    private function discoveryRotationBucket(): int
+    {
+        $minutes = max(1, $this->discoveryRotationWindowMinutes());
+
+        return (int) floor(now()->timestamp / ($minutes * 60));
+    }
+
+    private function discoveryRotationKey(Club $club, array $filters, int $rotationBucket): string
+    {
+        return implode('|', [
+            $club->id,
+            $filters['market'] ?? 'domestic',
+            $filters['position'] ?? 'all',
+            $filters['age_band'] ?? 'all',
+            $filters['value_band'] ?? 'all',
+            $filters['discovery_level'] ?? 'experienced',
+            $rotationBucket,
+        ]);
+    }
+
+    private function rotationBoost(int $playerId, string $rotationKey): int
+    {
+        $hash = sprintf('%u', crc32($rotationKey.'|'.$playerId));
+
+        return ((int) $hash % 19) - 9;
+    }
+
+    private function recentDiscoveryFreshness(Club $club): Collection
+    {
+        return ScoutingDiscovery::query()
+            ->select('player_id', DB::raw('MAX(scanned_at) as last_scanned_at'))
+            ->where('club_id', $club->id)
+            ->groupBy('player_id')
+            ->get()
+            ->mapWithKeys(function ($entry): array {
+                $lastScannedAt = $entry->last_scanned_at ? Carbon::parse($entry->last_scanned_at) : null;
+                $penalty = 0;
+
+                if ($lastScannedAt && $lastScannedAt->greaterThan(now()->subDays(2))) {
+                    $penalty = 10;
+                } elseif ($lastScannedAt && $lastScannedAt->greaterThan(now()->subDays(5))) {
+                    $penalty = 5;
+                }
+
+                return [(int) $entry->player_id => $penalty];
+            });
     }
 
     private function discoveryScanCost(string $market, string $level): float

@@ -61,7 +61,15 @@ class ScoutingCenterController extends Controller
             ->get();
 
         $discoveries = collect();
+        $scanState = null;
         if ($activeClub) {
+            $scanState = $scoutingService->discoveryScanState($activeClub, [
+                'market' => $market,
+                'position' => $position,
+                'age_band' => $ageBand,
+                'value_band' => $valueBand,
+                'discovery_level' => $discoveryLevel,
+            ]);
             $discoveries = ScoutingDiscovery::query()
                 ->where('club_id', $activeClub->id)
                 ->where('market', $market)
@@ -126,7 +134,17 @@ class ScoutingCenterController extends Controller
                 'target_limit' => $targetLimit,
                 'discovery_limit' => $discoveryLimit,
                 'discovery_note_prefix' => (string) config('simulation.modules.scouting_center.discovery_note_prefix', ''),
+                'scan_cooldown_minutes' => max(10, min(480, (int) config('simulation.modules.scouting_center.scan_cooldown_minutes', 45))),
+                'rotation_window_minutes' => max(30, min(1440, (int) config('simulation.modules.scouting_center.rotation_window_minutes', 180))),
             ],
+            'scanState' => $scanState ? [
+                'cooldown_active' => (bool) $scanState['cooldown_active'],
+                'minutes_remaining' => (int) $scanState['minutes_remaining'],
+                'last_scan_at' => $scanState['last_scan_at']?->format('d.m.Y H:i'),
+                'next_scan_at' => $scanState['next_scan_at']?->format('d.m.Y H:i'),
+                'cooldown_minutes' => (int) $scanState['cooldown_minutes'],
+                'rotation_window_minutes' => (int) $scanState['rotation_window_minutes'],
+            ] : null,
             'scoutStaff' => $scouts->map(fn ($scout) => [
                 'id' => $scout->id,
                 'name' => $scout->name,

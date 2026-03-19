@@ -1,11 +1,11 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import useLiveOverview from '@/hooks/useLiveOverview';
 import { 
     Calendar, Trophy, Users, ChartBar,
-    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit
+    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit, CaretUp, CaretDown, SlidersHorizontal, Eye, EyeSlash
 } from '@phosphor-icons/react';
 
 const taskTone = {
@@ -160,6 +160,14 @@ const moduleWidgetIconMap = {
     firstAidKit: FirstAidKit,
 };
 
+const defaultDashboardPreferences = {
+    variant: 'modern',
+    hidden_sections: [],
+    section_order: [],
+    hidden_widgets: [],
+    widget_order: [],
+};
+
 function ModuleWidgetCard({ widget }) {
     const Icon = moduleWidgetIconMap[widget.icon] || Lightning;
 
@@ -201,6 +209,90 @@ function ModuleWidgetCard({ widget }) {
     );
 }
 
+function CockpitPreferencesCard({ preferences, widgets, onVariantChange, onToggleWidget, onMoveWidget }) {
+    return (
+        <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Cockpit Preferences</div>
+                    <div className="mt-1 text-lg font-black text-white">Your manager layout</div>
+                </div>
+                <SlidersHorizontal size={16} className="text-cyan-300" weight="bold" />
+            </div>
+
+            <div className="mb-4">
+                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Dashboard Variant</div>
+                <div className="flex flex-wrap gap-2">
+                    {['modern', 'compact', 'classic'].map((variant) => (
+                        <button
+                            key={variant}
+                            type="button"
+                            onClick={() => onVariantChange(variant)}
+                            className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${
+                                preferences.variant === variant
+                                    ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-200'
+                                    : 'border-white/10 bg-white/[0.03] text-white/70'
+                            }`}
+                        >
+                            {variant}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-2.5">
+                {widgets.length > 0 ? widgets.map((widget, index) => {
+                    const hidden = preferences.hidden_widgets.includes(widget.key);
+
+                    return (
+                        <div key={widget.key} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+                            <button
+                                type="button"
+                                onClick={() => onToggleWidget(widget.key)}
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-xl border ${
+                                    hidden
+                                        ? 'border-slate-400/20 bg-slate-500/10 text-slate-300'
+                                        : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+                                }`}
+                            >
+                                {hidden ? <EyeSlash size={14} weight="bold" /> : <Eye size={14} weight="bold" />}
+                            </button>
+                            <div className="min-w-0 flex-1">
+                                <div className="truncate text-[11px] font-black uppercase tracking-[0.08em] text-white">{widget.title}</div>
+                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                    {widget.placement === 'sidebar' ? 'Sidebar' : 'Main'} / {hidden ? 'hidden' : 'visible'}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => onMoveWidget(widget.key, -1)}
+                                    disabled={index === 0}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <CaretUp size={14} weight="bold" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onMoveWidget(widget.key, 1)}
+                                    disabled={index === widgets.length - 1}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <CaretDown size={14} weight="bold" />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }) : (
+                    <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-6 text-sm text-[var(--text-muted)]">
+                        No module widgets available for customization.
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+}
+
 export default function Dashboard(props) {
     const { 
         activeClub, nextMatch, nextMatchTypeLabel, 
@@ -208,7 +300,7 @@ export default function Dashboard(props) {
         clubRank, clubPoints, recentForm, recentMatchesSummary, weekDays,
         todayMatchesCount, unreadNotificationsCount,
         dashboardVariant, assistantTasks, todayFocus, clubPulseOverview, comparisonStats, quickActions,
-        squadPulse, scoutingDesk, medicalDesk, managerDecisions, liveMatches, onlineManagers
+        squadPulse, scoutingDesk, medicalDesk, managerDecisions, liveMatches, onlineManagers, dashboardPreferences
     } = props;
     const { modules = {} } = usePage().props;
 
@@ -240,9 +332,54 @@ export default function Dashboard(props) {
     const liveOverview = useLiveOverview({ initialLiveMatches: liveMatches, initialOnlineManagers: onlineManagers });
     const hasManagerLiveRoute = route().has('manager-live.index');
     const hasLiveTickerRoute = route().has('live-ticker.index');
-    const dashboardWidgets = [...(modules.dashboard_widgets || [])].sort((a, b) => (a.priority || 999) - (b.priority || 999));
-    const mainModuleWidgets = dashboardWidgets.filter((widget) => (widget.placement || 'main') === 'main');
-    const sidebarModuleWidgets = dashboardWidgets.filter((widget) => widget.placement === 'sidebar');
+    const preferences = {
+        ...defaultDashboardPreferences,
+        ...(dashboardPreferences || {}),
+    };
+    const rawDashboardWidgets = [...(modules.dashboard_widgets || [])];
+    const allWidgetKeys = rawDashboardWidgets.map((widget) => widget.key);
+    const orderedWidgetKeys = [
+        ...preferences.widget_order.filter((key) => allWidgetKeys.includes(key)),
+        ...allWidgetKeys.filter((key) => !preferences.widget_order.includes(key)),
+    ];
+    const dashboardWidgets = orderedWidgetKeys
+        .map((key) => rawDashboardWidgets.find((widget) => widget.key === key))
+        .filter(Boolean);
+    const visibleDashboardWidgets = dashboardWidgets.filter((widget) => !preferences.hidden_widgets.includes(widget.key));
+    const mainModuleWidgets = visibleDashboardWidgets.filter((widget) => (widget.placement || 'main') === 'main');
+    const sidebarModuleWidgets = visibleDashboardWidgets.filter((widget) => widget.placement === 'sidebar');
+
+    const persistDashboardPreferences = (patch) => {
+        router.patch(route('dashboard.preferences.update'), {
+            ...preferences,
+            ...patch,
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const toggleWidgetVisibility = (key) => {
+        const hiddenWidgets = preferences.hidden_widgets.includes(key)
+            ? preferences.hidden_widgets.filter((item) => item !== key)
+            : [...preferences.hidden_widgets, key];
+
+        persistDashboardPreferences({ hidden_widgets: hiddenWidgets });
+    };
+
+    const moveWidget = (key, direction) => {
+        const currentOrder = [...orderedWidgetKeys];
+        const index = currentOrder.indexOf(key);
+        const targetIndex = index + direction;
+
+        if (index < 0 || targetIndex < 0 || targetIndex >= currentOrder.length) {
+            return;
+        }
+
+        [currentOrder[index], currentOrder[targetIndex]] = [currentOrder[targetIndex], currentOrder[index]];
+        persistDashboardPreferences({ widget_order: currentOrder });
+    };
 
     return (
         <AuthenticatedLayout>
@@ -607,6 +744,13 @@ export default function Dashboard(props) {
 
                     {/* Right Column (Sidebar Widgets) */}
                     <PageReveal className="lg:col-span-4 space-y-8" delay={180}>
+                        <CockpitPreferencesCard
+                            preferences={{ ...preferences, variant: dashboardVariant || preferences.variant }}
+                            widgets={dashboardWidgets}
+                            onVariantChange={(variant) => persistDashboardPreferences({ variant })}
+                            onToggleWidget={toggleWidgetVisibility}
+                            onMoveWidget={moveWidget}
+                        />
                         
                         <section className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
                             <div className="mb-4 flex items-center justify-between gap-3">

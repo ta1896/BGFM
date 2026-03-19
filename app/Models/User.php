@@ -28,6 +28,7 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         'is_admin',
         'default_club_id',
         'theme',
+        'dashboard_preferences',
     ];
 
     /**
@@ -51,6 +52,7 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'dashboard_preferences' => 'array',
         ];
     }
 

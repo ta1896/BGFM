@@ -38,7 +38,7 @@
             {
                 "key": "awards-center-visibility",
                 "title": "Awards Center",
-                "description": "Control awards history visibility on the dashboard.",
+                "description": "Control awards visibility on the dashboard and in the matchcenter.",
                 "fields": [
                     {
                         "key": "simulation.modules.awards_center.dashboard_widget_enabled",
@@ -46,12 +46,30 @@
                         "description": "Zeigt den Awards-History-Block im Dashboard an.",
                         "type": "boolean",
                         "default": true
+                    },
+                    {
+                        "key": "simulation.modules.awards_center.match_panel_enabled",
+                        "label": "Matchcenter-Panel anzeigen",
+                        "description": "Blendet Match-Auszeichnungen im Matchcenter ein.",
+                        "type": "boolean",
+                        "default": true
                     }
                 ]
             }
         ],
         "player_actions": [],
-        "matchcenter_panels": [],
+        "matchcenter_panels": [
+            {
+                "key": "awards-center-match-awards",
+                "title": "Match Awards",
+                "description": "Highlights player of the match, turning point, and the top save from this fixture.",
+                "route": "awards.index",
+                "accent": "amber",
+                "icon": "trophy",
+                "priority": 30,
+                "enabled_when": "simulation.modules.awards_center.match_panel_enabled"
+            }
+        ],
         "notifications": []
     }
 }

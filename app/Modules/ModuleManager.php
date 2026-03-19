@@ -50,7 +50,10 @@ class ModuleManager
         if ((bool) config('modules.autoload_migrations', true)) {
             foreach ($this->enabledModules() as $module) {
                 if ($module['migration_path'] && $this->files->isDirectory($module['migration_path'])) {
-                    $provider->loadMigrationsFrom($module['migration_path']);
+                    $path = $module['migration_path'];
+                    app()->afterResolving('migrator', function ($migrator) use ($path) {
+                        $migrator->path($path);
+                    });
                 }
             }
         }

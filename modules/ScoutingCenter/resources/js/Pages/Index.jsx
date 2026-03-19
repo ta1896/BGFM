@@ -3,9 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import PageHeader from '@/Components/PageHeader';
 import SectionCard from '@/Components/SectionCard';
-import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar, Target, SlidersHorizontal, UsersThree, ShieldCheck } from '@phosphor-icons/react';
+import { Binoculars, MagnifyingGlass, Handshake, Star, TrendUp, Wallet, GlobeHemisphereWest, VideoCamera, ChartBar, Target, SlidersHorizontal, UsersThree, ShieldCheck, ArrowsClockwise, Timer } from '@phosphor-icons/react';
 
-export default function Index({ club, discoveries, targets, watchlist, scoutOptions, filters, marketCounts, scoutStaff = [], moduleSettings = {} }) {
+export default function Index({ club, discoveries, targets, watchlist, scoutOptions, filters, marketCounts, scoutStaff = [], moduleSettings = {}, scanState = null }) {
     const watchlistForm = useForm({
         priority: 'medium',
         status: 'watching',
@@ -57,12 +57,36 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
                         )}
                         <button
                             type="button"
+                            disabled={Boolean(scanState?.cooldown_active)}
                             onClick={() => router.post(route('scouting.discover'), filters, { preserveScroll: true })}
-                            className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200"
+                            className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] ${
+                                scanState?.cooldown_active
+                                    ? 'cursor-not-allowed border-slate-400/20 bg-slate-500/10 text-slate-300'
+                                    : 'border-cyan-400/20 bg-cyan-500/10 text-cyan-200'
+                            }`}
                         >
-                            Markt scannen
+                            {scanState?.cooldown_active ? 'Scan blockiert' : 'Markt scannen'}
                         </button>
                     </div>
+                    {scanState && (
+                        <div className="mt-4 grid gap-3 md:grid-cols-3">
+                            <InfoTile
+                                icon={Timer}
+                                label="Naechster Scan"
+                                value={scanState.cooldown_active ? `${scanState.minutes_remaining} Min.` : 'Jetzt verfuegbar'}
+                            />
+                            <InfoTile
+                                icon={ArrowsClockwise}
+                                label="Pool-Rotation"
+                                value={`alle ${scanState.rotation_window_minutes} Min.`}
+                            />
+                            <InfoTile
+                                icon={Binoculars}
+                                label="Letzter Scan"
+                                value={scanState.last_scan_at || 'Noch keiner'}
+                            />
+                        </div>
+                    )}
                     <div className="mt-4 flex flex-wrap gap-2">
                         {scoutOptions.markets.map((market) => (
                             <button
@@ -128,6 +152,11 @@ export default function Index({ club, discoveries, targets, watchlist, scoutOpti
 
                 <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
                     <SectionCard title="Discovery Board" icon={Target} bodyClassName="p-6 space-y-4 xl:col-span-2">
+                        {scanState && (
+                            <div className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)]/45 px-4 py-3 text-sm text-[var(--text-muted)]">
+                                Discovery-Leads rotieren pro Filterfenster. Bereits frisch gescannte Spieler werden kurzfristig leicht zurueckgestellt, damit der Markt nicht immer dieselben Namen ausspuckt.
+                            </div>
+                        )}
                         {discoveries?.length ? (
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 {discoveries.map((entry) => (

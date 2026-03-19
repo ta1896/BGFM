@@ -1,0 +1,76 @@
+{
+    "key": "forum-center",
+    "name": "ForumCenter",
+    "version": "1.0.0",
+    "description": "A modular, WoltLab-style forum system for team communication and community interaction.",
+    "enabled": true,
+    "providers": [],
+    "routes": "routes/web.php",
+    "migrations": "database/migrations",
+    "frontend": {
+        "manager_navigation": {
+            "mod_forum_center": {
+                "label": "Community",
+                "target_group": "bg_team",
+                "items": [
+                    {
+                        "route": "forum.index",
+                        "label": "Forum",
+                        "active": "forum.*"
+                    }
+                ]
+            }
+        },
+        "admin_navigation": {
+            "mod_forum_admin": {
+                "label": "Forum Management",
+                "target_group": "acp_content",
+                "items": [
+                    {
+                        "route": "admin.forum.categories.index",
+                        "label": "Kategorien & Foren",
+                        "active": "admin.forum.*"
+                    }
+                ]
+            }
+        },
+        "dashboard_widgets": [
+            {
+                "key": "forum-latest-threads",
+                "title": "Neueste Forenthemen",
+                "description": "Bleibe auf dem Laufenden mit den aktuellsten Diskussionen.",
+                "route": "forum.index",
+                "accent": "indigo",
+                "icon": "chats",
+                "placement": "sidebar",
+                "priority": 50,
+                "enabled_when": "simulation.modules.forum_center.dashboard_widget_enabled"
+            }
+        ],
+        "settings_sections": [
+            {
+                "key": "forum-center-settings",
+                "title": "Forum Einstellungen",
+                "description": "Konfiguration für das interne Community-Forum.",
+                "fields": [
+                    {
+                        "key": "simulation.modules.forum_center.dashboard_widget_enabled",
+                        "label": "Dashboard-Widget anzeigen",
+                        "description": "Zeigt die neuesten Forenthemen im Dashboard an.",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    {
+                        "key": "simulation.modules.forum_center.posts_per_page",
+                        "label": "Beiträge pro Seite",
+                        "description": "Anzahl der Beiträge, die pro Thread-Seite angezeigt werden.",
+                        "type": "integer",
+                        "default": 15,
+                        "min": 5,
+                        "max": 50
+                    }
+                ]
+            }
+        ]
+    }
+}

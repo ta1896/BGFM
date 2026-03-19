@@ -100,6 +100,26 @@
                         "type": "text",
                         "default": "",
                         "max_length": 80
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.scan_cooldown_minutes",
+                        "label": "Scan-Cooldown",
+                        "description": "Wie lange ein identischer Markt-Scan blockiert bleibt.",
+                        "type": "integer",
+                        "default": 45,
+                        "min": 10,
+                        "max": 480,
+                        "step": 5
+                    },
+                    {
+                        "key": "simulation.modules.scouting_center.rotation_window_minutes",
+                        "label": "Rotationsfenster",
+                        "description": "Wie oft sich Discovery-Pools pro Filterset sichtbar drehen.",
+                        "type": "integer",
+                        "default": 180,
+                        "min": 30,
+                        "max": 1440,
+                        "step": 15
                     }
                 ]
             }

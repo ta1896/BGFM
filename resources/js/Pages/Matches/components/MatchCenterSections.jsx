@@ -506,6 +506,54 @@ export const ModulePanels = ({ panels = [] }) => {
                                 ))}
                             </div>
                         )}
+
+                        {panel.data?.awards?.length > 0 && (
+                            <div className="mt-4 space-y-2.5">
+                                {panel.data.awards.map((award) => (
+                                    <div key={award.award_key} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">
+                                                    {award.label}
+                                                </div>
+                                                <div className="mt-2 flex items-center gap-3">
+                                                    <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[var(--bg-content)]/50">
+                                                        {award.photo_url ? (
+                                                            <img src={award.photo_url} alt={award.player_name || award.label} className="h-full w-full object-cover" />
+                                                        ) : award.club_logo_url ? (
+                                                            <img src={award.club_logo_url} alt={award.club_name || award.label} className="h-full w-full object-contain p-2" />
+                                                        ) : (
+                                                            <Trophy size={18} weight="fill" className="text-amber-300" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="truncate text-sm font-black text-white">
+                                                            <PlayerNameLink
+                                                                playerId={award.player_id}
+                                                                name={award.player_name || award.club_name || award.label}
+                                                                className="text-white"
+                                                            />
+                                                        </div>
+                                                        {award.club_name && (
+                                                            <div className="mt-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                                                {award.club_logo_url && (
+                                                                    <img src={award.club_logo_url} alt={award.club_name} className="h-4 w-4 object-contain" />
+                                                                )}
+                                                                <span>{award.club_name}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
+                                                {award.value_label}
+                                            </div>
+                                        </div>
+                                        <p className="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">{award.summary}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 );
             })}

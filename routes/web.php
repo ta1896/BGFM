@@ -19,6 +19,7 @@ use App\Http\Controllers\MatchCenterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoadmapBoardController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
@@ -32,6 +33,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::patch('/dashboard/preferences', [DashboardController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/freie-vereine', [FreeClubController::class, 'index'])->name('clubs.free');
     Route::post('/freie-vereine/{club}/uebernehmen', [FreeClubController::class, 'claim'])->name('clubs.claim');
     Route::resource('clubs', ClubController::class)->only(['create', 'store']);
@@ -43,6 +45,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
     Route::delete('/settings/passkeys/{id}', [App\Http\Controllers\SettingsController::class, 'destroyPasskey'])->name('settings.passkeys.destroy');
+    Route::get('/roadmap-board', [RoadmapBoardController::class, 'index'])->name('roadmap-board.index');
+    Route::post('/roadmap-board/items', [RoadmapBoardController::class, 'storeItem'])->name('roadmap-board.items.store');
+    Route::patch('/roadmap-board/items/{roadmapItem}', [RoadmapBoardController::class, 'updateItem'])->name('roadmap-board.items.update');
+    Route::post('/roadmap-board/items/{roadmapItem}/comments', [RoadmapBoardController::class, 'storeComment'])->name('roadmap-board.comments.store');
 
     // WebAuthn Routes
     \Laragear\WebAuthn\Http\Routes::routes();
