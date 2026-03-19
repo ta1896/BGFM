@@ -41,16 +41,7 @@
         </script>
         @routes
         @viteReactRefresh
-        @php
-            $componentPath = "resources/js/Pages/{$page['component']}.jsx";
-            if (str_starts_with($page['component'], 'Modules/')) {
-                $parts = explode('/', $page['component']);
-                $module = $parts[1];
-                $subPath = implode('/', array_slice($parts, 2));
-                $componentPath = "modules/{$module}/resources/js/Pages/{$subPath}.jsx";
-            }
-        @endphp
-        @vite(['resources/js/app.jsx', $componentPath])
+        @vite(['resources/js/app.jsx'])
         @inertiaHead
     </head>
     <body class="font-sans antialiased bg-[#0a0b0d] text-white">
