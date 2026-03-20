@@ -20,33 +20,48 @@ jobs:
           script: |
             cd /home/ubuntu/NewGen
             
-            # Pull latest changes from Git
+            # --- 1. Fix Ownership & Pull Latest Code ---
+            sudo chown -R $USER:$USER /home/ubuntu/NewGen
             sudo git reset --hard
             sudo git pull origin main
             
-            # Clean and build frontend assets
-            sudo rm -rf public/build
-            sudo npm install
-            sudo npm run build
+            # --- 2. Build Assets using Docker (No NPM needed on host) ---
+            # We use node:20-alpine for a small, fast build container
+            sudo rm -rf public/build node_modules
+            sudo docker run --rm -v $(pwd):/var/www -w /var/www node:20-alpine sh -c "npm install && npm run build"
             
-            # Fix permissions for Laravel
+            # --- 3. Prep Laravel Directories ---
+            # Ensure critical folders exist before starting containers
+            mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache
+            sudo chmod -R 777 storage bootstrap/cache
+            
+            # --- 4. Container Management ---
+            # Rebuild and start container services
+            sudo docker compose up -d --build
+            
+            # --- 5. Application Setup (Inside Containers) ---
+            # Brief wait for services to initialize
+            echo "Waiting for services..."
+            sleep 5
+            
+            # Build database if missing
+            sudo docker compose exec -T mysql mysql -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS laravel;"
+            
+            # Install PHP dependencies with Linux-native binaries
+            sudo docker compose exec -T app composer install --optimize-autoloader --no-dev
+            
+            # Run migrations
+            sudo docker compose exec -T app php artisan migrate --force
+            
+            # Cache everything for performance
+            sudo docker compose exec -T app php artisan config:cache
+            sudo docker compose exec -T app php artisan route:cache
+            sudo docker compose exec -T app php artisan view:cache
+            sudo docker compose exec -T app php artisan event:cache
+            
+            # Restart Horizon
+            sudo docker compose exec -T app php artisan horizon:terminate
+            
+            # --- 6. Final Permission Polish ---
+            # Ensure the web server (www-data / 33) can write to storage
             sudo chown -R 33:33 storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
-            
-            # Rebuild and start container
-            docker compose up -d --build
-            
-            # Install PHP dependencies without dev packages
-            docker compose exec -T app composer install --optimize-autoloader --no-dev
-            
-            # Run database migrations
-            docker compose exec -T app php artisan migrate --force
-            
-            # Clear and cache Laravel configs
-            docker compose exec -T app php artisan config:cache
-            docker compose exec -T app php artisan route:cache
-            docker compose exec -T app php artisan view:cache
-            docker compose exec -T app php artisan event:cache
-            
-            # Restart Horizon so it loads the fresh code into RAM
-            docker compose exec -T app php artisan horizon:terminate

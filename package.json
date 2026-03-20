@@ -12,7 +12,6 @@
         "test:backend": "powershell -ExecutionPolicy Bypass -File scripts/test-backend.ps1"
     },
     "devDependencies": {
-        "@rollup/rollup-win32-x64-msvc": "^4.59.0",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/vite": "^4.0.0",
         "@testing-library/jest-dom": "^6.9.1",
