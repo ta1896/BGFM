@@ -30,20 +30,29 @@ jobs:
             sudo rm -rf public/build node_modules
             sudo docker run --rm -v $(pwd):/var/www -w /var/www node:20-alpine sh -c "npm install && npm run build"
             
-            # --- 3. Prep Laravel & Docker Directories ---
+            # --- 3. Prep Laravel Directories ---
             # Ensure critical folders exist before starting containers
-            mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache docker/mysql/data
-            sudo chmod -R 777 storage bootstrap/cache docker/mysql/data
+            mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache
+            sudo chmod -R 777 storage bootstrap/cache
             
             # --- 4. Container Management ---
             # Rebuild and start container services
             sudo docker compose up -d --build
             
+            # Debugging: Show container status
+            echo "--- Container Status ---"
+            sudo docker compose ps
+            
             # --- 5. Application Setup (Inside Containers) ---
             # Brief wait for services to initialize
             echo "Waiting for services..."
-            sleep 5
+            sleep 10
             
+            # Debugging: Show logs if something failed early
+            echo "--- App Logs (Startup) ---"
+            sudo docker compose logs app --tail=20
+            echo "--- MySQL Logs (Startup) ---"
+            sudo docker compose logs mysql --tail=20
             # (Database is now persistent via host-volume, no manual CREATE DB needed)
             # Install PHP dependencies with Linux-native binaries
             sudo docker compose exec -T app composer install --optimize-autoloader --no-dev
