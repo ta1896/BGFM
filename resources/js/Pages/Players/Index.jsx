@@ -39,15 +39,18 @@ const PlayerListItem = ({ player }) => (
 
             <div className="flex-1 min-w-0">
                 <Link href={route('players.show', player.id)} className="block">
-                    <h4 className="font-black text-[var(--text-main)] group-hover:text-[var(--accent-primary)] transition-colors uppercase tracking-tight truncate leading-none mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em] px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
+                            {player.player_style || 'Allrounder'}
+                        </span>
+                    </div>
+                    <h4 className="font-black text-[var(--text-main)] group-hover:text-[var(--accent-primary)] transition-colors uppercase tracking-tight truncate leading-none mb-1.5">
                         {player.last_name}
                     </h4>
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black text-[var(--accent-primary)] uppercase tracking-widest">{player.display_position}</span>
                         <span className="text-[10px] text-[var(--text-muted)]">•</span>
-                        <span className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">{player.player_style}</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">•</span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-bold">{player.age} JAHRE</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold">{player.age} JRE</span>
                     </div>
                 </Link>
             </div>
@@ -81,10 +84,6 @@ const PlayerListItem = ({ player }) => (
             </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
-            <Metric label="AGE" value={`${player.age}J`} />
-            <Metric label="POS" value={player.display_position} />
-        </div>
 
         <div className="absolute -bottom-4 -right-1 text-7xl font-black text-white/[0.02] select-none pointer-events-none italic">
             {player.display_position}
