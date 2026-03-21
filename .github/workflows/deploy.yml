@@ -86,3 +86,7 @@ jobs:
             
             # Restart Portainer to reset the security setup timeout
             sudo docker restart portainer
+            
+            # --- 7. Cleanup ---
+            # Remove unused Docker images to save disk space
+            sudo docker image prune -f

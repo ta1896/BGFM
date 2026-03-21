@@ -186,6 +186,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: newgen_phpmyadmin
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=mysql
+      - MYSQL_ROOT_PASSWORD=password
+    depends_on:
+      - mysql
+
 volumes:
   newgen_mysql_data:
   redis-data:
