@@ -5,7 +5,8 @@ import {
     User, IdentificationBadge, ChartBar, 
     Coins, ArrowLeft, FloppyDisk, Image,
     Trash, Warning, Info, SoccerBall,
-    Sneaker, Lightning, ShieldCheck, Heart
+    Sneaker, Lightning, ShieldCheck, Heart,
+    Robot
 } from '@phosphor-icons/react';
 
 const Card = ({ title, children, icon: Icon, color = 'cyan' }) => (
@@ -56,15 +57,19 @@ export default function Form({ player, clubs, positions }) {
         position: player?.position || 'ZM',
         age: player?.age || 22,
         overall: player?.overall || 60,
-        pace: player?.pace || 60,
-        shooting: player?.shooting || 60,
-        passing: player?.passing || 60,
-        defending: player?.defending || 60,
-        physical: player?.physical || 60,
-        stamina: player?.stamina || 80,
-        morale: player?.morale || 60,
+        potential: player?.potential || 70,
         market_value: player?.market_value || 1000000,
+        attr_market: player?.attr_market || 50,
         salary: player?.salary || 15000,
+        is_imported: player ? !!player.is_imported : false,
+        player_style: player?.player_style || 'Allrounder',
+        transfermarkt_id: player?.transfermarkt_id || '',
+        sofascore_id: player?.sofascore_id || '',
+        attr_attacking: player?.attr_attacking || 50,
+        attr_technical: player?.attr_technical || 50,
+        attr_tactical: player?.attr_tactical || 50,
+        attr_defending: player?.attr_defending || 50,
+        attr_creativity: player?.attr_creativity || 50,
     });
 
     const submit = (e) => {
@@ -201,13 +206,74 @@ export default function Form({ player, clubs, positions }) {
                                     </div>
                                     {errors.photo && <p className="text-rose-500 text-[8px] font-bold">{errors.photo}</p>}
                                 </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <IdentificationBadge size={10} />
+                                        Transfermarkt ID
+                                    </label>
+                                    <input 
+                                        type="text"
+                                        className="sim-input w-full font-mono text-cyan-400"
+                                        value={data.transfermarkt_id}
+                                        onChange={e => setData('transfermarkt_id', e.target.value)}
+                                        placeholder="z.B. 12345"
+                                    />
+                                    {errors.transfermarkt_id && <p className="text-rose-500 text-[9px] font-bold">{errors.transfermarkt_id}</p>}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <ChartBar size={10} />
+                                        Sofascore ID
+                                    </label>
+                                    <input 
+                                        type="text"
+                                        className="sim-input w-full font-mono text-indigo-400"
+                                        value={data.sofascore_id}
+                                        onChange={e => setData('sofascore_id', e.target.value)}
+                                        placeholder="z.B. 70996"
+                                    />
+                                    {errors.sofascore_id && <p className="text-rose-500 text-[9px] font-bold">{errors.sofascore_id}</p>}
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1 flex items-center gap-1">
+                                        <Robot size={10} />
+                                        Spieler-Typ (Auto)
+                                    </label>
+                                    <input 
+                                        type="text"
+                                        className="sim-input w-full bg-indigo-500/5 border-indigo-500/20 text-indigo-400 font-black italic"
+                                        value={data.player_style}
+                                        onChange={e => setData('player_style', e.target.value)}
+                                        placeholder="Wird automatisch berechnet..."
+                                    />
+                                </div>
+                                <div className="flex items-end pb-1.5 ">
+                                    <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl bg-[var(--bg-pillar)] overflow-hidden border border-[var(--border-pillar)] w-full active:scale-95 transition">
+                                        <div className={`w-9 h-5 rounded-full p-0.5 transition-colors ${data.is_imported ? 'bg-cyan-500' : 'bg-slate-700'}`}>
+                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${data.is_imported ? 'translate-x-4' : 'translate-x-0'}`} />
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            className="hidden" 
+                                            checked={data.is_imported}
+                                            onChange={e => setData('is_imported', e.target.checked)}
+                                        />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors flex items-center gap-1">
+                                            <Robot size={12} />
+                                            Importiert
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                         </Card>
 
                         <Card title="Attribute & Skills" icon={ChartBar} color="violet">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8">
-                                <div className="col-span-full mb-2">
-                                    <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.2em] mb-4">Hauptattribute</p>
+                                <div className="col-span-full space-y-4 mb-2">
+                                    <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.2em]">Hauptattribute</p>
+                                    
                                     <div className="p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-between group">
                                          <div>
                                             <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Stärkerating (OVR)</p>
@@ -221,15 +287,33 @@ export default function Form({ player, clubs, positions }) {
                                             required
                                          />
                                     </div>
+
+                                    <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex items-center justify-between group">
+                                         <div>
+                                            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Marktwert-Stärke</p>
+                                            <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Basiert auf dem Marktwert (€)</p>
+                                         </div>
+                                         <input 
+                                            type="number"
+                                            className="bg-transparent border-none text-4xl font-black text-amber-500/80 w-24 text-right focus:ring-0 group-hover:text-amber-400 transition-colors"
+                                            value={data.attr_market}
+                                            onChange={e => setData('attr_market', e.target.value)}
+                                            required
+                                         />
+                                    </div>
                                 </div>
 
-                                <AttributeInput label="Tempo" value={data.pace} onChange={e => setData('pace', e.target.value)} icon={Lightning} error={errors.pace} />
-                                <AttributeInput label="Schuss" value={data.shooting} onChange={e => setData('shooting', e.target.value)} icon={SoccerBall} error={errors.shooting} />
-                                <AttributeInput label="Passen" value={data.passing} onChange={e => setData('passing', e.target.value)} icon={Sneaker} error={errors.passing} />
-                                <AttributeInput label="Defensive" value={data.defending} onChange={e => setData('defending', e.target.value)} icon={ShieldCheck} error={errors.defending} />
-                                <AttributeInput label="Physis" value={data.physical} onChange={e => setData('physical', e.target.value)} icon={ChartBar} error={errors.physical} />
-                                <AttributeInput label="Ausdauer" value={data.stamina} onChange={e => setData('stamina', e.target.value)} icon={Heart} error={errors.stamina} />
-                                <AttributeInput label="Moral" value={data.morale} onChange={e => setData('morale', e.target.value)} icon={Info} error={errors.morale} />
+
+                                <div className="col-span-full mt-4 pt-4 border-t border-[var(--border-muted)] border-dashed">
+                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-4">Sofascore Attribute (Performance)</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                                        <AttributeInput label="Attacking" value={data.attr_attacking} onChange={e => setData('attr_attacking', e.target.value)} color="indigo" />
+                                        <AttributeInput label="Technical" value={data.attr_technical} onChange={e => setData('attr_technical', e.target.value)} color="indigo" />
+                                        <AttributeInput label="Tactical" value={data.attr_tactical} onChange={e => setData('attr_tactical', e.target.value)} color="indigo" />
+                                        <AttributeInput label="Defending" value={data.attr_defending} onChange={e => setData('attr_defending', e.target.value)} color="indigo" />
+                                        <AttributeInput label="Creativity" value={data.attr_creativity} onChange={e => setData('attr_creativity', e.target.value)} color="indigo" />
+                                    </div>
+                                </div>
                             </div>
                         </Card>
                     </div>

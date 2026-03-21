@@ -195,12 +195,12 @@ function TabButton({ active, onClick, icon: Icon, children }) {
 
 export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
     const stats = [
-        { label: 'Tempo', value: player.pace, icon: Lightning, color: 'text-amber-500', gradient: 'from-amber-500/60' },
-        { label: 'Schuss', value: player.shooting, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
-        { label: 'Passen', value: player.passing, icon: ChartBar, color: 'text-amber-600', gradient: 'from-amber-600/60' },
-        { label: 'Dribbling', value: player.dribbling || 70, icon: SoccerBall, color: 'text-amber-500', gradient: 'from-amber-500/60' },
-        { label: 'Defensive', value: player.defending, icon: ShieldCheck, color: 'text-emerald-400', gradient: 'from-emerald-400/60' },
-        { label: 'Physis', value: player.physical, icon: TrendUp, color: 'text-purple-400', gradient: 'from-purple-400/60' },
+        { label: 'Attacking', value: player.attr_attacking || 50, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
+        { label: 'Technical', value: player.attr_technical || 50, icon: ChartBar, color: 'text-cyan-400', gradient: 'from-cyan-400/60' },
+        { label: 'Tactical', value: player.attr_tactical || 50, icon: Selection, color: 'text-indigo-400', gradient: 'from-indigo-400/60' },
+        { label: 'Defending', value: player.attr_defending || 50, icon: ShieldCheck, color: 'text-emerald-400', gradient: 'from-emerald-400/60' },
+        { label: 'Creativity', value: player.attr_creativity || 50, icon: Broadcast, color: 'text-amber-400', gradient: 'from-amber-400/60' },
+        { label: 'Marktwert-Stärke', value: player.attr_market || 50, icon: TrendUp, color: 'text-purple-400', gradient: 'from-purple-400/60' },
     ];
 
     return (
@@ -255,8 +255,6 @@ export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions =
                         <Smiley size={24} weight="duotone" className="text-emerald-400" />
                         <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Kondition</h3>
                     </div>
-                    <ProgressBar label="Fitness" value={player.stamina} positive={player.stamina > 80} />
-                    <ProgressBar label="Moral" value={player.morale} positive />
                     <ProgressBar label="Zufriedenheit" value={player.happiness} positive={player.happiness >= 55} />
                     <ProgressBar label="Sharpness" value={player.sharpness} positive={player.sharpness >= 60} />
                     <ProgressBar label="Belastung" value={player.fatigue} positive={player.fatigue <= 45} />

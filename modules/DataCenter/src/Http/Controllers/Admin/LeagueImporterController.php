@@ -14,7 +14,7 @@ class LeagueImporterController extends Controller
 {
     public function index()
     {
-        $importedClubs = \App\Models\Club::whereNotNull('transfermarkt_id')
+        $importedClubs = \App\Models\Club::where('is_imported', true)
             ->withCount('players')
             ->orderBy('updated_at', 'desc')
             ->get();

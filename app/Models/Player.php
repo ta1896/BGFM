@@ -15,6 +15,106 @@ class Player extends Model
     
     protected $appends = ['photo_url', 'full_name', 'display_position'];
 
+    protected static function booted()
+    {
+        static::saving(function ($player) {
+            // Auto-calculate attr_market from market_value if market_value changed
+            if ($player->isDirty('market_value')) {
+                $player->attr_market = min(99, max(1, (int) (pow($player->market_value / 150000000, 0.3) * 100)));
+            }
+
+            // Auto-calculate overall from attributes if any attribute or position changed
+            if ($player->isDirty(['attr_attacking', 'attr_technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'position'])) {
+                $player->overall = $player->calculateOverall();
+                $player->player_style = $player->calculatePlayerStyle();
+            }
+        });
+    }
+
+    public function calculatePlayerStyle(): string
+    {
+        $pos = self::mapPosition($this->position);
+        $att = $this->attr_attacking ?? 50;
+        $tec = $this->attr_technical ?? 50;
+        $tac = $this->attr_tactical ?? 50;
+        $def = $this->attr_defending ?? 50;
+        $cre = $this->attr_creativity ?? 50;
+
+        return match(true) {
+            $pos === 'TW' => match(true) {
+                ($tec > 65 && $cre > 60) || ($tec > 75) => 'Mitspielender Torwart',
+                $def > 75 => 'Linien-Torwart',
+                default => 'Torwart-Spezialist'
+            },
+            $pos === 'IV' => match(true) {
+                $def > 78 && $tac > 72 => 'Zweikampfmonster', // "Zweikampfstarker IV"
+                $tec > 68 && $tac > 68 => 'Spielstarker IV',
+                default => 'Defensiv-Anker'
+            },
+            in_array($pos, ['LV', 'RV']) => match(true) {
+                $att > 68 && $tec > 65 => 'Offensiv-Flitzer',
+                $def > 75 && $tac > 70 => 'Defensiv-Spezialist',
+                default => 'Zweikampfstarker AV'
+            },
+            in_array($pos, ['DM', 'ZM']) => match(true) {
+                $def > 68 && $att > 62 => 'Box-to-Box',
+                $cre > 72 && $tec > 72 => 'Regisseur',
+                $def > 78 => 'Abräumer',
+                default => 'Strategischer DM'
+            },
+            in_array($pos, ['OM', 'LW', 'RW']) => match(true) {
+                $tec > 78 && $cre > 72 => 'Dribbelkünstler',
+                $cre > 78 => 'Spielgestalter',
+                default => 'Flügel-Flitzer'
+            },
+            $pos === 'ST' => match(true) {
+                $att > 78 && $tec > 70 => 'Knipser',
+                $att > 72 && $def > 55 => 'Zielspieler',
+                default => 'Dynamische Spitze'
+            },
+            default => 'Allrounder'
+        };
+    }
+
+    public function calculateOverall(): int
+    {
+        $pos = self::mapPosition($this->position);
+        
+        $attacking = $this->attr_attacking ?? 50;
+        $technical = $this->attr_technical ?? 50;
+        $tactical = $this->attr_tactical ?? 50;
+        $defending = $this->attr_defending ?? 50;
+        $creativity = $this->attr_creativity ?? 50;
+        $market = $this->attr_market ?? 50;
+
+        return (int) match(true) {
+            $pos === 'TW' => (
+                ($technical * 2.0 + $tactical * 1.5 + $defending * 2.0 + $market) / 6.5
+            ),
+            $pos === 'IV' => (
+                ($defending * 3.0 + $tactical * 1.5 + $market) / 5.5
+            ),
+            in_array($pos, ['LV', 'RV']) => (
+                ($defending * 2.0 + $tactical * 1.5 + $technical * 1.0 + $attacking * 0.5 + $market) / 6
+            ),
+            in_array($pos, ['DM', 'ZM']) => (
+                ($technical * 1.5 + $creativity * 1.5 + $tactical * 1.2 + $defending * 0.8 + $market) / 6
+            ),
+            in_array($pos, ['OM', 'LM', 'RM']) => (
+                ($creativity * 2.0 + $technical * 1.5 + $tactical * 1.0 + $attacking * 1.0 + $market) / 6.5
+            ),
+            in_array($pos, ['LF', 'RF', 'HS']) => (
+                ($attacking * 2.0 + $technical * 1.5 + $creativity * 1.5 + $tactical * 1.0 + $market) / 7
+            ),
+            $pos === 'MS' => (
+                ($attacking * 3.0 + $technical * 1.5 + $creativity * 0.5 + $market) / 6
+            ),
+            default => ( // Fallback Allrounder
+                ($attacking + $technical + $tactical + $defending + $creativity + $market) / 6
+            )
+        };
+    }
+
     protected $fillable = [
         'club_id',
         'parent_club_id',
@@ -29,13 +129,6 @@ class Player extends Model
         'age',
         'overall',
         'potential',
-        'pace',
-        'shooting',
-        'passing',
-        'defending',
-        'physical',
-        'stamina',
-        'morale',
         'status',
         'market_value',
         'salary',
@@ -69,6 +162,15 @@ class Player extends Model
         'yellow_cards_friendly_accumulated',
         'transfermarkt_id',
         'transfermarkt_url',
+        'sofascore_id',
+        'player_style',
+        'attr_attacking',
+        'attr_technical',
+        'attr_tactical',
+        'attr_defending',
+        'attr_creativity',
+        'attr_market',
+        'is_imported',
     ];
 
     protected function casts(): array
@@ -99,6 +201,7 @@ class Player extends Model
             'yellow_cards_cup_national_accumulated' => 'integer',
             'yellow_cards_cup_international_accumulated' => 'integer',
             'yellow_cards_friendly_accumulated' => 'integer',
+            'is_imported' => 'boolean',
         ];
     }
 

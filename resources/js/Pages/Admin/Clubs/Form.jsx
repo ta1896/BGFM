@@ -40,6 +40,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
         captain_player_id: club?.captain_player_id || '',
         vice_captain_player_id: club?.vice_captain_player_id || '',
         is_cpu: club ? !!club.is_cpu : false,
+        is_imported: club ? !!club.is_imported : false,
         notes: club?.notes || '',
         rival_id_1: club?.rival_id_1 || '',
         rival_id_2: club?.rival_id_2 || '',
@@ -197,6 +198,24 @@ export default function Form({ club, users, clubs, rolePlayers }) {
                                             onChange={e => setData('is_cpu', e.target.checked)}
                                         />
                                         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors">CPU-Gesteuert</span>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-end pb-1.5">
+                                    <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl bg-[var(--bg-pillar)] overflow-hidden border border-[var(--border-pillar)] w-full active:scale-95 transition">
+                                        <div className={`w-9 h-5 rounded-full p-0.5 transition-colors ${data.is_imported ? 'bg-cyan-500' : 'bg-slate-700'}`}>
+                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${data.is_imported ? 'translate-x-4' : 'translate-x-0'}`} />
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            className="hidden" 
+                                            checked={data.is_imported}
+                                            onChange={e => setData('is_imported', e.target.checked)}
+                                        />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-white transition-colors flex items-center gap-1">
+                                            <Robot size={12} />
+                                            Importiert
+                                        </span>
                                     </label>
                                 </div>
                             </div>

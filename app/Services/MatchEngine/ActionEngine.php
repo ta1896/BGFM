@@ -262,8 +262,8 @@ class ActionEngine
 
     private function handleChance(GameMatch $match, int $minute, int $sequence, int $attackerClubId, int $defenderClubId, Collection $attackerStates, Collection $defenderStates, array $modifiers): void
     {
-        $attacker = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->shooting + $s->player->overall);
-        $defender = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => $s->player->defending + $s->player->overall);
+        $attacker = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->attr_attacking + $s->player->overall);
+        $defender = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => $s->player->attr_defending + $s->player->overall);
 
         // Calculate Conversion Chance
         $baseChance = 25;
@@ -409,8 +409,8 @@ class ActionEngine
 
     private function handleFoul(GameMatch $match, int $minute, int $sequence, int $attackerClubId, int $defenderClubId, Collection $attackerStates, Collection $defenderStates, array $modifiers): void
     {
-        $fouler = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => max(10, 150 - $s->player->defending));
-        $victim = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->dribbling + $s->player->pace);
+        $fouler = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => max(10, 150 - $s->player->attr_defending));
+        $victim = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->attr_technical + $s->player->overall);
 
         $cardRoll = mt_rand(1, 100);
 
@@ -503,7 +503,7 @@ class ActionEngine
 
         $type = 'possession';
         $outcome = 'success';
-        $actor = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->passing + $s->player->overall);
+        $actor = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->attr_creativity + $s->player->overall);
         $actingClubId = $attackerClubId;
 
         if ($actionRoll <= 50) {
@@ -520,7 +520,7 @@ class ActionEngine
             // Turnover / Defensive Action
             $type = 'turnover';
             $outcome = 'lost_possession';
-            $actor = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => $s->player->defending + $s->player->physical);
+            $actor = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => $s->player->attr_defending + $s->player->attr_tactical);
             $actingClubId = $defenderClubId;
             $opponent = $this->stateRepository->randomCollectionItem($attackerStates)->player;
 

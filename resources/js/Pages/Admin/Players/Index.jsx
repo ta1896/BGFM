@@ -5,7 +5,7 @@ import PaginationLink from '@/Components/PaginationLink';
 import { 
     Users, UserPlus, MagnifyingGlass, Funnel, 
     ChartBar, TrendUp, Warning, FirstAid,
-    IdentificationBadge, CaretDown, CaretUp 
+    IdentificationBadge, CaretDown, CaretUp, Robot 
 } from '@phosphor-icons/react';
 
 const StatCard = ({ title, value, subtext, color = 'cyan' }) => (
@@ -109,6 +109,11 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                                                     <img src={player.photo_url} className="h-10 w-10 rounded-xl object-cover border border-[var(--border-pillar)] bg-[var(--bg-pillar)]" alt="" />
                                                     <div className="absolute -bottom-1 -right-1 bg-[var(--sim-shell-bg)] px-1 rounded border border-[var(--border-pillar)] text-[8px] font-black text-cyan-400 uppercase">
                                                         {player.position}
+                                                        {player.is_imported && (
+                                                            <div className="absolute -top-1 -right-1 bg-cyan-500 text-black px-1 rounded border border-cyan-400 text-[7px] font-black uppercase z-10">
+                                                                <Robot size={8} weight="fill" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -146,8 +151,13 @@ export default function Index({ players, groupedPlayers, squadStats, clubs, acti
                                         <tr key={player.id} className="hover:bg-[var(--bg-content)]/20 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={player.photo_url} className="h-8 w-8 rounded-lg object-cover border border-[var(--border-pillar)] bg-[var(--bg-pillar)]" alt="" />
                                                     <span className="font-bold text-white group-hover:text-cyan-400 transition-colors">{player.full_name}</span>
+                                                    {player.is_imported && (
+                                                        <span className="bg-cyan-500/10 text-cyan-500 text-[8px] font-black px-1 rounded border border-cyan-500/20 flex items-center gap-0.5 uppercase ml-2">
+                                                            <Robot size={10} weight="fill" />
+                                                            IMP
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">

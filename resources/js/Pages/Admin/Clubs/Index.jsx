@@ -56,6 +56,12 @@ export default function Index({ clubs }) {
                                                                 CPU
                                                             </span>
                                                         )}
+                                                        {club.is_imported && (
+                                                            <span className="bg-cyan-500/10 text-cyan-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-cyan-500/20 flex items-center gap-1 uppercase tracking-widest">
+                                                                <Robot size={10} weight="fill" />
+                                                                Imported
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{club.short_name || '-'}</p>
                                                 </div>

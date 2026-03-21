@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Modules\DataCenter\Services\ScraperService;
 use Modules\DataCenter\Models\ImportLog;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 
 class ImportLeagueJob implements ShouldQueue
@@ -42,6 +44,7 @@ class ImportLeagueJob implements ShouldQueue
 
     public function handle()
     {
+        $this->scraper = app(ScraperService::class);
         $log = null;
         if ($this->logId) {
             $log = ImportLog::find($this->logId);
@@ -193,6 +196,8 @@ class ImportLeagueJob implements ShouldQueue
                         'is_cpu' => true,
                         'league' => $this->leagueId,
                         'league_id' => $competition->id,
+                        'is_imported' => true,
+                        'transfermarkt_id' => $clubPlayers[0]['Club ID'] ?? null,
                     ]
                 );
 
@@ -259,6 +264,71 @@ class ImportLeagueJob implements ShouldQueue
         $val = $data['Market Value'] ?? $data['Value'] ?? 0;
         Log::info("Importing Player: {$fullName} - Received Value: " . json_encode($val));
 
+        $tmId = $this->extractIdFromUrl($data['URL'] ?? null);
+        $photoPath = null;
+
+        $posInfo = $data['Alternative Positions'] ?? null;
+        [$pos2, $pos3] = $this->extractAdditionalPositions($posInfo);
+
+        $marketValue = (int) ($data['Market Value'] ?? $data['Value'] ?? 0);
+        $attrMarket = min(99, max(1, (int) (pow($marketValue / 150000000, 0.3) * 100)));
+
+        $sofascore = $data['Sofascore'] ?? null;
+        
+        if (is_array($sofascore) && ($sofascore['sofascore_id'] ?? null)) {
+            $this->logInfo("Found Sofascore data for {$firstName} {$lastName} (ID: {$sofascore['sofascore_id']})");
+            // Position-Specific OVR Weighting
+            $pos = $this->mapPosition($data['Position'] ?? null);
+            $overall = (int) match(true) {
+                $pos === 'TW' => (
+                    ($sofascore['technical'] * 1.5 + 
+                     $sofascore['tactical'] * 1.5 + 
+                     $sofascore['defending'] * 2.0 + 
+                     $attrMarket) / 6
+                ),
+                in_array($pos, ['IV', 'LV', 'RV']) => (
+                    ($sofascore['defending'] * 2.0 + 
+                     $sofascore['tactical'] * 1.5 + 
+                     $sofascore['technical'] * 1.0 + 
+                     $sofascore['attacking'] * 0.5 + 
+                     $attrMarket) / 6
+                ),
+                in_array($pos, ['DM', 'ZM', 'OM', 'LM', 'RM']) => (
+                    ($sofascore['technical'] * 1.5 + 
+                     $sofascore['creativity'] * 1.5 + 
+                     $sofascore['tactical'] * 1.2 + 
+                     $sofascore['attacking'] * 0.8 + 
+                     $attrMarket) / 6
+                ),
+                default => ( // Attackers: MS, HS, LF, RF
+                    ($sofascore['attacking'] * 2.0 + 
+                     $sofascore['technical'] * 1.5 + 
+                     $sofascore['creativity'] * 1.5 + 
+                     $sofascore['tactical'] * 1.0 + 
+                     $attrMarket) / 7
+                )
+            };
+        } else {
+            $this->logWarning("No Sofascore data for {$firstName} {$lastName}, using default ratings.");
+            $overall = (int) ($data['Overall'] ?? $data['Rating'] ?? rand(60, 75));
+        }
+        
+        // New Potential Formula ("Experience & Talent Balance")
+        $age = (int) ($data['Age'] ?? 25);
+        $potentialBase = $overall;
+        $youngBonus = ($age < 24) ? (24 - $age) * 1.5 : 0;
+        $veteranBonus = ($age > 30) ? ($age - 30) * 0.5 : 0;
+        $classFactor = $attrMarket / 10;
+        
+        // Talent Factor: Gifted players (high Technical/Creativity) have higher ceilings
+        $talentFactor = 0;
+        if (isset($sofascore) && is_array($sofascore)) {
+            $talentFactor = ($sofascore['technical'] + $sofascore['creativity']) / 20;
+        }
+
+        $randomFactor = rand(1, 4);
+        $potential = min(99, (int) ($potentialBase + $youngBonus + $veteranBonus + $classFactor + $talentFactor + $randomFactor));
+
         Player::updateOrCreate(
             [
                 'club_id' => $club->id,
@@ -267,19 +337,25 @@ class ImportLeagueJob implements ShouldQueue
             ],
             [
                 'position' => $this->mapPosition($data['Position'] ?? null),
-                'age' => (int) ($data['Age'] ?? 25),
-                'market_value' => (float) ($data['Market Value'] ?? $data['Value'] ?? 0.0),
+                'position_second' => $pos2,
+                'position_third' => $pos3,
+                'age' => $age,
+                'market_value' => $marketValue,
+                'attr_market' => $attrMarket,
                 'status' => 'active',
-                'overall' => rand(65, 80),
-                'potential' => rand(75, 90),
-                'transfermarkt_id' => $this->extractIdFromUrl($data['URL'] ?? null),
+                'overall' => $overall,
+                'potential' => $potential,
+                'player_style' => null, // Placeholder, will be calculated after creation/retrieval
+                'transfermarkt_id' => $tmId,
                 'transfermarkt_url' => $data['URL'] ?? null,
-                'pace' => rand(60, 90),
-                'shooting' => rand(50, 85),
-                'passing' => rand(50, 85),
-                'defending' => rand(40, 85),
-                'physical' => rand(60, 90),
-                'stamina' => rand(70, 100),
+                'sofascore_id' => is_array($sofascore) ? ($sofascore['sofascore_id'] ?? null) : null,
+                'attr_attacking' => is_array($sofascore) ? ($sofascore['attacking'] ?? 50) : 50,
+                'attr_technical' => is_array($sofascore) ? ($sofascore['technical'] ?? 50) : 50,
+                'attr_tactical' => is_array($sofascore) ? ($sofascore['tactical'] ?? 50) : 50,
+                'attr_defending' => is_array($sofascore) ? ($sofascore['defending'] ?? 50) : 50,
+                'attr_creativity' => is_array($sofascore) ? ($sofascore['creativity'] ?? 50) : 50,
+                'photo_path' => null,
+                'is_imported' => true,
             ]
         );
     }
@@ -291,6 +367,25 @@ class ImportLeagueJob implements ShouldQueue
             return $matches[1];
         }
         return null;
+    }
+
+    protected function extractAdditionalPositions(?string $altPosString): array
+    {
+        if (!$altPosString) return [null, null];
+        
+        // Find "Other position:"
+        if (str_contains($altPosString, 'Other position:')) {
+            $parts = explode('Other position:', $altPosString);
+            $others = trim($parts[1]);
+            $positions = array_map('trim', explode(',', $others));
+            
+            return [
+                $this->mapPosition($positions[0] ?? null),
+                $this->mapPosition($positions[1] ?? null)
+            ];
+        }
+        
+        return [null, null];
     }
 
     protected function mapPosition(?string $pos): string
@@ -332,6 +427,32 @@ class ImportLeagueJob implements ShouldQueue
         if (str_contains(strtoupper($clean), 'K')) return $floatVal / 1000.0;
 
         return $floatVal;
+    }
+
+    protected function logInfo(string $message, array $details = [])
+    {
+        if (!$this->logId) return;
+        $log = ImportLog::find($this->logId);
+        if (!$log) return;
+        
+        $log->update([
+            'message' => $message,
+            'details' => array_merge((array)($log->details ?? []), $details)
+        ]);
+        Log::info("[Import] " . $message);
+    }
+
+    protected function logWarning(string $message, array $details = [])
+    {
+        if (!$this->logId) return;
+        $log = ImportLog::find($this->logId);
+        if (!$log) return;
+        
+        $log->update([
+            'message' => "WARN: " . $message,
+            'details' => array_merge((array)($log->details ?? []), $details)
+        ]);
+        Log::warning("[Import] " . $message);
     }
 }
 

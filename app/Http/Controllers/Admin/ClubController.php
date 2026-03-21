@@ -209,6 +209,7 @@ class ClubController extends Controller
             'captain_player_id' => $captainRules,
             'vice_captain_player_id' => $viceCaptainRules,
             'is_cpu' => ['sometimes', 'boolean'],
+            'is_imported' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'rival_id_1' => ['nullable', 'exists:clubs,id', 'different:rival_id_2'],
             'rival_id_2' => ['nullable', 'exists:clubs,id', 'different:rival_id_1'],

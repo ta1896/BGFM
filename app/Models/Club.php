@@ -43,6 +43,7 @@ class Club extends Model
         'rival_id_2',
         'transfermarkt_id',
         'transfermarkt_url',
+        'is_imported',
     ];
 
     protected function casts(): array
@@ -55,6 +56,7 @@ class Club extends Model
             'board_confidence' => 'integer',
             'training_level' => 'integer',
             'is_cpu' => 'boolean',
+            'is_imported' => 'boolean',
         ];
     }
 
