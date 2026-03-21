@@ -54,28 +54,6 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                 </Link>
 
                 <div className="flex items-center gap-3">
-                    {player.tm_profile_url && (
-                        <a
-                            href={player.tm_profile_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-red-400 transition-all hover:bg-red-500/20 hover:scale-105 active:scale-95"
-                        >
-                            <SoccerBall size={12} weight="fill" />
-                            Transfermarkt
-                        </a>
-                    )}
-                    {player.sofa_profile_url && (
-                        <a
-                            href={player.sofa_profile_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-blue-400 transition-all hover:bg-blue-500/20 hover:scale-105 active:scale-95"
-                        >
-                            <Broadcast size={12} weight="fill" />
-                            Sofascore
-                        </a>
-                    )}
                     {isOwner && (
                         <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">
                             Dein Spieler
@@ -118,6 +96,29 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                                 <span className="rounded-lg border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                                     {player.age} Jahre
                                 </span>
+
+                                {player.tm_profile_url && (
+                                    <a
+                                        href={player.tm_profile_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-red-400 transition-all hover:bg-red-500/20 hover:scale-105 active:scale-95"
+                                    >
+                                        <SoccerBall size={12} weight="fill" />
+                                        Transfermarkt
+                                    </a>
+                                )}
+                                {player.sofa_profile_url && (
+                                    <a
+                                        href={player.sofa_profile_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-blue-400 transition-all hover:bg-blue-500/20 hover:scale-105 active:scale-95"
+                                    >
+                                        <Broadcast size={12} weight="fill" />
+                                        Sofascore
+                                    </a>
+                                )}
                             </div>
                             <h1 className="mb-6 text-5xl font-black uppercase tracking-tighter text-white italic md:text-7xl">
                                 {player.first_name} <span className="text-amber-500">{player.last_name}</span>
