@@ -46,14 +46,19 @@ jobs:
             # --- 5. Application Setup (Inside Containers) ---
             # Brief wait for services to initialize
             echo "Waiting for services..."
-            sleep 10
+            sleep 15
             
             # Debugging: Show logs if something failed early
             echo "--- App Logs (Startup) ---"
             sudo docker compose logs app --tail=20
             echo "--- MySQL Logs (Startup) ---"
             sudo docker compose logs mysql --tail=20
+
             # (Database is now persistent via host-volume, no manual CREATE DB needed)
+            
+            # Fix git ownership issue within the container
+            sudo docker compose exec -T app git config --global --add safe.directory /var/www
+
             # Install PHP dependencies with Linux-native binaries
             sudo docker compose exec -T app composer install --optimize-autoloader --no-dev
             
