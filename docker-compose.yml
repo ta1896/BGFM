@@ -100,7 +100,7 @@ services:
       MYSQL_USER: sail
     logging: *default-logging
     volumes:
-      - db-data:/var/lib/mysql
+      - ./docker/mysql/data:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:
@@ -187,7 +187,6 @@ services:
       - portainer_data:/data
 
 volumes:
-  db-data:
   redis-data:
   nginx-logs:
   portainer_data:

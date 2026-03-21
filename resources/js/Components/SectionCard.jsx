@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function SectionCard({ title, icon: Icon, children, className = '', bodyClassName = '' }) {
+export default function SectionCard({ title, icon: Icon, children, className = '', bodyClassName = '', headerAction = null }) {
     return (
         <div className={`sim-card border-[var(--border-muted)] ${className}`.trim()}>
             {title && (
@@ -9,8 +9,14 @@ export default function SectionCard({ title, icon: Icon, children, className = '
                         {Icon && <Icon size={20} weight="duotone" className="text-[var(--accent-primary)]" />}
                         <h2 className="text-lg font-black uppercase tracking-tight text-[var(--text-main)]">{title}</h2>
                     </div>
+                    {headerAction && (
+                        <div className="flex items-center">
+                            {headerAction}
+                        </div>
+                    )}
                 </div>
             )}
+
             <div className={bodyClassName}>{children}</div>
         </div>
     );
