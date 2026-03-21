@@ -458,6 +458,8 @@ class PlayerController extends Controller
                     'severity' => $injury->severity,
                     'expected_return' => $injury->expected_return_at?->format('d.m.Y'),
                 ] : null,
+                'tm_profile_url' => $player->tm_profile_url,
+                'sofa_profile_url' => $player->sofa_profile_url,
             ],
             'currentSeasonStats' => $currentSeasonStats,
             'careerStats' => $careerStats,
