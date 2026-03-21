@@ -364,6 +364,7 @@ class Player extends Model
         if (!$this->sofascore_id) {
             return null;
         }
-        return "https://www.sofascore.com/player/{$this->sofascore_id}";
+        $slug = \Illuminate\Support\Str::slug($this->full_name);
+        return "https://www.sofascore.com/football/player/{$slug}/{$this->sofascore_id}";
     }
 }
