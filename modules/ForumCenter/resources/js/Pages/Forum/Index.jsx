@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ChatCircleDots, Chats, User, Clock } from '@phosphor-icons/react';
 import UserAvatar from '@/Components/UserAvatar';
+import Shoutbox from '../../Components/Shoutbox';
 
 export default function Index({ categories }) {
     return (
@@ -19,6 +20,8 @@ export default function Index({ categories }) {
             <Head title="Forum" />
 
             <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6 lg:px-8">
+                <Shoutbox />
+                
                 {categories.map((category) => (
                     <div key={category.id} className="overflow-hidden rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 backdrop-blur-md shadow-xl">
                         {/* Category Header */}

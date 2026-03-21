@@ -13,6 +13,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('/forum/t/{thread:slug}', [ForumController::class, 'showThread'])->name('forum.thread.show');
     Route::post('/forum/t/{thread:slug}/reply', [ForumController::class, 'storePost'])->name('forum.post.store');
+
+    // Shoutbox
+    Route::get('/forum/shoutbox', [\App\Modules\ForumCenter\Http\Controllers\ShoutboxController::class, 'index'])->name('forum.shoutbox.index');
+    Route::post('/forum/shoutbox', [\App\Modules\ForumCenter\Http\Controllers\ShoutboxController::class, 'store'])->name('forum.shoutbox.store');
     
     // Admin Routes
     Route::middleware(['admin'])
