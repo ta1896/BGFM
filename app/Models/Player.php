@@ -67,12 +67,14 @@ class Player extends Model
         'yellow_cards_cup_national_accumulated',
         'yellow_cards_cup_international_accumulated',
         'yellow_cards_friendly_accumulated',
+        'transfermarkt_id',
+        'transfermarkt_url',
     ];
 
     protected function casts(): array
     {
         return [
-            'market_value' => 'decimal:2',
+            'market_value' => 'integer',
             'salary' => 'decimal:2',
             'contract_expires_on' => 'date',
             'loan_ends_on' => 'date',

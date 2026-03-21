@@ -41,6 +41,8 @@ class Club extends Model
         'notes',
         'rival_id_1',
         'rival_id_2',
+        'transfermarkt_id',
+        'transfermarkt_url',
     ];
 
     protected function casts(): array

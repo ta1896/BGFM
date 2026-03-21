@@ -128,7 +128,7 @@ services:
     container_name: newgen_reverb
     restart: unless-stopped
     working_dir: /var/www
-    command: php artisan reverb:start --debug
+    command: php artisan reverb:start
     logging: *default-logging
     environment:
       - REDIS_CLIENT=phpredis
@@ -161,7 +161,33 @@ services:
     depends_on:
       - web
 
+  scraper-service:
+    build:
+      context: ./scraper-service
+    container_name: scraper_service
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./scraper-service:/app
+    command: gunicorn main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 1200
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
 volumes:
   db-data:
   redis-data:
   nginx-logs:
+  portainer_data:

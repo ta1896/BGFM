@@ -1,0 +1,23 @@
+{
+    "key": "data-center",
+    "name": "DataCenter",
+    "version": "1.0.0",
+    "description": "Handles automated data imports from external sources like Transfermarkt using ScraperFC.",
+    "enabled": true,
+    "providers": [],
+    "routes": "routes/web.php",
+    "frontend": {
+        "admin_navigation": {
+            "mod_data_center": {
+                "label": "Daten-Center",
+                "items": [
+                    {
+                        "route": "admin.data-center.league-importer.index",
+                        "label": "Liga-Importer",
+                        "active": "admin.data-center.*"
+                    }
+                ]
+            }
+        }
+    }
+}
