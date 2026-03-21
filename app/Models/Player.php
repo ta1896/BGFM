@@ -13,7 +13,7 @@ class Player extends Model
 {
     use HasFactory;
     
-    protected $appends = ['photo_url', 'full_name', 'display_position'];
+    protected $appends = ['photo_url', 'full_name', 'display_position', 'tm_profile_url', 'sofa_profile_url'];
 
     protected static function booted()
     {
@@ -352,5 +352,18 @@ class Player extends Model
     public function getDisplayPositionAttribute(): string
     {
         return self::mapPosition($this->position) ?? (string) $this->position;
+    }
+
+    public function getTmProfileUrlAttribute(): ?string
+    {
+        return $this->transfermarkt_url;
+    }
+
+    public function getSofaProfileUrlAttribute(): ?string
+    {
+        if (!$this->sofascore_id) {
+            return null;
+        }
+        return "https://www.sofascore.com/player/{$this->sofascore_id}";
     }
 }
