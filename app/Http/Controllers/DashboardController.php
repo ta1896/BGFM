@@ -412,7 +412,7 @@ class DashboardController extends Controller
                     'metric' => 'Lineup fehlt',
                     'label' => 'Naechstes Spiel ohne Setup',
                     'description' => 'Fuer die naechste Partie ist noch keine einsatzfaehige Match-Aufstellung hinterlegt.',
-                    'url' => route('matches.lineup.edit', ['match' => $nextMatch->id, 'club' => $activeClub->id]),
+                    'url' => route('lineups.match', ['match' => $nextMatch->id]),
                     'cta' => 'Match-Aufstellung',
                 ];
             } elseif ($nextMatch) {
