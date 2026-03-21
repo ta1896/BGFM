@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(DefaultAdminSeeder::class);
         $this->call(TestFactorySeeder::class);
         $this->call(MatchTickerTemplateSeeder::class);
         $this->call(DemoFeatureSeeder::class);
