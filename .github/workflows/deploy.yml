@@ -77,9 +77,12 @@ jobs:
             # Restart Horizon
             sudo docker compose exec -T app php artisan horizon:terminate
             
-            # --- 6. Final Permission Polish & Nginx Refresh ---
+            # --- 6. Final Permission Polish & Refresh Services ---
             # Ensure the web server (www-data / 33) can write to storage
             sudo chown -R 33:33 storage bootstrap/cache
             
             # Restart Nginx to pick up new container IPs (fixes persistent 502 Gateway errors)
             sudo docker compose restart web
+            
+            # Restart Portainer to reset the security setup timeout
+            sudo docker restart portainer
