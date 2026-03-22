@@ -333,7 +333,8 @@ class ImportLeagueJob implements ShouldQueue
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'nationality' => $data['Nationality'] ?? null,
-                'slug' => Str::slug($fullName) . '-' . Str::random(5),
+            ],
+            [
                 'position' => $mainPos,
                 'position_main' => $mainPos,
                 'position_second' => $pos2,
