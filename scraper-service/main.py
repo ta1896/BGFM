@@ -326,12 +326,35 @@ TM_API_BASES = [
     if base.strip()
 ]
 TM_API_TIMEOUT = float(os.getenv("TM_API_TIMEOUT", "20"))
-TM_API_PREFERRED_CONTEXT = os.getenv("TM_API_PREFERRED_CONTEXT", "").strip()
+TM_API_PREFERRED_CONTEXT = os.getenv("TM_API_PREFERRED_CONTEXT", "com").strip()
 TM_API_PROXY = os.getenv("TM_API_PROXY", "").strip() or None
+TM_LANGUAGE_BY_CONTEXT = {
+    "at": "de-AT,de;q=0.9,en;q=0.8",
+    "be": "nl-BE,nl;q=0.9,en;q=0.8",
+    "br": "pt-BR,pt;q=0.9,en;q=0.8",
+    "ch": "de-CH,de;q=0.9,en;q=0.8",
+    "co": "es-CO,es;q=0.9,en;q=0.8",
+    "com": "en-GB,en;q=0.9",
+    "de": "de-DE,de;q=0.9,en;q=0.8",
+    "es": "es-ES,es;q=0.9,en;q=0.8",
+    "fr": "fr-FR,fr;q=0.9,en;q=0.8",
+    "gr": "el-GR,el;q=0.9,en;q=0.8",
+    "it": "it-IT,it;q=0.9,en;q=0.8",
+    "mx": "es-MX,es;q=0.9,en;q=0.8",
+    "nl": "nl-NL,nl;q=0.9,en;q=0.8",
+    "pl": "pl-PL,pl;q=0.9,en;q=0.8",
+    "pt": "pt-PT,pt;q=0.9,en;q=0.8",
+    "ro": "ro-RO,ro;q=0.9,en;q=0.8",
+    "tr": "tr-TR,tr;q=0.9,en;q=0.8",
+    "uk": "en-GB,en;q=0.9",
+    "us": "en-US,en;q=0.9",
+    "world": "ru-RU,ru;q=0.9,en;q=0.8",
+    "za": "en-ZA,en;q=0.9",
+}
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'application/json',
-    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Language': TM_LANGUAGE_BY_CONTEXT.get(TM_API_PREFERRED_CONTEXT, 'en-GB,en;q=0.9'),
     'Origin': 'https://www.transfermarkt.com',
     'Referer': 'https://www.transfermarkt.com/',
 }
@@ -527,46 +550,49 @@ def tm_api_health():
     diagnostics = []
 
     for base in TM_API_BASES:
-        for url in build_tm_api_variants(base, "/club/1"):
-            attempt = {
-                "url": url,
-                "http2": None,
-                "http1": None,
-                "requests": None,
-            }
-
-            try:
-                response = fetch_tm_api_with_httpx(url, use_http2=True)
-                attempt["http2"] = {
-                    "status": response.status_code,
-                    "content_type": response.headers.get('content-type'),
+        for endpoint in ["/club/1", "/transfer/history/player/357565"]:
+            for url in build_tm_api_variants(base, endpoint):
+                attempt = {
+                    "endpoint": endpoint,
+                    "url": url,
+                    "http2": None,
+                    "http1": None,
+                    "requests": None,
                 }
-            except Exception as e:
-                attempt["http2"] = {"error": str(e)}
 
-            try:
-                response = fetch_tm_api_with_httpx(url, use_http2=False)
-                attempt["http1"] = {
-                    "status": response.status_code,
-                    "content_type": response.headers.get('content-type'),
-                }
-            except Exception as e:
-                attempt["http1"] = {"error": str(e)}
+                try:
+                    response = fetch_tm_api_with_httpx(url, use_http2=True)
+                    attempt["http2"] = {
+                        "status": response.status_code,
+                        "content_type": response.headers.get('content-type'),
+                    }
+                except Exception as e:
+                    attempt["http2"] = {"error": str(e)}
 
-            try:
-                response = fetch_tm_api_with_requests(url)
-                attempt["requests"] = {
-                    "status": response.status_code,
-                    "content_type": response.headers.get('content-type'),
-                }
-            except Exception as e:
-                attempt["requests"] = {"error": str(e)}
+                try:
+                    response = fetch_tm_api_with_httpx(url, use_http2=False)
+                    attempt["http1"] = {
+                        "status": response.status_code,
+                        "content_type": response.headers.get('content-type'),
+                    }
+                except Exception as e:
+                    attempt["http1"] = {"error": str(e)}
 
-            diagnostics.append(attempt)
+                try:
+                    response = fetch_tm_api_with_requests(url)
+                    attempt["requests"] = {
+                        "status": response.status_code,
+                        "content_type": response.headers.get('content-type'),
+                    }
+                except Exception as e:
+                    attempt["requests"] = {"error": str(e)}
+
+                diagnostics.append(attempt)
 
     return {
         "bases": TM_API_BASES,
         "preferred_context": TM_API_PREFERRED_CONTEXT or None,
+        "accept_language": HEADERS.get("Accept-Language"),
         "proxy_configured": bool(TM_API_PROXY),
         "diagnostics": diagnostics,
     }

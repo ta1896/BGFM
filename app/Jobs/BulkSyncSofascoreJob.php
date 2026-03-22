@@ -185,12 +185,18 @@ class BulkSyncSofascoreJob implements ShouldQueue
                     $historyData = [];
                     if ($tmId) {
                         $historyData = $scraper->getPlayerTransferHistoryById($tmId);
-                    } elseif ($tmUrl) {
+                    }
+
+                    if (empty($historyData) && $tmUrl) {
                         $historyData = $scraper->getPlayerTransferHistory($tmUrl);
                     }
 
                     if (empty($historyData)) {
-                        Log::warning("BulkSync: No transfer data for Player {$player->id}");
+                        Log::warning("BulkSync: No transfer data for Player {$player->id}", [
+                            'player' => $player->full_name,
+                            'tm_id' => $tmId,
+                            'tm_url' => $tmUrl,
+                        ]);
                         $failTransfers++;
                     } else {
                         foreach ($historyData as $data) {
