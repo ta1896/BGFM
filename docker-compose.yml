@@ -167,6 +167,12 @@ services:
     container_name: scraper_service
     restart: unless-stopped
     logging: *default-logging
+    environment:
+      - TM_API_BASE=${TM_API_BASE:-https://tmapi-alpha.transfermarkt.technology}
+      - TM_API_BASES=${TM_API_BASES:-}
+      - TM_API_TIMEOUT=${TM_API_TIMEOUT:-20}
+      - TM_API_PREFERRED_CONTEXT=${TM_API_PREFERRED_CONTEXT:-}
+      - TM_API_PROXY=${TM_API_PROXY:-}
     ports:
       - "8001:8000"
     volumes:

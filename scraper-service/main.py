@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException
+import os
 import re
 import time
 import requests
@@ -316,24 +317,106 @@ def scrape_league_players(
 import httpx
 from datetime import datetime
 
-TM_API_BASE = "https://tmapi-alpha.transfermarkt.technology"
+TM_API_BASES = [
+    base.strip().rstrip("/")
+    for base in os.getenv(
+        "TM_API_BASES",
+        os.getenv("TM_API_BASE", "https://tmapi-alpha.transfermarkt.technology"),
+    ).split(",")
+    if base.strip()
+]
+TM_API_TIMEOUT = float(os.getenv("TM_API_TIMEOUT", "20"))
+TM_API_PREFERRED_CONTEXT = os.getenv("TM_API_PREFERRED_CONTEXT", "").strip()
+TM_API_PROXY = os.getenv("TM_API_PROXY", "").strip() or None
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'application/json',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Origin': 'https://www.transfermarkt.com',
+    'Referer': 'https://www.transfermarkt.com/',
 }
 
-def get_tm_api_json(endpoint):
-    url = f"{TM_API_BASE}{endpoint}"
-    print(f"DEBUG: Fetching TM API: {url}")
+def build_tm_api_variants(base, endpoint):
+    variants = [f"{base}{endpoint}"]
+    if TM_API_PREFERRED_CONTEXT:
+        separator = "&" if "?" in endpoint else "?"
+        variants.insert(0, f"{base}{endpoint}{separator}_x_preferred_context={TM_API_PREFERRED_CONTEXT}")
+    return variants
+
+def fetch_tm_api_with_httpx(url, use_http2=True):
+    client_kwargs = {
+        "http2": use_http2,
+        "follow_redirects": True,
+        "timeout": TM_API_TIMEOUT,
+    }
+    if TM_API_PROXY:
+        client_kwargs["proxy"] = TM_API_PROXY
+
+    with httpx.Client(**client_kwargs) as client:
+        return client.get(url, headers=HEADERS)
+
+def fetch_tm_api_with_requests(url):
+    proxies = None
+    if TM_API_PROXY:
+        proxies = {
+            "http": TM_API_PROXY,
+            "https": TM_API_PROXY,
+        }
+
+    return requests.get(
+        url,
+        headers=HEADERS,
+        timeout=TM_API_TIMEOUT,
+        proxies=proxies,
+        allow_redirects=True,
+    )
+
+def parse_tm_api_response(response, url, transport_name):
+    content_type = response.headers.get('content-type', '')
+    if response.status_code != 200:
+        print(f"DEBUG: TM API {transport_name} error {response.status_code} for {url}")
+        return None
+
+    if 'application/json' not in content_type.lower():
+        print(f"DEBUG: TM API {transport_name} returned non-JSON content-type '{content_type}' for {url}")
+        return None
+
     try:
-        with httpx.Client(http2=True) as client:
-            response = client.get(url, headers=HEADERS, timeout=20)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                print(f"DEBUG: TM API error {response.status_code} for {url}")
+        return response.json()
     except Exception as e:
-        print(f"DEBUG: Error fetching TM API: {e}")
+        print(f"DEBUG: TM API {transport_name} JSON decode failed for {url}: {e}")
+        return None
+
+def get_tm_api_json(endpoint):
+    for base in TM_API_BASES:
+        for url in build_tm_api_variants(base, endpoint):
+            print(f"DEBUG: Fetching TM API via HTTP/2: {url}")
+            try:
+                response = fetch_tm_api_with_httpx(url, use_http2=True)
+                data = parse_tm_api_response(response, url, "HTTP/2")
+                if data is not None:
+                    return data
+            except Exception as e:
+                print(f"DEBUG: HTTP/2 error fetching TM API {url}: {e}")
+
+            print(f"DEBUG: Fetching TM API via HTTP/1.1: {url}")
+            try:
+                response = fetch_tm_api_with_httpx(url, use_http2=False)
+                data = parse_tm_api_response(response, url, "HTTP/1.1")
+                if data is not None:
+                    return data
+            except Exception as e:
+                print(f"DEBUG: HTTP/1.1 error fetching TM API {url}: {e}")
+
+            print(f"DEBUG: Fetching TM API via requests: {url}")
+            try:
+                response = fetch_tm_api_with_requests(url)
+                data = parse_tm_api_response(response, url, "requests")
+                if data is not None:
+                    return data
+            except Exception as e:
+                print(f"DEBUG: requests error fetching TM API {url}: {e}")
+
     return None
 
 def get_entity_info(entity_type, entity_id, cache):
@@ -439,3 +522,51 @@ def read_player_history_by_id(id: str):
     url = f"https://www.transfermarkt.us/profil/spieler/{id}"
     return get_player_transfer_history(url)
 
+@app.get("/transfermarkt/tm-api-health")
+def tm_api_health():
+    diagnostics = []
+
+    for base in TM_API_BASES:
+        for url in build_tm_api_variants(base, "/club/1"):
+            attempt = {
+                "url": url,
+                "http2": None,
+                "http1": None,
+                "requests": None,
+            }
+
+            try:
+                response = fetch_tm_api_with_httpx(url, use_http2=True)
+                attempt["http2"] = {
+                    "status": response.status_code,
+                    "content_type": response.headers.get('content-type'),
+                }
+            except Exception as e:
+                attempt["http2"] = {"error": str(e)}
+
+            try:
+                response = fetch_tm_api_with_httpx(url, use_http2=False)
+                attempt["http1"] = {
+                    "status": response.status_code,
+                    "content_type": response.headers.get('content-type'),
+                }
+            except Exception as e:
+                attempt["http1"] = {"error": str(e)}
+
+            try:
+                response = fetch_tm_api_with_requests(url)
+                attempt["requests"] = {
+                    "status": response.status_code,
+                    "content_type": response.headers.get('content-type'),
+                }
+            except Exception as e:
+                attempt["requests"] = {"error": str(e)}
+
+            diagnostics.append(attempt)
+
+    return {
+        "bases": TM_API_BASES,
+        "preferred_context": TM_API_PREFERRED_CONTEXT or None,
+        "proxy_configured": bool(TM_API_PROXY),
+        "diagnostics": diagnostics,
+    }
