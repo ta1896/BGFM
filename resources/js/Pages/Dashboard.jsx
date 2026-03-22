@@ -5,7 +5,7 @@ import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import useLiveOverview from '@/hooks/useLiveOverview';
 import { 
     Calendar, Trophy, Users, ChartBar,
-    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit, CaretUp, CaretDown, SlidersHorizontal, Eye, EyeSlash
+    ArrowRight, Bank, Smiley, SmileySad, FlagPennant, Handshake, ChatCircleText, Broadcast, UsersThree, Lightning, FirstAidKit, CaretUp, CaretDown, Eye, EyeSlash
 } from '@phosphor-icons/react';
 
 const taskTone = {
@@ -160,138 +160,9 @@ const moduleWidgetIconMap = {
     firstAidKit: FirstAidKit,
 };
 
-const defaultDashboardPreferences = {
-    variant: 'modern',
-    hidden_sections: [],
-    section_order: [],
-    hidden_widgets: [],
-    widget_order: [],
-};
 
-function ModuleWidgetCard({ widget }) {
-    const Icon = moduleWidgetIconMap[widget.icon] || Lightning;
 
-    return (
-        <Link
-            href={route(widget.route)}
-            className={`group rounded-2xl border px-4 py-4 transition-all hover:-translate-y-0.5 ${
-                widget.accent === 'rose'
-                    ? 'border-rose-400/15 bg-rose-400/6 hover:border-rose-300/30'
-                    : widget.accent === 'emerald'
-                        ? 'border-emerald-400/15 bg-emerald-400/6 hover:border-emerald-300/30'
-                        : widget.accent === 'amber'
-                            ? 'border-amber-400/15 bg-amber-400/6 hover:border-amber-300/30'
-                            : 'border-cyan-400/15 bg-cyan-400/6 hover:border-cyan-300/30'
-            }`}
-        >
-            <div className="flex items-start gap-3">
-                <div className={`rounded-2xl border p-3 ${
-                    widget.accent === 'rose'
-                        ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
-                        : widget.accent === 'emerald'
-                            ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
-                            : widget.accent === 'amber'
-                                ? 'border-amber-400/20 bg-amber-400/10 text-amber-200'
-                                : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-200'
-                }`}>
-                    <Icon size={16} weight="duotone" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-white">{widget.title}</div>
-                    <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{widget.description}</p>
-                    <div className="mt-3 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">
-                        Open
-                        <ArrowRight size={11} weight="bold" />
-                    </div>
-                </div>
-            </div>
-        </Link>
-    );
-}
 
-function CockpitPreferencesCard({ preferences, widgets, onVariantChange, onToggleWidget, onMoveWidget }) {
-    return (
-        <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Cockpit Preferences</div>
-                    <div className="mt-1 text-lg font-black text-white">Your manager layout</div>
-                </div>
-                <SlidersHorizontal size={16} className="text-cyan-300" weight="bold" />
-            </div>
-
-            <div className="mb-4">
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Dashboard Variant</div>
-                <div className="flex flex-wrap gap-2">
-                    {['modern', 'compact', 'classic'].map((variant) => (
-                        <button
-                            key={variant}
-                            type="button"
-                            onClick={() => onVariantChange(variant)}
-                            className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${
-                                preferences.variant === variant
-                                    ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-200'
-                                    : 'border-white/10 bg-white/[0.03] text-white/70'
-                            }`}
-                        >
-                            {variant}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="space-y-2.5">
-                {widgets.length > 0 ? widgets.map((widget, index) => {
-                    const hidden = preferences.hidden_widgets.includes(widget.key);
-
-                    return (
-                        <div key={widget.key} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                            <button
-                                type="button"
-                                onClick={() => onToggleWidget(widget.key)}
-                                className={`inline-flex h-8 w-8 items-center justify-center rounded-xl border ${
-                                    hidden
-                                        ? 'border-slate-400/20 bg-slate-500/10 text-slate-300'
-                                        : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
-                                }`}
-                            >
-                                {hidden ? <EyeSlash size={14} weight="bold" /> : <Eye size={14} weight="bold" />}
-                            </button>
-                            <div className="min-w-0 flex-1">
-                                <div className="truncate text-[11px] font-black uppercase tracking-[0.08em] text-white">{widget.title}</div>
-                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                                    {widget.placement === 'sidebar' ? 'Sidebar' : 'Main'} / {hidden ? 'hidden' : 'visible'}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => onMoveWidget(widget.key, -1)}
-                                    disabled={index === 0}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    <CaretUp size={14} weight="bold" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onMoveWidget(widget.key, 1)}
-                                    disabled={index === widgets.length - 1}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    <CaretDown size={14} weight="bold" />
-                                </button>
-                            </div>
-                        </div>
-                    );
-                }) : (
-                    <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-6 text-sm text-[var(--text-muted)]">
-                        No module widgets available for customization.
-                    </div>
-                )}
-            </div>
-        </section>
-    );
-}
 
 export default function Dashboard(props) {
     const { 
@@ -300,7 +171,7 @@ export default function Dashboard(props) {
         clubRank, clubPoints, recentForm, recentMatchesSummary, weekDays,
         todayMatchesCount, unreadNotificationsCount,
         dashboardVariant, assistantTasks, todayFocus, clubPulseOverview, comparisonStats, quickActions,
-        squadPulse, scoutingDesk, medicalDesk, managerDecisions, liveMatches, onlineManagers, dashboardPreferences
+        squadPulse, medicalDesk, managerDecisions, liveMatches, onlineManagers
     } = props;
     const { modules = {} } = usePage().props;
 
@@ -332,54 +203,6 @@ export default function Dashboard(props) {
     const liveOverview = useLiveOverview({ initialLiveMatches: liveMatches, initialOnlineManagers: onlineManagers });
     const hasManagerLiveRoute = route().has('manager-live.index');
     const hasLiveTickerRoute = route().has('live-ticker.index');
-    const preferences = {
-        ...defaultDashboardPreferences,
-        ...(dashboardPreferences || {}),
-    };
-    const rawDashboardWidgets = [...(modules.dashboard_widgets || [])];
-    const allWidgetKeys = rawDashboardWidgets.map((widget) => widget.key);
-    const orderedWidgetKeys = [
-        ...preferences.widget_order.filter((key) => allWidgetKeys.includes(key)),
-        ...allWidgetKeys.filter((key) => !preferences.widget_order.includes(key)),
-    ];
-    const dashboardWidgets = orderedWidgetKeys
-        .map((key) => rawDashboardWidgets.find((widget) => widget.key === key))
-        .filter(Boolean);
-    const visibleDashboardWidgets = dashboardWidgets.filter((widget) => !preferences.hidden_widgets.includes(widget.key));
-    const mainModuleWidgets = visibleDashboardWidgets.filter((widget) => (widget.placement || 'main') === 'main');
-    const sidebarModuleWidgets = visibleDashboardWidgets.filter((widget) => widget.placement === 'sidebar');
-
-    const persistDashboardPreferences = (patch) => {
-        router.patch(route('dashboard.preferences.update'), {
-            ...preferences,
-            ...patch,
-        }, {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-        });
-    };
-
-    const toggleWidgetVisibility = (key) => {
-        const hiddenWidgets = preferences.hidden_widgets.includes(key)
-            ? preferences.hidden_widgets.filter((item) => item !== key)
-            : [...preferences.hidden_widgets, key];
-
-        persistDashboardPreferences({ hidden_widgets: hiddenWidgets });
-    };
-
-    const moveWidget = (key, direction) => {
-        const currentOrder = [...orderedWidgetKeys];
-        const index = currentOrder.indexOf(key);
-        const targetIndex = index + direction;
-
-        if (index < 0 || targetIndex < 0 || targetIndex >= currentOrder.length) {
-            return;
-        }
-
-        [currentOrder[index], currentOrder[targetIndex]] = [currentOrder[targetIndex], currentOrder[index]];
-        persistDashboardPreferences({ widget_order: currentOrder });
-    };
 
     return (
         <AuthenticatedLayout>
@@ -518,52 +341,7 @@ export default function Dashboard(props) {
                             )}
                             </div>
                         </section>
-
-                        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                            <section className="rounded-3xl border border-[var(--border-muted)] bg-[var(--bg-pillar)]/34 p-5">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Priorities</div>
-                                        <div className="mt-1 text-lg font-black text-white">What needs attention</div>
-                                    </div>
-                                    {assistantTasks?.length > 0 && (
-                                        <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
-                                            {assistantTasks.length} open
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="space-y-3">
-                                    {(assistantTasks || []).slice(0, 3).map((task, idx) => (
-                                        <Link
-                                            key={idx}
-                                            href={task.url}
-                                            className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-[var(--bg-content)]/45 px-4 py-3 transition-colors hover:border-white/20"
-                                        >
-                                            <div className="min-w-0">
-                                                <div className="mb-2 flex flex-wrap items-center gap-2">
-                                                    <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${taskPriorityTone[task.priority] || taskPriorityTone.beobachten}`}>
-                                                        {task.priority || 'beobachten'}
-                                                    </span>
-                                                    {task.metric && (
-                                                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/80">
-                                                            {task.metric}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-sm font-black text-white">{task.label}</div>
-                                                <div className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{task.description}</div>
-                                            </div>
-                                            <ArrowRight size={14} className="mt-1 shrink-0 text-white/50" weight="bold" />
-                                        </Link>
-                                    ))}
-                                    {(!assistantTasks || assistantTasks.length === 0) && (
-                                        <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">
-                                            No urgent tasks right now.
-                                        </div>
-                                    )}
-                                </div>
-                            </section>
-
+                        <section className="grid gap-4">
                             <section className="rounded-3xl border border-[var(--border-muted)] bg-[var(--bg-pillar)]/34 p-5">
                                 <div className="mb-4 flex items-center justify-between gap-3">
                                     <div>
@@ -597,51 +375,6 @@ export default function Dashboard(props) {
                         </section>
 
                         <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                            {scoutingDesk && (scoutingDesk.watchlist_count > 0 || scoutingDesk.priority_targets.length > 0) && (
-                                <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
-                                    <div className="mb-4 flex items-center justify-between gap-3">
-                                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Scouting Desk</h3>
-                                        <Link href={route('scouting.index')} className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 hover:text-white">
-                                            {scoutingDesk.watchlist_count} Watchlist
-                                        </Link>
-                                    </div>
-                                    <div className="mb-4 grid grid-cols-3 gap-2">
-                                        <MiniDeskStat label="Faellig" value={scoutingDesk.due_reports_count} tone={scoutingDesk.due_reports_count > 0 ? 'amber' : 'emerald'} />
-                                        <MiniDeskStat label="Teuer" value={scoutingDesk.expensive_missions_count} tone={scoutingDesk.expensive_missions_count > 0 ? 'rose' : 'slate'} />
-                                        <MiniDeskStat label="Live" value={scoutingDesk.watchlist_count} tone="cyan" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        {scoutingDesk.priority_targets.map((target) => (
-                                            <Link
-                                                key={target.id}
-                                                href={route('scouting.index')}
-                                                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20"
-                                            >
-                                                <img src={target.photo_url} alt={target.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{target.name}</div>
-                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">{target.club_name}</div>
-                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200/80">
-                                                        {target.focus} / {target.scout_level} / {target.scout_type}
-                                                    </div>
-                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                                                        {target.progress}% / ETA {target.next_report_due_at || '-'} / {new Intl.NumberFormat('de-DE').format(target.last_mission_cost || 0)} EUR
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">{target.priority}</div>
-                                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-300">
-                                                        {target.overall_band ? `OVR ${target.overall_band}` : 'Kein Report'}
-                                                    </div>
-                                                    <div className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                                                        {target.scout_region} / {target.mission_days_left || 0}d
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
 
                             {medicalDesk && (medicalDesk.injured_count > 0 || medicalDesk.monitoring_count > 0 || medicalDesk.return_count > 0) && (
                                 <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
@@ -744,13 +477,7 @@ export default function Dashboard(props) {
 
                     {/* Right Column (Sidebar Widgets) */}
                     <PageReveal className="lg:col-span-4 space-y-8" delay={180}>
-                        <CockpitPreferencesCard
-                            preferences={{ ...preferences, variant: dashboardVariant || preferences.variant }}
-                            widgets={dashboardWidgets}
-                            onVariantChange={(variant) => persistDashboardPreferences({ variant })}
-                            onToggleWidget={toggleWidgetVisibility}
-                            onMoveWidget={moveWidget}
-                        />
+
                         
                         <section className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
                             <div className="mb-4 flex items-center justify-between gap-3">
@@ -771,6 +498,50 @@ export default function Dashboard(props) {
                                 )) : (
                                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
                                         Derzeit laeuft kein Match live.
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
+                        <section className="rounded-3xl border border-[var(--border-muted)] bg-[var(--bg-pillar)]/34 p-5">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Priorities</div>
+                                    <div className="mt-1 text-lg font-black text-white">What needs attention</div>
+                                </div>
+                                {assistantTasks?.length > 0 && (
+                                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
+                                        {assistantTasks.length} open
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-3">
+                                {(assistantTasks || []).slice(0, 3).map((task, idx) => (
+                                    <Link
+                                        key={idx}
+                                        href={task.url}
+                                        className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-[var(--bg-content)]/45 px-4 py-3 transition-colors hover:border-white/20"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                                                <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${taskPriorityTone[task.priority] || taskPriorityTone.beobachten}`}>
+                                                    {task.priority || 'beobachten'}
+                                                </span>
+                                                {task.metric && (
+                                                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/80">
+                                                        {task.metric}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-sm font-black text-white">{task.label}</div>
+                                            <div className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{task.description}</div>
+                                        </div>
+                                        <ArrowRight size={14} className="mt-1 shrink-0 text-white/50" weight="bold" />
+                                    </Link>
+                                ))}
+                                {(!assistantTasks || assistantTasks.length === 0) && (
+                                    <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">
+                                        No urgent tasks right now.
                                     </div>
                                 )}
                             </div>
@@ -859,24 +630,7 @@ export default function Dashboard(props) {
                             )}
                         </section>
 
-                        {mainModuleWidgets.length > 0 && (
-                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Module Highlights</div>
-                                        <div className="mt-1 text-xl font-black text-white">Enabled feature surfaces</div>
-                                    </div>
-                                    <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                                        {mainModuleWidgets.length} active
-                                    </div>
-                                </div>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    {mainModuleWidgets.map((widget) => (
-                                        <ModuleWidgetCard key={widget.key} widget={widget} />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+
 
                         {managerDecisions && managerDecisions.length > 0 && (
                             <section className="bg-[var(--bg-pillar)]/40 rounded-3xl border border-[var(--border-pillar)] p-6 shadow-xl">
@@ -958,21 +712,7 @@ export default function Dashboard(props) {
                             </div>
                         </section>
 
-                        {sidebarModuleWidgets.length > 0 && (
-                            <section className="rounded-3xl border border-white/10 bg-[var(--bg-pillar)]/35 p-5 shadow-xl">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Module Shortcuts</div>
-                                        <div className="mt-1 text-lg font-black text-white">Sidebar hooks</div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    {sidebarModuleWidgets.map((widget) => (
-                                        <ModuleWidgetCard key={widget.key} widget={widget} />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+
 
                     </PageReveal>
                 </div>

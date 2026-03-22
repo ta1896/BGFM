@@ -77,4 +77,41 @@ class ScraperService
             return [];
         }
     }
+
+    public function getPlayerTransferHistory(string $url): array
+    {
+        try {
+            Log::info("Scraper: Fetching Transfer History from {$this->baseUrl} for URL: {$url}");
+            $response = Http::timeout(120)->get("{$this->baseUrl}/transfermarkt/player-history", [
+                'url' => $url,
+            ]);
+            
+            if (!$response->successful()) {
+                Log::error("Scraper Error: Status {$response->status()} - Body: " . $response->body());
+                return [];
+            }
+            
+            $data = $response->json();
+            if (empty($data)) {
+                Log::warning("Scraper: Received empty JSON for URL: {$url}");
+            }
+            return $data;
+        } catch (\Exception $e) {
+            Log::error("Scraper Service Error (Get Transfer History): " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getPlayerTransferHistoryById(string $id): array
+    {
+        try {
+            $response = Http::timeout(120)->get("{$this->baseUrl}/transfermarkt/player-history-by-id", [
+                'id' => $id,
+            ]);
+            return $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            Log::error("Scraper Service Error (Get Transfer History By ID): " . $e->getMessage());
+            return [];
+        }
+    }
 }

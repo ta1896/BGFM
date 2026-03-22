@@ -13,20 +13,36 @@ class Player extends Model
 {
     use HasFactory;
     
-    protected $appends = ['photo_url', 'full_name', 'display_position', 'tm_profile_url', 'sofa_profile_url'];
+    protected $appends = ['photo_url', 'full_name', 'display_position', 'tm_profile_url', 'sofa_profile_url', 'nationality_code', 'position_long'];
 
     protected static function booted()
     {
+        static::creating(function ($player) {
+            if (!isset($player->happiness)) $player->happiness = 100;
+            if (!isset($player->sharpness)) $player->sharpness = 100;
+            if (!isset($player->fatigue)) $player->fatigue = 0;
+        });
+
         static::saving(function ($player) {
             // Auto-calculate attr_market from market_value if market_value changed
             if ($player->isDirty('market_value')) {
                 $player->attr_market = min(99, max(1, (int) (pow($player->market_value / 150000000, 0.3) * 100)));
             }
 
+            // Auto-calculate age from birthday if birthday changed
+            if ($player->isDirty('birthday') && $player->birthday) {
+                $player->age = $player->birthday->age;
+            }
+
             // Auto-calculate overall from attributes if any attribute or position changed
             if ($player->isDirty(['attr_attacking', 'attr_technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'position'])) {
                 $player->overall = $player->calculateOverall();
                 $player->player_style = $player->calculatePlayerStyle();
+                $player->potential = $player->calculatePotential();
+            }
+
+            if ($player->isDirty(['age', 'overall']) && !$player->isDirty('potential')) {
+                $player->potential = $player->calculatePotential();
             }
         });
     }
@@ -62,12 +78,18 @@ class Player extends Model
                 $def > 78 => 'Abräumer',
                 default => 'Strategischer DM'
             },
-            in_array($pos, ['OM', 'LW', 'RW']) => match(true) {
+            in_array($pos, ['OM', 'LM', 'RM']) => match(true) {
                 $tec > 78 && $cre > 72 => 'Dribbelkünstler',
                 $cre > 78 => 'Spielgestalter',
-                default => 'Flügel-Flitzer'
+                default => 'Offensiv-Allrounder'
             },
-            $pos === 'ST' => match(true) {
+            in_array($pos, ['LF', 'RF']) => match(true) {
+                $tec > 78 && $att > 75 => 'Inside Forward',
+                $cre > 78 && $tec > 75 => 'Klassischer Flügel',
+                $att > 78 => 'Außenstürmer',
+                default => 'Flügelstürmer'
+            },
+            in_array($pos, ['MS', 'HS', 'LF', 'RF']) => match(true) {
                 $att > 78 && $tec > 70 => 'Knipser',
                 $att > 72 && $def > 55 => 'Zielspieler',
                 default => 'Dynamische Spitze'
@@ -106,20 +128,44 @@ class Player extends Model
             in_array($pos, ['LF', 'RF', 'HS']) => (
                 ($attacking * 2.0 + $technical * 1.5 + $creativity * 1.5 + $tactical * 1.0 + $market) / 7
             ),
-            $pos === 'MS' => (
+            in_array($pos, ['MS']) => (
                 ($attacking * 3.0 + $technical * 1.5 + $creativity * 0.5 + $market) / 6
             ),
-            default => ( // Fallback Allrounder
-                ($attacking + $technical + $tactical + $defending + $creativity + $market) / 6
-            )
+            default => (
+                ($attacking * 1.0 + $technical * 1.0 + $tactical * 1.0 + $defending * 1.0 + $creativity * 1.0 + $market) / 6
+            ),
         };
+    }
+
+    public function calculatePotential(): int
+    {
+        $age = $this->age ?? 25;
+        $overall = $this->overall ?? 50;
+        
+        // Potential logic: Young players grow more. 
+        // Peak growth usually around 26-27.
+        $growthRoom = max(0, 27 - $age);
+        
+        // Multiplier: 2.0+ for very young, tapering off.
+        $factor = $age < 22 ? 2.2 : 1.8;
+        
+        $potential = $overall + ($growthRoom * $factor);
+        
+        // Market value influence: If market value is high, potential should be higher
+        // attr_market is already 1-99.
+        if (isset($this->attr_market) && $this->attr_market > $overall) {
+            $potential = max($potential, $this->attr_market + 2);
+        }
+
+        return min(99, max($overall, (int) $potential));
     }
 
     protected $fillable = [
         'club_id',
-        'parent_club_id',
         'first_name',
         'last_name',
+        'nationality',
+        'nationality',
         'photo_path',
         'position',
         'position_main',
@@ -133,7 +179,6 @@ class Player extends Model
         'market_value',
         'salary',
         'contract_expires_on',
-        'loan_ends_on',
         'last_training_at',
         'injury_matches_remaining',
         'squad_role',
@@ -171,6 +216,9 @@ class Player extends Model
         'attr_creativity',
         'attr_market',
         'is_imported',
+        'birthday',
+        'height',
+        'shirt_number',
     ];
 
     protected function casts(): array
@@ -179,7 +227,6 @@ class Player extends Model
             'market_value' => 'integer',
             'salary' => 'decimal:2',
             'contract_expires_on' => 'date',
-            'loan_ends_on' => 'date',
             'last_training_at' => 'datetime',
             'injury_matches_remaining' => 'integer',
             'expected_playtime' => 'integer',
@@ -202,17 +249,15 @@ class Player extends Model
             'yellow_cards_cup_international_accumulated' => 'integer',
             'yellow_cards_friendly_accumulated' => 'integer',
             'is_imported' => 'boolean',
+            'birthday' => 'date',
+            'height' => 'integer',
+            'shirt_number' => 'integer',
         ];
     }
 
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
-    }
-
-    public function parentClub(): BelongsTo
-    {
-        return $this->belongsTo(Club::class, 'parent_club_id');
     }
 
     public function lineups(): BelongsToMany
@@ -234,16 +279,6 @@ class Player extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(PlayerContract::class);
-    }
-
-    public function loanListings(): HasMany
-    {
-        return $this->hasMany(LoanListing::class);
-    }
-
-    public function loans(): HasMany
-    {
-        return $this->hasMany(Loan::class);
     }
 
     public function nationalTeamCallups(): HasMany
@@ -292,14 +327,9 @@ class Player extends Model
         return $this->hasMany(PlayerConversation::class);
     }
 
-    public function scoutingReports(): HasMany
+    public function transferHistories(): HasMany
     {
-        return $this->hasMany(ScoutingReport::class);
-    }
-
-    public function scoutingWatchlists(): HasMany
-    {
-        return $this->hasMany(ScoutingWatchlist::class);
+        return $this->hasMany(PlayerTransferHistory::class)->orderByDesc('transfer_date');
     }
 
     public function getFullNameAttribute(): string
@@ -326,32 +356,17 @@ class Player extends Model
             return null;
         }
 
-        $map = [
-            'GK' => 'TW',
-            'LB' => 'LV',
-            'CB' => 'IV',
-            'RB' => 'RV',
-            'LWB' => 'LV',
-            'RWB' => 'RV',
-            'CDM' => 'DM',
-            'CM' => 'ZM',
-            'CAM' => 'OM',
-            'LM' => 'LM',
-            'RM' => 'RM',
-            'LW' => 'LF',
-            'RW' => 'RF',
-            'ST' => 'MS',
-            'CF' => 'HS',
-            'LS' => 'MS',
-            'RS' => 'MS',
-        ];
-
-        return $map[$position] ?? $position;
+        return \App\Constants\PlayerPosition::map($position);
     }
 
     public function getDisplayPositionAttribute(): string
     {
         return self::mapPosition($this->position) ?? (string) $this->position;
+    }
+
+    public function getPositionLongAttribute(): string
+    {
+        return \App\Constants\PlayerPosition::labels()[$this->position] ?? $this->position;
     }
 
     public function getTmProfileUrlAttribute(): ?string
@@ -366,5 +381,10 @@ class Player extends Model
         }
         $slug = \Illuminate\Support\Str::slug($this->full_name);
         return "https://www.sofascore.com/football/player/{$slug}/{$this->sofascore_id}";
+    }
+
+    public function getNationalityCodeAttribute(): ?string
+    {
+        return \App\Constants\Nationality::getCode($this->nationality);
     }
 }

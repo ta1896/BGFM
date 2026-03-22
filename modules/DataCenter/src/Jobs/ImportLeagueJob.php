@@ -198,6 +198,7 @@ class ImportLeagueJob implements ShouldQueue
                         'league_id' => $competition->id,
                         'is_imported' => true,
                         'transfermarkt_id' => $clubPlayers[0]['Club ID'] ?? null,
+                        'transfermarkt_url' => $clubPlayers[0]['Club URL'] ?? null,
                     ]
                 );
 
@@ -264,11 +265,9 @@ class ImportLeagueJob implements ShouldQueue
         $val = $data['Market Value'] ?? $data['Value'] ?? 0;
         Log::info("Importing Player: {$fullName} - Received Value: " . json_encode($val));
 
-        $tmId = $this->extractIdFromUrl($data['URL'] ?? null);
-        $photoPath = null;
-
         $posInfo = $data['Alternative Positions'] ?? null;
         [$pos2, $pos3] = $this->extractAdditionalPositions($posInfo);
+        $mainPos = $this->mapPosition($data['Position'] ?? null);
 
         $marketValue = (int) ($data['Market Value'] ?? $data['Value'] ?? 0);
         $attrMarket = min(99, max(1, (int) (pow($marketValue / 150000000, 0.3) * 100)));
@@ -277,8 +276,7 @@ class ImportLeagueJob implements ShouldQueue
         
         if (is_array($sofascore) && ($sofascore['sofascore_id'] ?? null)) {
             $this->logInfo("Found Sofascore data for {$firstName} {$lastName} (ID: {$sofascore['sofascore_id']})");
-            // Position-Specific OVR Weighting
-            $pos = $this->mapPosition($data['Position'] ?? null);
+            $pos = $mainPos;
             $overall = (int) match(true) {
                 $pos === 'TW' => (
                     ($sofascore['technical'] * 1.5 + 
@@ -329,35 +327,47 @@ class ImportLeagueJob implements ShouldQueue
         $randomFactor = rand(1, 4);
         $potential = min(99, (int) ($potentialBase + $youngBonus + $veteranBonus + $classFactor + $talentFactor + $randomFactor));
 
-        Player::updateOrCreate(
+        $player = Player::updateOrCreate(
             [
                 'club_id' => $club->id,
                 'first_name' => $firstName,
                 'last_name' => $lastName,
-            ],
-            [
-                'position' => $this->mapPosition($data['Position'] ?? null),
+                'nationality' => $data['Nationality'] ?? null,
+                'slug' => Str::slug($fullName) . '-' . Str::random(5),
+                'position' => $mainPos,
+                'position_main' => $mainPos,
                 'position_second' => $pos2,
                 'position_third' => $pos3,
                 'age' => $age,
                 'market_value' => $marketValue,
                 'attr_market' => $attrMarket,
                 'status' => 'active',
-                'overall' => $overall,
-                'potential' => $potential,
+                'overall' => 60, // base overall, will be updated by sync later
+                'happiness' => 100, // reset happiness on import
                 'player_style' => null, // Placeholder, will be calculated after creation/retrieval
-                'transfermarkt_id' => $tmId,
+                'transfermarkt_id' => $this->extractIdFromUrl($data['URL'] ?? null),
                 'transfermarkt_url' => $data['URL'] ?? null,
                 'sofascore_id' => is_array($sofascore) ? ($sofascore['sofascore_id'] ?? null) : null,
-                'attr_attacking' => is_array($sofascore) ? ($sofascore['attacking'] ?? 50) : 50,
-                'attr_technical' => is_array($sofascore) ? ($sofascore['technical'] ?? 50) : 50,
-                'attr_tactical' => is_array($sofascore) ? ($sofascore['tactical'] ?? 50) : 50,
-                'attr_defending' => is_array($sofascore) ? ($sofascore['defending'] ?? 50) : 50,
-                'attr_creativity' => is_array($sofascore) ? ($sofascore['creativity'] ?? 50) : 50,
+                'sofascore_url' => is_array($sofascore) && ($sofascore['sofascore_id'] ?? null) 
+                    ? "https://www.sofascore.com/football/player/" . Str::slug($fullName) . "/" . $sofascore['sofascore_id'] 
+                    : ($data['Sofascore URL'] ?? null),
+                'birthday' => !empty($data['Birthday']) ? $data['Birthday'] : null,
+                'attr_attacking' => is_array($sofascore) ? ($sofascore['attacking'] ?? 100) : 100,
+                'attr_technical' => is_array($sofascore) ? ($sofascore['technical'] ?? 100) : 100,
+                'attr_tactical' => is_array($sofascore) ? ($sofascore['tactical'] ?? 100) : 100,
+                'attr_defending' => is_array($sofascore) ? ($sofascore['defending'] ?? 100) : 100,
+                'attr_creativity' => is_array($sofascore) ? ($sofascore['creativity'] ?? 100) : 100,
+                'sharpness' => 100,
+                'fatigue' => 0,
                 'photo_path' => null,
                 'is_imported' => true,
             ]
         );
+
+        // Queue transfer history sync (from Transfermarkt)
+        // if ($player->transfermarkt_url) {
+        //     \App\Jobs\SyncPlayerTransferHistoryJob::dispatch($player->id);
+        // }
     }
 
     protected function extractIdFromUrl(?string $url): ?string
@@ -373,18 +383,38 @@ class ImportLeagueJob implements ShouldQueue
     {
         if (!$altPosString) return [null, null];
         
-        // Find "Other position:"
-        if (str_contains($altPosString, 'Other position:')) {
-            $parts = explode('Other position:', $altPosString);
-            $others = trim($parts[1]);
-            $positions = array_map('trim', explode(',', $others));
-            
-            return [
-                $this->mapPosition($positions[0] ?? null),
-                $this->mapPosition($positions[1] ?? null)
-            ];
+        // Match both English and German labels, plural and singular
+        $patterns = [
+            'Other position:', 'Other positions:',
+            'Nebenposition:', 'Nebenpositionen:',
+            'Alternative position:', 'Alternative positions:'
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (str_contains($altPosString, $pattern)) {
+                $parts = explode($pattern, $altPosString);
+                $others = trim($parts[1]);
+                $positions = array_map('trim', explode(',', $others));
+                
+                return [
+                    $this->mapPosition($positions[0] ?? null),
+                    $this->mapPosition($positions[1] ?? null)
+                ];
+            }
         }
         
+        // Fallback: search for positions inside brackets if the whole string is just positions
+        // e.g. "Left Winger, Right Winger"
+        if (!str_contains($altPosString, 'position')) {
+            $positions = array_map('trim', explode(',', $altPosString));
+            if (count($positions) > 1) {
+                return [
+                    $this->mapPosition($positions[1] ?? null),
+                    $this->mapPosition($positions[2] ?? null)
+                ];
+            }
+        }
+
         return [null, null];
     }
 
@@ -400,15 +430,16 @@ class ImportLeagueJob implements ShouldQueue
             'Right-Back' => 'RV', 'RB' => 'RV', 'RWB' => 'RV',
             'Defensive Midfield' => 'DM', 'CDM' => 'DM',
             'Central Midfield' => 'ZM', 'CM' => 'ZM',
-            'Attacking Midfield' => 'OM', 'CAM' => 'OM', 'ZOM' => 'ZOM',
+            'Attacking Midfield' => 'OM', 'CAM' => 'OM', 'ZOM' => 'OM',
             'Left Midfield' => 'LM', 'Right Midfield' => 'RM',
-            'Left Winger' => 'LW', 'Right Winger' => 'RW',
-            'Centre-Forward' => 'ST', 'ST' => 'ST', 'CF' => 'ST',
-            'Second Striker' => 'MS', 'SS' => 'MS',
+            'Left Winger' => 'LF', 'Right Winger' => 'RF', 'LW' => 'LF', 'RW' => 'RF',
+            'Centre-Forward' => 'MS', 'ST' => 'MS', 'CF' => 'MS',
+            'Second Striker' => 'HS', 'SS' => 'HS',
             // German fallback
             'Torwart' => 'TW', 'Innenverteidiger' => 'IV', 'Linker Verteidiger' => 'LV', 'Rechter Verteidiger' => 'RV',
             'Defensives Mittelfeld' => 'DM', 'Zentrales Mittelfeld' => 'ZM', 'Offensives Mittelfeld' => 'OM',
-            'Linksaußen' => 'LW', 'Rechtsaußen' => 'RW', 'Mittelstürmer' => 'ST', 'Hängende Spitze' => 'MS',
+            'Zentrales offensives Mittelfeld' => 'OM',
+            'Linksaußen' => 'LF', 'Rechtsaußen' => 'RF', 'Mittelstürmer' => 'MS', 'Hängende Spitze' => 'HS',
         ];
 
         return $map[$pos] ?? 'ZM';

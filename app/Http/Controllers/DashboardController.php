@@ -7,7 +7,6 @@ use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Models\ManagerPresence;
 use App\Models\PlayerConversation;
-use App\Models\ScoutingWatchlist;
 use App\Models\SeasonClubStatistic;
 use App\Models\TrainingSession;
 use App\Services\InjuryManagementService;
@@ -19,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+
 class DashboardController extends Controller
 {
     public function index(
@@ -59,7 +59,6 @@ class DashboardController extends Controller
         }
 
         // Reload relationships needed for dashboard if they aren't already loaded
-        // (Middleware might have loaded basic model, but Dashboard needs more)
         $todayMatchesCount = GameMatch::query()
             ->whereDate('kickoff_at', now()->toDateString())
             ->count();
@@ -98,10 +97,6 @@ class DashboardController extends Controller
             'pressure_players' => [],
         ];
         $managerDecisions = [];
-        $scoutingDesk = [
-            'watchlist_count' => 0,
-            'priority_targets' => [],
-        ];
         $medicalDesk = [
             'injured_count' => 0,
             'monitoring_count' => 0,
@@ -152,11 +147,11 @@ class DashboardController extends Controller
             $selectedCompetitionSeasonId = $latestClubStat?->competition_season_id;
 
             if ($latestClubStat?->competition_season_id) {
-                $cacheKey = "club_rank_{$activeClub->id}_{$latestClubStat->competition_season_id}";
+                $cacheKey = "club_rank_{$activeClub->id}_{$latestClubStat?->competition_season_id}";
                 $clubRank = Cache::remember($cacheKey, 600, function () use ($latestClubStat) {
                     return SeasonClubStatistic::query()
-                        ->where('competition_season_id', $latestClubStat->competition_season_id)
-                        ->where('points', '>', (int) $latestClubStat->points)
+                        ->where('competition_season_id', $latestClubStat?->competition_season_id)
+                        ->where('points', '>', (int) ($latestClubStat?->points ?? 0))
                         ->count() + 1;
                 });
             } elseif ($activeClub->league_id) {
@@ -244,7 +239,7 @@ class DashboardController extends Controller
                 })->values()->all(),
             ];
 
-            if ($recentForm === [] && !empty($latestClubStat?->form_last5)) {
+            if ($recentForm === [] && $latestClubStat?->form_last5) {
                 $recentForm = str_split((string) $latestClubStat->form_last5);
             }
         }
@@ -504,51 +499,6 @@ class DashboardController extends Controller
                     ];
                 })->all(),
             ];
-            $watchlistEntries = ScoutingWatchlist::query()
-                ->where('club_id', $activeClub->id)
-                ->with(['player.club', 'reports' => fn ($query) => $query->latest('id')->limit(1)])
-                ->latest('updated_at')
-                ->get();
-            $dueReportsCount = $watchlistEntries->filter(function ($entry): bool {
-                return $entry->next_report_due_at && $entry->next_report_due_at->isPast();
-            })->count();
-            $expensiveMissionCount = $watchlistEntries->filter(fn ($entry) => (float) $entry->last_mission_cost >= 18000)->count();
-            $scoutingDesk = [
-                'watchlist_count' => $watchlistEntries->count(),
-                'due_reports_count' => $dueReportsCount,
-                'expensive_missions_count' => $expensiveMissionCount,
-                'priority_targets' => $watchlistEntries
-                    ->sortByDesc(fn ($entry) => match ($entry->priority) {
-                        'high' => 3,
-                        'medium' => 2,
-                        default => 1,
-                    })
-                    ->take(3)
-                    ->map(function ($entry) {
-                        $report = $entry->reports->first();
-
-                        return [
-                            'id' => $entry->player?->id,
-                            'name' => $entry->player?->full_name,
-                            'photo_url' => $entry->player?->photo_url,
-                            'club_name' => $entry->player?->club?->name,
-                            'priority' => $entry->priority,
-                            'status' => $entry->status,
-                            'focus' => $entry->focus,
-                            'scout_level' => $entry->scout_level,
-                            'scout_region' => $entry->scout_region,
-                            'scout_type' => $entry->scout_type,
-                            'progress' => (int) $entry->progress,
-                            'mission_days_left' => (int) $entry->mission_days_left,
-                            'last_mission_cost' => (float) $entry->last_mission_cost,
-                            'next_report_due_at' => $entry->next_report_due_at?->format('d.m'),
-                            'confidence' => $report?->confidence,
-                            'overall_band' => $report ? $report->overall_min.'-'.$report->overall_max : null,
-                        ];
-                    })
-                    ->values()
-                    ->all(),
-            ];
             $injuredPlayers = $activeClub->players
                 ->filter(fn ($player) => $player->injuries->where('status', 'active')->isNotEmpty())
                 ->values();
@@ -712,32 +662,6 @@ class DashboardController extends Controller
                 ];
             }
 
-            if ($scoutingDesk['due_reports_count'] > 0) {
-                $assistantTasks[] = [
-                    'kind' => 'info',
-                    'priority' => 'heute',
-                    'domain' => 'scouting',
-                    'metric' => $scoutingDesk['due_reports_count'].' faellig',
-                    'label' => 'Scout-Reports faellig',
-                    'description' => 'Mehrere Beobachtungen haben ihr naechstes Berichtfenster erreicht.',
-                    'url' => route('scouting.index'),
-                    'cta' => 'Scouting oeffnen',
-                ];
-            }
-
-            if ($scoutingDesk['expensive_missions_count'] > 0) {
-                $assistantTasks[] = [
-                    'kind' => 'warning',
-                    'priority' => 'beobachten',
-                    'domain' => 'scouting',
-                    'metric' => $scoutingDesk['expensive_missions_count'].' teuer',
-                    'label' => 'Teure Scout-Missionen aktiv',
-                    'description' => 'Mehrere Missionen belasten das Transferbudget deutlich. Priorisiere Ziele sauber.',
-                    'url' => route('scouting.index'),
-                    'cta' => 'Missionen pruefen',
-                ];
-            }
-
             $formPoints = collect($recentForm)->sum(fn ($result) => match ($result) {
                 'W' => 3,
                 'D' => 1,
@@ -861,12 +785,6 @@ class DashboardController extends Controller
                     'url' => route('medical.index'),
                     'tone' => 'rose',
                 ],
-                [
-                    'label' => 'Scouting',
-                    'description' => 'Reports und Ziele pflegen',
-                    'url' => route('scouting.index'),
-                    'tone' => 'emerald',
-                ],
             ];
         }
 
@@ -914,7 +832,6 @@ class DashboardController extends Controller
             'quickActions' => $quickActions,
             'squadAlerts' => $squadAlerts,
             'squadPulse' => $squadPulse,
-            'scoutingDesk' => $scoutingDesk,
             'medicalDesk' => $medicalDesk,
             'managerDecisions' => $managerDecisions,
             'liveMatches' => $liveMatches,

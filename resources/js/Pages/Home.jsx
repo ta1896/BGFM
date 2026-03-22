@@ -44,8 +44,8 @@ export default function Home() {
         },
         {
             icon: UsersThree,
-            title: 'Scouting & Market',
-            description: 'Ein lebendiger Transfermarkt mit Geboten, Listings und strategischen Leihoptionen.',
+            title: 'Transfer Market',
+            description: 'Ein lebendiger Markt mit Geboten und Listings.',
         },
         {
             icon: ShieldCheck,
@@ -157,7 +157,7 @@ export default function Home() {
                     <PageReveal className="text-center mb-20" delay={60}>
                         <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tighter">TOTAL CONTROL.</h2>
                         <p className="text-[var(--text-muted)] max-w-2xl mx-auto">
-                            Jedes Detail zaehlt. Von der praezisen Spielerrolle bis zum internationalen Leihgeschaeft.
+                            Jedes Detail zaehlt. Von der praezisen Spielerrolle bis zur umfassenden Infrastruktur.
                         </p>
                     </PageReveal>
 

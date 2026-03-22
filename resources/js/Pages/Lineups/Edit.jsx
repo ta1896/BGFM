@@ -391,7 +391,7 @@ export default function Edit({
                                                 >
                                                     {clubMatches.map(m => (
                                                         <option key={m.id} value={m.id} className="bg-[var(--bg-pillar)] border-none">
-                                                            {m.match_date} vs {m.home_club_id === club.id ? m.away_club.short_name : m.home_club.short_name}
+                                                            {m.match_date} vs {m.home_club_id === club.id ? (m.away_club?.short_name || m.away_club?.name || 'Gegner') : (m.home_club?.short_name || m.home_club?.name || 'Gegner')}
                                                         </option>
                                                     ))}
                                                 </select>

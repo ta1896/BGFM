@@ -1,17 +1,20 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { ArrowLeft, PaperPlaneTilt } from '@phosphor-icons/react';
+import { ArrowLeft, PaperPlaneTilt, Plus } from '@phosphor-icons/react';
 
 export default function Create({ forum }) {
     const { data, setData, post, processing, errors } = useForm({
         title: '',
         content: '',
+        images: [],
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('forum.thread.store', forum.slug));
+        post(route('forum.thread.store', forum.slug), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -56,6 +59,27 @@ export default function Create({ forum }) {
                                 required
                             ></textarea>
                             {errors.content && <div className="text-sm text-rose-500 font-bold">{errors.content}</div>}
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Bilder (optional)</label>
+                            <label className="flex items-center gap-4 px-6 py-4 rounded-xl bg-[var(--bg-content)]/50 border border-[var(--border-pillar)] text-gray-400 hover:text-amber-500 hover:border-amber-500/50 cursor-pointer transition-all group">
+                                <div className="p-2 rounded-lg bg-white/5 group-hover:bg-amber-500/10 transition-colors">
+                                    <Plus size={20} weight="bold" />
+                                </div>
+                                <span className="text-sm font-bold">
+                                    {data.images.length > 0 
+                                        ? `${data.images.length} Bilder ausgewählt` 
+                                        : 'Bilder für diesen Beitrag hochladen...'}
+                                </span>
+                                <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    multiple
+                                    onChange={e => setData('images', Array.from(e.target.files))}
+                                />
+                            </label>
+                            {errors.images && <div className="text-sm text-rose-500 font-bold">{errors.images}</div>}
                         </div>
 
                         <div className="flex justify-end pt-4">

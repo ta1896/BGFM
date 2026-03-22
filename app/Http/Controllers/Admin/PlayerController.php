@@ -5,13 +5,35 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\Player;
+use App\Jobs\BulkSyncSofascoreJob;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Modules\DataCenter\Models\ImportLog;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PlayerController extends Controller
 {
+    /**
+     * Dispatch the bulk sync job for all players.
+     */
+    public function bulkSyncSofascore(): RedirectResponse
+    {
+        BulkSyncSofascoreJob::dispatch();
+
+        return redirect()->back()->with('status', 'Bulk-Sync für Sofascore Spielerdaten wurde im Hintergrund gestartet!');
+    }
+
+    /**
+     * Clear the bulk sync logs.
+     */
+    public function clearBulkSyncLogs(): RedirectResponse
+    {
+        ImportLog::where('league_id', 'bulk_sync_sofascore')->delete();
+
+        return redirect()->back()->with('status', 'Bulk-Sync Journal wurde geleert.');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -67,6 +89,10 @@ class PlayerController extends Controller
             'squadStats' => $squadStats,
             'clubs' => Club::with('user')->orderBy('name')->get(),
             'activeClubId' => $clubId,
+            'bulkSyncLogs' => ImportLog::where('league_id', 'bulk_sync_sofascore')
+                ->orderByDesc('created_at')
+                ->limit(15)
+                ->get(),
         ]);
     }
 
@@ -154,6 +180,8 @@ class PlayerController extends Controller
             'last_name' => ['required', 'string', 'max:80'],
             'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'position' => ['required', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+            'position_second' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+            'position_third' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
             'potential' => ['sometimes', 'integer', 'min:1', 'max:99'],
@@ -162,6 +190,8 @@ class PlayerController extends Controller
             'is_imported' => ['sometimes', 'boolean'],
             'transfermarkt_id' => ['nullable', 'string', 'max:50'],
             'sofascore_id' => ['nullable', 'string', 'max:50'],
+            'sofascore_url' => ['nullable', 'url', 'max:255'],
+            'birthday' => ['nullable', 'date'],
             'attr_attacking' => ['nullable', 'integer', 'min:0', 'max:100'],
             'attr_technical' => ['nullable', 'integer', 'min:0', 'max:100'],
             'attr_tactical' => ['nullable', 'integer', 'min:0', 'max:100'],

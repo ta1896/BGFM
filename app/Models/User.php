@@ -76,16 +76,6 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         return $this->hasMany(TransferBid::class, 'bidder_user_id');
     }
 
-    public function loanListings(): HasMany
-    {
-        return $this->hasMany(LoanListing::class, 'listed_by_user_id');
-    }
-
-    public function loanBids(): HasMany
-    {
-        return $this->hasMany(LoanBid::class, 'bidder_user_id');
-    }
-
     public function sponsorContractsSigned(): HasMany
     {
         return $this->hasMany(SponsorContract::class, 'signed_by_user_id');

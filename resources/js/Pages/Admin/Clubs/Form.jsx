@@ -8,6 +8,8 @@ import {
     Robot
 } from '@phosphor-icons/react';
 
+import { countries } from '@/constants/countries';
+
 const Card = ({ title, children, icon: Icon, color = 'cyan' }) => (
     <div className="sim-card p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -156,13 +158,16 @@ export default function Form({ club, users, clubs, rolePlayers }) {
 
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-1">Land</label>
-                                    <input 
-                                        type="text"
-                                        className="sim-input w-full"
+                                    <select 
+                                        className="sim-select w-full"
                                         value={data.country}
                                         onChange={e => setData('country', e.target.value)}
                                         required
-                                    />
+                                    >
+                                        {countries.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div className="space-y-1">

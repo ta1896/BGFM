@@ -8,16 +8,16 @@ import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
-import { findActiveMenuLabel, getAdminMenuGroups, mergeMenuGroups } from '@/Layouts/navigation';
+import { findActiveMenuLabel, transformDynamicNavigation } from '@/Layouts/navigation';
 
 export default function AdminLayout({ header, children }) {
-    const { auth, flash, live, modules = {} } = usePage().props;
+    const { auth, flash, live, modules = {}, navigation = {} } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const currentRoute = route().current();
 
-    const menuGroups = mergeMenuGroups(getAdminMenuGroups(), modules.admin_navigation);
-    const activeMenuLabel = findActiveMenuLabel(menuGroups, currentRoute, 'Admin Dashboard');
+    const dynamicAdminNav = transformDynamicNavigation(navigation.admin);
+    const activeMenuLabel = findActiveMenuLabel(dynamicAdminNav, currentRoute, 'Admin Dashboard');
 
     return (
         <LayoutFrame
@@ -39,7 +39,7 @@ export default function AdminLayout({ header, children }) {
                     </div>
 
                     <SidebarNavigation
-                        menuGroups={menuGroups}
+                        menuGroups={dynamicAdminNav}
                         currentRoute={currentRoute}
                         className="min-h-0 flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar"
                         activeTextClassName="text-white bg-[var(--bg-content)]/50"

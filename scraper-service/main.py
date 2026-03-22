@@ -11,6 +11,18 @@ app = FastAPI()
 def read_root():
     return {"message": "NewGen Scraper Service is running (Lightweight)"}
 
+def get_soup(url):
+    print(f"DEBUG: Fetching soup for: {url}")
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    try:
+        response = requests.get(url, headers=headers, timeout=20)
+        print(f"DEBUG: Status Code: {response.status_code} for {url}")
+        if response.status_code == 200:
+            return BeautifulSoup(response.content, 'html.parser')
+    except Exception as e:
+        print(f"DEBUG: Error fetching soup: {e}")
+    return None
+
 def get_league_club_links(league_id, year):
     # Map L1 -> bundesliga, etc.
     # ScraperFC uses abbreviations, but we can just use the ID in the URL for TM
@@ -79,6 +91,14 @@ def get_sofascore_data(player_name, club_name):
 
         if not player_id: return None
         
+        # Get player details for positions
+        player_info_url = f"https://www.sofascore.com/api/v1/player/{player_id}"
+        player_info_resp = requests.get(player_info_url, headers=headers, timeout=10)
+        positions = []
+        if player_info_resp.status_code == 200:
+            player_info = player_info_resp.json()
+            positions = player_info.get('player', {}).get('positionsDetailed', [])
+
         # Get attributes
         attr_url = f"https://www.sofascore.com/api/v1/player/{player_id}/attribute-overviews"
         attr_resp = requests.get(attr_url, headers=headers, timeout=10)
@@ -96,7 +116,8 @@ def get_sofascore_data(player_name, club_name):
             "technical": current.get('technical', 50),
             "tactical": current.get('tactical', 50),
             "defending": current.get('defending', 50),
-            "creativity": current.get('creativity', 50)
+            "creativity": current.get('creativity', 50),
+            "positions": positions
         }
     except Exception as e:
         print(f"Sofascore error for {player_name}: {e}")
@@ -130,44 +151,80 @@ def get_squad_players(club_url, year):
             tds = row.find_all('td')
             if len(tds) < 10: continue
             
-            # Player name and URL
-            name_cell = row.find('td', class_='hauptlink')
+            # Player info cell (Index 1 in Detailed view)
+            player_td = tds[1] 
+            name_cell = player_td.find('td', class_='hauptlink')
+            if not name_cell: 
+                # Fallback to current row find if structure varies
+                name_cell = row.find('td', class_='hauptlink')
+            
             if not name_cell: continue
             name_link = name_cell.find('a')
             if not name_link: continue
             player_name = name_link.get_text(strip=True)
             player_url = "https://www.transfermarkt.us" + name_link['href']
             
-            # photo_url = "" # Removed per user request
-            
-            # Position and Alternative Positions
-            # Structure: <td> <table> <tr> <td class="posrela"> ... <div title="..."> ... </td> </tr> </table> </td>
-            # Or many variants. The subagent says the title is in the position element.
-            pos_td = row.find('td', class_='posrela')
+            # Position extraction (In the same player info cell table)
             position = ""
             alt_positions = ""
-            if pos_td:
-                # The position string is usually in a div or text within posrela
-                pos_element = pos_td.find('div', title=True) or pos_td.find('a', title=True)
-                if pos_element:
-                    alt_positions = pos_element['title']
-                
-                # Main position text
-                pos_table = pos_td.find('table')
-                if pos_table:
-                    pos_rows = pos_table.find_all('tr')
-                    if len(pos_rows) > 1:
-                        position = pos_rows[1].get_text(strip=True)
+            pos_table = player_td.find('table', class_='inline-table')
+            if pos_table:
+                pos_rows = pos_table.find_all('tr')
+                if len(pos_rows) > 1:
+                    position = pos_rows[1].get_text(strip=True)
             
-            # Age (Index 5)
-            age_cell = tds[5]
-            age_match = re.search(r'\((\d+)\)', age_cell.get_text(strip=True))
-            age = int(age_match.group(1)) if age_match else 0
+            # Clean position (e.g. "Right Winger" or "RW")
+            if position:
+                position = position.strip()
             
-            # Nationality (Index 6)
-            nat_cell = tds[6]
+            if not position:
+                # Fallback to old posrela logic
+                pos_td = row.find('td', class_='posrela')
+                if pos_td:
+                    pos_element = pos_td.find('div', title=True) or pos_td.find('a', title=True)
+                    if pos_element: alt_positions = pos_element['title']
+                    pos_table_fallback = pos_td.find('table')
+                    if pos_table_fallback:
+                        pos_rows_f = pos_table_fallback.find_all('tr')
+                        if len(pos_rows_f) > 1:
+                            position = pos_rows_f[1].get_text(strip=True)
+
+            # Date of Birth / Age (Index 2 in Detailed view)
+            dob_cell = tds[2]
+            dob_text = dob_cell.get_text(strip=True)
+            # Format: "Sep 5, 2001 (23)"
+            birthday = ""
+            age = 0
+            
+            age_match = re.search(r'\((\d+)\)', dob_text)
+            if age_match:
+                age = int(age_match.group(1))
+            
+            # Extract date part
+            # Support: "Sep 5, 2001" (English) or "05/09/2001" (Numerical)
+            from datetime import datetime
+            
+            # Try English: "Sep 5, 2001"
+            date_match_en = re.search(r'([A-Za-z]{3}\s\d+,\s\d{4})', dob_text)
+            if date_match_en:
+                try:
+                    dt = datetime.strptime(date_match_en.group(1), '%b %d, %Y')
+                    birthday = dt.strftime('%Y-%m-%d')
+                except: pass
+            
+            # Try Numerical: "05/09/2001" or "05.09.2001"
+            if not birthday:
+                date_match_num = re.search(r'(\d{2}[/.]\d{2}[/.]\d{4})', dob_text)
+                if date_match_num:
+                    raw_date = date_match_num.group(1).replace('.', '/')
+                    try:
+                        dt = datetime.strptime(raw_date, '%d/%m/%Y')
+                        birthday = dt.strftime('%Y-%m-%d')
+                    except: pass
+
+            # Nationality (Index 3 in Detailed view)
+            nat_cell = tds[3]
             nat_imgs = nat_cell.find_all('img')
-            # Extract title from any image in the nationality cell
             nationalities = [img['title'] for img in nat_imgs if img.has_attr('title')]
             nationality = nationalities[0] if nationalities else "Unknown"
             
@@ -203,10 +260,12 @@ def get_squad_players(club_url, year):
                 "Club ID": club_id,
                 "Position": position,
                 "Alternative Positions": alt_positions,
+                "Birthday": birthday,
                 "Age": age,
                 "Market Value": val_int,
                 "Nationality": nationality,
                 "URL": player_url,
+                "Club URL": club_url,
                 "Photo URL": None
             })
         
@@ -253,3 +312,130 @@ def scrape_league_players(
     except Exception as e:
         print(f"Scraper error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+import httpx
+from datetime import datetime
+
+TM_API_BASE = "https://tmapi-alpha.transfermarkt.technology"
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+}
+
+def get_tm_api_json(endpoint):
+    url = f"{TM_API_BASE}{endpoint}"
+    print(f"DEBUG: Fetching TM API: {url}")
+    try:
+        with httpx.Client(http2=True) as client:
+            response = client.get(url, headers=HEADERS, timeout=20)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"DEBUG: TM API error {response.status_code} for {url}")
+    except Exception as e:
+        print(f"DEBUG: Error fetching TM API: {e}")
+    return None
+
+def get_entity_info(entity_type, entity_id, cache):
+    if not entity_id or entity_id == "0":
+        return {"name": "Unknown", "logo": None}
+    
+    cache_key = f"{entity_type}_{entity_id}"
+    if cache_key in cache:
+        return cache[cache_key]
+    
+    endpoint = f"/{entity_type}/{entity_id}"
+    data = get_tm_api_json(endpoint)
+    info = {"name": "Unknown", "logo": None}
+    if data and 'data' in data:
+        entity_data = data['data']
+        info["name"] = entity_data.get('clubName') or entity_data.get('competitionName') or entity_data.get('name') or "Unknown"
+        info["logo"] = entity_data.get('crestUrl') or entity_data.get('logoUrl')
+        cache[cache_key] = info
+    
+    return info
+
+def get_player_transfer_history(url: str):
+    """Scrapes player transfer history from Transfermarkt using its JSON API."""
+    # Extract player ID from URL: .../spieler/357565
+    match = re.search(r'spieler/(\d+)', url)
+    if not match:
+        print(f"DEBUG: Could not extract player ID from {url}")
+        return []
+    
+    player_id = match.group(1)
+    endpoint = f"/transfer/history/player/{player_id}"
+    api_data = get_tm_api_json(endpoint)
+    
+    if not api_data or 'data' not in api_data:
+        print(f"DEBUG: No API data found for player {player_id}")
+        return []
+
+    history = []
+    terminated = api_data['data'].get('history', {}).get('terminated', [])
+    
+    # In-memory cache for club/competition info to reduce API calls
+    entity_cache = {}
+
+    print(f"DEBUG: Processing {len(terminated)} transfers from API")
+    for transfer in terminated:
+        details = transfer.get('details', {})
+        source = transfer.get('transferSource', {})
+        dest = transfer.get('transferDestination', {})
+        fee_info = details.get('fee', {})
+        mv_info = details.get('marketValue', {})
+        
+        # Format date: 2019-07-04T00:00:00+02:00 -> Jul 4, 2019
+        raw_date = details.get('date', '')
+        formatted_date = "?"
+        if raw_date:
+            try:
+                # Handle ISO format with offset
+                dt = datetime.fromisoformat(raw_date.replace('Z', '+00:00'))
+                formatted_date = dt.strftime('%b %d, %Y')
+            except:
+                formatted_date = raw_date
+
+        # Resolve Club Names and Logos
+        left_info = get_entity_info("club", source.get('clubId'), entity_cache)
+        joined_info = get_entity_info("club", dest.get('clubId'), entity_cache)
+
+        data = {
+            'season': details.get('season', {}).get('display', '?'),
+            'transfer_date': formatted_date,
+            'left_club_name': left_info["name"],
+            'left_club_logo': left_info["logo"],
+            'left_club_tm_id': source.get('clubId'),
+            'joined_club_name': joined_info["name"],
+            'joined_club_logo': joined_info["logo"],
+            'joined_club_tm_id': dest.get('clubId'),
+            'market_value': mv_info.get('compact', {}).get('content', '?') + mv_info.get('compact', {}).get('suffix', ''),
+            'fee': fee_info.get('compact', {}).get('content', '?') + fee_info.get('compact', {}).get('suffix', ''),
+        }
+
+        
+        # Clean up market value / fee display (remove leading ?)
+        if data['market_value'].startswith('?'): data['market_value'] = data['market_value'][1:] or '?'
+        if data['fee'].startswith('?'): data['fee'] = data['fee'][1:] or '?'
+        
+        # Add currency symbol if possible (hardcoded to € for TM usually if content starts with digit)
+        if data['market_value'] != '?' and data['market_value'][0].isdigit():
+            data['market_value'] = "€" + data['market_value']
+        if data['fee'] != '?' and data['fee'][0].isdigit():
+            data['fee'] = "€" + data['fee']
+
+        data['is_loan'] = 'Leihe' in transfer.get('typeDetails', {}).get('feeDescription', '') or 'Loan' in transfer.get('typeDetails', {}).get('feeDescription', '')
+
+        history.append(data)
+
+    return history
+
+@app.get("/transfermarkt/player-history")
+def read_player_history(url: str):
+    return get_player_transfer_history(url)
+
+@app.get("/transfermarkt/player-history-by-id")
+def read_player_history_by_id(id: str):
+    url = f"https://www.transfermarkt.us/profil/spieler/{id}"
+    return get_player_transfer_history(url)
+

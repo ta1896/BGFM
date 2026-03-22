@@ -157,26 +157,6 @@ class Club extends Model
         return $this->hasMany(TrainingCamp::class);
     }
 
-    public function loanListingsAsLender(): HasMany
-    {
-        return $this->hasMany(LoanListing::class, 'lender_club_id');
-    }
-
-    public function loanBidsAsBorrower(): HasMany
-    {
-        return $this->hasMany(LoanBid::class, 'borrower_club_id');
-    }
-
-    public function loansAsLender(): HasMany
-    {
-        return $this->hasMany(Loan::class, 'lender_club_id');
-    }
-
-    public function loansAsBorrower(): HasMany
-    {
-        return $this->hasMany(Loan::class, 'borrower_club_id');
-    }
-
     public function teamOfTheDayPlayers(): HasMany
     {
         return $this->hasMany(TeamOfTheDayPlayer::class);
@@ -196,16 +176,6 @@ class Club extends Model
     public function achievements(): HasMany
     {
         return $this->hasMany(ClubAchievement::class);
-    }
-
-    public function scoutingWatchlists(): HasMany
-    {
-        return $this->hasMany(ScoutingWatchlist::class);
-    }
-
-    public function scoutingReports(): HasMany
-    {
-        return $this->hasMany(ScoutingReport::class);
     }
 
     public function getLogoUrlAttribute(): string

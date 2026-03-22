@@ -7,6 +7,7 @@ import {
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal } from '@/Components/PageReveal';
 import SectionCard from '@/Components/SectionCard';
+import { countries } from '@/constants/countries';
 
 function CardField({ label, error, children }) {
     return (
@@ -82,7 +83,16 @@ export default function Form({ club, rolePlayers = [] }) {
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-3">
                                     <CardField label="Land" error={errors.country}>
-                                        <input type="text" value={data.country} onChange={(event) => setData('country', event.target.value)} className="sim-input-modern" required />
+                                        <select 
+                                            value={data.country} 
+                                            onChange={(event) => setData('country', event.target.value)} 
+                                            className="sim-select-modern" 
+                                            required
+                                        >
+                                            {countries.map(c => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
                                     </CardField>
                                     <CardField label="Liga" error={errors.league}>
                                         <input type="text" value={data.league} onChange={(event) => setData('league', event.target.value)} className="sim-input-modern" required />

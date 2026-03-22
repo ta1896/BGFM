@@ -154,7 +154,7 @@ export default function Show({
 
     return (
         <AuthenticatedLayout>
-            <Head title={`${home_club?.short_name} vs ${away_club?.short_name}`} />
+            <Head title={`${home_club?.short_name || home_club?.name || 'Heim'} vs ${away_club?.short_name || away_club?.name || 'Gast'}`} />
 
             <div className="mx-auto max-w-[1300px] space-y-8">
                 <Link href={route('league.matches')} className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] transition-colors hover:text-amber-500">

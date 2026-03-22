@@ -57,6 +57,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         function () {
             Route::resource('clubs', ClubController::class)->except(['create', 'store']);
             Route::get('/players/hierarchy', [PlayerController::class, 'hierarchy'])->name('squad-hierarchy.index');
+            Route::post('/players/{player}/sync-history', [PlayerController::class, 'syncTransferHistory'])->name('players.sync-history');
+            Route::post('/players/{player}/sync-sofascore', [PlayerController::class, 'syncSofascore'])->name('players.sync-sofascore');
             Route::resource('players', PlayerController::class)->only(['index', 'show', 'update']);
             Route::post('/players/{player}/playtime-promise', [PlayerController::class, 'storePlaytimePromise'])->name('players.playtime-promise.store');
             Route::post('/players/{player}/conversation', [PlayerController::class, 'storeConversation'])->name('players.conversations.store');
@@ -106,11 +108,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     );
 });
 
+use App\Http\Controllers\Admin\NavigationController as AdminNavigationController;
+
 Route::middleware(['auth', 'verified', 'admin'])
     ->prefix('acp')
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::post('navigation/reorder', [\App\Http\Controllers\Admin\NavigationController::class, 'reorder'])->name('navigation.reorder');
+        Route::resource('navigation', \App\Http\Controllers\Admin\NavigationController::class)->except(['show']);
         Route::get('/modules', [AdminModuleController::class, 'index'])->name('modules.index');
         Route::patch('/modules/{module}', [AdminModuleController::class, 'update'])->name('modules.update');
         Route::resource('competitions', AdminCompetitionController::class);
@@ -118,6 +124,8 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('seasons', \App\Http\Controllers\Admin\SeasonController::class);
         Route::resource('competition-seasons', \App\Http\Controllers\Admin\CompetitionSeasonController::class)->only(['edit', 'update']);
         Route::resource('clubs', AdminClubController::class);
+        Route::post('/players/bulk-sync', [AdminPlayerController::class, 'bulkSyncSofascore'])->name('players.bulk-sync');
+        Route::delete('/players/bulk-sync/clear', [AdminPlayerController::class, 'clearBulkSyncLogs'])->name('players.bulk-sync.clear');
         Route::resource('players', AdminPlayerController::class);
         Route::resource('lineups', AdminLineupController::class);
         Route::post('/lineups/{lineup}/activate', [AdminLineupController::class, 'activate'])->name('lineups.activate');
@@ -152,6 +160,13 @@ Route::middleware(['auth', 'verified', 'admin'])
             Route::post('/repair', [App\Http\Controllers\Admin\MonitoringController::class, 'repair'])->name('repair');
             Route::post('/clear-cache', [App\Http\Controllers\Admin\MonitoringController::class, 'clearCache'])->name('clear-cache');
             Route::post('/lab/run', [App\Http\Controllers\Admin\MonitoringController::class, 'runLabSimulation'])->name('lab.run');
+        });
+
+        // External Data Sync
+        Route::controller(\App\Http\Controllers\Admin\ExternalSyncController::class)->prefix('external-sync')->name('external-sync.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/start', 'startSync')->name('start');
+            Route::delete('/logs', 'clearLogs')->name('clear-logs');
         });
     });
 

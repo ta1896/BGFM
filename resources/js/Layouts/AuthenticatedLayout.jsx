@@ -8,21 +8,38 @@ import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
 import SidebarNavigation from '@/Components/layout/SidebarNavigation';
-import { findActiveMenuLabel, getManagerMenuGroups, mergeMenuGroups } from '@/Layouts/navigation';
+import { findActiveMenuLabel, transformDynamicNavigation } from '@/Layouts/navigation';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const { auth, activeClub, userClubs = [], flash, live, modules = {} } = usePage().props;
+    const { auth, navigation, activeClub, userClubs = [], flash, live, modules = {} } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
     const currentRoute = route().current();
 
     const hasManagedClub = auth.isAdmin || userClubs.length > 0;
-    const menuGroups = mergeMenuGroups(
-        getManagerMenuGroups({ hasManagedClub }),
-        modules.manager_navigation,
-    );
-    const activeMenuLabel = findActiveMenuLabel(menuGroups, currentRoute, 'Dashboard');
+    
+    const filterNavByClubStatus = (items, hasClub) => {
+        if (!items) return [];
+        return items.filter(item => {
+            if (item.group === 'manager_with_club' && !hasClub) return false;
+            if (item.group === 'manager_without_club' && hasClub) return false;
+            return true;
+        }).map(item => {
+            if (item.children && item.children.length > 0) {
+                return { ...item, children: filterNavByClubStatus(item.children, hasClub) };
+            }
+            return item;
+        });
+    };
+
+    const filteredManagerNav = navigation?.manager ? filterNavByClubStatus(navigation.manager, hasManagedClub) : [];
+    
+    // Convert DB items using the transform function
+    const dynamicManagerNav = transformDynamicNavigation ? transformDynamicNavigation(filteredManagerNav) : {};
+    
+    // We only use the database-managed navigation now
+    const activeMenuLabel = findActiveMenuLabel(dynamicManagerNav, currentRoute, 'Dashboard');
 
     return (
         <LayoutFrame
@@ -47,7 +64,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     <SidebarBrand href={route('dashboard')} badge="NW" title="NewGen" subtitle="Management Suite" />
 
                     <SidebarNavigation
-                        menuGroups={menuGroups}
+                        menuGroups={dynamicManagerNav}
                         currentRoute={currentRoute}
                         className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar"
                         activeTextClassName="text-[var(--text-main)] bg-[var(--bg-content)]/50"
@@ -122,7 +139,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     ) : (
                         <div className="flex items-center justify-between w-full text-left">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/90 mb-0.5">Scouting & Analysis</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/90 mb-0.5">Club Overview</p>
                                 <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
                             </div>
 

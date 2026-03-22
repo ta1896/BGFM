@@ -67,7 +67,6 @@ class ContractController extends Controller
         if (!$user->isAdmin()) {
             abort_unless($user->clubs()->whereKey($player->club_id)->exists(), 403);
         }
-        abort_if($player->parent_club_id !== null, 422, 'Vertragsverlaengerung waehrend Leihe nicht erlaubt.');
 
         $validated = $request->validate([
             'salary' => ['required', 'numeric', 'min:0'],

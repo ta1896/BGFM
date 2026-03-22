@@ -93,6 +93,7 @@ class ForumController extends Controller
             ->through(fn ($post) => [
                 'id' => $post->id,
                 'content' => $post->content,
+                'images' => collect($post->images ?? [])->map(fn ($path) => asset('storage/' . $path))->all(),
                 'created_at' => $post->created_at->format('d.m.Y H:i'),
                 'user' => [
                     'name' => $post->user->name,
@@ -135,6 +136,8 @@ class ForumController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['image', 'max:5120'],
         ]);
 
         $thread = ForumThread::create([
@@ -145,10 +148,18 @@ class ForumController extends Controller
             'last_post_at' => now(),
         ]);
 
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imagePaths[] = $file->store('forum_posts', 'public');
+            }
+        }
+
         ForumPost::create([
             'forum_thread_id' => $thread->id,
             'user_id' => $request->user()->id,
             'content' => $validated['content'],
+            'images' => $imagePaths,
         ]);
 
         return redirect()->route('forum.thread.show', $thread)->with('status', 'Thema wurde erstellt.');
@@ -160,12 +171,22 @@ class ForumController extends Controller
 
         $validated = $request->validate([
             'content' => ['required', 'string'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['image', 'max:5120'], // 5MB max
         ]);
+
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imagePaths[] = $file->store('forum_posts', 'public');
+            }
+        }
 
         ForumPost::create([
             'forum_thread_id' => $thread->id,
             'user_id' => $request->user()->id,
             'content' => $validated['content'],
+            'images' => $imagePaths,
         ]);
 
         $thread->update(['last_post_at' => now()]);

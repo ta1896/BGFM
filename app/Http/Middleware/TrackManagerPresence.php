@@ -63,7 +63,6 @@ class TrackManagerPresence
             str_starts_with($routeName, 'players.') => 'Im Kader',
             str_starts_with($routeName, 'training') => 'Im Training',
             str_starts_with($routeName, 'medical') => 'Im Medical Center',
-            str_starts_with($routeName, 'scouting') => 'Im Scouting',
             str_starts_with($routeName, 'finances') => 'In den Finanzen',
             str_starts_with($routeName, 'notifications') => 'Im Postfach',
             str_starts_with($routeName, 'team-of-the-day') => 'Bei Team der Woche',

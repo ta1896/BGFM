@@ -28,12 +28,11 @@ class FriendlyMatchController extends Controller
         if ($activeClub) {
             $opponents = Club::query()
                 ->whereKeyNot($activeClub->id)
-                ->where('is_cpu', false)
                 ->orderByDesc('is_cpu')
                 ->orderByDesc('reputation')
                 ->orderBy('name')
                 ->limit(50)
-                ->get(['id', 'name']);
+                ->get(['id', 'name', 'is_cpu']);
 
             $outgoing = FriendlyMatchRequest::query()
                 ->with(['challengerClub', 'challengedClub', 'acceptedMatch'])

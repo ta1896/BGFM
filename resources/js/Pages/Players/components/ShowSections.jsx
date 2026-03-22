@@ -1,31 +1,23 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    Binoculars,
-    ChatCircleText,
-    Camera,
-    ChartBar,
-    ClockCounterClockwise,
-    Crown,
-    FloppyDisk,
-    Heartbeat,
-    IdentificationBadge,
-    Info,
-    Lightning,
-    Selection,
-    ShieldCheck,
-    Smiley,
-    SoccerBall,
-    Target,
-    TrendUp,
-    Trophy,
-    UsersThree,
-    Warning,
-    FirstAidKit,
-    Broadcast,
-    Gear,
+import { Link, router } from '@inertiajs/react';
+import { 
+    Selection, ChartBar, ShieldCheck, Broadcast, TrendUp, Lightning, Smiley, Info, Heartbeat, 
+    IdentificationCard, FileText, Calendar, Money, Crown, UserFocus, Warning, Heart, 
+    CheckCircle, XCircle, Gear, ArrowLeft, Binoculars, ChatCircleText, Camera, 
+    ClockCounterClockwise, FloppyDisk, IdentificationBadge, SoccerBall, Target, Trophy, 
+    UsersThree, FirstAidKit, ArrowsLeftRight, Flag, Ruler, Footprints, TShirt 
 } from '@phosphor-icons/react';
+import { POSITIONS, POSITION_COORDS } from '@/constants/positions';
+import {
+    Radar,
+    RadarChart,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    ResponsiveContainer,
+    Tooltip,
+} from 'recharts';
+
 
 const moduleActionIconMap = {
     binoculars: Binoculars,
@@ -80,6 +72,13 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                                     alt={player.full_name}
                                     className="h-full w-full rounded-full object-cover mix-blend-luminosity transition-all duration-500 hover:mix-blend-normal"
                                 />
+                                {player.shirt_number && (
+                                    <div className="absolute -bottom-1 -right-1 flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#0c1222] bg-white text-black shadow-2xl">
+                                        <span className="text-lg font-black italic tracking-tighter">
+                                            #{player.shirt_number}
+                                        </span>
+                                    </div>
+                                )}
                                 {isOwner && (
                                     <div className="absolute -top-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#0c1222] bg-amber-500 text-black shadow-xl">
                                         <Crown size={20} weight="fill" />
@@ -89,14 +88,6 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                         </div>
 
                         <div className="flex-1 text-center lg:text-left">
-                            <div className="mb-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                                <span className="rounded-lg border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-500 italic">
-                                    {player.position}
-                                </span>
-                                <span className="rounded-lg border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                    {player.age} Jahre
-                                </span>
-
                                 {player.tm_profile_url && (
                                     <a
                                         href={player.tm_profile_url}
@@ -119,10 +110,51 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                                         Sofascore
                                     </a>
                                 )}
-                            </div>
-                            <h1 className="mb-6 text-5xl font-black uppercase tracking-tighter text-white italic md:text-7xl">
+                             <h1 className="mb-4 text-5xl font-black uppercase tracking-tighter text-white italic md:text-7xl">
                                 {player.first_name} <span className="text-amber-500">{player.last_name}</span>
                             </h1>
+
+                            <div className="mb-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 lg:justify-start border-y border-white/5 py-4">
+                                <div className="flex items-center gap-3">
+                                    {player.nationality_code ? (
+                                        <img 
+                                            src={`https://flagcdn.com/w40/${player.nationality_code}.png`} 
+                                            className="h-4 w-6 rounded-sm object-cover shadow-sm ring-1 ring-white/10" 
+                                            alt={player.nationality} 
+                                        />
+                                    ) : (
+                                        <Flag className="text-amber-500" size={14} />
+                                    )}
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nationalität</span>
+                                    <span className="text-sm font-bold text-white uppercase italic">{player.nationality || 'Unbekannt'}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="text-amber-500" size={14} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Geburtstag</span>
+                                    <span className="text-sm font-bold text-white uppercase italic">{player.birthday || 'Unbekannt'} ({player.age})</span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <Ruler className="text-amber-500" size={14} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Größe</span>
+                                    <span className="text-sm font-bold text-white uppercase italic">{player.height ? `${player.height} cm` : 'Unbekannt'}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2 border-l border-white/5 pl-8 lg:border-none lg:pl-0">
+                                    <Footprints className="text-amber-500" size={14} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fuß</span>
+                                    <span className="text-sm font-bold text-white uppercase italic">
+                                        {player.preferred_foot === 'right' ? 'Rechts' : player.preferred_foot === 'left' ? 'Links' : player.preferred_foot === 'both' ? 'Beidfüßig' : 'Unbekannt'}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <TShirt className="text-amber-500" size={14} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nummer</span>
+                                    <span className="text-sm font-bold text-white uppercase italic">#{player.shirt_number || '-'}</span>
+                                </div>
+                            </div>
 
                             <div className="flex flex-wrap items-center justify-center gap-8 lg:justify-start">
                                 {player.club ? (
@@ -165,7 +197,9 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                     {[
                         ['overview', 'Uebersicht', ChartBar],
                         ['career', 'Karriere', Trophy],
+                        ['contract', 'Vertrag & Dynamik', IdentificationBadge],
                         ['matches', 'Spiele', SoccerBall],
+                        ['transfers', 'Transfers', ArrowsLeftRight],
                         ['history', 'Historie', ClockCounterClockwise],
                         ...(isOwner ? [['customize', 'Anpassen', IdentificationBadge]] : []),
                     ].map(([key, label, Icon]) => (
@@ -202,6 +236,44 @@ function StatRing({ value, max = 99, label, color = 'emerald' }) {
     );
 }
 
+function ResultCircle({ result }) {
+    const colors = {
+        W: 'bg-emerald-500',
+        D: 'bg-slate-500',
+        L: 'bg-rose-500',
+        '?': 'bg-slate-700',
+    };
+    return (
+        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white shadow-lg ${colors[result] || colors['?']}`}>
+            {result}
+        </div>
+    );
+}
+
+function StatCircle({ value }) {
+    if (!value || value === 0) return <span className="text-slate-600 font-bold">-</span>;
+    return (
+        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black text-black shadow-md border border-slate-200">
+            {value}
+        </div>
+    );
+}
+
+function RatingBadge({ rating }) {
+    let colorClass = 'bg-slate-800 text-slate-400';
+    if (rating >= 9.5) colorClass = 'bg-[#3b82f6] text-white'; // Blue for 10
+    else if (rating >= 8.5) colorClass = 'bg-[#4f46e5] text-white'; // Indigo
+    else if (rating >= 7.0) colorClass = 'bg-[#22c55e] text-white'; // Emerald/Green
+    else if (rating >= 6.0) colorClass = 'bg-[#f59e0b] text-white'; // Amber
+    else if (rating > 0) colorClass = 'bg-[#ef4444] text-white'; // Rose
+
+    return (
+        <div className={`flex h-7 w-10 shrink-0 items-center justify-center rounded-md text-[11px] font-black italic shadow-lg ${colorClass}`}>
+            {rating > 0 ? rating.toFixed(1) : '-'}
+        </div>
+    );
+}
+
 function TabButton({ active, onClick, icon: Icon, children }) {
     return (
         <button
@@ -216,8 +288,79 @@ function TabButton({ active, onClick, icon: Icon, children }) {
     );
 }
 
+const RadarTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-slate-950/90 border border-amber-500/30 px-4 py-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/70 leading-none mb-1 text-nowrap">
+                            {payload[0].payload.fullLabel}
+                        </span>
+                        <span className="text-xl font-black text-white italic leading-none">
+                            {payload[0].value}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
+function PlayerRadarChart({ stats }) {
+    const data = stats.map(s => ({
+        subject: s.label.substring(0, 3).toUpperCase(),
+        fullLabel: s.label,
+        value: s.value,
+        fullMark: 99,
+    }));
+
+    return (
+        <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+                    <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                    <PolarAngleAxis 
+                        dataKey="subject" 
+                        tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 900 }} 
+                    />
+                    <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 99]} 
+                        tick={false} 
+                        axisLine={false} 
+                    />
+                    <Tooltip content={<RadarTooltip />} cursor={false} />
+                    <Radar
+                        name="Player"
+                        dataKey="value"
+                        stroke="#f59e0b"
+                        strokeWidth={3}
+                        fill="#f59e0b"
+                        fillOpacity={0.35}
+                        dot={{ r: 3, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                        activeDot={{ r: 5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                        animationDuration={1500}
+                    />
+                </RadarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+}
+
 export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
-    const stats = [
+    const isGK = player.position === 'TW' || player.position === 'GK';
+
+    const stats = isGK ? [
+        { label: 'Aerial', value: player.attr_attacking || 50, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
+        { label: 'Ball Distr.', value: player.attr_technical || 50, icon: ChartBar, color: 'text-cyan-400', gradient: 'from-cyan-400/60' },
+        { label: 'Tactical', value: player.attr_tactical || 50, icon: Selection, color: 'text-indigo-400', gradient: 'from-indigo-400/60' },
+        { label: 'Saves', value: player.attr_defending || 50, icon: ShieldCheck, color: 'text-emerald-400', gradient: 'from-emerald-400/60' },
+        { label: 'Anticip.', value: player.attr_creativity || 50, icon: Broadcast, color: 'text-amber-400', gradient: 'from-amber-400/60' },
+        { label: 'Marktwert-Stärke', value: player.attr_market || 50, icon: TrendUp, color: 'text-purple-400', gradient: 'from-purple-400/60' },
+    ] : [
         { label: 'Attacking', value: player.attr_attacking || 50, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
         { label: 'Technical', value: player.attr_technical || 50, icon: ChartBar, color: 'text-cyan-400', gradient: 'from-cyan-400/60' },
         { label: 'Tactical', value: player.attr_tactical || 50, icon: Selection, color: 'text-indigo-400', gradient: 'from-indigo-400/60' },
@@ -226,108 +369,333 @@ export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions =
         { label: 'Marktwert-Stärke', value: player.attr_market || 50, icon: TrendUp, color: 'text-purple-400', gradient: 'from-purple-400/60' },
     ];
 
-    return (
-        <div className="grid gap-8 lg:grid-cols-3">
-            <div className="space-y-8 lg:col-span-2">
-                <div className="sim-card p-8">
-                    <div className="mb-8 flex items-center gap-4">
-                        <ChartBar size={24} weight="duotone" className="text-cyan-400" />
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Physische und technische Profile</h3>
-                    </div>
-                    <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-                        {stats.map((stat) => (
-                            <div key={stat.label} className="space-y-3">
-                                <div className="flex items-center justify-between px-1">
-                                    <div className="flex items-center gap-2">
-                                        <stat.icon size={14} className={stat.color} weight="bold" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{stat.label}</span>
-                                    </div>
-                                    <span className="text-xs font-black text-white italic">{stat.value}</span>
-                                </div>
-                                <div className="h-2 overflow-hidden rounded-full border border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-0.5">
-                                    <div className={`h-full rounded-full bg-gradient-to-r ${stat.gradient} to-transparent transition-all duration-700 ease-out`} style={{ width: `${stat.value}%` }} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+    const handleSyncSofascore = () => {
+        router.post(route('players.sync-sofascore', player.id), {}, { preserveScroll: true });
+    };
 
-                <div className="sim-card p-8">
-                    <div className="mb-8 flex items-center gap-4">
-                        <Selection size={24} weight="duotone" className="text-indigo-400" />
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Positionen</h3>
-                    </div>
-                    <div className="flex flex-wrap gap-4">
-                        {[
-                            ['Hauptposition', player.position, 'bg-amber-500/10 border-amber-500/20 text-amber-500'],
-                            ['Nebenposition', player.position_second, 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-slate-300'],
-                            ['Alternativ', player.position_third, 'bg-[var(--bg-pillar)] border-[var(--border-pillar)] text-slate-300'],
-                        ].filter(([, value]) => value).map(([label, value, classes]) => (
-                            <div key={label} className={`min-w-[200px] flex-1 rounded-3xl border p-6 text-center ${classes}`}>
-                                <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
-                                <span className="text-2xl font-black text-white">{value}</span>
+    return (
+        <div className="grid gap-8 xl:grid-cols-3">
+            {/* Column 1: Attributes & Profile */}
+            <div className="sim-card p-8 bg-black/40 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10">
+                    <div className="mb-8 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 rounded-xl bg-cyan-400/10 border border-cyan-400/20 shadow-lg">
+                                <ChartBar size={20} weight="duotone" className="text-cyan-400" />
                             </div>
-                        ))}
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Profil</h3>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Physis & Technik</p>
+                            </div>
+                        </div>
+                        {player.sofascore_id && (
+                            <button
+                                onClick={handleSyncSofascore}
+                                className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-all border border-cyan-400/10"
+                                title="Sync Sofascore"
+                            >
+                                <Lightning size={16} weight="duotone" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-center py-6 px-4 rounded-3xl border border-white/[0.03] bg-black/20 relative">
+                             <div className="absolute top-4 left-4 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-50">Radar</div>
+                             <PlayerRadarChart stats={stats.filter(s => s.label !== 'Marktwert-Stärke')} size={240} />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {stats.map((stat) => (
+                                <div key={stat.label} className="bg-white/[0.02] p-3 rounded-2xl border border-white/[0.03] group hover:bg-white/[0.04] transition-all">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <stat.icon size={12} className={stat.color} weight="bold" />
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{stat.label}</span>
+                                        </div>
+                                        <span className="text-xs font-black text-white italic">{stat.value}</span>
+                                    </div>
+                                    <div className="h-1 overflow-hidden rounded-full bg-black/40">
+                                        <div className={`h-full rounded-full bg-gradient-to-r ${stat.gradient} to-transparent transition-all duration-700 ease-out`} style={{ width: `${stat.value}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Column 2: Tactical Positioning & Bio */}
+            <div className="sim-card p-8 bg-black/40 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 h-full flex flex-col">
+                    <div className="mb-10 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-lg">
+                                <Selection size={20} weight="duotone" className="text-indigo-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Taktik</h3>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Rollen & Position</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3 py-1.5 shadow-xl backdrop-blur-md">
+                            <span className="text-xs font-black uppercase tracking-tighter text-white">{player.display_position}</span>
+                            <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col gap-10">
+                         <div className="flex flex-col items-center justify-center flex-1">
+                            <PlayerPositionPitch player={player} />
+                        </div>
+                        <div className="mt-auto">
+                            <PlayerAttributesBio player={player} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Column 3: Condition, Contract & Dynamics */}
             <div className="space-y-8">
-                <div className="sim-card p-8">
-                    <div className="mb-8 flex items-center gap-4">
-                        <Smiley size={24} weight="duotone" className="text-emerald-400" />
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Kondition</h3>
+                {/* Condition */}
+                <div className="sim-card p-6 bg-black/40 shadow-xl border-l border-emerald-500/20">
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                            <Smiley size={18} weight="duotone" className="text-emerald-400" />
+                        </div>
+                        <h4 className="text-sm font-black uppercase tracking-tighter text-white italic">Zustand</h4>
                     </div>
-                    <ProgressBar label="Zufriedenheit" value={player.happiness} positive={player.happiness >= 55} />
-                    <ProgressBar label="Sharpness" value={player.sharpness} positive={player.sharpness >= 60} />
-                    <ProgressBar label="Belastung" value={player.fatigue} positive={player.fatigue <= 45} />
+                    <div className="space-y-4">
+                        <ProgressBar label="Glück" value={player.happiness} positive={player.happiness >= 55} compact />
+                        <ProgressBar label="Sharpness" value={player.sharpness} positive={player.sharpness >= 60} compact />
+                        <ProgressBar label="Belastung" value={player.fatigue} positive={player.fatigue <= 45} compact />
+                    </div>
                 </div>
 
-                <div className="sim-card border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-8">
-                    <div className="mb-6 flex items-center gap-4">
+                {/* Contract Summary */}
+                <div className="sim-card p-6 bg-black/40 shadow-xl border-l border-indigo-500/20">
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                            <Info size={18} weight="duotone" className="text-indigo-400" />
+                        </div>
+                        <h4 className="text-sm font-black uppercase tracking-tighter text-white italic">Vertrag</h4>
+                    </div>
+                    <div className="space-y-3">
+                        <CompactInfoRow label="Gehalt" value={new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(player.salary || 0)} />
+                        <CompactInfoRow label="Marktwert" value={player.market_value_formatted} />
+                        <CompactInfoRow label="Kaderrolle" value={player.squad_role} />
+                        <CompactInfoRow label="Medizin" value={player.medical_status} />
+                    </div>
+                </div>
+
+                {/* Team Dynamics */}
+                <div className="sim-card p-6 bg-black/40 shadow-xl border-l border-rose-500/20">
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                            <Heartbeat size={18} weight="duotone" className="text-rose-400" />
+                        </div>
+                        <h4 className="text-sm font-black uppercase tracking-tighter text-white italic">Dynamik</h4>
+                    </div>
+                    <div className="space-y-3">
+                        <CompactInfoRow label="Verletzungsrisiko" value={`${player.injury_risk}%`} />
+                        <CompactInfoRow label="Promise-Druck" value={`${player.promise_pressure}%`} />
+                        <CompactInfoRow label="Moral-Status" value={player.last_morale_reason || 'Neutral'} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function PlayerContractTab({ player, modulePlayerActions = [], onModuleAction }) {
+    return (
+        <div className="grid gap-8 lg:grid-cols-2">
+            <div className="sim-card bg-black/20 p-8 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div className="mb-8 flex items-center gap-4 relative z-10">
+                    <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 shadow-lg">
                         <Info size={24} weight="duotone" className="text-indigo-400" />
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Vertrag</h3>
                     </div>
-                    <div className="space-y-4">
-                        <InfoRow label="Gehalt" value={new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(player.salary || 0)} />
-                        <InfoRow label="Marktwert" value={player.market_value_formatted} />
-                        <InfoRow label="Kaderrolle" value={player.squad_role} />
-                        <InfoRow label="Hierarchie" value={player.leadership_level} />
-                        <InfoRow label="Erwartete Spielzeit" value={`${player.expected_playtime}%`} />
-                        <InfoRow label="Medizin" value={player.medical_status} />
+                    <div>
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Vertragsdetails</h3>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Konditionen & Status</p>
                     </div>
                 </div>
+                <div className="space-y-4 relative z-10">
+                    <InfoRow label="Gehalt" value={new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(player.salary || 0)} />
+                    <InfoRow label="Marktwert" value={player.market_value_formatted} />
+                    <InfoRow label="Kaderrolle" value={player.squad_role} />
+                    <InfoRow label="Hierarchie" value={player.leadership_level} />
+                    <InfoRow label="Erwartete Spielzeit" value={`${player.expected_playtime}%`} />
+                    <InfoRow label="Medizin" value={player.medical_status} />
+                </div>
+            </div>
 
-                <div className="sim-card border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-8">
-                    <div className="mb-6 flex items-center gap-4">
+            <div className="sim-card bg-black/20 p-8 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div className="mb-8 flex items-center gap-4 relative z-10">
+                    <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 shadow-lg">
                         <Heartbeat size={24} weight="duotone" className="text-rose-400" />
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Dynamik</h3>
                     </div>
-                    <div className="space-y-4">
-                        <InfoRow label="Verletzungsrisiko" value={`${player.injury_risk}%`} />
-                        <InfoRow label="Promise-Druck" value={`${player.promise_pressure}%`} />
-                        <InfoRow label="Grund" value={player.last_morale_reason || '-'} />
-                        {player.injury && <InfoRow label="Aktuelle Verletzung" value={`${player.injury.type} bis ${player.injury.expected_return || '?'}`} />}
+                    <div>
+                        <h3 className="text-xl font-black uppercase tracking-tighter text-white italic">Team-Dynamik</h3>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Belastung & Moral</p>
                     </div>
+                </div>
+                <div className="space-y-4 relative z-10">
+                    <InfoRow label="Verletzungsrisiko" value={`${player.injury_risk}%`} />
+                    <InfoRow label="Promise-Druck" value={`${player.promise_pressure}%`} />
+                    <InfoRow label="Grund" value={player.last_morale_reason || '-'} />
+                    {player.injury && <InfoRow label="Aktuelle Verletzung" value={`${player.injury.type} bis ${player.injury.expected_return || '?'}`} />}
                 </div>
 
                 {modulePlayerActions.length > 0 && (
-                    <ModuleActionPanel actions={modulePlayerActions} onAction={onModuleAction} />
+                    <div className="mt-8 pt-8 border-t border-white/5">
+                        <ModuleActionPanel actions={modulePlayerActions} onAction={onModuleAction} compact />
+                    </div>
                 )}
             </div>
         </div>
     );
 }
 
-function ProgressBar({ label, value, positive }) {
+function ProgressBar({ label, value, positive, compact = false }) {
     return (
-        <div className="mb-8 last:mb-0">
-            <div className="mb-4 flex justify-between px-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
-                <span className={`text-xs font-black italic ${positive ? 'text-emerald-400' : 'text-amber-400'}`}>{value}%</span>
+        <div className={compact ? "mb-4 last:mb-0" : "mb-8 last:mb-0"}>
+            <div className={compact ? "mb-2 flex justify-between px-1" : "mb-4 flex justify-between px-1"}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+                <span className={`text-[10px] font-black italic ${positive ? 'text-emerald-400' : 'text-amber-400'}`}>{value}%</span>
             </div>
-            <div className="h-6 overflow-hidden rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-1 shadow-inner">
-                <div className={`h-full rounded-lg bg-gradient-to-r ${positive ? 'from-emerald-600 to-emerald-400' : 'from-amber-600 to-amber-400'} transition-all duration-700 ease-out`} style={{ width: `${value}%` }} />
+            <div className={compact ? "h-3 overflow-hidden rounded-lg border border-white/[0.05] bg-black/20 p-0.5" : "h-6 overflow-hidden rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] p-1 shadow-inner"}>
+                <div className={`h-full rounded-md bg-gradient-to-r ${positive ? 'from-emerald-600 to-emerald-400' : 'from-amber-600 to-amber-400'} transition-all duration-700 ease-out`} style={{ width: `${value}%` }} />
+            </div>
+        </div>
+    );
+}
+
+function CompactInfoRow({ label, value }) {
+    return (
+        <div className="flex items-center justify-between border-b border-white/[0.03] py-2 last:border-0 grow">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+            <span className="text-[11px] font-black text-white italic truncate ml-4 translate-y-[1px]">{value}</span>
+        </div>
+    );
+}
+
+function PlayerPositionPitch({ player }) {
+    const mainPos = player.position;
+    const secondPos = player.position_second;
+    const thirdPos = player.position_third;
+
+    const renderMarker = (pos, type) => {
+        const coords = POSITION_COORDS[pos];
+        if (!coords) return null;
+
+        const isMain = type === 'main';
+        const color = isMain ? 'bg-rose-500' : 'bg-slate-700/80';
+        const zIndex = isMain ? 'z-20' : 'z-10';
+        const scale = isMain ? 'scale-110' : 'scale-90 opacity-60';
+
+        return (
+            <div
+                key={`${pos}-${type}`}
+                className={`absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[9px] font-black text-white shadow-xl ring-2 ring-black/40 ${color} ${zIndex} ${scale} transition-all duration-500 hover:scale-125`}
+                style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
+                title={pos}
+            >
+                {pos}
+            </div>
+        );
+    };
+
+    return (
+        <div className="relative aspect-[2/3] w-full max-w-[240px] overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-900/10 shadow-inner group">
+            <svg viewBox="0 0 100 150" className="absolute inset-0 h-full w-full opacity-30">
+                <rect x="0" y="0" width="100" height="150" fill="#14532d" />
+                <path d="M 0 75 H 100" stroke="white" strokeWidth="0.5" fill="none" />
+                <circle cx="50" cy="75" r="15" stroke="white" strokeWidth="0.5" fill="none" />
+                <circle cx="50" cy="75" r="0.5" fill="white" />
+                <rect x="25" y="0" width="50" height="18" stroke="white" strokeWidth="0.5" fill="none" />
+                <rect x="35" y="0" width="30" height="6" stroke="white" strokeWidth="0.5" fill="none" />
+                <rect x="25" y="132" width="50" height="18" stroke="white" strokeWidth="0.5" fill="none" />
+                <rect x="35" y="144" width="30" height="6" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M 40 18 A 12 12 0 0 0 60 18" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M 40 132 A 12 12 0 0 1 60 132" stroke="white" strokeWidth="0.5" fill="none" />
+            </svg>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none"></div>
+
+            <div className="relative h-full w-full">
+                {thirdPos && renderMarker(thirdPos, 'third')}
+                {secondPos && renderMarker(secondPos, 'second')}
+                {mainPos && renderMarker(mainPos, 'main')}
+            </div>
+        </div>
+    );
+}
+
+function PlayerAttributesBio({ player }) {
+    const strengths = [];
+    const weaknesses = [];
+
+    if (player.attr_attacking >= 75) strengths.push('Torgefährlich');
+    if (player.attr_technical >= 78) strengths.push('Exzellente Technik');
+    if (player.attr_tactical >= 78) strengths.push('Spielintelligence');
+    if (player.attr_defending >= 75) strengths.push('Zweikampfstark');
+    if (player.attr_creativity >= 75) strengths.push('Kreativer Ideengeber');
+    if (player.player_style?.includes('Regisseur')) strengths.push('Hervorragender Regisseur');
+    if (player.player_style?.includes('Abräumer')) strengths.push('Defensiv-Anker');
+    if (player.player_style?.includes('Knipser')) strengths.push('Eiskalter Abschluss');
+    if (player.stamina >= 85) strengths.push('Enormes Laufpensum');
+
+    // Vielseitigkeit & Positions-Backup Analyse
+    if (player.position_second || player.position_third) {
+        strengths.push('Vielseitiger Spieler');
+        
+        const backupPositions = [player.position_second, player.position_third].filter(Boolean);
+        const isDefensiveBackup = backupPositions.some(p => [POSITIONS.TW, POSITIONS.IV, POSITIONS.LV, POSITIONS.RV].includes(p));
+        const isOffensiveBackup = backupPositions.some(p => [POSITIONS.MS, POSITIONS.LF, POSITIONS.RF, POSITIONS.HS].includes(p));
+        const isMidfieldBackup = backupPositions.some(p => [POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM, POSITIONS.RM, POSITIONS.LM].includes(p));
+
+        if (isDefensiveBackup && ![POSITIONS.IV, POSITIONS.TW].includes(player.position)) strengths.push('Defensiv-Backup');
+        if (isOffensiveBackup && ![POSITIONS.MS].includes(player.position)) strengths.push('Offensiv-Option');
+        if (isMidfieldBackup && ![POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM].includes(player.position)) strengths.push('Mittelfeld-Allrounder');
+    }
+
+    if (strengths.length === 0) strengths.push('Vielseitiger Allrounder');
+
+    if (player.attr_defending < 40 && !player.position?.includes('TW')) weaknesses.push('Ausbaufähige Defensive');
+    if (player.attr_attacking < 40 && (player.position === 'MS' || player.position === 'ST')) weaknesses.push('Wenig Tordrang');
+    if (player.attr_tactical < 45) weaknesses.push('Taktische Defizite');
+    if (player.pace < 50) weaknesses.push('Mangelndes Tempo');
+
+    if (weaknesses.length === 0) weaknesses.push('Keine herausragenden Schwächen');
+
+    return (
+        <div className="flex flex-col justify-center gap-8 h-full">
+            <div>
+                <h4 className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
+                    Stärken
+                </h4>
+                <div className="flex flex-col gap-2">
+                    {strengths.map(s => (
+                        <span key={s} className="text-lg font-black tracking-tight text-white italic">{s}</span>
+                    ))}
+                </div>
+            </div>
+
+            <div>
+                <h4 className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">
+                    <div className="h-1.5 w-1.5 rounded-full bg-rose-400"></div>
+                    Schwächen
+                </h4>
+                <div className="flex flex-col gap-2">
+                    {weaknesses.map(w => (
+                        <span key={w} className="text-lg font-black tracking-tight text-slate-400 italic">{w}</span>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -382,33 +750,167 @@ export function PlayerCareerTab({ careerStats }) {
 }
 
 export function PlayerMatchesTab({ player, recentMatches }) {
+    if (!recentMatches || recentMatches.length === 0) {
+        return (
+            <div className="sim-card border border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-20 text-center">
+                <SoccerBall size={48} weight="thin" className="mx-auto mb-6 text-slate-700" />
+                <p className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)] italic">Keine aktuellen Spieldaten erfasst</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="grid gap-6">
-            {recentMatches.length > 0 ? recentMatches.map((stat, index) => (
-                <div key={`${stat.match?.home_score}-${stat.match?.away_score}-${index}`} className="sim-card group flex flex-wrap items-center gap-8 p-6 transition-all hover:border-cyan-500/30 lg:flex-nowrap">
-                    <div className="w-32 shrink-0 border-r border-[var(--border-pillar)] pr-6">
-                        <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{stat.match?.kickoff_date_formatted}</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400">{stat.match?.competition_season?.competition?.code || 'LG'}</span>
-                    </div>
-                    <div className="min-w-[300px] flex-1 items-center justify-center gap-12 lg:flex lg:justify-start">
-                        <ClubSide side={stat.match?.home_club} active={stat.match?.home_club_id === player.club_id} align="end" />
-                        <div className="min-w-[60px] rounded-lg border border-[var(--border-pillar)] bg-[var(--bg-pillar)] px-4 py-1.5 text-center text-lg font-black text-white italic">
-                            {stat.match?.home_score} : {stat.match?.away_score}
+        <div className="space-y-4">
+            {/* Desktop View: Table */}
+            <div className="hidden md:block sim-card overflow-hidden p-0 border-[var(--border-muted)] bg-black/40">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <tbody className="divide-y divide-white/5">
+                            {recentMatches.map((stat, index) => (
+                                <tr key={`${stat.match?.home_club_id}-${stat.match?.away_club_id}-${index}`} className="group transition-colors hover:bg-white/[0.03]">
+                                    <td className="py-4 pl-8 pr-4 w-24">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black text-slate-400 opacity-60">14:00</span>
+                                            <span className="text-[11px] font-black text-white italic tracking-tighter">{stat.match?.kickoff_date_formatted}</span>
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-4 w-12 text-center">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="h-6 w-6">
+                                                {stat.match?.competition_season?.competition?.logo_url ? (
+                                                    <img src={stat.match.competition_season.competition.logo_url} className="h-full w-full object-contain mix-blend-luminosity brightness-200" alt="comp" />
+                                                ) : (
+                                                    <Flag size={20} className="text-slate-600" />
+                                                )}
+                                            </div>
+                                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Endst.</span>
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-6 flex-1 min-w-[200px]">
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={stat.match?.home_club?.logo_url} className="h-5 w-5 object-contain" alt="H" />
+                                                    <span className={`text-sm font-black italic tracking-tight ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
+                                                        {stat.match?.home_club?.short_name}
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm font-black text-white italic">{stat.match?.home_score}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={stat.match?.away_club?.logo_url} className="h-5 w-5 object-contain" alt="A" />
+                                                    <span className={`text-sm font-black italic tracking-tight ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
+                                                        {stat.match?.away_club?.short_name}
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm font-black text-white italic">{stat.match?.away_score}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-6 w-16 text-center">
+                                        <div className="flex justify-center">
+                                            <ResultCircle result={stat.result} />
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-6 w-20 text-center">
+                                        <span className="text-sm font-black text-white italic tracking-tighter">{stat.minutes_played}'</span>
+                                    </td>
+
+                                    <td className="py-4 px-4 w-12 text-center">
+                                        <div className="flex justify-center">
+                                            <StatCircle value={stat.goals} />
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-4 w-12 text-center">
+                                        <div className="flex justify-center">
+                                            <StatCircle value={stat.assists} />
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-4 w-12 text-center">
+                                        <div className="flex justify-center">
+                                            <StatCircle value={stat.yellow_cards} />
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 px-4 w-12 text-center">
+                                        <div className="flex justify-center">
+                                            <StatCircle value={stat.red_cards} />
+                                        </div>
+                                    </td>
+
+                                    <td className="py-4 pl-4 pr-8 w-24">
+                                        <div className="flex justify-end">
+                                            <RatingBadge rating={stat.rating} />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Mobile View: Cards */}
+            <div className="md:hidden space-y-3">
+                {recentMatches.map((stat, index) => (
+                    <div key={index} className="sim-card border-[var(--border-muted)] bg-black/40 p-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="h-6 w-6">
+                                    {stat.match?.competition_season?.competition?.logo_url ? (
+                                        <img src={stat.match.competition_season.competition.logo_url} className="h-full w-full object-contain mix-blend-luminosity brightness-200" alt="comp" />
+                                    ) : (
+                                        <Flag size={20} className="text-slate-600" />
+                                    )}
+                                </div>
+                                <span className="text-[11px] font-black text-white italic tracking-tighter">{stat.match?.kickoff_date_formatted}</span>
+                            </div>
+                            <RatingBadge rating={stat.rating} />
                         </div>
-                        <ClubSide side={stat.match?.away_club} active={stat.match?.away_club_id === player.club_id} />
+
+                        <div className="space-y-2 mb-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <img src={stat.match?.home_club?.logo_url} className="h-4 w-4 object-contain" alt="H" />
+                                    <span className={`text-xs font-black italic ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
+                                        {stat.match?.home_club?.short_name}
+                                    </span>
+                                </div>
+                                <span className="text-xs font-black text-white italic">{stat.match?.home_score}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <img src={stat.match?.away_club?.logo_url} className="h-4 w-4 object-contain" alt="A" />
+                                    <span className={`text-xs font-black italic ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
+                                        {stat.match?.away_club?.short_name}
+                                    </span>
+                                </div>
+                                <span className="text-xs font-black text-white italic">{stat.match?.away_score}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                            <div className="flex items-center gap-3">
+                                <ResultCircle result={stat.result} />
+                                <span className="text-xs font-black text-white italic">{stat.minutes_played}'</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <StatCircle value={stat.goals} />
+                                <StatCircle value={stat.assists} />
+                                <StatCircle value={stat.yellow_cards} />
+                                <StatCircle value={stat.red_cards} />
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-8 lg:border-l lg:border-[var(--border-pillar)] lg:pl-8">
-                        <MiniStat label="Einsatz" value={`${stat.minutes_played}'`} />
-                        <MiniStat label="S/A" value={<><span className="text-emerald-400">{stat.goals}</span><span className="mx-1 text-slate-700">/</span><span className="text-amber-500">{stat.assists}</span></>} />
-                        <MiniStat label="Rating" value={<span className={`rounded px-2 py-0.5 text-xs font-black italic ${stat.rating >= 7 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[var(--bg-content)] text-[var(--text-muted)]'}`}>{parseFloat(stat.rating || 0).toFixed(1)}</span>} />
-                    </div>
-                </div>
-            )) : (
-                <div className="sim-card border border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-20 text-center">
-                    <SoccerBall size={48} weight="thin" className="mx-auto mb-6 text-slate-700" />
-                    <p className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)] italic">Keine aktuellen Spieldaten erfasst</p>
-                </div>
-            )}
+                ))}
+            </div>
         </div>
     );
 }

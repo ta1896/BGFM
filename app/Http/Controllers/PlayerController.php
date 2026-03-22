@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\PlayerTransferHistory;
+use App\Modules\DataCenter\Services\ScraperService;
 
 class PlayerController extends Controller
 {
@@ -274,6 +276,8 @@ class PlayerController extends Controller
             'seasonCompetitionStatistics.season:id,name,start_date',
             'playtimePromises',
             'injuries',
+            'transferHistories.leftClub',
+            'transferHistories.joinedClub',
             'recoveryLogs' => fn ($query) => $query->latest('day')->limit(7),
             'conversations' => fn ($query) => $query->latest('id')->limit(8),
         ]);
@@ -378,12 +382,15 @@ class PlayerController extends Controller
             )
             ->take(10)
             ->get()
-            ->map(function ($stat) {
+            ->map(function ($stat) use ($player) {
                 return [
                     'minutes_played' => (int) $stat->minutes_played,
                     'goals' => (int) $stat->goals,
                     'assists' => (int) $stat->assists,
+                    'yellow_cards' => (int) $stat->yellow_cards,
+                    'red_cards' => (int) $stat->red_cards,
                     'rating' => (float) $stat->rating,
+                    'result' => $this->calculateMatchResult($stat->match, $player->club_id),
                     'match' => $stat->match ? [
                         'home_club_id' => (int) $stat->match->home_club_id,
                         'away_club_id' => (int) $stat->match->away_club_id,
@@ -393,6 +400,7 @@ class PlayerController extends Controller
                         'competition_season' => [
                             'competition' => [
                                 'code' => $stat->match->competitionSeason?->competition?->code,
+                                'logo_url' => $stat->match->competitionSeason?->competition?->logo_url,
                             ],
                         ],
                         'home_club' => $stat->match->homeClub ? [
@@ -420,6 +428,13 @@ class PlayerController extends Controller
                 'position' => $player->position,
                 'position_second' => $player->position_second,
                 'position_third' => $player->position_third,
+                'position_long' => $player->position_long,
+                'nationality' => $player->nationality,
+                'nationality_code' => $player->nationality_code,
+                'birthday' => $player->birthday?->format('d.m.Y'),
+                'height' => $player->height,
+                'shirt_number' => $player->shirt_number,
+                'preferred_foot' => $player->preferred_foot,
                 'age' => $player->age,
                 'overall' => $player->overall,
                 'potential' => $player->potential,
@@ -431,6 +446,12 @@ class PlayerController extends Controller
                 'physical' => $player->physical,
                 'stamina' => $player->stamina,
                 'morale' => $player->morale,
+                'attr_attacking' => $player->attr_attacking,
+                'attr_technical' => $player->attr_technical,
+                'attr_tactical' => $player->attr_tactical,
+                'attr_defending' => $player->attr_defending,
+                'attr_creativity' => $player->attr_creativity,
+                'attr_market' => $player->attr_market,
                 'salary' => $player->salary,
                 'market_value' => $player->market_value,
                 'market_value_formatted' => number_format($player->market_value, 0, ',', '.') . ' EUR',
@@ -460,6 +481,20 @@ class PlayerController extends Controller
                 ] : null,
                 'tm_profile_url' => $player->tm_profile_url,
                 'sofa_profile_url' => $player->sofa_profile_url,
+                'transfer_history' => $player->transferHistories->map(fn($history) => [
+                    'id' => $history->id,
+                    'season' => $history->season,
+                    'transfer_date' => $history->transfer_date?->format('d.m.Y'),
+                    'left_club_name' => $history->left_club_name,
+                    'left_club_id' => $history->left_club_id,
+                    'left_club_logo' => $history->leftClub?->logo_url,
+                    'joined_club_name' => $history->joined_club_name,
+                    'joined_club_id' => $history->joined_club_id,
+                    'joined_club_logo' => $history->joinedClub?->logo_url,
+                    'market_value' => $history->market_value,
+                    'fee' => $history->fee,
+                    'is_loan' => $history->is_loan,
+                ]),
             ],
             'currentSeasonStats' => $currentSeasonStats,
             'careerStats' => $careerStats,
@@ -584,7 +619,13 @@ class PlayerController extends Controller
                 'first_name' => ['required', 'string', 'max:80'],
                 'last_name' => ['required', 'string', 'max:80'],
                 'position' => ['required', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+                'position_second' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
+                'position_third' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
                 'age' => ['required', 'integer', 'min:15', 'max:45'],
+                'birthday' => ['nullable', 'date'],
+                'height' => ['nullable', 'integer'],
+                'shirt_number' => ['nullable', 'integer'],
+                'preferred_foot' => ['nullable', 'string'],
                 'overall' => ['required', 'integer', 'min:1', 'max:99'],
                 'pace' => ['required', 'integer', 'min:1', 'max:99'],
                 'shooting' => ['required', 'integer', 'min:1', 'max:99'],
@@ -595,6 +636,17 @@ class PlayerController extends Controller
                 'morale' => ['required', 'integer', 'min:1', 'max:100'],
                 'market_value' => ['required', 'numeric', 'min:0'],
                 'salary' => ['required', 'numeric', 'min:0'],
+                'transfermarkt_id' => ['nullable', 'string'],
+                'sofascore_id' => ['nullable', 'string'],
+                'sofascore_url' => ['nullable', 'string'],
+                'attr_attacking' => ['nullable', 'integer'],
+                'attr_technical' => ['nullable', 'integer'],
+                'attr_tactical' => ['nullable', 'integer'],
+                'attr_defending' => ['nullable', 'integer'],
+                'attr_creativity' => ['nullable', 'integer'],
+                'attr_market' => ['nullable', 'integer'],
+                'player_style' => ['nullable', 'string'],
+                'is_imported' => ['nullable', 'boolean'],
                 'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             ];
             $fullValidated = $request->validate($fullRules);
@@ -769,6 +821,111 @@ class PlayerController extends Controller
         return redirect()
             ->route('players.index', ['club' => $clubId])
             ->with('status', 'Spieler wurde geloescht.');
+    }
+
+    protected function calculateMatchResult($match, $clubId)
+    {
+        if (!$match) return 'D';
+        if ($match->home_score === null || $match->away_score === null) return 'D';
+
+        $isHome = (int) $match->home_club_id === (int) $clubId;
+        $homeScore = (int) $match->home_score;
+        $awayScore = (int) $match->away_score;
+
+        if ($homeScore === $awayScore) return 'D';
+
+        if ($isHome) {
+            return $homeScore > $awayScore ? 'W' : 'L';
+        } else {
+            return $awayScore > $homeScore ? 'W' : 'L';
+        }
+    }
+
+    public function transfer_history(Player $player, ScraperService $scraper): RedirectResponse
+    {
+        $this->ensureOwnership(request(), $player);
+
+        if (!$player->tm_profile_url) {
+            return back()->withErrors(['tm_url' => 'Keine Transfermarkt-URL hinterlegt.']);
+        }
+
+        $historyData = $scraper->getPlayerTransferHistory($player->tm_profile_url);
+
+        if (empty($historyData)) {
+            return back()->with('status', 'Keine Transferhistorie gefunden oder Fehler beim Scraper.');
+        }
+
+        foreach ($historyData as $data) {
+            // Find existing clubs
+            $leftClubId = null;
+            if (isset($data['left_club_tm_id'])) {
+                $leftClubId = Club::where('transfermarkt_id', $data['left_club_tm_id'])->value('id');
+            }
+            if (!$leftClubId && !empty($data['left_club_name'])) {
+                $leftClubId = Club::where('name', $data['left_club_name'])->value('id');
+            }
+
+            $joinedClubId = null;
+            if (isset($data['joined_club_tm_id'])) {
+                $joinedClubId = Club::where('transfermarkt_id', $data['joined_club_tm_id'])->value('id');
+            }
+            if (!$joinedClubId && !empty($data['joined_club_name'])) {
+                $joinedClubId = Club::where('name', $data['joined_club_name'])->value('id');
+            }
+
+            $player->transferHistories()->updateOrCreate(
+                [
+                    'season' => $data['season'],
+                    'transfer_date' => Carbon::parse($data['transfer_date']),
+                    'left_club_name' => $data['left_club_name'] ?? 'Unbekannt',
+                    'joined_club_name' => $data['joined_club_name'] ?? 'Unbekannt',
+                ],
+                [
+                    'left_club_tm_id' => $data['left_club_tm_id'] ?? null,
+                    'left_club_id' => $leftClubId,
+                    'joined_club_tm_id' => $data['joined_club_tm_id'] ?? null,
+                    'joined_club_id' => $joinedClubId,
+                    'market_value' => $this->parseValue($data['market_value'] ?? null),
+                    'fee' => $data['fee'] ?? '?',
+                    'is_loan' => $data['is_loan'] ?? false,
+                ]
+            );
+        }
+
+        return back()->with('status', 'Transferhistorie wurde erfolgreich synchronisiert.');
+    }
+
+    public function syncSofascore(Player $player): RedirectResponse
+    {
+        $this->ensureOwnership(request(), $player);
+
+        if (!$player->sofascore_id) {
+            return back()->with('error', 'Keine Sofascore-ID beim Spieler hinterlegt.');
+        }
+
+        try {
+            \App\Jobs\SyncPlayerSofascoreJob::dispatchSync($player);
+            return back()->with('status', 'Sofascore-Daten wurden erfolgreich synchronisiert.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Fehler beim Sofascore-Sync: ' . $e->getMessage());
+        }
+    }
+
+    private function parseValue(?string $value): ?int
+    {
+        if (!$value || $value === '?' || $value === '-') return null;
+        
+        $value = str_replace(['.', ','], ['', '.'], $value);
+        $factor = 1;
+        
+        if (Str::contains($value, 'Mio')) {
+            $factor = 1000000;
+        } elseif (Str::contains($value, 'Tsd')) {
+            $factor = 1000;
+        }
+        
+        $amount = (float) filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        return (int) ($amount * $factor);
     }
 
     private function ensureOwnership(Request $request, Player $player): void

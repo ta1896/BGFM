@@ -7,8 +7,10 @@ import {
     PlayerHistoryTab,
     PlayerMatchesTab,
     PlayerOverviewTab,
+    PlayerContractTab,
     PlayerShowHeader,
 } from '@/Pages/Players/components/ShowSections';
+import TransferHistory from '@/Pages/Players/components/TransferHistory';
 
 export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics, modulePlayerActions = [] }) {
     const { features } = usePage().props;
@@ -85,8 +87,16 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                         />
                     )}
                     {activeTab === 'career' && <PlayerCareerTab careerStats={careerStats} />}
+                    {activeTab === 'contract' && (
+                        <PlayerContractTab
+                            player={player}
+                            modulePlayerActions={modulePlayerActions.filter((action) => action.placement === 'overview')}
+                            onModuleAction={handleModuleAction}
+                        />
+                    )}
                     {activeTab === 'matches' && <PlayerMatchesTab player={player} recentMatches={recentMatches} />}
                     {activeTab === 'history' && <PlayerHistoryTab squadDynamics={squadDynamics} playerConversationsEnabled={playerConversationsEnabled} />}
+                    {activeTab === 'transfers' && <TransferHistory player={player} isOwner={isOwner} />}
                     {activeTab === 'customize' && (
                         <PlayerCustomizeTab
                             isOwner={isOwner}

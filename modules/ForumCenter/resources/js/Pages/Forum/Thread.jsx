@@ -7,12 +7,14 @@ import { ArrowLeft, ChatCircleDots, User, IdentificationCard, ShieldCheck, Quote
 export default function Thread({ thread, posts }) {
     const { data, setData, post, processing, reset, errors } = useForm({
         content: '',
+        images: [],
     });
 
     const submitReply = (e) => {
         e.preventDefault();
         post(route('forum.post.store', thread.slug), {
-            onSuccess: () => reset('content'),
+            onSuccess: () => reset('content', 'images'),
+            forceFormData: true,
         });
     };
 
@@ -83,6 +85,21 @@ export default function Thread({ thread, posts }) {
                             
                             <div className="flex-1 p-8 text-slate-200 leading-loose text-lg whitespace-pre-wrap font-medium">
                                 {post_item.content}
+                                
+                                {post_item.images && post_item.images.length > 0 && (
+                                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {post_item.images.map((img, imgIdx) => (
+                                            <div key={imgIdx} className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 group/img relative">
+                                                <img 
+                                                    src={img} 
+                                                    alt={`Beitrag Bild ${imgIdx + 1}`} 
+                                                    className="w-full h-48 object-cover cursor-zoom-in hover:scale-105 transition-transform duration-500"
+                                                    onClick={() => window.open(img, '_blank')}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="px-6 py-4 border-t border-[var(--border-muted)] flex justify-end gap-3">
@@ -112,14 +129,31 @@ export default function Thread({ thread, posts }) {
                                 required
                             ></textarea>
                             {errors.content && <div className="mt-2 text-sm text-rose-500">{errors.content}</div>}
-                            <div className="mt-4 flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="px-8 py-3 rounded-2xl bg-amber-500 text-black text-xs font-black uppercase tracking-widest hover:bg-amber-400 disabled:opacity-50 transition-all shadow-[0_5px_15px_rgba(217,177,92,0.2)]"
-                                >
-                                    {processing ? 'Sendet...' : 'Antwort absenden'}
-                                </button>
+                            
+                            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                    <label className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-amber-500 hover:border-amber-500/50 cursor-pointer transition-all text-[10px] font-black uppercase tracking-widest">
+                                        <Plus size={16} weight="bold" />
+                                        {data.images.length > 0 ? `${data.images.length} Bilder ausgewählt` : 'Bilder hinzufügen'}
+                                        <input 
+                                            type="file" 
+                                            className="hidden" 
+                                            accept="image/*"
+                                            multiple
+                                            onChange={e => setData('images', Array.from(e.target.files))}
+                                        />
+                                    </label>
+                                    {errors.images && <div className="mt-1 text-[10px] text-rose-500 font-bold">{errors.images}</div>}
+                                </div>
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="px-8 py-3 rounded-2xl bg-amber-500 text-black text-xs font-black uppercase tracking-widest hover:bg-amber-400 disabled:opacity-50 transition-all shadow-[0_5px_15px_rgba(217,177,92,0.2)]"
+                                    >
+                                        {processing ? 'Sendet...' : 'Antwort absenden'}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>

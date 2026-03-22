@@ -1109,7 +1109,7 @@ class LiveMatchTickerService
         $goalkeeper = $this->goalkeeperState($defenders) ?? $this->randomCollectionItem($defenders);
         if (
             $this->simulationStrategy->isSave(
-                (float) $goalkeeper->player->overall,
+                (float) $goalkeeper->player->attr_defending,
                 (float) $goalkeeper->fit_factor,
                 (float) $ballCarrier->player->shooting,
                 (float) $ballCarrier->fit_factor,
@@ -1283,7 +1283,7 @@ class LiveMatchTickerService
         if (
             $this->simulationStrategy->isPenaltyScoredInPlay(
                 (float) $taker->player->shooting,
-                (float) $goalkeeper->player->overall
+                (float) $goalkeeper->player->attr_creativity
             )
         ) {
             $match->events()->create([
@@ -1444,7 +1444,7 @@ class LiveMatchTickerService
 
         $isGoal = $this->simulationStrategy->isPenaltyScoredInShootout(
             (float) $taker->player->shooting,
-            (float) $goalkeeper->player->overall
+            (float) $goalkeeper->player->attr_creativity
         );
 
         $match->events()->create([

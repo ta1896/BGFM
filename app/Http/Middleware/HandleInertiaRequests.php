@@ -7,6 +7,7 @@ use App\Modules\ModuleManager;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Club;
+use App\Models\NavigationItem;
 use Illuminate\Support\Collection;
 
 class HandleInertiaRequests extends Middleware
@@ -68,6 +69,22 @@ class HandleInertiaRequests extends Middleware
                 'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),
             ],
             'modules' => fn () => app(ModuleManager::class)->frontendRegistry(),
+            'navigation' => [
+                'admin' => $isAdmin ? \Illuminate\Support\Facades\Cache::rememberForever('navigation_admin', function () {
+                    return \App\Models\NavigationItem::with('children')
+                        ->whereNull('parent_id')
+                        ->where('group', 'admin')
+                        ->orderBy('sort_order')
+                        ->get();
+                }) : [],
+                'manager' => \Illuminate\Support\Facades\Cache::rememberForever('navigation_manager', function () {
+                    return \App\Models\NavigationItem::with('children')
+                        ->whereNull('parent_id')
+                        ->whereIn('group', ['manager', 'manager_with_club', 'manager_without_club'])
+                        ->orderBy('sort_order')
+                        ->get();
+                }),
+            ],
         ];
     }
 

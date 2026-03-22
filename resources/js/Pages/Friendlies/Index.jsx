@@ -16,7 +16,7 @@ import {
 } from '@phosphor-icons/react';
 
 const StatusIcon = ({ status }) => {
-    if (status === 'accepted') return <CheckCircle size={16} weight="fill" className="text-emerald-400" />;
+    if (status === 'accepted' || status === 'auto_accepted') return <CheckCircle size={16} weight="fill" className="text-emerald-400" />;
     if (status === 'rejected') return <XCircle size={16} weight="fill" className="text-rose-400" />;
     return <Hourglass size={16} weight="fill" className="text-amber-400" />;
 };
@@ -178,14 +178,14 @@ export default function Index({ activeClub, opponents, outgoingRequests, incomin
                                     </div>
                                     <span
                                         className={`shrink-0 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
-                                            request.status === 'accepted'
+                                            (request.status === 'accepted' || request.status === 'auto_accepted')
                                                 ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
                                                 : request.status === 'rejected'
                                                   ? 'border-rose-500/20 bg-rose-500/10 text-rose-400'
                                                   : 'border-amber-500/20 bg-amber-500/10 text-amber-400'
                                         }`}
                                     >
-                                        {request.status === 'accepted' ? 'Angenommen' : request.status === 'rejected' ? 'Abgelehnt' : 'Ausstehend'}
+                                        {(request.status === 'accepted' || request.status === 'auto_accepted') ? 'Angenommen' : request.status === 'rejected' ? 'Abgelehnt' : 'Ausstehend'}
                                     </span>
                                 </div>
                             ))
@@ -211,11 +211,16 @@ export default function Index({ activeClub, opponents, outgoingRequests, incomin
                                         <option value="">Verein waehlen...</option>
                                         {opponents.map((club) => (
                                             <option key={club.id} value={club.id}>
-                                                {club.name}
+                                                {club.name} {club.is_cpu ? '(CPU)' : ''}
                                             </option>
                                         ))}
                                     </select>
                                     {errors.opponent_club_id && <p className="mt-2 text-xs text-rose-400">{errors.opponent_club_id}</p>}
+                                    {data.opponent_club_id && opponents.find(c => c.id == data.opponent_club_id)?.is_cpu && (
+                                        <p className="mt-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                                            <CheckCircle size={12} className="inline mr-1" /> Dieser CPU-Verein wird die Anfrage sofort annehmen.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>

@@ -109,6 +109,7 @@ export function getAdminMenuGroups() {
             label: 'System',
             items: [
                 { route: 'admin.dashboard', label: 'ACP Uebersicht', active: 'admin.dashboard' },
+                { route: 'admin.navigation.index', label: 'Navigation', active: 'admin.navigation.*' },
                 { route: 'admin.modules.index', label: 'Module', active: 'admin.modules.*' },
             ],
         },
@@ -130,4 +131,31 @@ export function getAdminMenuGroups() {
             ],
         },
     };
+}
+export function transformDynamicNavigation(dbItems) {
+    if (!dbItems || !Array.isArray(dbItems)) {
+        return {};
+    }
+
+    const groups = {};
+
+    dbItems.forEach((group, index) => {
+        const key = `db_group_${group.id}`;
+        groups[key] = {
+            label: group.label,
+            items: (group.children || []).map(item => ({
+                route: item.route,
+                url: item.url,
+                label: item.label,
+                active: item.route ? (
+                    item.route.endsWith('dashboard') 
+                        ? item.route 
+                        : `${item.route.split('.').slice(0, -1).join('.')}.*`
+                ) : null,
+                icon_name: item.icon, // Store icon name to resolve later if needed
+            })),
+        };
+    });
+
+    return groups;
 }

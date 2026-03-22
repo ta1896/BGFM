@@ -96,13 +96,13 @@ const EVENT_LABELS = {
 };
 
 const POSITION_ROWS = {
-    GK: 0, TW: 0, SW: 0.3,
-    LB: 1, LV: 1, RB: 1, RV: 1, CB: 1, IV: 1, 'IV-L': 1, 'IV-R': 1, 'CB-L': 1, 'CB-R': 1, 'CB-M': 1, 'CB-3L': 1, 'CB-3R': 1, LWB: 1.5, RWB: 1.5,
-    DM: 2, ZDM: 2, 'DM-L': 2, 'DM-R': 2, HL: 2, HR: 2,
-    CM: 3, ZM: 3, 'ZM-L': 3, 'ZM-R': 3, 'CM-L': 3, 'CM-R': 3, 'CM-M': 3, LM: 3, RM: 3,
-    AM: 4, ZOM: 4, LAM: 4, RAM: 4, 'AM-L': 4, 'AM-R': 4, MS: 4.8,
-    LW: 5, RW: 5, LF: 5, RF: 5, LS: 5.2, RS: 5.2, SS: 5, 'SS-L': 5, 'SS-R': 5,
-    ST: 6, 'ST-L': 6, 'ST-R': 6, CF: 6,
+    TW: 0, GK: 0,
+    LV: 1, LB: 1, IV: 1, CB: 1, RV: 1, RB: 1,
+    DM: 2, CDM: 2,
+    ZM: 3, CM: 3, LM: 3, RM: 3,
+    OM: 4, CAM: 4,
+    LF: 5, LW: 5, RF: 5, RW: 5, HS: 5.5, CF: 5.5,
+    MS: 6, ST: 6,
 };
 
 const getActionConfig = (type) => ACTION_CONFIG[type] || ACTION_CONFIG.default;

@@ -8,7 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ForumPost extends Model
 {
-    protected $fillable = ['forum_thread_id', 'user_id', 'content'];
+    protected $fillable = ['forum_thread_id', 'user_id', 'content', 'images'];
+
+    protected $casts = [
+        'images' => 'array',
+    ];
 
     public function thread(): BelongsTo
     {

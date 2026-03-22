@@ -66,6 +66,8 @@ class ModuleManager
     public function frontendRegistry(): array
     {
         $managerNavigation = [];
+        $managerWithClubNavigation = [];
+        $managerWithoutClubNavigation = [];
         $adminNavigation = [];
         $dashboardWidgets = [];
         $settingsSections = [];
@@ -76,6 +78,8 @@ class ModuleManager
         foreach ($this->enabledModules() as $module) {
             $frontend = $module['frontend'];
             $managerNavigation = array_merge($managerNavigation, $frontend['manager_navigation'] ?? []);
+            $managerWithClubNavigation = array_merge($managerWithClubNavigation, $frontend['manager_with_club_navigation'] ?? []);
+            $managerWithoutClubNavigation = array_merge($managerWithoutClubNavigation, $frontend['manager_without_club_navigation'] ?? []);
             $adminNavigation = array_merge($adminNavigation, $frontend['admin_navigation'] ?? []);
             $dashboardWidgets = array_merge($dashboardWidgets, $this->normalizeDashboardWidgets($this->filterHookEntries($frontend['dashboard_widgets'] ?? [])));
             $settingsSections = array_merge($settingsSections, $this->settingsSectionsForModule($module));
@@ -94,6 +98,8 @@ class ModuleManager
                 ->values()
                 ->all(),
             'manager_navigation' => $managerNavigation,
+            'manager_with_club_navigation' => $managerWithClubNavigation,
+            'manager_without_club_navigation' => $managerWithoutClubNavigation,
             'admin_navigation' => $adminNavigation,
             'dashboard_widgets' => $dashboardWidgets,
             'settings_sections' => $settingsSections,
@@ -467,6 +473,8 @@ class ModuleManager
 
         return [
             'manager_navigation' => is_array($frontend['manager_navigation'] ?? null) ? $frontend['manager_navigation'] : [],
+            'manager_with_club_navigation' => is_array($frontend['manager_with_club_navigation'] ?? null) ? $frontend['manager_with_club_navigation'] : [],
+            'manager_without_club_navigation' => is_array($frontend['manager_without_club_navigation'] ?? null) ? $frontend['manager_without_club_navigation'] : [],
             'admin_navigation' => is_array($frontend['admin_navigation'] ?? null) ? $frontend['admin_navigation'] : [],
             'dashboard_widgets' => array_values(is_array($frontend['dashboard_widgets'] ?? null) ? $frontend['dashboard_widgets'] : []),
             'settings_sections' => array_values(is_array($frontend['settings_sections'] ?? null) ? $frontend['settings_sections'] : []),

@@ -129,7 +129,7 @@ class DefaultSimulationStrategy
     }
 
     public function isSave(
-        float $goalkeeperOverall,
+        float $goalkeeperSavingSkill,
         float $goalkeeperFitFactor,
         float $shooterShooting,
         float $shooterFitFactor,
@@ -139,7 +139,7 @@ class DefaultSimulationStrategy
         $skillDivisor = $this->float('formulas.save.skill_divisor', 300.0);
         $xgDivisor = $this->float('formulas.save.xg_divisor', 2.5);
         $probability = $base
-            + (((($goalkeeperOverall * $goalkeeperFitFactor) - ($shooterShooting * $shooterFitFactor)) / $skillDivisor))
+            + (((($goalkeeperSavingSkill * $goalkeeperFitFactor) - ($shooterShooting * $shooterFitFactor)) / $skillDivisor))
             - ($xg / $xgDivisor);
 
         return $this->roll($this->clamp(
@@ -173,9 +173,9 @@ class DefaultSimulationStrategy
         return $this->roll($this->probability('penalty_awarded_after_foul', 0.14));
     }
 
-    public function isPenaltyScoredInPlay(float $takerShooting, float $goalkeeperOverall): bool
+    public function isPenaltyScoredInPlay(float $takerShooting, float $goalkeeperAnticipation): bool
     {
-        return $this->roll($this->penaltyScoreProbability($takerShooting, $goalkeeperOverall, 'formulas.penalty_in_play', 0.75));
+        return $this->roll($this->penaltyScoreProbability($takerShooting, $goalkeeperAnticipation, 'formulas.penalty_in_play', 0.75));
     }
 
     public function shouldCreatePenaltySaveEventInPlay(): bool
@@ -188,9 +188,9 @@ class DefaultSimulationStrategy
         return $this->roll($this->probability('random_injury_per_minute', 0.012));
     }
 
-    public function isPenaltyScoredInShootout(float $takerShooting, float $goalkeeperOverall): bool
+    public function isPenaltyScoredInShootout(float $takerShooting, float $goalkeeperAnticipation): bool
     {
-        return $this->roll($this->penaltyScoreProbability($takerShooting, $goalkeeperOverall, 'formulas.penalty_shootout', 0.76));
+        return $this->roll($this->penaltyScoreProbability($takerShooting, $goalkeeperAnticipation, 'formulas.penalty_shootout', 0.76));
     }
 
     public function shouldCreatePenaltySaveEventInShootout(): bool
@@ -203,11 +203,11 @@ class DefaultSimulationStrategy
         return $this->roll($this->probability('shootout_coinflip_home_wins', 0.50));
     }
 
-    private function penaltyScoreProbability(float $takerShooting, float $goalkeeperOverall, string $path, float $defaultBase): float
+    private function penaltyScoreProbability(float $takerShooting, float $goalkeeperAnticipation, string $path, float $defaultBase): float
     {
         $base = $this->float($path.'.base', $defaultBase);
         $divisor = $this->float($path.'.divisor', 300.0);
-        $probability = $base + (($takerShooting - $goalkeeperOverall) / $divisor);
+        $probability = $base + (($takerShooting - $goalkeeperAnticipation) / $divisor);
 
         return $this->clamp(
             $probability,
