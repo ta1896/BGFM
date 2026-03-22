@@ -42,8 +42,10 @@ class SeasonProgressionService
      *   training_camps_activated:int,
      *   training_camps_completed:int,
      *   sponsor_contracts_expired:int,
+     *   loans_completed:int,
      *   team_of_the_day_generated:int,
-     *   team_of_the_day_generated:int
+     *   random_events_generated:int,
+     *   random_events_applied:int
      * }
      */
     public function processNextMatchday(?CompetitionSeason $targetCompetitionSeason = null): array
@@ -59,8 +61,10 @@ class SeasonProgressionService
             'training_camps_activated' => 0,
             'training_camps_completed' => 0,
             'sponsor_contracts_expired' => 0,
+            'loans_completed' => 0,
             'team_of_the_day_generated' => 0,
-            'team_of_the_day_generated' => 0,
+            'random_events_generated' => 0,
+            'random_events_applied' => 0,
         ];
 
         $competitionSeasons = $this->competitionSeasonsForRun($targetCompetitionSeason);
