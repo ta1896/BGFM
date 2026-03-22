@@ -52,6 +52,9 @@ return new class extends Migration
                 );
             }
         }
+
+        \Illuminate\Support\Facades\Cache::forget('navigation_admin');
+        \Illuminate\Support\Facades\Cache::forget('navigation_manager');
     }
 
     /**
