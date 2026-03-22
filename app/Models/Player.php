@@ -366,7 +366,7 @@ class Player extends Model
 
     public function getPositionLongAttribute(): string
     {
-        return \App\Constants\PlayerPosition::labels()[$this->position] ?? $this->position;
+        return \App\Constants\PlayerPosition::labels()[$this->position] ?? (string) ($this->position ?? '');
     }
 
     public function getTmProfileUrlAttribute(): ?string
