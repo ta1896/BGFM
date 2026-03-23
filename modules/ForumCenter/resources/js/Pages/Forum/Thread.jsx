@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UserAvatar from '@/Components/UserAvatar';
-import { ArrowLeft, ChatCircleDots, User, IdentificationCard, ShieldCheck, Quotes } from '@phosphor-icons/react';
+import { ArrowLeft, ChatCircleDots, IdentificationCard, ShieldCheck, Quotes, Plus } from '@phosphor-icons/react';
 
 export default function Thread({ thread, posts }) {
     const { data, setData, post, processing, reset, errors } = useForm({
