@@ -117,12 +117,12 @@ export default function Form({ player, clubs, positions }) {
 
     const handleSyncSofascore = () => {
         if (!player) return;
-        router.post(route('players.sync-sofascore', player.id), {}, { preserveScroll: true });
+        router.post(route('admin.players.sync-sofascore', player.id), {}, { preserveScroll: true });
     };
 
     const handleSyncHistory = () => {
         if (!player) return;
-        router.post(route('players.sync-history', player.id), {}, { preserveScroll: true });
+        router.post(route('admin.players.sync-history', player.id), {}, { preserveScroll: true });
     };
 
     return (

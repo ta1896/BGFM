@@ -51,10 +51,7 @@ export default function Form({ club, users, clubs, rolePlayers }) {
     const submit = (e) => {
         e.preventDefault();
         if (isEdit) {
-            router.post(route('admin.clubs.update', club.id), {
-                _method: 'PUT',
-                ...data,
-            }, {
+            router.put(route('admin.clubs.update', club.id), data, {
                 forceFormData: true,
             });
         } else {

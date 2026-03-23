@@ -76,9 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/matches/{match}/live/substitute/plan', [MatchCenterController::class, 'livePlanSubstitute'])->name('matches.live.substitute.plan');
             Route::post('/matches/{match}/live/shout', [MatchCenterController::class, 'liveShout'])->name('matches.live.shout');
             Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
-            Route::get('/matches/{match}/live/state', [MatchCenterController::class, 'liveState'])->name('matches.live.state');
             Route::get('/lineups/match/{match}', [LineupsController::class, 'match'])->name('lineups.match');
-            Route::get('/friendlies', [FriendlyMatchController::class, 'index'])->name('friendlies.index');
             Route::get('/friendlies', [FriendlyMatchController::class, 'index'])->name('friendlies.index');
             Route::post('/friendlies', [FriendlyMatchController::class, 'store'])->name('friendlies.store');
             Route::post('/friendlies/{friendlyRequest}/accept', [FriendlyMatchController::class, 'accept'])->name('friendlies.accept');
@@ -126,6 +124,8 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('clubs', AdminClubController::class);
         Route::post('/players/bulk-sync', [AdminPlayerController::class, 'bulkSyncSofascore'])->name('players.bulk-sync');
         Route::delete('/players/bulk-sync/clear', [AdminPlayerController::class, 'clearBulkSyncLogs'])->name('players.bulk-sync.clear');
+        Route::post('/players/{player}/sync-history', [AdminPlayerController::class, 'syncTransferHistory'])->name('players.sync-history');
+        Route::post('/players/{player}/sync-sofascore', [AdminPlayerController::class, 'syncSofascore'])->name('players.sync-sofascore');
         Route::resource('players', AdminPlayerController::class);
         Route::resource('lineups', AdminLineupController::class);
         Route::post('/lineups/{lineup}/activate', [AdminLineupController::class, 'activate'])->name('lineups.activate');
@@ -166,6 +166,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::controller(\App\Http\Controllers\Admin\ExternalSyncController::class)->prefix('external-sync')->name('external-sync.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/start', 'startSync')->name('start');
+            Route::post('/players/{player}/link-sofascore', 'linkSofascore')->name('link-sofascore');
             Route::delete('/logs', 'clearLogs')->name('clear-logs');
         });
     });

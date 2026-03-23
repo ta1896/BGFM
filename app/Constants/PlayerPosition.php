@@ -46,9 +46,9 @@ class PlayerPosition
         ];
     }
 
-    public static function map(string $pos): string
+    public static function aliases(): array
     {
-        $map = [
+        return [
             'GK' => self::TW,
             'LB' => self::LV,
             'CB' => self::IV,
@@ -58,6 +58,9 @@ class PlayerPosition
             'CDM' => self::DM,
             'CM' => self::ZM,
             'CAM' => self::OM,
+            'LAM' => self::OM,
+            'ZOM' => self::OM,
+            'RAM' => self::OM,
             'LW' => self::LF,
             'RW' => self::RF,
             'ST' => self::MS,
@@ -65,7 +68,10 @@ class PlayerPosition
             'LS' => self::MS,
             'RS' => self::MS,
         ];
+    }
 
-        return $map[strtoupper($pos)] ?? strtoupper($pos);
+    public static function map(string $pos): string
+    {
+        return self::aliases()[strtoupper($pos)] ?? strtoupper($pos);
     }
 }

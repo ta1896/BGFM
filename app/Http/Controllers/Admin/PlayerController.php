@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\Player;
 use App\Jobs\BulkSyncSofascoreJob;
+use App\Jobs\SyncPlayerSofascoreJob;
+use App\Jobs\SyncPlayerTransferHistoryJob;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Modules\DataCenter\Models\ImportLog;
@@ -170,6 +172,28 @@ class PlayerController extends Controller
         return redirect()
             ->route('admin.players.index')
             ->with('status', 'Spieler wurde geloescht.');
+    }
+
+    public function syncTransferHistory(Player $player): RedirectResponse
+    {
+        if (!$player->transfermarkt_id && !$player->transfermarkt_url) {
+            return back()->with('error', 'Keine Transfermarkt-ID oder URL beim Spieler hinterlegt.');
+        }
+
+        SyncPlayerTransferHistoryJob::dispatch($player->id);
+
+        return back()->with('status', 'Transferhistorie wurde zur Synchronisation eingeplant.');
+    }
+
+    public function syncSofascore(Player $player): RedirectResponse
+    {
+        if (!$player->sofascore_id) {
+            return back()->with('error', 'Keine Sofascore-ID beim Spieler hinterlegt.');
+        }
+
+        SyncPlayerSofascoreJob::dispatch($player);
+
+        return back()->with('status', 'Sofascore-Daten wurden zur Synchronisation eingeplant.');
     }
 
     private function validatePayload(Request $request): array

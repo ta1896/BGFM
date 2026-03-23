@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\BulkSyncSofascoreJob;
+use App\Jobs\SyncPlayerSofascoreJob;
 use App\Models\Player;
+use App\Services\SofascoreLinkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,16 +22,30 @@ class ExternalSyncController extends Controller
     {
         $playerStats = [
             'total' => Player::count(),
-            'with_sofascore' => Player::whereNotNull('sofascore_id')->count(),
-            'with_transfermarkt' => Player::where(function($q) {
-                $q->whereNotNull('transfermarkt_id')->orWhereNotNull('transfermarkt_url');
+            'with_sofascore' => Player::whereNotNull('sofascore_id')
+                ->where('sofascore_id', '!=', '')
+                ->count(),
+            'with_transfermarkt' => Player::where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('transfermarkt_id')->where('transfermarkt_id', '!=', '');
+                })->orWhere(function ($inner) {
+                    $inner->whereNotNull('transfermarkt_url')->where('transfermarkt_url', '!=', '');
+                });
             })->count(),
         ];
 
         $missingPlayers = [
-            'sofascore' => Player::with('club:id,name')->whereNull('sofascore_id')->get(['id', 'first_name', 'last_name', 'club_id']),
-            'transfermarkt' => Player::with('club:id,name')->where(function($q) {
-                $q->whereNull('transfermarkt_id')->whereNull('transfermarkt_url');
+            'sofascore' => Player::with('club:id,name')
+                ->where(function ($q) {
+                    $q->whereNull('sofascore_id')->orWhere('sofascore_id', '');
+                })
+                ->get(['id', 'first_name', 'last_name', 'club_id']),
+            'transfermarkt' => Player::with('club:id,name')->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNull('transfermarkt_id')->orWhere('transfermarkt_id', '');
+                })->where(function ($inner) {
+                    $inner->whereNull('transfermarkt_url')->orWhere('transfermarkt_url', '');
+                });
             })->get(['id', 'first_name', 'last_name', 'club_id']),
         ];
 
@@ -78,5 +94,21 @@ class ExternalSyncController extends Controller
         ImportLog::where('league_id', 'bulk_sync_sofascore')->delete();
 
         return back()->with('status', 'Synchronisations-Journal wurde geleert.');
+    }
+
+    public function linkSofascore(Player $player, SofascoreLinkService $linkService): RedirectResponse
+    {
+        $result = $linkService->linkPlayer($player->loadMissing('club:id,name'));
+
+        if (!($result['linked'] ?? false)) {
+            return back()->with('error', 'Kein sicherer Sofascore-Treffer gefunden.');
+        }
+
+        SyncPlayerSofascoreJob::dispatch($player->fresh());
+
+        return back()->with(
+            'status',
+            "Sofascore-Verknüpfung gesetzt für {$player->full_name} (ID: {$result['id']}). Sync wurde gestartet."
+        );
     }
 }

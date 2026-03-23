@@ -34,12 +34,20 @@ class SyncPlayerTransferHistoryJob implements ShouldQueue
     public function handle(): void
     {
         $player = Player::find($this->playerId);
-        if (!$player || !$player->transfermarkt_url) {
+        if (!$player || (!$player->transfermarkt_id && !$player->transfermarkt_url)) {
             return;
         }
 
         $scraper = app(ScraperService::class);
-        $historyData = $scraper->getPlayerTransferHistory($player->transfermarkt_url);
+        $historyData = [];
+
+        if ($player->transfermarkt_id) {
+            $historyData = $scraper->getPlayerTransferHistoryById($player->transfermarkt_id);
+        }
+
+        if (empty($historyData) && $player->transfermarkt_url) {
+            $historyData = $scraper->getPlayerTransferHistory($player->transfermarkt_url);
+        }
 
         if (empty($historyData)) {
             Log::info("SyncPlayerTransferHistoryJob: No data for Player {$player->id}");

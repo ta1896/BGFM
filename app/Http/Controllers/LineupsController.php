@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\PlayerPosition;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
@@ -360,6 +361,7 @@ class LineupsController extends Controller
                 'foreign' => (float) config('simulation.position_fit.foreign', 0.76),
                 'foreign_gk' => (float) config('simulation.position_fit.foreign_gk', 0.55),
             ],
+            'positionAliases' => PlayerPosition::aliases(),
         ]);
     }
 

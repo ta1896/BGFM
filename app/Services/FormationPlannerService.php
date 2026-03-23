@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\PlayerPosition;
 use App\Models\Player;
 use Illuminate\Support\Collection;
 
@@ -348,17 +349,10 @@ class FormationPlannerService
         $starters = [];
 
         foreach ($slots as $slot) {
-            $pick = $available->first(function (Player $player) use ($slot, $usedIds): bool {
-                if (in_array($player->id, $usedIds, true)) {
-                    return false;
-                }
-
-                return $this->positionFitsGroup($player->position, $slot['group']);
-            });
-
-            if (!$pick) {
-                $pick = $available->first(fn(Player $player): bool => !in_array($player->id, $usedIds, true));
-            }
+            $pick = $available
+                ->reject(fn(Player $player): bool => in_array($player->id, $usedIds, true))
+                ->sortByDesc(fn(Player $player): float => $this->slotScore($player, $slot))
+                ->first();
 
             if ($pick) {
                 $starters[$slot['slot']] = $pick->id;
@@ -395,5 +389,103 @@ class FormationPlannerService
             'FWD' => in_array($playerGroup, ['FWD', 'MID'], true),
             default => false,
         };
+    }
+
+    /**
+     * @param array{slot:string,label:string,group:string,x:int,y:int} $slot
+     */
+    private function slotScore(Player $player, array $slot): float
+    {
+        $base = ($player->overall * 12)
+            + ($player->stamina * 0.8)
+            + ($player->morale * 0.6)
+            + (($player->sharpness ?? 50) * 0.4)
+            - (($player->fatigue ?? 0) * 0.7);
+
+        $fit = $this->positionService->fitFactorWithProfile(
+            $player->position_main ?: $player->position,
+            $player->position_second,
+            $player->position_third,
+            $slot['slot']
+        );
+
+        $bonus = 0.0;
+        foreach ([
+            [$player->position_main ?: $player->position, 120.0],
+            [$player->position_second, 70.0],
+            [$player->position_third, 35.0],
+        ] as [$position, $weight]) {
+            if ($this->positionMatchesSlot((string) $position, $slot)) {
+                $bonus = max($bonus, $weight);
+            }
+        }
+
+        if ($bonus === 0.0 && $this->positionFitsGroup((string) ($player->position_main ?: $player->position), $slot['group'])) {
+            $bonus = 20.0;
+        }
+
+        return $base + ($fit * 100.0) + $bonus;
+    }
+
+    /**
+     * @param array{slot:string,label:string,group:string,x:int,y:int} $slot
+     */
+    private function positionMatchesSlot(string $position, array $slot): bool
+    {
+        $normalizedPosition = $this->normalizePositionCode($position);
+        if ($normalizedPosition === '') {
+            return false;
+        }
+
+        return in_array($normalizedPosition, $this->slotAliases($slot['slot'], $slot['label']), true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function slotAliases(string $slotCode, string $slotLabel): array
+    {
+        $slot = $this->normalizePositionCode($slotCode);
+        $label = $this->normalizePositionCode($slotLabel);
+        $map = [
+            'TW' => ['TW', 'GK'],
+            'LV' => ['LV', 'LWB'],
+            'RV' => ['RV', 'RWB'],
+            'LWB' => ['LWB', 'LV', 'LM'],
+            'RWB' => ['RWB', 'RV', 'RM'],
+            'IV' => ['IV'],
+            'LM' => ['LM', 'LWB', 'LV', 'LF'],
+            'RM' => ['RM', 'RWB', 'RV', 'RF'],
+            'DM' => ['DM', 'ZM'],
+            'ZM' => ['ZM', 'DM', 'OM', 'ZOM'],
+            'OM' => ['OM', 'ZOM', 'LAM', 'RAM', 'ZM'],
+            'ZOM' => ['ZOM', 'OM', 'LAM', 'RAM'],
+            'LAM' => ['LAM', 'LM', 'OM', 'ZOM'],
+            'RAM' => ['RAM', 'RM', 'OM', 'ZOM'],
+            'LF' => ['LF', 'LW', 'LM', 'LS', 'ST', 'MS'],
+            'RF' => ['RF', 'RW', 'RM', 'RS', 'ST', 'MS'],
+            'LS' => ['LS', 'LF', 'ST', 'MS'],
+            'RS' => ['RS', 'RF', 'ST', 'MS'],
+            'ST' => ['ST', 'MS', 'HS', 'LS', 'RS'],
+            'MS' => ['MS', 'ST', 'HS', 'LS', 'RS'],
+            'HS' => ['HS', 'MS', 'ST', 'ZOM'],
+        ];
+
+        return array_values(array_unique(array_merge(
+            [$slot, $label],
+            $map[$slot] ?? [],
+            $map[$label] ?? []
+        )));
+    }
+
+    private function normalizePositionCode(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        $base = preg_replace('/-(L|R)$/', '', $normalized);
+        return PlayerPosition::map($base);
     }
 }

@@ -841,6 +841,11 @@ class PlayerController extends Controller
         }
     }
 
+    public function syncTransferHistory(Player $player, ScraperService $scraper): RedirectResponse
+    {
+        return $this->transfer_history($player, $scraper);
+    }
+
     public function transfer_history(Player $player, ScraperService $scraper): RedirectResponse
     {
         $this->ensureOwnership(request(), $player);

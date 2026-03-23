@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { 
     Trash, Lightning,
     IdentificationBadge, Info,
     Users, Broadcast,
     TrendUp, X,
     CheckSquare,
+    ArrowsClockwise,
 } from '@phosphor-icons/react';
 import SyncJournal from '@/Components/SyncJournal';
 
@@ -61,6 +62,7 @@ export default function Index({ stats, latestLogs, missingPlayers = {} }) {
     const { post, delete: destroy, processing } = useForm();
     const [selectedMode, setSelectedMode] = useState('both');
     const [showMissing, setShowMissing] = useState(null); // 'sofascore' | 'transfermarkt' | null
+    const [linkingPlayerId, setLinkingPlayerId] = useState(null);
 
     const startSync = () => {
         const modeLabel = MODES.find(m => m.key === selectedMode)?.label ?? selectedMode;
@@ -73,6 +75,14 @@ export default function Index({ stats, latestLogs, missingPlayers = {} }) {
         if (confirm('Möchtest du das gesamte Synchronisations-Journal leeren?')) {
             destroy(route('admin.external-sync.clear-logs'));
         }
+    };
+
+    const linkSofascore = (playerId) => {
+        setLinkingPlayerId(playerId);
+        router.post(route('admin.external-sync.link-sofascore', playerId), {}, {
+            preserveScroll: true,
+            onFinish: () => setLinkingPlayerId(null),
+        });
     };
 
     const activeModeConfig = MODES.find(m => m.key === selectedMode);
@@ -114,8 +124,25 @@ export default function Index({ stats, latestLogs, missingPlayers = {} }) {
                                                 <p className="font-bold text-white leading-tight">{player.full_name}</p>
                                                 <p className="text-xs text-slate-500 uppercase font-black tracking-widest mt-1">ID: {player.id}</p>
                                             </div>
-                                            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                                                {player.club ? player.club.name : 'Vereinslos'}
+                                            <div className="flex items-center gap-2">
+                                                <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                                    {player.club ? player.club.name : 'Vereinslos'}
+                                                </div>
+                                                {showMissing === 'sofascore' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => linkSofascore(player.id)}
+                                                        disabled={linkingPlayerId === player.id}
+                                                        className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase text-indigo-300 tracking-widest hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+                                                    >
+                                                        {linkingPlayerId === player.id ? (
+                                                            <span className="inline-flex items-center gap-1">
+                                                                <ArrowsClockwise size={12} className="animate-spin" />
+                                                                Suche...
+                                                            </span>
+                                                        ) : 'Auto-Link'}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}

@@ -317,14 +317,18 @@ def scrape_league_players(
 import httpx
 from datetime import datetime
 
-TM_API_BASES = [
-    base.strip().rstrip("/")
-    for base in os.getenv(
-        "TM_API_BASES",
-        os.getenv("TM_API_BASE", "https://tmapi-alpha.transfermarkt.technology"),
-    ).split(",")
-    if base.strip()
-]
+def resolve_tm_api_bases():
+    raw_bases = os.getenv("TM_API_BASES", "").strip()
+    if not raw_bases:
+        raw_bases = os.getenv("TM_API_BASE", "https://tmapi-alpha.transfermarkt.technology").strip()
+
+    return [
+        base.strip().rstrip("/")
+        for base in raw_bases.split(",")
+        if base.strip()
+    ]
+
+TM_API_BASES = resolve_tm_api_bases()
 TM_API_TIMEOUT = float(os.getenv("TM_API_TIMEOUT", "20"))
 TM_API_PREFERRED_CONTEXT = os.getenv("TM_API_PREFERRED_CONTEXT", "com").strip()
 TM_API_PROXY = os.getenv("TM_API_PROXY", "").strip() or None

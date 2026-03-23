@@ -1,27 +1,20 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { 
-    SoccerBall, 
     ArrowLeft, 
     Lightning, 
-    ShieldCheck, 
-    Users, 
     Strategy, 
     CaretDown,
     Calendar,
-    Checks,
-    Warning,
     Target,
-    Clock,
-    UserCircle,
     Plus,
     X,
     Trash,
     FloppyDisk,
     MagicWand,
     MagnifyingGlass,
-    TrendUp
+    Stack
 } from '@phosphor-icons/react';
 
 const PitchMarkings = () => (
@@ -40,6 +33,106 @@ const PitchMarkings = () => (
         </g>
     </svg>
 );
+
+const normalizePositionCode = (value) => {
+    const normalized = String(value ?? '').trim().toUpperCase();
+    if (!normalized) return '';
+
+    const base = normalized.replace(/-(L|R)$/, '');
+    if (base === 'GK') return 'TW';
+    if (base === 'LW') return 'LF';
+    if (base === 'RW') return 'RF';
+
+    return base;
+};
+
+const groupFromPosition = (value) => {
+    const normalized = normalizePositionCode(value);
+    if (!normalized) return null;
+    if (['TW'].includes(normalized)) return 'GK';
+    if (['LV', 'IV', 'RV', 'LWB', 'RWB', 'DEF'].includes(normalized)) return 'DEF';
+    if (['LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'MID'].includes(normalized)) return 'MID';
+    if (['LS', 'MS', 'RS', 'ST', 'LF', 'RF', 'HS', 'FWD'].includes(normalized)) return 'FWD';
+    return null;
+};
+
+const slotAliases = (slot) => {
+    const slotCode = normalizePositionCode(slot.slot);
+    const slotLabel = normalizePositionCode(slot.label);
+    const aliasMap = {
+        TW: ['TW'],
+        LV: ['LV', 'LWB'],
+        RV: ['RV', 'RWB'],
+        LWB: ['LWB', 'LV', 'LM'],
+        RWB: ['RWB', 'RV', 'RM'],
+        IV: ['IV'],
+        LM: ['LM', 'LWB', 'LV', 'LF'],
+        RM: ['RM', 'RWB', 'RV', 'RF'],
+        DM: ['DM', 'ZM'],
+        ZM: ['ZM', 'DM', 'OM', 'ZOM'],
+        OM: ['OM', 'ZOM', 'LAM', 'RAM', 'ZM'],
+        ZOM: ['ZOM', 'OM', 'LAM', 'RAM'],
+        LAM: ['LAM', 'LM', 'OM', 'ZOM'],
+        RAM: ['RAM', 'RM', 'OM', 'ZOM'],
+        LF: ['LF', 'LM', 'LS', 'ST', 'MS'],
+        RF: ['RF', 'RM', 'RS', 'ST', 'MS'],
+        LS: ['LS', 'LF', 'ST', 'MS'],
+        RS: ['RS', 'RF', 'ST', 'MS'],
+        ST: ['ST', 'MS', 'HS', 'LS', 'RS'],
+        MS: ['MS', 'ST', 'HS', 'LS', 'RS'],
+        HS: ['HS', 'MS', 'ST', 'ZOM'],
+    };
+
+    return Array.from(new Set([
+        slotCode,
+        slotLabel,
+        ...(aliasMap[slotCode] ?? []),
+        ...(aliasMap[slotLabel] ?? []),
+    ].filter(Boolean)));
+};
+
+const playerSlotScore = (player, slot, positionFit) => {
+    const positions = [
+        normalizePositionCode(player.position_main || player.position),
+        normalizePositionCode(player.position_second),
+        normalizePositionCode(player.position_third),
+    ].filter(Boolean);
+    const aliases = slotAliases(slot);
+
+    const mainGroup = groupFromPosition(positions[0]);
+    const secondGroup = groupFromPosition(positions[1]);
+    const thirdGroup = groupFromPosition(positions[2]);
+
+    let fit = positionFit.foreign;
+    if (aliases.includes(positions[0]) || mainGroup === slot.group) fit = positionFit.main;
+    else if (aliases.includes(positions[1]) || secondGroup === slot.group) fit = positionFit.second;
+    else if (aliases.includes(positions[2]) || thirdGroup === slot.group) fit = positionFit.third;
+    else if (mainGroup === 'GK' || slot.group === 'GK') fit = positionFit.foreign_gk;
+
+    const exactBonus = aliases.includes(positions[0])
+        ? 220
+        : aliases.includes(positions[1])
+            ? 150
+            : aliases.includes(positions[2])
+                ? 90
+                : mainGroup === slot.group
+                    ? 45
+                    : secondGroup === slot.group
+                        ? 25
+                        : thirdGroup === slot.group
+                            ? 10
+                            : 0;
+
+    return (
+        (player.overall * 12)
+        + (player.stamina * 0.8)
+        + (player.morale * 0.6)
+        + ((player.sharpness ?? 50) * 0.4)
+        - ((player.fatigue ?? 0) * 0.7)
+        + (fit * 100)
+        + exactBonus
+    );
+};
 
 const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, onRemove }) => {
     return (
@@ -84,12 +177,14 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                 {!isSelected ? (
                     <>
                         <button 
+                            type="button"
                             onClick={() => onAddPitch(player.id)}
                             className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-amber-500 hover:border-amber-500/30 transition-all flex items-center justify-center"
                         >
                             <Plus size={12} weight="bold" />
                         </button>
                         <button 
+                            type="button"
                             onClick={() => onAddBench(player.id)}
                             className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-[var(--text-muted)] hover:text-amber-600 hover:border-amber-600/30 transition-all flex items-center justify-center"
                         >
@@ -98,6 +193,7 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
                     </>
                 ) : (
                     <button 
+                        type="button"
                         onClick={() => onRemove(player.id)}
                         className="w-6 h-6 rounded bg-[var(--bg-content)] border border-[var(--border-pillar)] text-rose-500 hover:text-rose-400 transition-all flex items-center justify-center"
                     >
@@ -130,9 +226,10 @@ export default function Edit({
     captainPlayerId,
     setPieces,
     metrics: initialMetrics,
-    positionFit
+    positionFit,
+    positionAliases
 }) {
-    const { data, setData, post, put, patch, processing, errors } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         name: lineup.name,
         formation: formation,
         mentality: mentality,
@@ -155,7 +252,8 @@ export default function Edit({
     });
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [metrics, setMetrics] = useState(initialMetrics);
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
+    const [assigningPlayerId, setAssigningPlayerId] = useState(null);
 
     // Selected Player IDs for quick checking
     const selectedPlayerIds = useMemo(() => {
@@ -165,21 +263,20 @@ export default function Edit({
         return new Set(ids);
     }, [data.starter_slots, data.bench_slots]);
 
-    const getPlayer = (id) => clubPlayers.find(p => p.id === parseInt(id));
+    const playerById = useMemo(() => Object.fromEntries(clubPlayers.map((player) => [player.id, player])), [clubPlayers]);
+    const getPlayer = (id) => playerById[parseInt(id)] ?? null;
+    const freeStarterSlots = useMemo(() => slots.filter((slot) => !data.starter_slots[slot.slot]), [slots, data.starter_slots]);
+    const firstFreeBenchIndex = useMemo(() => data.bench_slots.findIndex((id) => !id), [data.bench_slots]);
+    const assigningPlayer = useMemo(() => assigningPlayerId ? getPlayer(assigningPlayerId) : null, [assigningPlayerId, playerById]);
+    const assignableStarterSlots = useMemo(() => {
+        if (!assigningPlayer) {
+            return [];
+        }
 
-    // Helper for position grouping (simplified JS version of PlayerPositionService)
-    const getGroupFromPosition = (pos) => {
-        if (!pos) return null;
-        const p = pos.toUpperCase();
-        if (['TW', 'GK'].includes(p)) return 'GK';
-        if (['LV', 'IV', 'RV', 'LWB', 'RWB', 'DEF'].includes(p)) return 'DEF';
-        if (['LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'MID'].includes(p)) return 'MID';
-        if (['LS', 'MS', 'RS', 'ST', 'LW', 'RW', 'LF', 'RF', 'HS', 'FWD'].includes(p)) return 'FWD';
-        if (p.startsWith('IV')) return 'DEF';
-        if (p.startsWith('ZM') || p.startsWith('DM')) return 'MID';
-        if (p.startsWith('ST')) return 'FWD';
-        return null;
-    };
+        return freeStarterSlots
+            .map((slot) => ({ ...slot, score: playerSlotScore(assigningPlayer, slot, positionFit) }))
+            .sort((left, right) => right.score - left.score);
+    }, [assigningPlayer, freeStarterSlots, positionFit]);
 
     // Client-side Strength Calculation
     const calculatedMetrics = useMemo(() => {
@@ -198,12 +295,12 @@ export default function Edit({
             const pSec = (p.position_second || '').toUpperCase();
             const pThird = (p.position_third || '').toUpperCase();
 
-            const pGroup = getGroupFromPosition(pPos);
+            const pGroup = groupFromPosition(pPos);
             const sGroup = slotGroup;
 
             if (pGroup === sGroup) fit = positionFit.main;
-            else if (getGroupFromPosition(pSec) === sGroup) fit = positionFit.second;
-            else if (getGroupFromPosition(pThird) === sGroup) fit = positionFit.third;
+            else if (groupFromPosition(pSec) === sGroup) fit = positionFit.second;
+            else if (groupFromPosition(pThird) === sGroup) fit = positionFit.third;
             else if (pGroup === 'GK' || sGroup === 'GK') fit = positionFit.foreign_gk;
 
             return { player: p, group: sGroup, fit };
@@ -258,7 +355,6 @@ export default function Edit({
     };
 
     const assignPlayer = (playerId, targetSlot, isBench = false) => {
-        // 1. Remove from anywhere else
         const newStarters = { ...data.starter_slots };
         const newBench = [...data.bench_slots];
 
@@ -269,22 +365,18 @@ export default function Edit({
         const benchIndex = newBench.indexOf(playerId);
         if (benchIndex !== -1) newBench[benchIndex] = null;
 
-        // 2. Assign to target
         if (isBench) {
             newBench[targetSlot] = playerId;
         } else {
-            // Check if slot already occupied
-            const oldOccupant = newStarters[targetSlot];
             newStarters[targetSlot] = playerId;
-            
-            // If it was occupied, we could swap? For now just assign.
         }
 
-        setData(prev => ({
-            ...prev,
+        setData({
+            ...data,
             starter_slots: newStarters,
             bench_slots: newBench
-        }));
+        });
+        setAssigningPlayerId(null);
     };
 
     const removePlayer = (playerId) => {
@@ -298,36 +390,34 @@ export default function Edit({
         const benchIndex = newBench.indexOf(playerId);
         if (benchIndex !== -1) newBench[benchIndex] = null;
 
-        setData(prev => ({
-            ...prev,
+        setData({
+            ...data,
             starter_slots: newStarters,
             bench_slots: newBench
-        }));
+        });
     };
 
     const addPitchAuto = (playerId) => {
-        // Find first empty slot
-        const emptySlot = Object.keys(data.starter_slots).find(k => !data.starter_slots[k]);
-        if (emptySlot) assignPlayer(playerId, emptySlot);
+        setAssigningPlayerId(playerId);
     };
 
     const addBenchAuto = (playerId) => {
-        const newBench = [...data.bench_slots];
-        // Find first null/empty slot
-        const firstEmpty = newBench.findIndex(id => !id);
-        if (firstEmpty !== -1) {
-            newBench[firstEmpty] = playerId;
-            // Also remove from starters if there
-            const newStarters = { ...data.starter_slots };
-            Object.keys(newStarters).forEach(k => {
-                if (parseInt(newStarters[k]) === playerId) newStarters[k] = null;
-            });
-            setData(prev => ({
-                ...prev,
-                starter_slots: newStarters,
-                bench_slots: newBench
-            }));
+        if (firstFreeBenchIndex === -1) {
+            return;
         }
+
+        const newBench = [...data.bench_slots];
+        newBench[firstFreeBenchIndex] = playerId;
+        const newStarters = { ...data.starter_slots };
+        Object.keys(newStarters).forEach(k => {
+            if (parseInt(newStarters[k]) === playerId) newStarters[k] = null;
+        });
+        setData({
+            ...data,
+            starter_slots: newStarters,
+            bench_slots: newBench
+        });
+        setAssigningPlayerId(null);
     };
 
     // Auto Fill Action — use form's put so it submits correctly with CSRF
@@ -335,7 +425,6 @@ export default function Edit({
         e.preventDefault();
         put(route('lineups.update', lineup.id), {
             data: { ...data, action: 'auto_pick' },
-            onBefore: () => setData('action', 'auto_pick'),
         });
     };
 
@@ -344,12 +433,32 @@ export default function Edit({
         put(route('lineups.update', lineup.id));
     };
 
+    const handleApplyTemplate = () => {
+        if (!selectedTemplateId) {
+            return;
+        }
+
+        router.get(route('lineups.edit', lineup.id), {
+            formation: data.formation,
+            template_id: selectedTemplateId,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleSaveTemplate = () => {
+        put(route('lineups.update', lineup.id), {
+            data: { ...data, save_as_template: true },
+        });
+    };
+
     // Effects
     useEffect(() => {
         if (data.formation !== formation) {
-            router.get(window.location.pathname, { formation: data.formation }, { preserveState: true });
+            router.get(window.location.pathname, { formation: data.formation }, { preserveState: true, preserveScroll: true });
         }
-    }, [data.formation]);
+    }, [data.formation, formation]);
 
     return (
         <AuthenticatedLayout>
@@ -513,6 +622,62 @@ export default function Edit({
                             </div>
 
                             <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                <h3 className="text-xs font-black text-cyan-300 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                    <Stack size={16} weight="bold" />
+                                    VORLAGEN
+                                </h3>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Vorlage laden</label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={selectedTemplateId}
+                                                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                                                className="sim-select w-full"
+                                            >
+                                                <option value="">Vorlage waehlen</option>
+                                                {templates.map((template) => (
+                                                    <option key={template.id} value={template.id}>
+                                                        {template.name} ({template.players_count})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={handleApplyTemplate}
+                                                disabled={!selectedTemplateId}
+                                                className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:border-cyan-400/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Laden
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Aktuelle Elf als Vorlage</label>
+                                        <input
+                                            value={data.template_name}
+                                            onChange={(e) => setData('template_name', e.target.value)}
+                                            placeholder="z.B. Standard Heimspiel"
+                                            className="sim-input w-full py-2.5 text-xs"
+                                        />
+                                        {errors.template_name && (
+                                            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-rose-400">{errors.template_name}</p>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveTemplate}
+                                        className="w-full rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-200 transition-all hover:border-amber-400/50 hover:text-white"
+                                    >
+                                        Vorlage speichern
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)]">
                                 <h3 className="text-xs font-black text-amber-600 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <Target size={16} weight="bold" />
                                     ROLLEN
@@ -591,8 +756,8 @@ export default function Edit({
                                                 key={slot.slot}
                                                 onDragOver={e => e.preventDefault()}
                                                 onDrop={e => handleDrop(e, slot.slot)}
-                                                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group/slot"
-                                                style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                                                className="absolute flex flex-col items-center group/slot"
+                                                style={{ left: `${slot.x}%`, top: `${slot.y}%`, transform: 'translate(-50%, -50%)' }}
                                             >
                                                 <div className={`w-14 h-14 rounded-full border-2 transition-all duration-300 flex items-center justify-center relative ${
                                                     p ? 'bg-[var(--bg-pillar)] border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
@@ -687,6 +852,55 @@ export default function Edit({
                                     />
                                 </div>
 
+                                {assigningPlayer && (
+                                    <div className="mb-4 rounded-3xl border border-amber-500/20 bg-amber-500/8 p-4">
+                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Position waehlen</p>
+                                                <p className="text-sm font-black text-white">{assigningPlayer.full_name}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setAssigningPlayerId(null)}
+                                                className="rounded-full border border-white/10 p-1 text-slate-400 transition-colors hover:text-white"
+                                            >
+                                                <X size={14} weight="bold" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {assignableStarterSlots.map((slot) => (
+                                                <button
+                                                    key={slot.slot}
+                                                    type="button"
+                                                    onClick={() => assignPlayer(assigningPlayer.id, slot.slot)}
+                                                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left transition-all hover:border-amber-400/40 hover:bg-amber-500/10"
+                                                >
+                                                    <span className="block text-[10px] font-black uppercase tracking-widest text-white">{slot.label}</span>
+                                                    <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">{slot.slot}</span>
+                                                </button>
+                                            ))}
+
+                                            {firstFreeBenchIndex !== -1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addBenchAuto(assigningPlayer.id)}
+                                                    className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-left transition-all hover:border-cyan-400/40 hover:text-white"
+                                                >
+                                                    <span className="block text-[10px] font-black uppercase tracking-widest text-cyan-200">Bank</span>
+                                                    <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">B-{firstFreeBenchIndex + 1}</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {assignableStarterSlots.length === 0 && firstFreeBenchIndex === -1 && (
+                                            <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-rose-300">
+                                                Keine freie Position verfuegbar.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                     {clubPlayers
                                         .filter(p => !searchTerm || p.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -717,10 +931,11 @@ export default function Edit({
                     width: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    @apply bg-transparent;
+                    background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    @apply bg-[var(--bg-content)] rounded-full;
+                    background: var(--bg-content);
+                    border-radius: 9999px;
                 }
             `}} />
         </AuthenticatedLayout>

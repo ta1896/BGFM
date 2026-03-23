@@ -639,31 +639,44 @@ function PlayerAttributesBio({ player }) {
     const strengths = [];
     const weaknesses = [];
 
-    if (player.attr_attacking >= 75) strengths.push('Torgefährlich');
-    if (player.attr_technical >= 78) strengths.push('Exzellente Technik');
-    if (player.attr_tactical >= 78) strengths.push('Spielintelligence');
-    if (player.attr_defending >= 75) strengths.push('Zweikampfstark');
-    if (player.attr_creativity >= 75) strengths.push('Kreativer Ideengeber');
-    if (player.player_style?.includes('Regisseur')) strengths.push('Hervorragender Regisseur');
-    if (player.player_style?.includes('Abräumer')) strengths.push('Defensiv-Anker');
-    if (player.player_style?.includes('Knipser')) strengths.push('Eiskalter Abschluss');
-    if (player.stamina >= 85) strengths.push('Enormes Laufpensum');
+    const isGK = player.position === 'TW' || player.position_main === 'TW';
 
-    // Vielseitigkeit & Positions-Backup Analyse
-    if (player.position_second || player.position_third) {
-        strengths.push('Vielseitiger Spieler');
-        
-        const backupPositions = [player.position_second, player.position_third].filter(Boolean);
-        const isDefensiveBackup = backupPositions.some(p => [POSITIONS.TW, POSITIONS.IV, POSITIONS.LV, POSITIONS.RV].includes(p));
-        const isOffensiveBackup = backupPositions.some(p => [POSITIONS.MS, POSITIONS.LF, POSITIONS.RF, POSITIONS.HS].includes(p));
-        const isMidfieldBackup = backupPositions.some(p => [POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM, POSITIONS.RM, POSITIONS.LM].includes(p));
+    if (isGK) {
+        // Torhüter-spezifische Stärken
+        if (player.overall >= 70) strengths.push('Sicherer Rückhalt');
+        if (player.attr_technical >= 75) strengths.push('Starke Reflexe');
+        if (player.attr_tactical >= 75) strengths.push('Antizipationsstark');
+        if (player.attr_defending >= 75) strengths.push('Sicher auf der Linie');
+        if (player.attr_creativity >= 70) strengths.push('Modernes Torwartspiel');
+        if (player.player_style?.includes('Torwart')) strengths.push(player.player_style);
+    } else {
+        // Standard Feldspieler-Stärken
+        if (player.attr_attacking >= 75) strengths.push('Torgefährlich');
+        if (player.attr_technical >= 78) strengths.push('Exzellente Technik');
+        if (player.attr_tactical >= 78) strengths.push('Spielintelligence');
+        if (player.attr_defending >= 75) strengths.push('Zweikampfstark');
+        if (player.attr_creativity >= 75) strengths.push('Kreativer Ideengeber');
+        if (player.player_style?.includes('Regisseur')) strengths.push('Hervorragender Regisseur');
+        if (player.player_style?.includes('Abräumer')) strengths.push('Defensiv-Anker');
+        if (player.player_style?.includes('Knipser')) strengths.push('Eiskalter Abschluss');
+        if (player.stamina >= 85) strengths.push('Enormes Laufpensum');
 
-        if (isDefensiveBackup && ![POSITIONS.IV, POSITIONS.TW].includes(player.position)) strengths.push('Defensiv-Backup');
-        if (isOffensiveBackup && ![POSITIONS.MS].includes(player.position)) strengths.push('Offensiv-Option');
-        if (isMidfieldBackup && ![POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM].includes(player.position)) strengths.push('Mittelfeld-Allrounder');
+        // Vielseitigkeit & Positions-Backup Analyse
+        if (player.position_second || player.position_third) {
+            strengths.push('Vielseitiger Spieler');
+            
+            const backupPositions = [player.position_second, player.position_third].filter(Boolean);
+            const isDefensiveBackup = backupPositions.some(p => [POSITIONS.IV, POSITIONS.LV, POSITIONS.RV].includes(p));
+            const isOffensiveBackup = backupPositions.some(p => [POSITIONS.MS, POSITIONS.LF, POSITIONS.RF, POSITIONS.HS].includes(p));
+            const isMidfieldBackup = backupPositions.some(p => [POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM, POSITIONS.RM, POSITIONS.LM].includes(p));
+
+            if (isDefensiveBackup && ![POSITIONS.IV, POSITIONS.TW].includes(player.position)) strengths.push('Defensiv-Backup');
+            if (isOffensiveBackup && ![POSITIONS.MS].includes(player.position)) strengths.push('Offensiv-Option');
+            if (isMidfieldBackup && ![POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM].includes(player.position)) strengths.push('Mittelfeld-Allrounder');
+        }
     }
 
-    if (strengths.length === 0) strengths.push('Vielseitiger Allrounder');
+    if (strengths.length === 0) strengths.push(isGK ? 'Zuverlässiger Torwart' : 'Vielseitiger Allrounder');
 
     if (player.attr_defending < 40 && !player.position?.includes('TW')) weaknesses.push('Ausbaufähige Defensive');
     if (player.attr_attacking < 40 && (player.position === 'MS' || player.position === 'ST')) weaknesses.push('Wenig Tordrang');

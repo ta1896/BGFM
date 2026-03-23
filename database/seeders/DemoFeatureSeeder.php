@@ -17,8 +17,6 @@ use App\Models\PlayerConversation;
 use App\Models\PlayerInjury;
 use App\Models\PlayerPlaytimePromise;
 use App\Models\PlayerRecoveryLog;
-use App\Models\ScoutingReport;
-use App\Models\ScoutingWatchlist;
 use App\Models\SeasonClubStatistic;
 use App\Models\Sponsor;
 use App\Models\SponsorContract;
@@ -31,6 +29,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 class DemoFeatureSeeder extends Seeder
 {
@@ -66,7 +65,6 @@ class DemoFeatureSeeder extends Seeder
             $this->seedNotifications($primaryClub, $primaryManager);
             $this->seedTraining($primaryClub, $primaryManager);
             $this->seedDynamics($primaryClub, $primaryManager);
-            $this->seedScouting($primaryClub, $primaryManager, $managedClubs->slice(1));
             $this->seedSponsor($primaryClub, $primaryManager);
             $this->seedFriendlies($primaryClub, $managedClubs->get(1), $primaryManager);
             $this->seedLiveMatches($competitionSeason, $managedClubs);
@@ -140,14 +138,13 @@ class DemoFeatureSeeder extends Seeder
     {
         GameNotification::query()
             ->where('user_id', $user->id)
-            ->whereIn('type', ['promise_at_risk', 'promise_broken', 'medical_warning', 'scouting_update', 'match_live'])
+            ->whereIn('type', ['promise_at_risk', 'promise_broken', 'medical_warning', 'match_live'])
             ->delete();
 
         $notifications = [
-            ['type' => 'promise_at_risk', 'title' => 'Spielzeitversprechen kritisch', 'message' => 'Ein wichtiger Stammspieler droht sein Minutenversprechen zu verfehlen.', 'action_url' => route('players.index')],
-            ['type' => 'medical_warning', 'title' => 'Rueckfallrisiko erhoeht', 'message' => 'Ein Spieler ist im Return-to-Play-Prozess und sollte vorsichtig belastet werden.', 'action_url' => route('medical.index')],
-            ['type' => 'scouting_update', 'title' => 'Scoutreport eingetroffen', 'message' => 'Ein priorisiertes Ziel hat einen neuen Report mit engerer OVR-Spanne.', 'action_url' => route('scouting.index')],
-            ['type' => 'match_live', 'title' => 'Live-Spiel laeuft', 'message' => 'In deiner Liga laufen gerade mehrere Partien live.', 'action_url' => route('manager-live.index')],
+            ['type' => 'promise_at_risk', 'title' => 'Spielzeitversprechen kritisch', 'message' => 'Ein wichtiger Stammspieler droht sein Minutenversprechen zu verfehlen.', 'action_url' => $this->routeOrPath('players.index', '/players')],
+            ['type' => 'medical_warning', 'title' => 'Rueckfallrisiko erhoeht', 'message' => 'Ein Spieler ist im Return-to-Play-Prozess und sollte vorsichtig belastet werden.', 'action_url' => $this->routeOrPath('medical.index', '/training')],
+            ['type' => 'match_live', 'title' => 'Live-Spiel laeuft', 'message' => 'In deiner Liga laufen gerade mehrere Partien live.', 'action_url' => $this->routeOrPath('manager-live.index', '/matches')],
         ];
 
         foreach ($notifications as $notification) {
@@ -295,47 +292,9 @@ class DemoFeatureSeeder extends Seeder
         }
     }
 
-    private function seedScouting(Club $club, User $user, Collection $otherClubs): void
+    private function routeOrPath(string $routeName, string $fallbackPath): string
     {
-        ScoutingWatchlist::query()->where('club_id', $club->id)->delete();
-        ScoutingReport::query()->where('club_id', $club->id)->delete();
-
-        $targets = $otherClubs
-            ->flatMap(fn (Club $otherClub) => $otherClub->players()->orderByDesc('potential')->take(2)->get())
-            ->take(4)
-            ->values();
-
-        foreach ($targets as $index => $player) {
-            $watchlist = ScoutingWatchlist::create([
-                'club_id' => $club->id,
-                'player_id' => $player->id,
-                'created_by_user_id' => $user->id,
-                'priority' => $index < 2 ? 'high' : 'medium',
-                'status' => $index === 0 ? 'shortlist' : 'watching',
-                'notes' => 'Interessanter Markt-Case fuer Sommerfenster.',
-            ]);
-
-            ScoutingReport::create([
-                'club_id' => $club->id,
-                'player_id' => $player->id,
-                'watchlist_id' => $watchlist->id,
-                'created_by_user_id' => $user->id,
-                'confidence' => 58 + ($index * 8),
-                'overall_min' => max(45, $player->overall - 3),
-                'overall_max' => min(99, $player->overall + 2),
-                'potential_min' => max(50, $player->potential - 5),
-                'potential_max' => min(99, $player->potential + 2),
-                'pace_min' => max(40, $player->pace - 4),
-                'pace_max' => min(99, $player->pace + 3),
-                'passing_min' => max(40, $player->passing - 4),
-                'passing_max' => min(99, $player->passing + 3),
-                'physical_min' => max(40, $player->physical - 4),
-                'physical_max' => min(99, $player->physical + 3),
-                'injury_risk_band' => $index === 0 ? 'medium' : 'low',
-                'personality_band' => $index === 2 ? 'volatile' : 'professional',
-                'summary' => 'Scout sieht passendes Profil, aber finale Einordnung braucht mehr Beobachtung.',
-            ]);
-        }
+        return Route::has($routeName) ? route($routeName) : $fallbackPath;
     }
 
     private function seedSponsor(Club $club, User $user): void
@@ -547,9 +506,9 @@ class DemoFeatureSeeder extends Seeder
 
         $activities = [
             ['route_name' => 'matches.show', 'path' => '/matches/1', 'activity_label' => 'Im Matchcenter', 'matchIndex' => 0],
-            ['route_name' => 'scouting.index', 'path' => '/scouting', 'activity_label' => 'Im Scouting', 'matchIndex' => null],
             ['route_name' => 'training.index', 'path' => '/training', 'activity_label' => 'Im Training', 'matchIndex' => null],
             ['route_name' => 'players.show', 'path' => '/players/1', 'activity_label' => 'Im Spielerprofil', 'matchIndex' => null],
+            ['route_name' => 'finances.index', 'path' => '/finances', 'activity_label' => 'In den Finanzen', 'matchIndex' => null],
         ];
 
         $liveMatches = GameMatch::query()->where('status', 'live')->orderBy('id')->get();

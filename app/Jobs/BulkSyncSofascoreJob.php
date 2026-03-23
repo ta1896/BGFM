@@ -55,8 +55,15 @@ class BulkSyncSofascoreJob implements ShouldQueue
     public function handle(): void
     {
         $scraper = app(ScraperService::class);
-        $players = Player::whereNotNull('sofascore_id')
-            ->orWhereNotNull('transfermarkt_url')
+        $players = Player::where(function ($query) {
+                $query->whereNotNull('sofascore_id')->where('sofascore_id', '!=', '');
+            })
+            ->orWhere(function ($query) {
+                $query->whereNotNull('transfermarkt_id')->where('transfermarkt_id', '!=', '');
+            })
+            ->orWhere(function ($query) {
+                $query->whereNotNull('transfermarkt_url')->where('transfermarkt_url', '!=', '');
+            })
             ->get();
         $totalPlayers = $players->count();
         
