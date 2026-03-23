@@ -420,17 +420,39 @@ export default function Edit({
         setAssigningPlayerId(null);
     };
 
-    // Auto Fill Action — use form's put so it submits correctly with CSRF
     const handleAutoFill = (e) => {
         e.preventDefault();
-        put(route('lineups.update', lineup.id), {
-            data: { ...data, action: 'auto_pick' },
+        router.put(route('lineups.update', lineup.id), {
+            ...data,
+            action: 'auto_pick',
+        }, {
+            preserveState: false,
+            preserveScroll: true,
         });
     };
 
     const handleSave = (e) => {
         e.preventDefault();
         put(route('lineups.update', lineup.id));
+    };
+
+    const handleClearLineup = () => {
+        const clearedStarters = Object.fromEntries(
+            Object.keys(data.starter_slots).map((slotKey) => [slotKey, null])
+        );
+
+        setData({
+            ...data,
+            starter_slots: clearedStarters,
+            bench_slots: Array.from({ length: maxBenchPlayers }, () => null),
+            captain_player_id: '',
+            penalty_taker_player_id: '',
+            free_kick_near_player_id: '',
+            free_kick_far_player_id: '',
+            corner_left_taker_player_id: '',
+            corner_right_taker_player_id: '',
+        });
+        setAssigningPlayerId(null);
     };
 
     const handleApplyTemplate = () => {
@@ -448,8 +470,9 @@ export default function Edit({
     };
 
     const handleSaveTemplate = () => {
-        put(route('lineups.update', lineup.id), {
-            data: { ...data, save_as_template: true },
+        router.put(route('lineups.update', lineup.id), {
+            ...data,
+            save_as_template: true,
         });
     };
 
@@ -520,6 +543,14 @@ export default function Edit({
                             >
                                 <MagicWand size={18} weight="bold" className="group-hover:text-amber-500 transition-colors shrink-0" />
                                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">Auto</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleClearLineup}
+                                className="sim-btn-muted flex-1 sm:flex-none justify-center px-4 sm:px-6 py-3 flex items-center gap-2 group text-rose-300 hover:text-rose-200"
+                            >
+                                <Trash size={18} weight="bold" className="shrink-0" />
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">Clear</span>
                             </button>
                             <button 
                                 type="submit"
