@@ -35,7 +35,7 @@ class Player extends Model
             }
 
             // Auto-calculate overall from attributes if any attribute or position changed
-            if ($player->isDirty(['attr_attacking', 'attr_technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'position'])) {
+            if ($player->isDirty(['attr_attacking', 'technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'position'])) {
                 $player->overall = $player->calculateOverall();
                 $player->player_style = $player->calculatePlayerStyle();
                 $player->potential = $player->calculatePotential();
@@ -51,7 +51,7 @@ class Player extends Model
     {
         $pos = self::mapPosition($this->position);
         $att = $this->attr_attacking ?? 50;
-        $tec = $this->attr_technical ?? 50;
+        $tec = $this->technical ?? 50;
         $tac = $this->attr_tactical ?? 50;
         $def = $this->attr_defending ?? 50;
         $cre = $this->attr_creativity ?? 50;
@@ -103,7 +103,7 @@ class Player extends Model
         $pos = self::mapPosition($this->position);
         
         $attacking = $this->attr_attacking ?? 50;
-        $technical = $this->attr_technical ?? 50;
+        $technical = $this->technical ?? 50;
         $tactical = $this->attr_tactical ?? 50;
         $defending = $this->attr_defending ?? 50;
         $creativity = $this->attr_creativity ?? 50;
@@ -174,6 +174,7 @@ class Player extends Model
         'age',
         'overall',
         'potential',
+        'technical',
         'status',
         'market_value',
         'salary',
@@ -225,6 +226,7 @@ class Player extends Model
     {
         return [
             'market_value' => 'integer',
+            'technical' => 'integer',
             'salary' => 'decimal:2',
             'contract_expires_on' => 'date',
             'last_training_at' => 'datetime',

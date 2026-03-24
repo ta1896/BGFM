@@ -30,9 +30,9 @@ class SimulationSettingsService
         'shooting',
         'pace',
         'physical',
+        'technical',
         'overall',
         'attr_attacking',
-        'attr_technical',
         'attr_tactical',
         'attr_creativity',
         'attr_market',
@@ -52,8 +52,8 @@ class SimulationSettingsService
         'defending',
         'stamina',
         'morale',
+        'technical',
         'attr_attacking',
-        'attr_technical',
         'attr_tactical',
         'attr_defending',
         'attr_creativity',
@@ -489,7 +489,12 @@ class SimulationSettingsService
         foreach (self::TEAM_STRENGTH_AREAS as $area) {
             foreach (self::TEAM_STRENGTH_ATTRIBUTES as $attribute) {
                 $weights[$area][$attribute] = round(
-                    (float) config("simulation.team_strength.weights.{$area}.{$attribute}", 0.0),
+                    (float) config(
+                        "simulation.team_strength.weights.{$area}.{$attribute}",
+                        $attribute === 'technical'
+                            ? (float) config("simulation.team_strength.weights.{$area}.attr_technical", 0.0)
+                            : 0.0
+                    ),
                     3
                 );
             }
@@ -506,7 +511,15 @@ class SimulationSettingsService
         $weights = [];
 
         foreach (self::MATCH_STRENGTH_ATTRIBUTES as $attribute) {
-            $weights[$attribute] = round((float) config("simulation.match_strength.weights.{$attribute}", 0.0), 3);
+            $weights[$attribute] = round(
+                (float) config(
+                    "simulation.match_strength.weights.{$attribute}",
+                    $attribute === 'technical'
+                        ? (float) config('simulation.match_strength.weights.attr_technical', 0.0)
+                        : 0.0
+                ),
+                3
+            );
         }
 
         return $weights;

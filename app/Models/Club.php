@@ -125,6 +125,11 @@ class Club extends Model
         return $this->hasMany(TrainingSession::class);
     }
 
+    public function trainingGroups(): HasMany
+    {
+        return $this->hasMany(TrainingGroup::class);
+    }
+
     public function financialTransactions(): HasMany
     {
         return $this->hasMany(ClubFinancialTransaction::class);

@@ -298,6 +298,7 @@ class LineupsController extends Controller
                 'pace' => $player->pace,
                 'shooting' => $player->shooting,
                 'passing' => $player->passing,
+                'technical' => $player->technical,
                 'defending' => $player->defending,
                 'physical' => $player->physical,
                 'attr_attacking' => $player->attr_attacking,

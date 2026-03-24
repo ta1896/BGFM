@@ -14,9 +14,15 @@ class TrainingSession extends Model
     protected $fillable = [
         'club_id',
         'created_by_user_id',
+        'training_type_id',
+        'training_type_name',
         'type',
+        'team_focus',
+        'unit_focus',
         'intensity',
         'focus_position',
+        'unit_groups',
+        'effect_blueprint',
         'session_date',
         'morale_effect',
         'stamina_effect',
@@ -30,6 +36,8 @@ class TrainingSession extends Model
     {
         return [
             'session_date' => 'date',
+            'unit_groups' => 'array',
+            'effect_blueprint' => 'array',
             'is_applied' => 'boolean',
             'applied_at' => 'datetime',
         ];
@@ -45,11 +53,31 @@ class TrainingSession extends Model
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
+    public function trainingType(): BelongsTo
+    {
+        return $this->belongsTo(TrainingType::class);
+    }
+
     public function players(): BelongsToMany
     {
         return $this->belongsToMany(Player::class, 'training_session_player')
-            ->withPivot(['role', 'stamina_delta', 'morale_delta', 'overall_delta'])
+            ->withPivot([
+                'role',
+                'focus_group',
+                'primary_focus',
+                'secondary_focus',
+                'individual_intensity',
+                'stamina_delta',
+                'morale_delta',
+                'overall_delta',
+                'attribute_deltas',
+            ])
             ->withTimestamps();
+    }
+
+    public function trainingGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(TrainingGroup::class, 'training_session_group')->withTimestamps();
     }
 
     protected function sessionDateFormatted(): \Illuminate\Database\Eloquent\Casts\Attribute

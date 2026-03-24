@@ -410,7 +410,7 @@ class ActionEngine
     private function handleFoul(GameMatch $match, int $minute, int $sequence, int $attackerClubId, int $defenderClubId, Collection $attackerStates, Collection $defenderStates, array $modifiers): void
     {
         $fouler = $this->stateRepository->weightedStatePick($defenderStates, fn($s) => max(10, 150 - $s->player->attr_defending));
-        $victim = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->attr_technical + $s->player->overall);
+        $victim = $this->stateRepository->weightedStatePick($attackerStates, fn($s) => $s->player->technical + $s->player->overall);
 
         $cardRoll = mt_rand(1, 100);
 

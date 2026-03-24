@@ -77,6 +77,7 @@ export default function Form({ player, clubs, positions }) {
         shirt_number: player?.shirt_number || '',
         preferred_foot: player?.preferred_foot || 'right',
         overall: player?.overall ?? 60,
+        technical: player?.technical ?? player?.attr_technical ?? 60,
         potential: player?.potential ?? 70,
         market_value: player?.market_value ?? 1000000,
         attr_market: player?.attr_market ?? 100,
@@ -381,10 +382,17 @@ export default function Form({ player, clubs, positions }) {
 
 
                                 <div className="col-span-full mt-4 pt-4 border-t border-[var(--border-muted)] border-dashed">
-                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-4">Sofascore Attribute (Performance)</p>
+                                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] mb-4">Trainierbare Attribute</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                                        <AttributeInput label="Technical (Trainierbar)" value={data.technical} onChange={e => setData('technical', e.target.value)} color="cyan" />
+                                    </div>
+                                </div>
+
+                                <div className="col-span-full mt-4 pt-4 border-t border-[var(--border-muted)] border-dashed">
+                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-4">Sofascore Attribute (Import)</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
                                         <AttributeInput label="Attacking" value={data.attr_attacking} onChange={e => setData('attr_attacking', e.target.value)} color="indigo" />
-                                        <AttributeInput label="Technical" value={data.attr_technical} onChange={e => setData('attr_technical', e.target.value)} color="indigo" />
+                                        <AttributeInput label="Sofascore Technical" value={data.attr_technical} onChange={e => setData('attr_technical', e.target.value)} color="indigo" />
                                         <AttributeInput label="Tactical" value={data.attr_tactical} onChange={e => setData('attr_tactical', e.target.value)} color="indigo" />
                                         <AttributeInput label="Defending" value={data.attr_defending} onChange={e => setData('attr_defending', e.target.value)} color="indigo" />
                                         <AttributeInput label="Creativity" value={data.attr_creativity} onChange={e => setData('attr_creativity', e.target.value)} color="indigo" />

@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { 
     Gear, Timer, ArrowsLeftRight, Users, 
     ToggleLeft, ToggleRight, FloppyDisk, ChartBar,
@@ -13,12 +13,13 @@ const ATTRIBUTE_LABELS = {
     shooting: 'Shooting',
     passing: 'Passing',
     defending: 'Defending',
+    technical: 'Technical',
     pace: 'Pace',
     physical: 'Physical',
     stamina: 'Stamina',
     morale: 'Morale',
     attr_attacking: 'Attacking',
-    attr_technical: 'Technical',
+    attr_technical: 'Sofascore Technical',
     attr_tactical: 'Tactical',
     attr_defending: 'Defending Attr.',
     attr_creativity: 'Creativity',
@@ -30,21 +31,21 @@ const TEAM_STRENGTH_GROUPS = [
     {
         key: 'attack',
         title: 'Attack Weighting',
-        fields: ['shooting', 'pace', 'physical', 'overall', 'attr_attacking', 'attr_technical', 'attr_tactical', 'attr_creativity', 'attr_market', 'potential'],
+        fields: ['shooting', 'pace', 'physical', 'overall', 'attr_attacking', 'technical', 'attr_tactical', 'attr_creativity', 'attr_market', 'potential'],
     },
     {
         key: 'midfield',
         title: 'Midfield Weighting',
-        fields: ['passing', 'pace', 'defending', 'overall', 'attr_technical', 'attr_tactical', 'attr_creativity', 'attr_defending', 'attr_attacking', 'attr_market', 'potential'],
+        fields: ['passing', 'pace', 'defending', 'overall', 'technical', 'attr_tactical', 'attr_creativity', 'attr_defending', 'attr_attacking', 'attr_market', 'potential'],
     },
     {
         key: 'defense',
         title: 'Defense Weighting',
-        fields: ['defending', 'physical', 'passing', 'overall', 'attr_defending', 'attr_tactical', 'attr_technical', 'attr_creativity', 'attr_market', 'potential'],
+        fields: ['defending', 'physical', 'passing', 'overall', 'attr_defending', 'attr_tactical', 'technical', 'attr_creativity', 'attr_market', 'potential'],
     },
 ];
 
-const MATCH_STRENGTH_FIELDS = ['overall', 'shooting', 'passing', 'defending', 'stamina', 'morale', 'attr_attacking', 'attr_technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'potential'];
+const MATCH_STRENGTH_FIELDS = ['overall', 'shooting', 'passing', 'defending', 'stamina', 'morale', 'technical', 'attr_attacking', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'potential'];
 const SLOT_SCORE_BONUS_FIELDS = [
     ['main', 'Hauptposition'],
     ['second', 'Nebenposition'],
@@ -288,14 +289,19 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Simulation Setup</h2>
                         <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Engine-Konfiguration</p>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="sim-btn-primary px-8 py-3 flex items-center gap-2"
-                    >
-                        <FloppyDisk size={18} weight="bold" />
-                        Speichern
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <Link href={route('admin.training-types.index')} className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200 transition hover:bg-cyan-500/20">
+                            Training Types
+                        </Link>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="sim-btn-primary px-8 py-3 flex items-center gap-2"
+                        >
+                            <FloppyDisk size={18} weight="bold" />
+                            Speichern
+                        </button>
+                    </div>
                 </div>
 
                 {/* Scheduler */}

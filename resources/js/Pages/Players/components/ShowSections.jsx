@@ -292,7 +292,7 @@ export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions =
         { label: 'Marktwert-Stärke', value: player.attr_market || 50, icon: TrendUp, color: 'text-purple-400', gradient: 'from-purple-400/60' },
     ] : [
         { label: 'Attacking', value: player.attr_attacking || 50, icon: Target, color: 'text-rose-400', gradient: 'from-rose-400/60' },
-        { label: 'Technical', value: player.attr_technical || 50, icon: ChartBar, color: 'text-cyan-400', gradient: 'from-cyan-400/60' },
+        { label: 'Technical', value: player.technical || 50, icon: ChartBar, color: 'text-cyan-400', gradient: 'from-cyan-400/60' },
         { label: 'Tactical', value: player.attr_tactical || 50, icon: Selection, color: 'text-indigo-400', gradient: 'from-indigo-400/60' },
         { label: 'Defending', value: player.attr_defending || 50, icon: ShieldCheck, color: 'text-emerald-400', gradient: 'from-emerald-400/60' },
         { label: 'Creativity', value: player.attr_creativity || 50, icon: Broadcast, color: 'text-amber-400', gradient: 'from-amber-400/60' },
@@ -584,7 +584,7 @@ function PlayerAttributesBio({ player }) {
     } else {
         // Standard Feldspieler-Stärken
         if (player.attr_attacking >= 75) strengths.push('Torgefährlich');
-        if (player.attr_technical >= 78) strengths.push('Exzellente Technik');
+        if (player.technical >= 78) strengths.push('Exzellente Technik');
         if (player.attr_tactical >= 78) strengths.push('Spielintelligence');
         if (player.attr_defending >= 75) strengths.push('Zweikampfstark');
         if (player.attr_creativity >= 75) strengths.push('Kreativer Ideengeber');

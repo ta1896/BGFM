@@ -208,6 +208,7 @@ class PlayerController extends Controller
             'position_third' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
             'age' => ['required', 'integer', 'min:15', 'max:45'],
             'overall' => ['required', 'integer', 'min:1', 'max:99'],
+            'technical' => ['nullable', 'integer', 'min:0', 'max:100'],
             'potential' => ['sometimes', 'integer', 'min:1', 'max:99'],
             'market_value' => ['required', 'numeric', 'min:0'],
             'salary' => ['required', 'numeric', 'min:0'],

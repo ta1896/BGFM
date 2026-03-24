@@ -17,8 +17,8 @@ vi.mock('@inertiajs/react', () => ({
     Link: ({ href, children, ...props }) => <a href={href} {...props}>{children}</a>,
     Head: () => null,
     usePage: () => ({ props: mockPageProps }),
-    useForm: () => ({
-        data: {},
+    useForm: (initial = {}) => ({
+        data: initial,
         setData: vi.fn(),
         post: mockPost,
         processing: false,
@@ -66,7 +66,7 @@ describe('Page smoke tests', () => {
         );
 
         expect(screen.getByText('Trainingszentrum')).toBeInTheDocument();
-        expect(screen.getByText('technical')).toBeInTheDocument();
+        expect(screen.getAllByText('technical').length).toBeGreaterThan(0);
     });
 
     it('renders notifications empty state', () => {

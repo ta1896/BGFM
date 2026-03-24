@@ -57,6 +57,7 @@ export default function Form({ player, clubs, positions }) {
         pace: player?.pace ?? 60,
         shooting: player?.shooting ?? 60,
         passing: player?.passing ?? 60,
+        technical: player?.technical ?? 60,
         defending: player?.defending ?? 60,
         physical: player?.physical ?? 60,
         stamina: player?.stamina ?? 80,
@@ -180,10 +181,11 @@ export default function Form({ player, clubs, positions }) {
                         </PageReveal>
 
                         <PageReveal delay={160} className="lg:col-span-3">
-                            <SectionCard title="Leistungswerte" icon={Target} bodyClassName="grid gap-6 p-6 md:grid-cols-5">
+                            <SectionCard title="Leistungswerte" icon={Target} bodyClassName="grid gap-6 p-6 md:grid-cols-6">
                                 <AttributeInput label="Tempo" value={data.pace} onChange={(value) => setData('pace', value)} error={errors.pace} icon={Lightning} />
                                 <AttributeInput label="Schuss" value={data.shooting} onChange={(value) => setData('shooting', value)} error={errors.shooting} icon={Sword} />
                                 <AttributeInput label="Pass" value={data.passing} onChange={(value) => setData('passing', value)} error={errors.passing} icon={ArrowsClockwise} />
+                                <AttributeInput label="Technical" value={data.technical} onChange={(value) => setData('technical', value)} error={errors.technical} icon={Target} />
                                 <AttributeInput label="Defensive" value={data.defending} onChange={(value) => setData('defending', value)} error={errors.defending} icon={Shield} />
                                 <AttributeInput label="Physis" value={data.physical} onChange={(value) => setData('physical', value)} error={errors.physical} icon={UserCircle} />
                             </SectionCard>

@@ -14,6 +14,7 @@ use App\Services\PlayerClubBackfillService;
 use App\Services\SeasonProgressionService;
 use App\Services\SimulationSettingsService;
 use App\Services\StatisticsAggregationService;
+use App\Services\TrainingService;
 use Database\Seeders\TestFactorySeeder;
 
 Artisan::command('inspire', function () {
@@ -61,6 +62,27 @@ Artisan::command('game:process-matchday {--competition-season=}', function (Seas
 
 Schedule::command('game:process-matchday')
     ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
+Artisan::command('game:apply-training {--date=}', function (TrainingService $trainingService) {
+    $date = $this->option('date') ?: now()->toDateString();
+    $summary = $trainingService->applyScheduledSessionsForDate($date);
+
+    $this->info('Training fuer ' . $date . ' verarbeitet.');
+    $this->table(
+        ['Kennzahl', 'Wert'],
+        [
+            ['Gefundene Sessions', $summary['found']],
+            ['Neu angewendet', $summary['applied']],
+            ['Bereits angewendet', $summary['already_applied']],
+        ]
+    );
+
+    return 0;
+})->purpose('Wendet alle Trainingseinheiten eines Tages an, falls sie geplant und noch offen sind.');
+
+Schedule::command('game:apply-training')
+    ->dailyAt('23:00')
     ->withoutOverlapping();
 
 Artisan::command('game:simulate-matches {--limit=} {--types=} {--minutes-per-run=} {--force} {--ids=}', function (SimulationSettingsService $simulationSettings, LiveMatchTickerService $tickerService) {

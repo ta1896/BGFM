@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\LineupController as AdminLineupController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\SimulationController as AdminSimulationController;
+use App\Http\Controllers\Admin\TrainingTypeController as AdminTrainingTypeController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
@@ -94,6 +95,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/training', [TrainingController::class, 'index'])->name('training.index');
             Route::post('/training', [TrainingController::class, 'store'])->name('training.store');
             Route::post('/training/{session}/apply', [TrainingController::class, 'apply'])->name('training.apply');
+            Route::post('/training/apply-today', [TrainingController::class, 'applyToday'])->name('training.apply-today');
+            Route::post('/training/groups', [TrainingController::class, 'storeGroup'])->name('training.groups.store');
+            Route::put('/training/groups/{group}', [TrainingController::class, 'updateGroup'])->name('training.groups.update');
+            Route::delete('/training/groups/{group}', [TrainingController::class, 'destroyGroup'])->name('training.groups.destroy');
             Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
             Route::post('/notifications/{notification}/seen', [NotificationController::class, 'markSeen'])->name('notifications.seen');
             Route::post('/notifications/seen-all', [NotificationController::class, 'markAllSeen'])->name('notifications.seen-all');
@@ -140,6 +145,10 @@ Route::middleware(['auth', 'verified', 'admin'])
         );
 
         Route::resource('ticker-templates', \App\Http\Controllers\Admin\TickerTemplateController::class);
+        Route::get('/training-types', [AdminTrainingTypeController::class, 'index'])->name('training-types.index');
+        Route::post('/training-types', [AdminTrainingTypeController::class, 'store'])->name('training-types.store');
+        Route::put('/training-types/{trainingType}', [AdminTrainingTypeController::class, 'update'])->name('training-types.update');
+        Route::delete('/training-types/{trainingType}', [AdminTrainingTypeController::class, 'destroy'])->name('training-types.destroy');
 
         // Match Engine Index
         Route::get('/match-engine', [App\Http\Controllers\Admin\GeneralSimulationSettingsController::class, 'index'])->name('match-engine.index');
