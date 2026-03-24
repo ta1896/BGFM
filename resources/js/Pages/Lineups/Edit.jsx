@@ -35,6 +35,13 @@ const ATTRIBUTE_LABELS = {
     potential: 'Potential',
 };
 
+const POSITION_GROUPS = [
+    { key: 'GK', label: 'Torwart' },
+    { key: 'DEF', label: 'Abwehr' },
+    { key: 'MID', label: 'Mittelfeld' },
+    { key: 'FWD', label: 'Sturm' },
+];
+
 const PitchMarkings = () => (
     <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-40" viewBox="0 0 680 1050" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g stroke="#d9b15c" strokeWidth="2" fill="none">
@@ -241,6 +248,13 @@ export default function Edit({
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const [assigningPlayerId, setAssigningPlayerId] = useState(null);
+    const [positionFilter, setPositionFilter] = useState('ALL');
+    const [collapsedGroups, setCollapsedGroups] = useState({
+        GK: false,
+        DEF: false,
+        MID: false,
+        FWD: false,
+    });
 
     // Selected Player IDs for quick checking
     const selectedPlayerIds = useMemo(() => {
@@ -255,6 +269,7 @@ export default function Edit({
     const freeStarterSlots = useMemo(() => slots.filter((slot) => !data.starter_slots[slot.slot]), [slots, data.starter_slots]);
     const firstFreeBenchIndex = useMemo(() => data.bench_slots.findIndex((id) => !id), [data.bench_slots]);
     const assigningPlayer = useMemo(() => assigningPlayerId ? getPlayer(assigningPlayerId) : null, [assigningPlayerId, playerById]);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
     const assignableStarterSlots = useMemo(() => {
         if (!assigningPlayer) {
             return [];
@@ -264,6 +279,43 @@ export default function Edit({
             .map((slot) => ({ ...slot, score: playerSlotScore(assigningPlayer, slot, positionFit, positionMeta, lineupScoring) }))
             .sort((left, right) => right.score - left.score);
     }, [assigningPlayer, freeStarterSlots, positionFit, positionMeta, lineupScoring]);
+    const filteredPoolPlayers = useMemo(() => {
+        return clubPlayers.filter((player) => {
+            const matchesSearch = !normalizedSearch || [
+                player.full_name,
+                player.last_name,
+                player.position_main,
+                player.position,
+            ].some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch));
+
+            if (!matchesSearch) {
+                return false;
+            }
+
+            if (positionFilter === 'ALL') {
+                return true;
+            }
+
+            return groupFromPosition(player.position_main || player.position, positionMeta) === positionFilter;
+        });
+    }, [clubPlayers, normalizedSearch, positionFilter, positionMeta]);
+    const groupedPoolPlayers = useMemo(() => {
+        const grouped = {
+            GK: [],
+            DEF: [],
+            MID: [],
+            FWD: [],
+        };
+
+        filteredPoolPlayers.forEach((player) => {
+            const group = groupFromPosition(player.position_main || player.position, positionMeta);
+            if (grouped[group]) {
+                grouped[group].push(player);
+            }
+        });
+
+        return grouped;
+    }, [filteredPoolPlayers, positionMeta]);
 
     // Client-side Strength Calculation
     const calculatedMetrics = useMemo(() => {
@@ -512,6 +564,12 @@ export default function Edit({
             ...data,
             save_as_template: true,
         });
+    };
+    const toggleGroup = (groupKey) => {
+        setCollapsedGroups((current) => ({
+            ...current,
+            [groupKey]: !current[groupKey],
+        }));
     };
 
     // Effects
@@ -948,6 +1006,34 @@ export default function Edit({
                                     />
                                 </div>
 
+                                <div className="mb-6 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPositionFilter('ALL')}
+                                        className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                                            positionFilter === 'ALL'
+                                                ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                                : 'border-[var(--border-pillar)] bg-[var(--bg-content)]/30 text-[var(--text-muted)] hover:text-white'
+                                        }`}
+                                    >
+                                        Alle
+                                    </button>
+                                    {POSITION_GROUPS.map((group) => (
+                                        <button
+                                            key={group.key}
+                                            type="button"
+                                            onClick={() => setPositionFilter(group.key)}
+                                            className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                                                positionFilter === group.key
+                                                    ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-200'
+                                                    : 'border-[var(--border-pillar)] bg-[var(--bg-content)]/30 text-[var(--text-muted)] hover:text-white'
+                                            }`}
+                                        >
+                                            {group.label}
+                                        </button>
+                                    ))}
+                                </div>
+
                                 {assigningPlayer && (
                                     <div className="mb-4 rounded-3xl border border-amber-500/20 bg-amber-500/8 p-4">
                                         <div className="mb-3 flex items-start justify-between gap-3">
@@ -998,20 +1084,56 @@ export default function Edit({
                                 )}
 
                                 <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                    {clubPlayers
-                                        .filter(p => !searchTerm || p.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                                        .map(p => (
-                                            <PlayerCard 
-                                                key={p.id}
-                                                player={p}
-                                                isSelected={selectedPlayerIds.has(p.id)}
-                                                onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
-                                                onAddPitch={addPitchAuto}
-                                                onAddBench={addBenchAuto}
-                                                onRemove={removePlayer}
-                                            />
-                                        ))
-                                    }
+                                    {POSITION_GROUPS.map((group) => {
+                                        const players = groupedPoolPlayers[group.key] ?? [];
+                                        const isCollapsed = collapsedGroups[group.key];
+
+                                        if (positionFilter !== 'ALL' && positionFilter !== group.key) {
+                                            return null;
+                                        }
+
+                                        return (
+                                            <div key={group.key} className="rounded-3xl border border-[var(--border-pillar)]/30 bg-[var(--bg-content)]/20">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleGroup(group.key)}
+                                                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">{group.label}</span>
+                                                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                            {players.length}
+                                                        </span>
+                                                    </div>
+                                                    <CaretDown
+                                                        size={14}
+                                                        weight="bold"
+                                                        className={`text-[var(--text-muted)] transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                                                    />
+                                                </button>
+
+                                                {!isCollapsed && (
+                                                    <div className="space-y-2 border-t border-[var(--border-pillar)]/20 px-3 py-3">
+                                                        {players.length > 0 ? players.map((p) => (
+                                                            <PlayerCard 
+                                                                key={p.id}
+                                                                player={p}
+                                                                isSelected={selectedPlayerIds.has(p.id)}
+                                                                onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
+                                                                onAddPitch={addPitchAuto}
+                                                                onAddBench={addBenchAuto}
+                                                                onRemove={removePlayer}
+                                                            />
+                                                        )) : (
+                                                            <div className="rounded-2xl border border-dashed border-white/10 px-3 py-4 text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                                Keine Spieler
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </aside>
