@@ -118,9 +118,8 @@ export default function DashboardDeferredSections({
     const hasLiveTickerRoute = route().has('live-ticker.index');
 
     return (
-        <>
-            <PageReveal className="space-y-8 lg:col-span-8" delay={120}>
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <PageReveal className="space-y-8 lg:col-span-4" delay={180}>
+            <section className="grid grid-cols-1 gap-4">
                     {medicalDesk && (medicalDesk.injured_count > 0 || medicalDesk.monitoring_count > 0 || medicalDesk.return_count > 0) ? (
                         <section className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-6 shadow-xl">
                             <div className="mb-4 flex items-center justify-between gap-3">
@@ -213,10 +212,8 @@ export default function DashboardDeferredSections({
                             </div>
                         </section>
                     ) : null}
-                </section>
-            </PageReveal>
+            </section>
 
-            <PageReveal className="space-y-8 lg:col-span-4" delay={180}>
                 <section className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
@@ -431,7 +428,6 @@ export default function DashboardDeferredSections({
                         )}
                     </div>
                 </section>
-            </PageReveal>
-        </>
+        </PageReveal>
     );
 }

@@ -85,20 +85,17 @@ const TimelineDay = ({ day }) => {
 
 function DeferredDashboardSkeleton() {
     return (
-        <>
-            <PageReveal className="space-y-4 lg:col-span-8" delay={120}>
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                    <div className="min-h-[16rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
-                    <div className="min-h-[16rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
-                    <div className="min-h-[16rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
-                </section>
-            </PageReveal>
-            <PageReveal className="space-y-4 lg:col-span-4" delay={180}>
+        <PageReveal className="space-y-4 lg:col-span-4" delay={180}>
+            <div className="grid grid-cols-1 gap-4">
+                <div className="min-h-[16rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
+                <div className="min-h-[16rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
+            </div>
+            <div className="space-y-4">
                 <div className="min-h-[13rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
                 <div className="min-h-[22rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
                 <div className="min-h-[18rem] animate-pulse rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/30" />
-            </PageReveal>
-        </>
+            </div>
+        </PageReveal>
     );
 }
 
