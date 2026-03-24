@@ -27,15 +27,13 @@ class SimulationController extends Controller
         $summary = $progressionService->processNextMatchday($competitionSeason);
 
         $status = sprintf(
-            'Spieltag-Prozess: %d Spiele simuliert, %d Finanz-Abrechnung(en), %d Saison(en) finalisiert, %d Aufstieg(e), %d Abstieg(e), %d Stadionprojekt(e) fertig, %d Trainingslager aktiviert, %d Trainingslager abgeschlossen.',
+            'Spieltag-Prozess: %d Spiele simuliert, %d Finanz-Abrechnung(en), %d Saison(en) finalisiert, %d Aufstieg(e), %d Abstieg(e), %d Stadionprojekt(e) fertig.',
             $summary['matches_simulated'],
             $summary['match_settlements'],
             $summary['seasons_finalized'],
             $summary['promotions'],
             $summary['relegations'],
-            $summary['stadium_projects_completed'],
-            $summary['training_camps_activated'],
-            $summary['training_camps_completed']
+            $summary['stadium_projects_completed']
         );
 
         return redirect()

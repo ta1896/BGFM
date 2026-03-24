@@ -22,7 +22,6 @@ class SeasonProgressionService
         private readonly FixtureGeneratorService $fixtureGenerator,
         private readonly FinanceCycleService $financeCycleService,
         private readonly StadiumService $stadiumService,
-        private readonly TrainingCampService $trainingCampService,
         private readonly SponsorService $sponsorService,
         private readonly PlayerAvailabilityService $playerAvailabilityService,
         private readonly CupQualificationService $cupQualificationService,
@@ -39,8 +38,6 @@ class SeasonProgressionService
      *   relegations:int,
      *   match_settlements:int,
      *   stadium_projects_completed:int,
-     *   training_camps_activated:int,
-     *   training_camps_completed:int,
      *   sponsor_contracts_expired:int,
      *   loans_completed:int,
      *   team_of_the_day_generated:int,
@@ -58,8 +55,6 @@ class SeasonProgressionService
             'relegations' => 0,
             'match_settlements' => 0,
             'stadium_projects_completed' => 0,
-            'training_camps_activated' => 0,
-            'training_camps_completed' => 0,
             'sponsor_contracts_expired' => 0,
             'loans_completed' => 0,
             'team_of_the_day_generated' => 0,
@@ -126,9 +121,6 @@ class SeasonProgressionService
         }
 
         $summary['stadium_projects_completed'] = $this->stadiumService->completeDueProjects();
-        $campProgress = $this->trainingCampService->progressDueCamps();
-        $summary['training_camps_activated'] = $campProgress['activated'];
-        $summary['training_camps_completed'] = $campProgress['completed'];
         $summary['sponsor_contracts_expired'] = $this->sponsorService->expireEndedContracts();
 
         return $summary;

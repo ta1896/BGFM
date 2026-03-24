@@ -34,12 +34,13 @@ export default function Show({
     lineups,
     planned_substitutions,
     comparison,
+    pre_match_report,
     can_simulate,
     manageable_club_ids,
     module_panels,
     live_table,
 }) {
-    const [tab, setTab] = useState('ticker');
+    const [tab, setTab] = useState(status === 'scheduled' ? 'overview' : 'ticker');
     const [liveState, setLiveState] = useState({
         status,
         live_minute,
@@ -143,13 +144,17 @@ export default function Show({
     const highlightCount = allActions.filter((action) => ['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution'].includes(action.action_type)).length;
 
     const tabs = [
-        { key: 'ticker', label: 'Ticker', count: allActions.length },
-        { key: 'highlights', label: 'Highlight', count: highlightCount },
-        { key: 'overview', label: 'Uebersicht' },
-        { key: 'lineup', label: 'Aufstellung' },
-        { key: 'stats', label: 'Statistiken' },
-        ...(liveState.live_table?.rows?.length ? [{ key: 'live-table', label: 'Livetabelle' }] : []),
-        ...(status !== 'scheduled' ? [{ key: 'players', label: 'Spieler' }] : []),
+        ...(liveState.status === 'scheduled' ? [
+            { key: 'overview', label: 'Vorbericht' },
+        ] : [
+            { key: 'ticker', label: 'Ticker', count: allActions.length },
+            { key: 'highlights', label: 'Highlight', count: highlightCount },
+            { key: 'overview', label: 'Uebersicht' },
+            { key: 'lineup', label: 'Aufstellung' },
+            { key: 'stats', label: 'Statistiken' },
+            ...(liveState.live_table?.rows?.length ? [{ key: 'live-table', label: 'Livetabelle' }] : []),
+            { key: 'players', label: 'Spieler' },
+        ]),
     ];
 
     return (
@@ -191,12 +196,14 @@ export default function Show({
                     </div>
                 )}
 
-                <MatchTabs entries={tabs} activeTab={tab} onChange={setTab} />
+                {tabs.length > 1 ? (
+                    <MatchTabs entries={tabs} activeTab={tab} onChange={setTab} />
+                ) : null}
 
                 <div>
-                    {tab === 'ticker' && <TickerTab actions={allActions} homeClubId={home_club?.id} status={liveState.status} />}
+                    {tab === 'ticker' && liveState.status !== 'scheduled' && <TickerTab actions={allActions} homeClubId={home_club?.id} status={liveState.status} />}
 
-                    {tab === 'highlights' && <HighlightsTab actions={allActions} homeClubId={home_club?.id} />}
+                    {tab === 'highlights' && liveState.status !== 'scheduled' && <HighlightsTab actions={allActions} homeClubId={home_club?.id} />}
 
                     {tab === 'overview' && (
                         <OverviewTab
@@ -212,10 +219,11 @@ export default function Show({
                             onShout={(clubId, shout) => postMatchCommand('matches.live.shout', { club_id: clubId, shout })}
                             modulePanels={liveState.module_panels}
                             comparison={comparison}
+                            preMatchReport={pre_match_report}
                         />
                     )}
 
-                    {tab === 'lineup' && (
+                    {tab === 'lineup' && liveState.status !== 'scheduled' && (
                         <div className="sim-card p-6">
                             <LineupPitch
                                 homeClub={home_club}
@@ -227,11 +235,11 @@ export default function Show({
                         </div>
                     )}
 
-                    {tab === 'stats' && <StatsTab homeState={homeState} awayState={awayState} />}
+                    {tab === 'stats' && liveState.status !== 'scheduled' && <StatsTab homeState={homeState} awayState={awayState} />}
 
-                    {tab === 'live-table' && <LiveTableTab liveTable={liveState.live_table} />}
+                    {tab === 'live-table' && liveState.status !== 'scheduled' && <LiveTableTab liveTable={liveState.live_table} />}
 
-                    {tab === 'players' && <PlayersTab clubs={[home_club, away_club]} finalStats={final_stats} />}
+                    {tab === 'players' && liveState.status !== 'scheduled' && <PlayersTab clubs={[home_club, away_club]} finalStats={final_stats} />}
                 </div>
             </div>
 

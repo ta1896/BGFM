@@ -11,7 +11,6 @@ use App\Models\Player;
 use App\Models\Sponsor;
 use App\Models\Stadium;
 use App\Models\StadiumProject;
-use App\Models\TrainingCamp;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,7 +53,7 @@ class WaveTwoModulesTest extends TestCase
         $this->assertTrue((float) $club->fresh()->budget > $startBudget);
     }
 
-    public function test_due_stadium_project_and_training_camp_are_processed_by_matchday_command(): void
+    public function test_due_stadium_project_is_processed_by_matchday_command(): void
     {
         $user = User::factory()->create();
         $club = $this->createClub($user, 'Infra Club', 80, 850000);
@@ -85,22 +84,6 @@ class WaveTwoModulesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $player = $this->createPlayer($club, 'Camp');
-        TrainingCamp::create([
-            'club_id' => $club->id,
-            'created_by_user_id' => $user->id,
-            'name' => 'Camp Done',
-            'focus' => 'fitness',
-            'intensity' => 'low',
-            'starts_on' => now()->subDays(3)->toDateString(),
-            'ends_on' => now()->subDay()->toDateString(),
-            'cost' => 10000,
-            'stamina_effect' => 2,
-            'morale_effect' => 1,
-            'overall_effect' => 0,
-            'status' => 'active',
-        ]);
-
         Artisan::call('game:process-matchday');
 
         $this->assertDatabaseHas('stadium_projects', [
@@ -111,11 +94,6 @@ class WaveTwoModulesTest extends TestCase
             'id' => $stadium->id,
             'pitch_quality' => 68,
         ]);
-        $this->assertDatabaseHas('training_camps', [
-            'club_id' => $club->id,
-            'status' => 'completed',
-        ]);
-        $this->assertTrue((int) $player->fresh()->stamina >= 81);
     }
 
     public function test_matchday_command_creates_financial_settlement_for_simulated_match(): void

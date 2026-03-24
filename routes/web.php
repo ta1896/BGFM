@@ -25,7 +25,6 @@ use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
 use App\Http\Controllers\TrainingController;
-use App\Http\Controllers\TrainingCampController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -90,8 +89,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/sponsors/contracts/{contract}/terminate', [SponsorController::class, 'terminate'])->name('sponsors.contracts.terminate');
             Route::get('/stadium', [StadiumController::class, 'index'])->name('stadium.index');
             Route::post('/stadium/projects', [StadiumController::class, 'storeProject'])->name('stadium.projects.store');
-            Route::get('/training-camps', [TrainingCampController::class, 'index'])->name('training-camps.index');
-            Route::post('/training-camps', [TrainingCampController::class, 'store'])->name('training-camps.store');
             Route::get('/training', [TrainingController::class, 'index'])->name('training.index');
             Route::post('/training', [TrainingController::class, 'store'])->name('training.store');
             Route::post('/training/{session}/apply', [TrainingController::class, 'apply'])->name('training.apply');

@@ -79,7 +79,6 @@ export function getManagerMenuGroups({ hasManagedClub }) {
                 { route: 'players.index', label: 'Kader', active: 'players.*' },
                 { route: 'squad-hierarchy.index', label: 'Hierarchie', active: 'squad-hierarchy.index' },
                 { route: 'training.index', label: 'Training', active: 'training.*' },
-                { route: 'training-camps.index', label: 'Trainingslager', active: 'training-camps.*' },
             ],
         },
         bg_wettbewerb: {

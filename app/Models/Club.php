@@ -157,11 +157,6 @@ class Club extends Model
         return $this->hasManyThrough(StadiumProject::class, Stadium::class);
     }
 
-    public function trainingCamps(): HasMany
-    {
-        return $this->hasMany(TrainingCamp::class);
-    }
-
     public function teamOfTheDayPlayers(): HasMany
     {
         return $this->hasMany(TeamOfTheDayPlayer::class);

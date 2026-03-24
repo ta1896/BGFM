@@ -2,7 +2,7 @@ import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
-    Users, UserGear, BuildingOffice, UserCircle, CalendarCheck, Suitcase, Warehouse, Tent,
+    Users, UserGear, BuildingOffice, UserCircle, CalendarCheck, Suitcase, Warehouse,
     Lightning, Play, CaretRight, ArrowsClockwise, ListNumbers
 } from '@phosphor-icons/react';
 import MetricCard from '@/Components/MetricCard';
@@ -41,7 +41,6 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                     <MetricCard label="Geplante Spiele" value={stats.scheduled_matches} icon={CalendarCheck} />
                     <MetricCard label="Sponsoren" value={stats.active_sponsors} icon={Suitcase} />
                     <MetricCard label="Stadionprojekte" value={stats.active_stadium_projects} icon={Warehouse} />
-                    <MetricCard label="Trainingslager" value={stats.active_training_camps} icon={Tent} />
                 </StaggerGroup>
 
                 <div className="grid gap-8 xl:grid-cols-2">

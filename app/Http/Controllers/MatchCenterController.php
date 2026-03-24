@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class MatchCenterController extends Controller
 {
@@ -25,19 +26,11 @@ class MatchCenterController extends Controller
 
         $this->loadMatchStateRelations($match, true);
 
-        $getComparisonMetrics = function(\App\Models\Club $club) {
-            $players = $club->players()->where('status', 'active')->get(['market_value', 'age', 'overall']);
-            return [
-                'market_value' => $players->sum('market_value') ?? 0,
-                'avg_age' => round($players->avg('age') ?? 0, 1),
-                'strength' => round($players->sortByDesc('overall')->take(14)->avg('overall') ?? 0, 1),
-            ];
-        };
-
         $comparison = [
-            'home' => $getComparisonMetrics($match->homeClub),
-            'away' => $getComparisonMetrics($match->awayClub),
+            'home' => $this->comparisonMetrics($match->homeClub),
+            'away' => $this->comparisonMetrics($match->awayClub),
         ];
+        $preMatchReport = $this->preMatchReport($match, $leagueTableService, $comparison);
 
         $state = $this->statePayload($request, $match, $leagueTableService);
 
@@ -57,13 +50,396 @@ class MatchCenterController extends Controller
             ],
             'competition'       => $match->competitionSeason?->competition?->name,
             'matchday'          => $match->matchday,
-            'kickoff_formatted' => $match->kickoff_at?->format('d.m.Y \u2022 H:i'),
+            'kickoff_formatted' => $match->kickoff_at?->format('d.m.Y • H:i'),
             'weather'           => $match->weather,
             'referee'           => $match->referee,
             'type'              => $match->type,
             'comparison'        => $comparison,
+            'pre_match_report'  => $preMatchReport,
             'module_panels'     => $state['module_panels'] ?? [],
         ]));
+    }
+
+    private function comparisonMetrics(\App\Models\Club $club): array
+    {
+        $scoreColumns = $this->availablePlayerScoreColumns();
+        $selects = ['market_value', 'age', 'overall'];
+
+        if (in_array('morale', $scoreColumns, true)) {
+            $selects[] = 'morale';
+        }
+
+        if (in_array('happiness', $scoreColumns, true)) {
+            $selects[] = 'happiness';
+        }
+
+        if (in_array('stamina', $scoreColumns, true)) {
+            $selects[] = 'stamina';
+        }
+
+        if (in_array('sharpness', $scoreColumns, true)) {
+            $selects[] = 'sharpness';
+        }
+
+        if (in_array('fatigue', $scoreColumns, true)) {
+            $selects[] = 'fatigue';
+        }
+
+        $players = $club->players()
+            ->where('status', 'active')
+            ->get($selects);
+
+        $corePlayers = $players->sortByDesc('overall')->take(14)->values();
+        $moraleMetric = in_array('morale', $scoreColumns, true)
+            ? $corePlayers->avg('morale')
+            : $corePlayers->avg('happiness');
+        $fitnessMetric = $this->resolveFitnessMetric($corePlayers, $scoreColumns);
+
+        return [
+            'market_value' => (float) ($players->sum('market_value') ?? 0),
+            'avg_age' => round((float) ($players->avg('age') ?? 0), 1),
+            'strength' => round((float) ($corePlayers->avg('overall') ?? 0), 1),
+            'morale' => round((float) ($moraleMetric ?? 0), 1),
+            'fitness' => round((float) ($fitnessMetric ?? 0), 1),
+        ];
+    }
+
+    private function availablePlayerScoreColumns(): array
+    {
+        static $columns = null;
+
+        if ($columns !== null) {
+            return $columns;
+        }
+
+        return $columns = Schema::getColumnListing('players');
+    }
+
+    private function resolveFitnessMetric(Collection $players, array $scoreColumns): float
+    {
+        if (in_array('stamina', $scoreColumns, true)) {
+            return (float) ($players->avg('stamina') ?? 0);
+        }
+
+        if (in_array('sharpness', $scoreColumns, true) && in_array('fatigue', $scoreColumns, true)) {
+            return (float) ($players->avg(fn ($player) => max(0, min(100, (((int) ($player->sharpness ?? 0)) + (100 - (int) ($player->fatigue ?? 0))) / 2))) ?? 0);
+        }
+
+        if (in_array('sharpness', $scoreColumns, true)) {
+            return (float) ($players->avg('sharpness') ?? 0);
+        }
+
+        if (in_array('fatigue', $scoreColumns, true)) {
+            return (float) ($players->avg(fn ($player) => max(0, 100 - (int) ($player->fatigue ?? 0))) ?? 0);
+        }
+
+        return 0.0;
+    }
+
+    private function preMatchReport(GameMatch $match, LeagueTableService $leagueTableService, array $comparison): array
+    {
+        $keyPlayers = $this->keyPlayers($match);
+
+        return [
+            'recent_form' => [
+                'home' => $this->recentForm($match->home_club_id, $match->id),
+                'away' => $this->recentForm($match->away_club_id, $match->id),
+            ],
+            'league_snapshot' => $this->leagueSnapshot($match, $leagueTableService),
+            'head_to_head' => $this->headToHead($match),
+            'insights' => $this->insightBullets($match, $comparison),
+            'key_players' => $keyPlayers,
+            'absentees' => $this->absentees($match),
+            'key_duels' => $this->keyDuels($match, $keyPlayers),
+            'expected_lineup_preview' => $this->expectedLineupPreview($match),
+        ];
+    }
+
+    private function recentForm(int $clubId, int $currentMatchId): array
+    {
+        $matches = GameMatch::query()
+            ->where('status', 'played')
+            ->whereKeyNot($currentMatchId)
+            ->where(function ($query) use ($clubId): void {
+                $query->where('home_club_id', $clubId)
+                    ->orWhere('away_club_id', $clubId);
+            })
+            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path'])
+            ->orderByDesc('kickoff_at')
+            ->take(5)
+            ->get();
+
+        $form = $matches->map(function (GameMatch $pastMatch) use ($clubId): array {
+            $isHome = (int) $pastMatch->home_club_id === $clubId;
+            $goalsFor = (int) ($isHome ? $pastMatch->home_score : $pastMatch->away_score);
+            $goalsAgainst = (int) ($isHome ? $pastMatch->away_score : $pastMatch->home_score);
+            $opponent = $isHome ? $pastMatch->awayClub : $pastMatch->homeClub;
+            $result = $goalsFor > $goalsAgainst ? 'W' : ($goalsFor < $goalsAgainst ? 'L' : 'D');
+
+            return [
+                'id' => $pastMatch->id,
+                'result' => $result,
+                'score' => $goalsFor . ':' . $goalsAgainst,
+                'opponent_name' => $opponent?->short_name ?: $opponent?->name ?: 'Gegner',
+                'opponent_logo_url' => $opponent?->logo_url,
+                'is_home' => $isHome,
+                'kickoff_label' => $pastMatch->kickoff_at?->format('d.m.'),
+                'relative_label' => $pastMatch->kickoff_at
+                    ? sprintf('vor %d Tagen', now()->diffInDays($pastMatch->kickoff_at))
+                    : null,
+                'competition_name' => $pastMatch->competitionSeason?->competition?->name
+                    ?? ($pastMatch->type === 'league' ? 'Liga' : ($pastMatch->type === 'friendly' ? 'Testspiel' : 'Pokal')),
+                'trend_rating' => round($this->formTrendRating($goalsFor, $goalsAgainst), 2),
+            ];
+        })->values();
+
+        return [
+            'matches' => $form->all(),
+            'wins' => $form->where('result', 'W')->count(),
+            'draws' => $form->where('result', 'D')->count(),
+            'losses' => $form->where('result', 'L')->count(),
+            'points' => ($form->where('result', 'W')->count() * 3) + $form->where('result', 'D')->count(),
+        ];
+    }
+
+    private function formTrendRating(int $goalsFor, int $goalsAgainst): float
+    {
+        $goalDiff = $goalsFor - $goalsAgainst;
+        $base = match (true) {
+            $goalDiff >= 2 => 8.8,
+            $goalDiff === 1 => 8.1,
+            $goalDiff === 0 => 7.1,
+            $goalDiff === -1 => 6.4,
+            default => 5.8,
+        };
+
+        $bonus = min(0.5, max(-0.3, ($goalsFor * 0.12) - ($goalsAgainst * 0.08)));
+
+        return max(5.0, min(9.8, $base + $bonus));
+    }
+
+    private function leagueSnapshot(GameMatch $match, LeagueTableService $leagueTableService): ?array
+    {
+        if ($match->type !== 'league' || !$match->competitionSeason) {
+            return null;
+        }
+
+        $table = $leagueTableService->table($match->competitionSeason)->values();
+        $homeRow = $table->firstWhere('club_id', $match->home_club_id);
+        $awayRow = $table->firstWhere('club_id', $match->away_club_id);
+
+        if (!$homeRow && !$awayRow) {
+            return null;
+        }
+
+        return [
+            'competition' => $match->competitionSeason->competition?->name,
+            'home' => $homeRow ? [
+                'position' => (int) ($homeRow->position ?? 0),
+                'points' => (int) ($homeRow->points ?? 0),
+                'goal_diff' => (int) ($homeRow->goal_diff ?? 0),
+            ] : null,
+            'away' => $awayRow ? [
+                'position' => (int) ($awayRow->position ?? 0),
+                'points' => (int) ($awayRow->points ?? 0),
+                'goal_diff' => (int) ($awayRow->goal_diff ?? 0),
+            ] : null,
+        ];
+    }
+
+    private function headToHead(GameMatch $match): array
+    {
+        $matches = GameMatch::query()
+            ->where('status', 'played')
+            ->where(function ($query) use ($match): void {
+                $query->where(function ($inner) use ($match): void {
+                    $inner->where('home_club_id', $match->home_club_id)
+                        ->where('away_club_id', $match->away_club_id);
+                })->orWhere(function ($inner) use ($match): void {
+                    $inner->where('home_club_id', $match->away_club_id)
+                        ->where('away_club_id', $match->home_club_id);
+                });
+            })
+            ->orderByDesc('kickoff_at')
+            ->take(5)
+            ->get();
+
+        $entries = $matches->map(function (GameMatch $entry) use ($match): array {
+            $homeGoals = (int) ($entry->home_score ?? 0);
+            $awayGoals = (int) ($entry->away_score ?? 0);
+            $homePerspectiveGoals = (int) ((int) $entry->home_club_id === (int) $match->home_club_id ? $homeGoals : $awayGoals);
+            $awayPerspectiveGoals = (int) ((int) $entry->home_club_id === (int) $match->home_club_id ? $awayGoals : $homeGoals);
+            $winner = $homePerspectiveGoals > $awayPerspectiveGoals ? 'home' : ($homePerspectiveGoals < $awayPerspectiveGoals ? 'away' : 'draw');
+
+            return [
+                'id' => $entry->id,
+                'date' => $entry->kickoff_at?->format('d.m.Y'),
+                'score' => $homePerspectiveGoals . ':' . $awayPerspectiveGoals,
+                'winner' => $winner,
+            ];
+        })->values();
+
+        return [
+            'matches' => $entries->all(),
+            'home_wins' => $entries->where('winner', 'home')->count(),
+            'draws' => $entries->where('winner', 'draw')->count(),
+            'away_wins' => $entries->where('winner', 'away')->count(),
+        ];
+    }
+
+    private function insightBullets(GameMatch $match, array $comparison): array
+    {
+        $homeStrength = (float) ($comparison['home']['strength'] ?? 0);
+        $awayStrength = (float) ($comparison['away']['strength'] ?? 0);
+        $homeMarket = (float) ($comparison['home']['market_value'] ?? 0);
+        $awayMarket = (float) ($comparison['away']['market_value'] ?? 0);
+        $homeFitness = (float) ($comparison['home']['fitness'] ?? 0);
+        $awayFitness = (float) ($comparison['away']['fitness'] ?? 0);
+
+        $strengthLeader = $homeStrength >= $awayStrength ? ($match->homeClub?->short_name ?: $match->homeClub?->name ?: 'Heimteam') : ($match->awayClub?->short_name ?: $match->awayClub?->name ?: 'Auswaertsteam');
+        $marketLeader = $homeMarket >= $awayMarket ? ($match->homeClub?->short_name ?: $match->homeClub?->name ?: 'Heimteam') : ($match->awayClub?->short_name ?: $match->awayClub?->name ?: 'Auswaertsteam');
+        $fitnessLeader = $homeFitness >= $awayFitness ? ($match->homeClub?->short_name ?: $match->homeClub?->name ?: 'Heimteam') : ($match->awayClub?->short_name ?: $match->awayClub?->name ?: 'Auswaertsteam');
+
+        return [
+            $strengthLeader . ' geht mit einem leichten Vorteil in der Kaderstaerke in dieses Duell.',
+            $marketLeader . ' bringt aktuell den hoeheren Gesamtmarktwert auf den Platz.',
+            $fitnessLeader . ' wirkt vor dem Anpfiff im Schnitt etwas frischer.',
+        ];
+    }
+
+    private function keyPlayers(GameMatch $match): array
+    {
+        $suspensionField = $this->getSuspensionField($match->type ?? 'league');
+
+        $fetcher = fn($clubId) => Player::query()
+            ->where('club_id', $clubId)
+            ->where('medical_status', 'fit')
+            ->where('status', 'active')
+            ->where($suspensionField, 0)
+            ->orderByDesc('overall')
+            ->take(2)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->full_name,
+                'overall' => (int) $p->overall,
+                'photo_url' => $p->photo_url,
+                'position' => $p->display_position,
+                'style' => $p->player_style,
+            ]);
+
+        return [
+            'home' => $fetcher($match->home_club_id),
+            'away' => $fetcher($match->away_club_id),
+        ];
+    }
+
+    private function absentees(GameMatch $match): array
+    {
+        $suspensionField = $this->getSuspensionField($match->type ?? 'league');
+
+        $fetcher = fn($clubId) => Player::query()
+            ->where('club_id', $clubId)
+            ->where(function($q) use ($suspensionField) {
+                $q->where('medical_status', '!=', 'fit')
+                  ->orWhere($suspensionField, '>', 0);
+            })
+            ->with(['injuries' => fn($q) => $q->where('status', 'active')])
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->full_name,
+                'reason' => $p->$suspensionField > 0 ? 'Gesperrt' : ($p->injuries->first()?->injury_type ?? 'Verletzt'),
+                'type' => $p->$suspensionField > 0 ? 'suspension' : 'injury',
+            ]);
+
+        return [
+            'home' => $fetcher($match->home_club_id),
+            'away' => $fetcher($match->away_club_id),
+        ];
+    }
+
+    private function keyDuels(GameMatch $match, array $keyPlayers): array
+    {
+        $duels = [];
+
+        // Simple heuristic: Best Home vs Best Away
+        $homeP1 = $keyPlayers['home'][0] ?? null;
+        $awayP1 = $keyPlayers['away'][0] ?? null;
+
+        if ($homeP1 && $awayP1) {
+            $duels[] = [
+                'label' => 'Star-Vgl.',
+                'home' => $homeP1,
+                'away' => $awayP1,
+            ];
+        }
+
+        // Try to find an offensive vs defensive duel
+        $homeAttacker = Player::query()
+            ->where('club_id', $match->home_club_id)
+            ->where('medical_status', 'fit')
+            ->whereIn('position', ['MS', 'ST', 'HS', 'LF', 'RF', 'OM'])
+            ->orderByDesc('overall')
+            ->first();
+
+        $awayDefender = Player::query()
+            ->where('club_id', $match->away_club_id)
+            ->where('medical_status', 'fit')
+            ->whereIn('position', ['IV', 'CB', 'LB', 'RB', 'LV', 'RV', 'DM'])
+            ->orderByDesc('overall')
+            ->first();
+
+        if ($homeAttacker && $awayDefender) {
+            $duels[] = [
+                'label' => 'Angriff vs Abwehr',
+                'home' => [
+                    'id' => $homeAttacker->id,
+                    'name' => $homeAttacker->full_name,
+                    'overall' => $homeAttacker->overall,
+                    'photo_url' => $homeAttacker->photo_url,
+                    'position' => $homeAttacker->display_position,
+                ],
+                'away' => [
+                    'id' => $awayDefender->id,
+                    'name' => $awayDefender->full_name,
+                    'overall' => $awayDefender->overall,
+                    'photo_url' => $awayDefender->photo_url,
+                    'position' => $awayDefender->display_position,
+                ],
+            ];
+        }
+
+        return $duels;
+    }
+
+    private function expectedLineupPreview(GameMatch $match): array
+    {
+        $payload = $this->lineupsPayload($match);
+        
+        $mapper = fn($l) => collect($l['starters'] ?? [])
+            ->map(fn($s) => [
+                'id' => $s['id'],
+                'name' => $s['name'],
+                'position' => $s['position'],
+                'slot' => $s['slot'],
+            ]);
+
+        return [
+            'home' => $mapper($payload[(string) $match->home_club_id] ?? []),
+            'away' => $mapper($payload[(string) $match->away_club_id] ?? []),
+        ];
+    }
+
+    private function getSuspensionField(string $type): string
+    {
+        return match($type) {
+            'league' => 'suspension_league_remaining',
+            'cup_national' => 'suspension_cup_national_remaining',
+            'cup_international' => 'suspension_cup_international_remaining',
+            'friendly' => 'suspension_friendly_remaining',
+            default => 'suspension_matches_remaining'
+        };
     }
 
     public function simulate(

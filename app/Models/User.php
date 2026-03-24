@@ -81,11 +81,6 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         return $this->hasMany(SponsorContract::class, 'signed_by_user_id');
     }
 
-    public function trainingCampsCreated(): HasMany
-    {
-        return $this->hasMany(TrainingCamp::class, 'created_by_user_id');
-    }
-
     public function managedNationalTeams(): HasMany
     {
         return $this->hasMany(NationalTeam::class, 'manager_user_id');

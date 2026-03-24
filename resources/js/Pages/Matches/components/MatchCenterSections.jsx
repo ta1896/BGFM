@@ -654,6 +654,7 @@ export const MatchCommandRail = ({ matchStatus, clubs = [], manageableClubIds = 
 export const ScoreHero = ({ home_club, away_club, home_score, away_score, status, live_minute, display_minute, kickoff_formatted, competition, matchday, weather, type, actions = [] }) => {
     const isLive = status === 'live';
     const isPlayed = status === 'played';
+    const scorelineLabel = isPlayed || isLive ? `${home_score ?? 0}:${away_score ?? 0}` : '-:-';
     const scoreLookup = buildScorelineLookup(actions, home_club?.id);
     const scoreEvents = getScorelineEvents(actions).map((action) => ({
         ...action,
@@ -731,8 +732,15 @@ export const ScoreHero = ({ home_club, away_club, home_score, away_score, status
                         </div>
                     ) : (
                         <div className="text-center">
-                            <p className="text-[2rem] font-bold tracking-[-0.03em] text-slate-200 sm:text-[2.4rem]">{kickoff_formatted}</p>
-                            <p className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Anstoss</p>
+                            <p className="text-[2.8rem] font-black leading-none tracking-[-0.08em] text-slate-100 tabular-nums sm:text-[3.8rem]">
+                                {scorelineLabel}
+                            </p>
+                            {kickoff_formatted && (
+                                <p className="mt-2 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-[0.8rem]">
+                                    {kickoff_formatted}
+                                </p>
+                            )}
+                            <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">Anstoss</p>
                         </div>
                     )}
 
@@ -1291,9 +1299,23 @@ export const OverviewTab = ({
     onShout,
     modulePanels,
     comparison,
-}) => (
-    <div className="space-y-6">
-        {(status === 'live' || status === 'played') && (
+    preMatchReport,
+}) => {
+    if (status === 'scheduled') {
+        return (
+            <div className="space-y-6">
+                <PreMatchReport
+                    homeClub={homeClub}
+                    awayClub={awayClub}
+                    comparison={comparison}
+                    report={preMatchReport}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
             <MatchPulse
                 homeClub={homeClub}
                 awayClub={awayClub}
@@ -1301,24 +1323,439 @@ export const OverviewTab = ({
                 awayState={awayState}
                 livePlayerStates={livePlayerStates}
             />
-        )}
 
-        {manageableClubIds?.length > 0 && (
-            <MatchCommandRail
-                matchStatus={status}
-                clubs={[homeClub, awayClub]}
-                manageableClubIds={manageableClubIds}
-                teamStates={teamStates}
-                onStyleChange={onStyleChange}
-                onShout={onShout}
-            />
-        )}
+            {manageableClubIds?.length > 0 && (
+                <MatchCommandRail
+                    matchStatus={status}
+                    clubs={[homeClub, awayClub]}
+                    manageableClubIds={manageableClubIds}
+                    teamStates={teamStates}
+                    onStyleChange={onStyleChange}
+                    onShout={onShout}
+                />
+            )}
 
-        {modulePanels?.length > 0 && (
-            <ModulePanels panels={modulePanels} />
-        )}
+            {modulePanels?.length > 0 && (
+                <ModulePanels panels={modulePanels} />
+            )}
 
-        <PreviewTab comparison={comparison} />
+            <PreviewTab comparison={comparison} />
+        </div>
+    );
+};
+
+const FormChip = ({ result }) => (
+    <span className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full text-[10px] font-black uppercase ${
+        result === 'W'
+            ? 'bg-emerald-500/20 text-emerald-200'
+            : result === 'L'
+                ? 'bg-rose-500/20 text-rose-200'
+                : 'bg-amber-500/20 text-amber-200'
+    }`}>
+        {result}
+    </span>
+);
+
+const ComparisonDuelRow = ({ label, homeValue, awayValue, formatter = (value) => value }) => {
+    const homeNumeric = Number(homeValue || 0);
+    const awayNumeric = Number(awayValue || 0);
+    const total = homeNumeric + awayNumeric;
+    const homePct = total > 0 ? Math.max(8, Math.round((homeNumeric / total) * 100)) : 50;
+    const awayPct = total > 0 ? Math.max(8, 100 - homePct) : 50;
+
+    return (
+        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-[0.16em]">
+                <span className="text-cyan-200">{formatter(homeNumeric)}</span>
+                <span className="text-[var(--text-muted)]">{label}</span>
+                <span className="text-amber-200">{formatter(awayNumeric)}</span>
+            </div>
+            <div className="flex h-2 overflow-hidden rounded-full gap-1 bg-white/[0.04]">
+                <div className="rounded-full bg-cyan-400" style={{ width: `${homePct}%` }} />
+                <div className="rounded-full bg-amber-400" style={{ width: `${awayPct}%` }} />
+            </div>
+        </div>
+    );
+};
+
+const formResultTone = (result) => (
+    result === 'W'
+        ? 'border-emerald-400/25 bg-emerald-400/12 text-emerald-200'
+        : result === 'L'
+            ? 'border-rose-400/25 bg-rose-400/12 text-rose-200'
+            : 'border-amber-400/25 bg-amber-400/12 text-amber-200'
+);
+
+const trendBadgeTone = (rating) => {
+    if (rating >= 8.5) {
+        return 'bg-emerald-500 text-white';
+    }
+
+    if (rating >= 7.2) {
+        return 'bg-lime-600 text-white';
+    }
+
+    if (rating >= 6.6) {
+        return 'bg-amber-600 text-white';
+    }
+
+    return 'bg-slate-700 text-slate-200';
+};
+
+const FormTrendBoard = ({ club, form, accent = 'cyan' }) => {
+    const matches = form?.matches || [];
+    const stroke = accent === 'cyan' ? '#cbd5f5' : '#f8d28b';
+    const badgeAccent = accent === 'cyan' ? 'text-cyan-200' : 'text-amber-200';
+    const points = matches.map((entry, index) => {
+        const step = 100 / (matches.length || 1);
+        const x = (index * step) + (step / 2);
+        const rating = Number(entry.trend_rating || 0);
+        // Rating usually 5.0 to 9.8. Normalize 5.0 -> 0, 9.8 -> 1
+        const normalized = Math.max(0, Math.min(1, (rating - 5) / 4.8));
+        const y = 65 - (normalized * 45); // Range from 20 to 65 in 80px height
+
+        return { ...entry, x, y, rating };
+    });
+
+    const polyline = points.map((point) => `${point.x},${point.y}`).join(' ');
+
+    return (
+        <div className="sim-card overflow-hidden p-0">
+            <div className="border-b border-white/6 bg-white/[0.03] px-5 py-4">
+                <div className="flex items-center gap-3">
+                    <img loading="lazy" src={club?.logo_url} alt={club?.name} className="h-10 w-10 object-contain" />
+                    <div>
+                        <div className={`text-[10px] font-black uppercase tracking-[0.18em] ${badgeAccent}`}>Last 5 Matches</div>
+                        <div className="text-lg font-black text-white">{club?.name}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-5">
+                <div 
+                    className="grid gap-3"
+                    style={{ gridTemplateColumns: `repeat(${matches.length || 1}, minmax(0, 1fr))` }}
+                >
+                    {matches.map((entry, index) => (
+                        <div key={`${entry.id || index}-${entry.score}`} className="rounded-[1.7rem] border border-white/8 bg-white/[0.04] px-4 py-5 text-center">
+                            <div className="text-xs text-white/45">{entry.relative_label || entry.kickoff_label}</div>
+                            <div className="mt-4 flex justify-center">
+                                <img loading="lazy" src={entry.opponent_logo_url} alt={entry.opponent_name} className="h-14 w-14 object-contain" />
+                            </div>
+                            <div className="mt-4 text-[1.05rem] font-black text-white">
+                                {entry.opponent_name} <span className="text-white/45">({entry.is_home ? 'H' : 'A'})</span>
+                            </div>
+                            <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white/70">
+                                {entry.competition_name}
+                            </div>
+                            <div className={`mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-lg font-black ${formResultTone(entry.result)}`}>
+                                <span className="inline-flex h-3.5 w-3.5 rounded-full border border-current/20 bg-current/90" />
+                                {entry.score}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {points.length > 1 && (
+                    <div className="mt-5 rounded-[1.6rem] border border-white/8 bg-white/[0.03] px-4 py-5">
+                        <svg viewBox="0 0 100 80" className="h-28 w-full">
+                            <polyline
+                                fill="none"
+                                stroke={stroke}
+                                strokeWidth="1.5"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                                points={polyline}
+                            />
+                            {points.map((point, index) => (
+                                <g key={`${point.id || index}-trend`}>
+                                    <circle cx={point.x} cy={point.y} r="3.4" fill={stroke} fillOpacity="0.18" />
+                                    <circle cx={point.x} cy={point.y} r="2" fill={stroke} />
+                                </g>
+                            ))}
+                        </svg>
+                        <div 
+                            className="-mt-5 grid gap-3"
+                            style={{ gridTemplateColumns: `repeat(${matches.length || 1}, minmax(0, 1fr))` }}
+                        >
+                            {points.map((point, index) => (
+                                <div key={`${point.id || index}-badge`} className="flex justify-center">
+                                    <span className={`inline-flex rounded-full px-3 py-1 text-sm font-black shadow-lg ${trendBadgeTone(point.rating)}`}>
+                                        {point.rating.toFixed(2)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const ClubFormCard = ({ club, form, tone }) => (
+    <div className="sim-card p-5">
+        <div className="mb-4 flex items-center gap-3">
+            <img loading="lazy" src={club?.logo_url} alt={club?.name} className="h-11 w-11 object-contain" />
+            <div>
+                <div className={`text-[10px] font-black uppercase tracking-[0.16em] ${tone}`}>Formcheck</div>
+                <div className="text-lg font-black text-white">{club?.name}</div>
+            </div>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+            {(form?.matches || []).map((entry, index) => (
+                <FormChip key={`${entry.id || index}-${entry.result}`} result={entry.result} />
+            ))}
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Punkte</div>
+                <div className="mt-1 text-lg font-black text-white">{form?.points ?? 0}</div>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">S</div>
+                <div className="mt-1 text-lg font-black text-emerald-200">{form?.wins ?? 0}</div>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">U</div>
+                <div className="mt-1 text-lg font-black text-amber-200">{form?.draws ?? 0}</div>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">N</div>
+                <div className="mt-1 text-lg font-black text-rose-200">{form?.losses ?? 0}</div>
+            </div>
+        </div>
+    </div>
+);
+
+const KeyPlayersPanel = ({ club, players, accent = 'cyan' }) => {
+    const tone = accent === 'cyan' ? 'text-cyan-200' : 'text-amber-200';
+    const borderTone = accent === 'cyan' ? 'border-cyan-400/20' : 'border-amber-400/20';
+
+    return (
+        <div className="sim-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Key Player</div>
+                <Star size={14} weight="fill" className={tone} />
+            </div>
+            <div className="space-y-3">
+                {players && players.length > 0 ? players.map(player => (
+                    <div key={player.id} className={`flex items-center gap-3 rounded-2xl border ${borderTone} bg-white/[0.03] px-3 py-3`}>
+                        <img src={player.photo_url} alt={player.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
+                        <div className="min-w-0 flex-1">
+                            <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.name}</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                {player.position} · {player.style}
+                            </div>
+                        </div>
+                        <div className={`rounded-full border ${borderTone} bg-white/[0.05] px-2.5 py-1 text-[10px] font-black text-white`}>
+                            {player.overall}
+                        </div>
+                    </div>
+                )) : (
+                    <div className="py-4 text-center text-xs italic text-[var(--text-muted)]">Keine Daten</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const AbsenteesPanel = ({ homeClub, awayClub, absentees }) => (
+    <div className="sim-card p-5">
+        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Ausfaelle / Sperren</div>
+        <div className="grid gap-4 md:grid-cols-2">
+            {[
+                { club: homeClub, list: absentees?.home, tone: 'text-cyan-200' },
+                { club: awayClub, list: absentees?.away, tone: 'text-amber-200' },
+            ].map(({ club, list, tone }) => (
+                <div key={club?.id} className="space-y-2">
+                    <div className={`text-[9px] font-black uppercase tracking-widest ${tone}`}>{club?.short_name || club?.name}</div>
+                    <div className="space-y-1.5">
+                        {list && list.length > 0 ? list.map(player => (
+                            <div key={player.id} className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+                                <span className="truncate text-[10px] font-bold text-white">{player.name}</span>
+                                <span className={`shrink-0 text-[8px] font-black uppercase ${player.type === 'suspension' ? 'text-rose-400' : 'text-amber-300'}`}>
+                                    {player.reason}
+                                </span>
+                            </div>
+                        )) : (
+                            <div className="text-[10px] italic text-emerald-400/60">Keine Ausfaelle</div>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const KeyDuelsPanel = ({ duels }) => (
+    <div className="sim-card p-5">
+        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Schluesselduelle</div>
+        <div className="space-y-3">
+            {duels && duels.length > 0 ? duels.map((duel, idx) => (
+                <div key={idx} className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                    <div className="mb-2 text-center text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">{duel.label}</div>
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-1 items-center gap-2 min-w-0">
+                            <img src={duel.home.photo_url} className="h-8 w-8 rounded-lg border border-cyan-400/20" />
+                            <div className="min-w-0 flex-1">
+                                <div className="truncate text-[10px] font-black text-white">{duel.home.name}</div>
+                                <div className="text-[8px] text-cyan-300">{duel.home.overall} OVR</div>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-black text-white/20 px-2">VS</div>
+                        <div className="flex flex-1 flex-row-reverse items-center gap-2 min-w-0">
+                            <img src={duel.away.photo_url} className="h-8 w-8 rounded-lg border border-amber-400/20" />
+                            <div className="min-w-0 flex-1 text-right">
+                                <div className="truncate text-[10px] font-black text-white">{duel.away.name}</div>
+                                <div className="text-[8px] text-amber-300">{duel.away.overall} OVR</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )) : (
+                <div className="py-2 text-center text-xs italic text-[var(--text-muted)]">Keine Schluesselduelle analysiert</div>
+            )}
+        </div>
+    </div>
+);
+
+const ExpectedLineupLight = ({ homeClub, awayClub, lineupPreview }) => (
+    <div className="sim-card p-5">
+        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Voraussichtliche Aufstellung</div>
+        <div className="grid gap-6 md:grid-cols-2">
+            {[
+                { club: homeClub, players: lineupPreview?.home, accent: 'cyan' },
+                { club: awayClub, players: lineupPreview?.away, accent: 'amber' },
+            ].map(({ club, players, accent }) => (
+                <div key={club?.id} className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <ClubLogo club={club} className="h-5 w-5" imgClassName="h-full w-full object-contain" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white">{club?.short_name || club?.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        {players && players.slice(0, 11).map(player => (
+                            <div key={player.id} className={`flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.02] px-2 py-1`}>
+                                <span className={`text-[8px] font-black uppercase text-${accent === 'amber' ? 'amber-400' : 'cyan-400'} w-4`}>{player.position}</span>
+                                <span className="truncate text-[9px] font-medium text-white/80">{player.name?.split(' ').pop()}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const PreMatchReport = ({ homeClub, awayClub, comparison, report }) => (
+    <div className="space-y-6">
+        <div className="sim-card overflow-hidden p-0">
+            <div className="border-b border-white/6 bg-[linear-gradient(90deg,rgba(34,211,238,0.08),rgba(217,177,92,0.06),transparent)] px-6 py-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent-primary)]">Vorbericht</div>
+                <div className="mt-1 text-xl font-black text-white">So gehen die Teams ins Spiel</div>
+            </div>
+
+            <div className="grid gap-5 p-6 xl:grid-cols-[1.25fr_0.75fr]">
+                <div className="space-y-4">
+                    <FormTrendBoard club={homeClub} form={report?.recent_form?.home} accent="cyan" />
+                    <FormTrendBoard club={awayClub} form={report?.recent_form?.away} accent="amber" />
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <KeyPlayersPanel club={homeClub} players={report?.key_players?.home} accent="cyan" />
+                        <KeyPlayersPanel club={awayClub} players={report?.key_players?.away} accent="amber" />
+                    </div>
+
+                    <ExpectedLineupLight homeClub={homeClub} awayClub={awayClub} lineupPreview={report?.expected_lineup_preview} />
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <ClubFormCard club={homeClub} form={report?.recent_form?.home} tone="text-cyan-200" />
+                        <ClubFormCard club={awayClub} form={report?.recent_form?.away} tone="text-amber-200" />
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                        <ComparisonDuelRow label="Kaderstaerke" homeValue={comparison?.home?.strength} awayValue={comparison?.away?.strength} formatter={(value) => Number(value || 0).toFixed(1)} />
+                        <ComparisonDuelRow label="Marktwert" homeValue={comparison?.home?.market_value} awayValue={comparison?.away?.market_value} formatter={(value) => `${(Number(value || 0) / 1000000).toFixed(1)}M`} />
+                        <ComparisonDuelRow label="Alter" homeValue={comparison?.home?.avg_age} awayValue={comparison?.away?.avg_age} formatter={(value) => Number(value || 0).toFixed(1)} />
+                        <ComparisonDuelRow label="Moral" homeValue={comparison?.home?.morale} awayValue={comparison?.away?.morale} formatter={(value) => Number(value || 0).toFixed(1)} />
+                        <ComparisonDuelRow label="Fitness" homeValue={comparison?.home?.fitness} awayValue={comparison?.away?.fitness} formatter={(value) => Number(value || 0).toFixed(1)} />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <AbsenteesPanel homeClub={homeClub} awayClub={awayClub} absentees={report?.absentees} />
+                    <KeyDuelsPanel duels={report?.key_duels} />
+
+                    {report?.league_snapshot && (
+                        <div className="sim-card p-5">
+                            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                Tabelle {report.league_snapshot.competition ? `· ${report.league_snapshot.competition}` : ''}
+                            </div>
+                            <div className="grid gap-3">
+                                {[
+                                    { club: homeClub, row: report.league_snapshot.home, tone: 'text-cyan-200' },
+                                    { club: awayClub, row: report.league_snapshot.away, tone: 'text-amber-200' },
+                                ].map(({ club, row, tone }) => row ? (
+                                    <div key={club?.id} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className={`truncate text-sm font-black ${tone}`}>{club?.name}</div>
+                                                <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                                    Platz {row.position} · {row.points} Punkte
+                                                </div>
+                                            </div>
+                                            <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75">
+                                                TD {row.goal_diff > 0 ? '+' : ''}{row.goal_diff}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : null)}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="sim-card p-5">
+                        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Direktvergleich</div>
+                        <div className="mb-4 grid grid-cols-3 gap-3">
+                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
+                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">Heim</div>
+                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.home_wins ?? 0}</div>
+                            </div>
+                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
+                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">Remis</div>
+                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.draws ?? 0}</div>
+                            </div>
+                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
+                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-300">Gast</div>
+                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.away_wins ?? 0}</div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {(report?.head_to_head?.matches || []).length > 0 ? report.head_to_head.matches.map((entry) => (
+                                <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.date}</span>
+                                    <span className="text-sm font-black text-white">{entry.score}</span>
+                                </div>
+                            )) : (
+                                <div className="rounded-xl border border-dashed border-[var(--border-pillar)] px-3 py-4 text-sm text-[var(--text-muted)]">
+                                    Noch kein Direktvergleich vorhanden.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {(report?.insights || []).length > 0 && (
+            <div className="grid gap-3 md:grid-cols-3">
+                {report.insights.map((insight, index) => (
+                    <div key={`${insight}-${index}`} className="sim-card p-4">
+                        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Insight {index + 1}</div>
+                        <div className="text-sm leading-relaxed text-white/85">{insight}</div>
+                    </div>
+                ))}
+            </div>
+        )}
     </div>
 );
 

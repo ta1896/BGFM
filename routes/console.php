@@ -47,8 +47,6 @@ Artisan::command('game:process-matchday {--competition-season=}', function (Seas
             ['Aufstiege', $summary['promotions']],
             ['Abstiege', $summary['relegations']],
             ['Stadionprojekte abgeschlossen', $summary['stadium_projects_completed']],
-            ['Trainingslager aktiviert', $summary['training_camps_activated']],
-            ['Trainingslager abgeschlossen', $summary['training_camps_completed']],
             ['Sponsorvertraege ausgelaufen', $summary['sponsor_contracts_expired']],
             ['Beendete Leihen', $summary['loans_completed']],
             ['Team of the Day erzeugt', $summary['team_of_the_day_generated']],

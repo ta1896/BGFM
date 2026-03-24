@@ -10,7 +10,6 @@ use App\Models\Lineup;
 use App\Models\Player;
 use App\Models\SponsorContract;
 use App\Models\StadiumProject;
-use App\Models\TrainingCamp;
 use App\Models\User;
 use App\Services\SimulationSettingsService;
 use Illuminate\View\View;
@@ -30,7 +29,6 @@ class DashboardController extends Controller
                 'scheduled_matches' => GameMatch::where('status', 'scheduled')->count(),
                 'active_sponsors' => SponsorContract::where('status', 'active')->count(),
                 'active_stadium_projects' => StadiumProject::where('status', 'active')->count(),
-                'active_training_camps' => TrainingCamp::whereIn('status', ['planned', 'active'])->count(),
             ],
             'latestUsers' => User::latest()->limit(8)->get(),
             'latestClubs' => Club::with('user')->latest()->limit(8)->get(),

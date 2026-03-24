@@ -40,7 +40,6 @@ return new class extends Migration
                     ['route' => 'players.index', 'label' => 'Kader', 'icon' => 'Users', 'group' => 'manager'],
                     ['route' => 'squad-hierarchy.index', 'label' => 'Hierarchie', 'icon' => 'TreeStructure', 'group' => 'manager'],
                     ['route' => 'training.index', 'label' => 'Training', 'icon' => 'Dumbbell', 'group' => 'manager'],
-                    ['route' => 'training-camps.index', 'label' => 'Trainingslager', 'icon' => 'Tent', 'group' => 'manager'],
                 ],
             ],
             'bg_wettbewerb' => [

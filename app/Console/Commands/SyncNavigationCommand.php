@@ -55,7 +55,6 @@ class SyncNavigationCommand extends Command
                     ['route' => 'players.index', 'label' => 'Kader', 'group' => 'manager_with_club'],
                     ['route' => 'squad-hierarchy.index', 'label' => 'Hierarchie', 'group' => 'manager_with_club'],
                     ['route' => 'training.index', 'label' => 'Training', 'group' => 'manager_with_club'],
-                    ['route' => 'training-camps.index', 'label' => 'Trainingslager', 'group' => 'manager_with_club'],
                 ],
             ],
             'bg_wettbewerb' => [
