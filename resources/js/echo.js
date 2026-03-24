@@ -21,3 +21,31 @@ window.Echo = new Echo({
     forceTLS: isSecure,
     enabledTransports: ['ws', 'wss'],
 });
+
+const getEchoConnection = () => window.Echo?.connector?.pusher?.connection ?? null;
+
+if (!window.__echoBfcacheLifecycleBound) {
+    const disconnectForBfcache = () => {
+        const connection = getEchoConnection();
+
+        if (connection && connection.state !== 'disconnected') {
+            connection.disconnect();
+        }
+    };
+
+    const reconnectAfterBfcache = (event) => {
+        if (!event.persisted) {
+            return;
+        }
+
+        const connection = getEchoConnection();
+
+        if (connection && connection.state === 'disconnected') {
+            connection.connect();
+        }
+    };
+
+    window.addEventListener('pagehide', disconnectForBfcache);
+    window.addEventListener('pageshow', reconnectAfterBfcache);
+    window.__echoBfcacheLifecycleBound = true;
+}

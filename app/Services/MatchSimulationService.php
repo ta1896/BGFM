@@ -17,10 +17,13 @@ class MatchSimulationService
 {
     public function __construct(
         private readonly StatisticsAggregationService $statisticsAggregationService,
-        private readonly PlayerPositionService $positionService,
+        private readonly MatchPlayerRoleService $matchPlayerRoleService,
+        private readonly MatchLineupService $matchLineupService,
+        private readonly MatchStrengthService $matchStrengthService,
+        private readonly MatchEnvironmentService $matchEnvironmentService,
+        private readonly MatchRandomService $matchRandomService,
         private readonly TacticalManager $tacticalManager,
-        private readonly NarrativeEngine $narrativeEngine,
-        private readonly SimulationSettingsService $settingsService
+        private readonly NarrativeEngine $narrativeEngine
     ) {
     }
 
@@ -87,8 +90,8 @@ class MatchSimulationService
             'competitionSeason',
         ]);
 
-        $homeLineup = $this->resolveLineup($match->homeClub, $match);
-        $awayLineup = $this->resolveLineup($match->awayClub, $match);
+        $homeLineup = $this->matchLineupService->resolvePreferredLineup($match->homeClub, $match);
+        $awayLineup = $this->matchLineupService->resolvePreferredLineup($match->awayClub, $match);
 
         // Override Formations (for Tactics Lab)
         if (isset($options['force_home_formation']) && $homeLineup) {
@@ -98,8 +101,8 @@ class MatchSimulationService
             $awayLineup->formation = $options['force_away_formation'];
         }
 
-        $homePlayers = $this->extractPlayers($homeLineup, $match->homeClub);
-        $awayPlayers = $this->extractPlayers($awayLineup, $match->awayClub);
+        $homePlayers = $this->matchLineupService->resolveStarters($match->homeClub, $match);
+        $awayPlayers = $this->matchLineupService->resolveStarters($match->awayClub, $match);
 
         $homeStrength = $this->teamStrength($homePlayers, true, $homeLineup);
         $awayStrength = $this->teamStrength($awayPlayers, false, $awayLineup);
@@ -150,8 +153,8 @@ class MatchSimulationService
             'home_score' => $homeGoals,
             'away_score' => $awayGoals,
             'events' => $events,
-            'attendance' => min(60000, $this->attendance($match->homeClub)),
-            'weather' => $this->weather(),
+            'attendance' => min(60000, $this->matchEnvironmentService->attendance($match->homeClub)),
+            'weather' => $this->matchEnvironmentService->weather(),
             'seed' => mt_rand(100000, 999999999),
             'home_players' => $homePlayers,
             'away_players' => $awayPlayers,
@@ -162,53 +165,13 @@ class MatchSimulationService
 
     private function teamStrength(Collection $players, bool $isHome, ?Lineup $lineup = null): float
     {
-        $overall = (float) $players->avg('overall');
-        $attack = (float) $players->avg('shooting');
-        $buildUp = (float) $players->avg('passing');
-        $defense = (float) $players->avg('defending');
-        $condition = ((float) $players->avg('stamina') + (float) $players->avg('morale')) / 2;
-
-        $score = ($overall * 0.4) + ($attack * 0.2) + ($buildUp * 0.15) + ($defense * 0.15) + ($condition * 0.1);
-
-        // Apply tactical modifiers
+        $multiplier = 1.0;
         if ($lineup) {
             $mods = $this->tacticalManager->getTacticalModifiers($lineup);
-            $score *= (($mods['attack'] + $mods['defense'] + $mods['possession']) / 3);
+            $multiplier = (($mods['attack'] + $mods['defense'] + $mods['possession']) / 3);
         }
 
-        if ($isHome) {
-            $score += 3.5;
-        }
-
-        return $score;
-    }
-
-    private function resolveLineup(Club $club, GameMatch $match): ?Lineup
-    {
-        return $club->lineups()
-            ->with(['players'])
-            ->where('match_id', $match->id)
-            ->first()
-            ?? $club->lineups()
-                ->with(['players'])
-                ->where('is_active', true)
-                ->first();
-    }
-
-    private function extractPlayers(?Lineup $lineup, Club $club): Collection
-    {
-        if (!$lineup || $lineup->players->isEmpty()) {
-            return $club->players()->orderByDesc('overall')->limit(11)->get();
-        }
-
-        $starters = $lineup->players->filter(fn($p) => !$p->pivot->is_bench)->take(11)->values();
-        if ($starters->count() < 11) {
-            $ids = $starters->pluck('id');
-            $fallback = $club->players()->whereNotIn('id', $ids)->orderByDesc('overall')->limit(11 - $starters->count())->get();
-            $starters = $starters->concat($fallback);
-        }
-
-        return $starters->take(11)->values();
+        return $this->matchStrengthService->fromPlayers($players, $isHome, $multiplier);
     }
 
     private function rollGoals(float $attackStrength, float $defenseStrength): int
@@ -526,7 +489,7 @@ class MatchSimulationService
                     'club_id' => $clubId,
                     'player_id' => $player->id,
                     'lineup_role' => $role,
-                    'position_code' => $this->positionCodeForStat($player),
+                    'position_code' => $this->matchPlayerRoleService->positionCodeForStat($player),
                     'rating' => max(3.5, min(10.0, round($baseRating, 2))),
                     'minutes_played' => $role === 'starter' ? mt_rand(65, 96) : mt_rand(0, 26),
                     'goals' => $goals,
@@ -631,74 +594,11 @@ class MatchSimulationService
             DB::table('match_live_actions')->insert($actions);
         }
     }
-    private function positionCodeForStat(Player $player): string
-    {
-        $slot = strtoupper(trim((string) ($player->pivot?->pitch_position ?? '')));
-        if ($slot !== '') {
-            if (str_starts_with($slot, 'BANK-')) {
-                return 'SUB';
-            }
-
-            if (strlen($slot) <= 4) {
-                return $slot;
-            }
-        }
-
-        $position = strtoupper((string) $player->position);
-        return strlen($position) <= 4 ? $position : substr($position, 0, 4);
-    }
-
-    private function isGoalkeeper(Player $player): bool
-    {
-        return $this->positionService->groupFromPosition($player->position) === 'GK';
-    }
-
-    private function attendance(Club $homeClub): int
-    {
-        $homeClub->loadMissing('stadium');
-        $capacity = (int) ($homeClub->stadium?->capacity ?? 18000);
-        $experience = (int) ($homeClub->stadium?->fan_experience ?? 60);
-
-        $base = max(4500, (int) round($homeClub->fanbase * (0.10 + ($experience / 1000))));
-        $variation = mt_rand(-2500, 4200);
-        $attendance = max(2500, $base + $variation);
-
-        return min($capacity, $attendance);
-    }
-
-    private function weather(): string
-    {
-        $weather = ['clear', 'cloudy', 'rainy', 'windy'];
-
-        return $weather[$this->randomArrayKey($weather)];
-    }
-
-    private function randomArrayKey(array $values): int|string
-    {
-        if ($values === []) {
-            return 0;
-        }
-
-        $keys = array_keys($values);
-        $index = mt_rand(0, max(0, count($keys) - 1));
-
-        return $keys[$index];
-    }
-
     private function randomCollectionItem(Collection $collection): ?Player
     {
-        /** @var Player|null $fallback */
-        $fallback = $collection->first();
-        if (!$fallback) {
-            return null;
-        }
-
-        $items = $collection->values();
-        $index = mt_rand(0, max(0, $items->count() - 1));
-
         /** @var Player|null $picked */
-        $picked = $items->get($index);
+        $picked = $this->matchRandomService->randomCollectionItem($collection);
 
-        return $picked ?? $fallback;
+        return $picked;
     }
 }

@@ -18,6 +18,59 @@ class SimulationSettingsService
      */
     private const ALLOWED_MATCH_TYPES = ['friendly', 'league', 'cup'];
 
+    /**
+     * @var array<int, string>
+     */
+    private const TEAM_STRENGTH_AREAS = ['attack', 'midfield', 'defense'];
+
+    /**
+     * @var array<int, string>
+     */
+    private const TEAM_STRENGTH_ATTRIBUTES = [
+        'shooting',
+        'pace',
+        'physical',
+        'overall',
+        'attr_attacking',
+        'attr_technical',
+        'attr_tactical',
+        'attr_creativity',
+        'attr_market',
+        'potential',
+        'passing',
+        'defending',
+        'attr_defending',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    private const MATCH_STRENGTH_ATTRIBUTES = [
+        'overall',
+        'shooting',
+        'passing',
+        'defending',
+        'stamina',
+        'morale',
+        'attr_attacking',
+        'attr_technical',
+        'attr_tactical',
+        'attr_defending',
+        'attr_creativity',
+        'attr_market',
+        'potential',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    private const SLOT_SCORE_BONUS_KEYS = ['main', 'second', 'third', 'group_fallback'];
+
+    /**
+     * @var array<int, string>
+     */
+    private const LINEUP_SCORING_WEIGHT_KEYS = ['fit_weight', 'role_weight', 'low_fit_penalty'];
+
     public function applyRuntimeOverrides(): void
     {
         foreach ($this->loadSettingsMap() as $key => $value) {
@@ -63,6 +116,34 @@ class SimulationSettingsService
                     config('simulation.lineup.max_bench_players', 5)
                 ),
             ],
+            'team_strength' => [
+                'weights' => $this->adminTeamStrengthWeights(),
+                'formation_factor' => [
+                    'complete_lineup' => round((float) config('simulation.team_strength.formation_factor.complete_lineup', 1.0), 2),
+                    'incomplete_lineup' => round((float) config('simulation.team_strength.formation_factor.incomplete_lineup', 0.8), 2),
+                    'minimum_players' => max(1, (int) config('simulation.team_strength.formation_factor.minimum_players', 8)),
+                ],
+                'chemistry' => [
+                    'size_bonus_cap' => max(0, (int) config('simulation.team_strength.chemistry.size_bonus_cap', 10)),
+                    'fit_modifier_min' => round((float) config('simulation.team_strength.chemistry.fit_modifier_min', 0.82), 2),
+                    'fit_modifier_max' => round((float) config('simulation.team_strength.chemistry.fit_modifier_max', 1.0), 2),
+                ],
+            ],
+            'match_strength' => [
+                'weights' => $this->adminMatchStrengthWeights(),
+                'home_bonus' => round((float) config('simulation.match_strength.home_bonus', 3.5), 2),
+            ],
+            'lineup_scoring' => [
+                'slot_score_bonuses' => [
+                    'main' => round((float) config('simulation.lineup_scoring.slot_score_bonuses.main', 120.0), 2),
+                    'second' => round((float) config('simulation.lineup_scoring.slot_score_bonuses.second', 70.0), 2),
+                    'third' => round((float) config('simulation.lineup_scoring.slot_score_bonuses.third', 35.0), 2),
+                    'group_fallback' => round((float) config('simulation.lineup_scoring.slot_score_bonuses.group_fallback', 20.0), 2),
+                ],
+                'fit_weight' => round((float) config('simulation.lineup_scoring.fit_weight', 260.0), 2),
+                'role_weight' => round((float) config('simulation.lineup_scoring.role_weight', 3.0), 2),
+                'low_fit_penalty' => round((float) config('simulation.lineup_scoring.low_fit_penalty', 220.0), 2),
+            ],
             'features' => [
                 'player_conversations_enabled' => (bool) config('simulation.features.player_conversations_enabled', false),
             ],
@@ -103,6 +184,13 @@ class SimulationSettingsService
             'simulation.lineup.max_bench_players' => $this->normalizeMaxBenchPlayers(
                 data_get($payload, 'lineup.max_bench_players', 5)
             ),
+            'simulation.team_strength.formation_factor.complete_lineup' => round((float) data_get($payload, 'team_strength.formation_factor.complete_lineup', 1.0), 2),
+            'simulation.team_strength.formation_factor.incomplete_lineup' => round((float) data_get($payload, 'team_strength.formation_factor.incomplete_lineup', 0.8), 2),
+            'simulation.team_strength.formation_factor.minimum_players' => max(1, min(11, (int) data_get($payload, 'team_strength.formation_factor.minimum_players', 8))),
+            'simulation.team_strength.chemistry.size_bonus_cap' => max(0, min(25, (int) data_get($payload, 'team_strength.chemistry.size_bonus_cap', 10))),
+            'simulation.team_strength.chemistry.fit_modifier_min' => round((float) data_get($payload, 'team_strength.chemistry.fit_modifier_min', 0.82), 2),
+            'simulation.team_strength.chemistry.fit_modifier_max' => round((float) data_get($payload, 'team_strength.chemistry.fit_modifier_max', 1.0), 2),
+            'simulation.match_strength.home_bonus' => round((float) data_get($payload, 'match_strength.home_bonus', 3.5), 2),
             'simulation.features.player_conversations_enabled' => (bool) data_get($payload, 'features.player_conversations_enabled', false),
             'simulation.observers.match_finished.enabled' => (bool) data_get($payload, 'observers.match_finished.enabled', true),
             'simulation.observers.match_finished.rebuild_match_player_stats' => (bool) data_get($payload, 'observers.match_finished.rebuild_match_player_stats', true),
@@ -111,6 +199,52 @@ class SimulationSettingsService
             'simulation.observers.match_finished.update_competition_after_match' => (bool) data_get($payload, 'observers.match_finished.update_competition_after_match', true),
             'simulation.observers.match_finished.settle_match_finance' => (bool) data_get($payload, 'observers.match_finished.settle_match_finance', true),
         ];
+
+        foreach (self::TEAM_STRENGTH_AREAS as $area) {
+            foreach (self::TEAM_STRENGTH_ATTRIBUTES as $attribute) {
+                $settings["simulation.team_strength.weights.{$area}.{$attribute}"] = round(
+                    (float) data_get(
+                        $payload,
+                        "team_strength.weights.{$area}.{$attribute}",
+                        config("simulation.team_strength.weights.{$area}.{$attribute}", 0.0)
+                    ),
+                    3
+                );
+            }
+        }
+
+        foreach (self::MATCH_STRENGTH_ATTRIBUTES as $attribute) {
+            $settings["simulation.match_strength.weights.{$attribute}"] = round(
+                (float) data_get(
+                    $payload,
+                    "match_strength.weights.{$attribute}",
+                    config("simulation.match_strength.weights.{$attribute}", 0.0)
+                ),
+                3
+            );
+        }
+
+        foreach (self::SLOT_SCORE_BONUS_KEYS as $key) {
+            $settings["simulation.lineup_scoring.slot_score_bonuses.{$key}"] = round(
+                (float) data_get(
+                    $payload,
+                    "lineup_scoring.slot_score_bonuses.{$key}",
+                    config("simulation.lineup_scoring.slot_score_bonuses.{$key}", 0.0)
+                ),
+                2
+            );
+        }
+
+        foreach (self::LINEUP_SCORING_WEIGHT_KEYS as $key) {
+            $settings["simulation.lineup_scoring.{$key}"] = round(
+                (float) data_get(
+                    $payload,
+                    "lineup_scoring.{$key}",
+                    config("simulation.lineup_scoring.{$key}", 0.0)
+                ),
+                2
+            );
+        }
 
         $this->persistMany($settings);
         $this->applyRuntimeOverrides();
@@ -343,5 +477,38 @@ class SimulationSettingsService
             'text' => mb_substr(trim((string) $value), 0, (int) ($field['max_length'] ?? 255)),
             default => (bool) $value,
         };
+    }
+
+    /**
+     * @return array<string, array<string, float>>
+     */
+    private function adminTeamStrengthWeights(): array
+    {
+        $weights = [];
+
+        foreach (self::TEAM_STRENGTH_AREAS as $area) {
+            foreach (self::TEAM_STRENGTH_ATTRIBUTES as $attribute) {
+                $weights[$area][$attribute] = round(
+                    (float) config("simulation.team_strength.weights.{$area}.{$attribute}", 0.0),
+                    3
+                );
+            }
+        }
+
+        return $weights;
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    private function adminMatchStrengthWeights(): array
+    {
+        $weights = [];
+
+        foreach (self::MATCH_STRENGTH_ATTRIBUTES as $attribute) {
+            $weights[$attribute] = round((float) config("simulation.match_strength.weights.{$attribute}", 0.0), 3);
+        }
+
+        return $weights;
     }
 }

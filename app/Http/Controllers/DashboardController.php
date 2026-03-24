@@ -9,9 +9,6 @@ use App\Models\ManagerPresence;
 use App\Models\PlayerConversation;
 use App\Models\SeasonClubStatistic;
 use App\Models\TrainingSession;
-use App\Services\InjuryManagementService;
-use App\Services\PlayerMoraleService;
-use App\Services\SquadHierarchyService;
 use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,9 +21,6 @@ class DashboardController extends Controller
     public function index(
         Request $request,
         TeamStrengthCalculator $calculator,
-        SquadHierarchyService $squadHierarchyService,
-        PlayerMoraleService $playerMoraleService,
-        InjuryManagementService $injuryManagementService,
     ): \Inertia\Response
     {
         $allowedDashboardVariants = ['modern', 'compact', 'classic'];
@@ -48,7 +42,7 @@ class DashboardController extends Controller
         $clubs = $request->user()
             ->clubs()
             ->orderBy('name')
-            ->get();
+            ->get(['clubs.id', 'clubs.name']);
 
         // Use standard activeClub from container
         $activeClub = app()->has('activeClub') ? app('activeClub') : null;
@@ -59,9 +53,9 @@ class DashboardController extends Controller
         }
 
         // Reload relationships needed for dashboard if they aren't already loaded
-        $todayMatchesCount = GameMatch::query()
+        $todayMatchesCount = Cache::remember('dashboard_today_matches_count', 60, fn (): int => GameMatch::query()
             ->whereDate('kickoff_at', now()->toDateString())
-            ->count();
+            ->count());
 
         $activeLineup = null;
         $metrics = [
@@ -113,14 +107,38 @@ class DashboardController extends Controller
         $hasLiveTickerRoute = Route::has('live-ticker.index');
 
         if ($activeClub) {
-            $activeClub->loadMissing(['stadium', 'activeSponsorContract.sponsor']);
-            $squadHierarchyService->refreshForClub($activeClub);
-
-            $activeClub->loadMissing(['players.playtimePromises']);
-            $activeClub->players->each(function ($player) use ($playerMoraleService, $injuryManagementService): void {
-                $injuryManagementService->syncCurrentInjury($player);
-                $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
-            });
+            $activeClub->load([
+                'players' => fn ($query) => $query->select([
+                    'players.id',
+                    'players.club_id',
+                    'players.first_name',
+                    'players.last_name',
+                    'players.photo_path',
+                    'players.overall',
+                    'players.happiness',
+                    'players.fatigue',
+                    'players.squad_role',
+                    'players.role_override_active',
+                    'players.role_override_set_at',
+                    'players.expected_playtime',
+                    'players.medical_status',
+                ]),
+                'players.playtimePromises' => fn ($query) => $query->select([
+                    'id',
+                    'player_id',
+                    'status',
+                    'expected_minutes_share',
+                    'fulfilled_ratio',
+                    'created_at',
+                ]),
+                'players.injuries' => fn ($query) => $query->select([
+                    'id',
+                    'player_id',
+                    'status',
+                    'return_phase',
+                    'expected_return_at',
+                ]),
+            ]);
 
             $activeLineup = Lineup::query()
                 ->where('club_id', $activeClub->id)
@@ -338,7 +356,7 @@ class DashboardController extends Controller
             ->whereNull('seen_at')
             ->count();
 
-        $liveMatches = GameMatch::query()
+        $liveMatches = Cache::remember('dashboard_live_matches', 15, fn (): array => GameMatch::query()
             ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
             ->where('status', 'live')
             ->orderByDesc('live_minute')
@@ -362,9 +380,9 @@ class DashboardController extends Controller
                     ] : null,
                 ];
             })
-            ->all();
+            ->all());
 
-        $onlineManagers = ManagerPresence::query()
+        $onlineManagers = Cache::remember('dashboard_online_managers', 15, fn (): array => ManagerPresence::query()
             ->with(['user:id,name', 'club:id,name,logo_path'])
             ->where('last_seen_at', '>=', now()->subMinutes(5))
             ->whereHas('user', fn ($query) => $query->where('is_admin', false))
@@ -383,7 +401,7 @@ class DashboardController extends Controller
                     'last_seen_label' => $presence->last_seen_at?->diffForHumans(),
                 ];
             })
-            ->all();
+            ->all());
 
         if ($activeClub) {
             if (!$activeLineup) {
@@ -519,7 +537,7 @@ class DashboardController extends Controller
                         'photo_url' => $player->photo_url,
                         'medical_status' => $player->medical_status,
                         'fatigue' => (int) $player->fatigue,
-                        'availability_status' => $injury?->availability_status,
+                        'availability_status' => $injury ? $this->resolveAvailabilityStatus($injury) : null,
                         'return_phase' => $injury?->return_phase,
                         'expected_return' => $injury?->expected_return_at?->format('d.m'),
                     ];
@@ -539,7 +557,7 @@ class DashboardController extends Controller
                 'return_count' => $injuredPlayers->filter(function ($player) {
                     $injury = $player->injuries->where('status', 'active')->sortByDesc('id')->first();
 
-                    return $injury && in_array((string) $injury->availability_status, ['bench_only', 'limited', 'available'], true);
+                    return $injury && in_array($this->resolveAvailabilityStatus($injury), ['bench_only', 'limited', 'available'], true);
                 })->count(),
                 'critical_cases' => $medicalCases->all(),
             ];
@@ -941,5 +959,20 @@ class DashboardController extends Controller
             'hidden_widgets' => $normalizeList($preferences['hidden_widgets'] ?? []),
             'widget_order' => $normalizeList($preferences['widget_order'] ?? []),
         ];
+    }
+
+    private function resolveAvailabilityStatus(object $injury): string
+    {
+        $availability = (string) ($injury->availability_status ?? '');
+
+        if ($availability !== '') {
+            return $availability;
+        }
+
+        return match ((string) ($injury->return_phase ?? '')) {
+            'full' => 'limited',
+            'partial' => 'bench_only',
+            default => 'unavailable',
+        };
     }
 }

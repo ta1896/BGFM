@@ -19,11 +19,11 @@ function Field({ label, icon: Icon, error, children }) {
     );
 }
 
-export default function Create({ club }) {
+export default function Create({ club, formations, defaultFormation }) {
     const { data, setData, post, processing, errors } = useForm({
         club_id: club.id,
         name: '',
-        formation: '4-4-2',
+        formation: defaultFormation,
         notes: '',
         is_active: true,
     });
@@ -57,13 +57,18 @@ export default function Create({ club }) {
                         <form onSubmit={submit} className="space-y-8">
                             <div className="grid gap-8 md:grid-cols-2">
                                 <Field label="Formation" icon={Strategy} error={errors.formation}>
-                                    <input
+                                    <select
                                         className="sim-input"
                                         value={data.formation}
                                         onChange={(event) => setData('formation', event.target.value)}
-                                        placeholder="z.B. 4-3-3"
                                         required
-                                    />
+                                    >
+                                        {formations.map((formation) => (
+                                            <option key={formation} value={formation}>
+                                                {formation}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </Field>
 
                                 <Field label="Name der Aufstellung" icon={Cards} error={errors.name}>

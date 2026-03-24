@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 class MatchPlayerStatsService
 {
     public function __construct(
-        private readonly PlayerPositionService $positionService
+        private readonly PlayerPositionService $positionService,
+        private readonly MatchPlayerRoleService $matchPlayerRoleService
     ) {
     }
 
@@ -78,14 +79,14 @@ class MatchPlayerStatsService
                 $passAttempts = $state ? (int) $state->pass_attempts : ($passesCompleted + $this->randomInt(2, 19));
                 $tacklesWon = $state ? (int) $state->tackle_won : $this->randomInt(0, 8);
                 $tackleAttempts = $state ? (int) $state->tackle_attempts : ($tacklesWon + $this->randomInt(0, 5));
-                $saves = $state ? (int) $state->saves : ($this->isGoalkeeper($player) ? $this->randomInt(1, 8) : 0);
+                $saves = $state ? (int) $state->saves : ($this->matchPlayerRoleService->isGoalkeeper($player) ? $this->randomInt(1, 8) : 0);
 
                 return [
                     'match_id' => $match->id,
                     'club_id' => $clubId,
                     'player_id' => $player->id,
                     'lineup_role' => $role,
-                    'position_code' => $this->positionCodeForStat($player, $state?->slot),
+                    'position_code' => $this->matchPlayerRoleService->positionCodeForStat($player, $state?->slot),
                     'rating' => max(3.5, min(10.0, round($baseRating, 2))),
                     'minutes_played' => $minutesPlayed,
                     'goals' => $goals,
@@ -97,7 +98,7 @@ class MatchPlayerStatsService
                     'passes_failed' => max(0, $passAttempts - $passesCompleted),
                     'tackles_won' => $tacklesWon,
                     'tackles_lost' => max(0, $tackleAttempts - $tacklesWon),
-                    'saves' => $this->isGoalkeeper($player) ? $saves : 0,
+                    'saves' => $this->matchPlayerRoleService->isGoalkeeper($player) ? $saves : 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -133,28 +134,6 @@ class MatchPlayerStatsService
         return ['in' => $in, 'out' => $out];
     }
 
-    private function positionCodeForStat(Player $player, ?string $slot = null): string
-    {
-        $resolvedSlot = strtoupper(trim((string) ($slot ?: ($player->pivot?->pitch_position ?? ''))));
-        if ($resolvedSlot !== '') {
-            if (str_starts_with($resolvedSlot, 'BANK-')) {
-                return 'SUB';
-            }
-            if (str_starts_with($resolvedSlot, 'OUT-')) {
-                $position = strtoupper((string) $player->position);
-
-                return strlen($position) <= 4 ? $position : substr($position, 0, 4);
-            }
-            if (strlen($resolvedSlot) <= 4) {
-                return $resolvedSlot;
-            }
-        }
-
-        $position = strtoupper((string) $player->position);
-
-        return strlen($position) <= 4 ? $position : substr($position, 0, 4);
-    }
-
     private function playerFit(Player $player): float
     {
         return $this->positionService->fitFactorWithProfile(
@@ -163,11 +142,6 @@ class MatchPlayerStatsService
             (string) $player->position_third,
             $player->pivot?->pitch_position
         );
-    }
-
-    private function isGoalkeeper(Player $player): bool
-    {
-        return $this->positionService->groupFromPosition((string) ($player->position_main ?: $player->position)) === 'GK';
     }
 
     private function randomInt(int $min, int $max): int

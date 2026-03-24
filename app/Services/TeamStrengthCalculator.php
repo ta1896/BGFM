@@ -73,12 +73,10 @@ class TeamStrengthCalculator
         return $players->avg(function (array $entry) use ($type) {
             $player = $entry['player'];
             $fit = (float) $entry['fit'];
-
-            $base = match ($type) {
-                'attack' => ($player->shooting * 0.4) + ($player->pace * 0.2) + ($player->physical * 0.15) + ($player->overall * 0.25),
-                'midfield' => ($player->passing * 0.35) + ($player->pace * 0.15) + ($player->defending * 0.2) + ($player->overall * 0.3),
-                default => ($player->defending * 0.4) + ($player->physical * 0.2) + ($player->passing * 0.1) + ($player->overall * 0.3),
-            };
+            $base = 0.0;
+            foreach ((array) config('simulation.team_strength.weights.' . $type, []) as $attribute => $weight) {
+                $base += ((float) $player->{$attribute}) * (float) $weight;
+            }
 
             $conditionFactor = (($player->stamina + $player->morale) / 200) + 0.5;
 
@@ -92,20 +90,22 @@ class TeamStrengthCalculator
         $stamina = $players->avg(fn (array $entry) => (float) $entry['player']->stamina);
         $fit = $players->avg(fn (array $entry) => (float) $entry['fit']);
 
-        $sizeBonus = min(10, $players->count());
-        $fitModifier = max(0.82, min(1.0, $fit ?: 1.0));
+        $sizeBonus = min((int) config('simulation.team_strength.chemistry.size_bonus_cap', 10), $players->count());
+        $fitModifier = max(
+            (float) config('simulation.team_strength.chemistry.fit_modifier_min', 0.82),
+            min((float) config('simulation.team_strength.chemistry.fit_modifier_max', 1.0), $fit ?: 1.0)
+        );
 
         return min(100, ((($morale + $stamina) / 2) + ($sizeBonus / 2)) * $fitModifier);
     }
 
     private function formationFactor(string $formation, int $count): float
     {
-        if ($count < 8) {
-            return 0.8;
+        $minimumPlayers = (int) config('simulation.team_strength.formation_factor.minimum_players', 8);
+        if ($count < $minimumPlayers) {
+            return (float) config('simulation.team_strength.formation_factor.incomplete_lineup', 0.8);
         }
 
-        $known = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '5-3-2'];
-
-        return in_array($formation, $known, true) ? 1.0 : 0.95;
+        return (float) config('simulation.team_strength.formation_factor.complete_lineup', 1.0);
     }
 }

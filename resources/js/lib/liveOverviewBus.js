@@ -1,20 +1,38 @@
 const listeners = new Set();
 let started = false;
+let loadingPromise = null;
 
-function start() {
-    if (started || !window.Echo) {
+async function ensureEchoLoaded() {
+    if (window.Echo) {
+        return window.Echo;
+    }
+
+    if (!loadingPromise) {
+        loadingPromise = import('@/echo').then(() => window.Echo).catch(() => null);
+    }
+
+    return loadingPromise;
+}
+
+async function start() {
+    if (started) {
+        return;
+    }
+
+    const echo = await ensureEchoLoaded();
+    if (!echo) {
         return;
     }
 
     started = true;
 
-    window.Echo.channel('live.overview').listen('.live.overview.updated', (event) => {
+    echo.channel('live.overview').listen('.live.overview.updated', (event) => {
         listeners.forEach((listener) => listener(event));
     });
 }
 
 export function subscribeToLiveOverview(listener) {
-    start();
+    void start();
     listeners.add(listener);
 
     return () => {

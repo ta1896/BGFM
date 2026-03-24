@@ -47,7 +47,10 @@ class LiveMatchTickerService
         private readonly CpuClubDecisionService $cpuDecisionService,
         private readonly PlayerPositionService $positionService,
         private readonly CompetitionContextService $competitionContextService,
-        private readonly FormationPlannerService $formationPlannerService,
+        private readonly MatchLineupService $matchLineupService,
+        private readonly MatchStrengthService $matchStrengthService,
+        private readonly MatchEnvironmentService $matchEnvironmentService,
+        private readonly MatchRandomService $matchRandomService,
         private readonly PlayerAvailabilityService $availabilityService,
         private readonly ActionEngine $actionEngine,
         private readonly SubstitutionManager $substitutionManager,
@@ -73,11 +76,11 @@ class LiveMatchTickerService
         $this->cpuDecisionService->prepareForMatch($match);
         $match->loadMissing(['homeClub.players', 'awayClub.players']);
 
-        $this->ensureMatchLineup($match, $match->homeClub);
-        $this->ensureMatchLineup($match, $match->awayClub);
+        $this->matchLineupService->ensureMatchLineup($match, $match->homeClub);
+        $this->matchLineupService->ensureMatchLineup($match, $match->awayClub);
 
-        $homePlayers = $this->resolveMatchSquad($match->homeClub, $match);
-        $awayPlayers = $this->resolveMatchSquad($match->awayClub, $match);
+        $homePlayers = $this->matchLineupService->resolveStarters($match->homeClub, $match, true);
+        $awayPlayers = $this->matchLineupService->resolveStarters($match->awayClub, $match, true);
         if ($homePlayers->isEmpty() || $awayPlayers->isEmpty()) {
             return $this->loadState($match);
         }
@@ -100,8 +103,8 @@ class LiveMatchTickerService
                 'competition_context' => $context,
                 'home_score' => (int) ($lockedMatch->home_score ?? 0),
                 'away_score' => (int) ($lockedMatch->away_score ?? 0),
-                'attendance' => $lockedMatch->attendance ?: $this->attendance($lockedMatch->homeClub),
-                'weather' => $lockedMatch->weather ?: $this->weather(),
+                'attendance' => $lockedMatch->attendance ?: $this->matchEnvironmentService->attendance($lockedMatch->homeClub, $this->deterministicEnabled()),
+                'weather' => $lockedMatch->weather ?: $this->matchEnvironmentService->weather($this->deterministicEnabled()),
                 'live_minute' => max(0, (int) $lockedMatch->live_minute),
                 'live_paused' => false,
                 'live_error_message' => null,
@@ -211,7 +214,7 @@ class LiveMatchTickerService
         }
 
         DB::transaction(function () use ($match, $club, $teamState, $style, $minute, $clubId): void {
-            $lineup = $this->ensureMatchLineup($match, $club);
+            $lineup = $this->matchLineupService->ensureMatchLineup($match, $club);
             if ($lineup->tactical_style !== $style) {
                 $lineup->update(['tactical_style' => $style]);
             }
@@ -334,7 +337,7 @@ class LiveMatchTickerService
             return $this->loadState($match);
         }
 
-        $lineup = $this->ensureMatchLineup($match, $club);
+        $lineup = $this->matchLineupService->ensureMatchLineup($match, $club);
         $lineup->load('players');
 
         /** @var Player|null $playerOut */
@@ -481,7 +484,7 @@ class LiveMatchTickerService
             return $this->loadState($match);
         }
 
-        $lineup = $this->ensureMatchLineup($match, $club);
+        $lineup = $this->matchLineupService->ensureMatchLineup($match, $club);
         $lineup->load('players');
 
         /** @var Player|null $playerOut */
@@ -888,8 +891,8 @@ class LiveMatchTickerService
         }
 
         $finalizedMatch->loadMissing(['homeClub.players', 'awayClub.players']);
-        $homePlayers = $this->resolveMatchParticipants($finalizedMatch->homeClub, $finalizedMatch);
-        $awayPlayers = $this->resolveMatchParticipants($finalizedMatch->awayClub, $finalizedMatch);
+        $homePlayers = $this->matchLineupService->resolveParticipants($finalizedMatch->homeClub, $finalizedMatch, true);
+        $awayPlayers = $this->matchLineupService->resolveParticipants($finalizedMatch->awayClub, $finalizedMatch, true);
 
         if ((bool) config('simulation.observers.match_finished.enabled', true)) {
             $this->matchFinishedObserverPipeline->process(new MatchFinishedContext(
@@ -1540,7 +1543,7 @@ class LiveMatchTickerService
 
         foreach ([(int) $match->home_club_id, (int) $match->away_club_id] as $clubId) {
             $club = $clubId === (int) $match->home_club_id ? $match->homeClub : $match->awayClub;
-            $style = $this->lineupStyle($club, $match);
+            $style = $this->matchLineupService->lineupStyle($club, $match);
 
             MatchLiveTeamState::query()->updateOrCreate(
                 ['match_id' => $match->id, 'club_id' => $clubId],
@@ -1572,7 +1575,7 @@ class LiveMatchTickerService
                 ]
             );
 
-            $lineup = $this->ensureMatchLineup($match, $club)->load('players');
+            $lineup = $this->matchLineupService->ensureMatchLineup($match, $club)->load('players');
             $rows = [];
             foreach ($lineup->players as $player) {
                 $slot = strtoupper((string) $player->pivot->pitch_position);
@@ -1691,7 +1694,7 @@ class LiveMatchTickerService
 
         /** @var Club|null $club */
         $club = Club::query()->find($clubId);
-        $style = $club ? $this->lineupStyle($club, $match) : 'balanced';
+        $style = $club ? $this->matchLineupService->lineupStyle($club, $match) : 'balanced';
 
         return MatchLiveTeamState::query()->create([
             'match_id' => $match->id,
@@ -2001,257 +2004,29 @@ class LiveMatchTickerService
         return $remainingGoalkeepers->isNotEmpty();
     }
 
-    private function lineupStyle(Club $club, GameMatch $match): string
-    {
-        /** @var Lineup|null $lineup */
-        $lineup = $club->lineups()->where('match_id', $match->id)->first();
-        if (!$lineup) {
-            $lineup = $club->lineups()->where('is_active', true)->first();
-        }
-
-        return (string) ($lineup?->tactical_style ?: 'balanced');
-    }
-
     private function teamStrengthFromStates(Collection $states, bool $isHome, string $style): float
     {
-        $avg = function (string $field) use ($states): float {
-            return (float) $states->avg(fn(MatchLivePlayerState $state): float => ((float) $state->player->{$field}) * ((float) $state->fit_factor));
-        };
-
-        $overall = $avg('overall');
-        $attack = $avg('shooting');
-        $buildUp = $avg('passing');
-        $defense = $avg('defending');
-        $condition = ((float) $states->avg(fn(MatchLivePlayerState $state): float => (float) $state->player->stamina)
-            + (float) $states->avg(fn(MatchLivePlayerState $state): float => (float) $state->player->morale)) / 2;
-
-        $score = ($overall * 0.4) + ($attack * 0.2) + ($buildUp * 0.15) + ($defense * 0.15) + ($condition * 0.1);
-        if ($isHome) {
-            $score += 3.5;
-        }
-
-        return $score + match ($style) {
-            'offensive' => 2.6,
-            'defensive' => 1.1,
-            'counter' => 1.5,
-            default => 0.0,
-        };
-    }
-
-    private function resolveMatchSquad(Club $club, GameMatch $match): Collection
-    {
-        $lineup = $this->ensureMatchLineup($match, $club)->load('players');
-        if ($lineup->players->isNotEmpty()) {
-            $starters = $lineup->players
-                ->filter(function (Player $player): bool {
-                    $slot = strtoupper((string) $player->pivot->pitch_position);
-
-                    return !(bool) $player->pivot->is_bench && !str_starts_with($slot, 'OUT-');
-                })
-                ->sortBy(fn(Player $player) => (int) $player->pivot->sort_order)
-                ->take(11)
-                ->values();
-
-            if ($starters->isNotEmpty()) {
-                return $starters;
-            }
-        }
-
-        return $club->players()
-            ->orderByDesc('overall')
-            ->limit(11)
-            ->get();
-    }
-
-    private function resolveMatchParticipants(Club $club, GameMatch $match): Collection
-    {
-        $lineup = $this->ensureMatchLineup($match, $club)->load('players');
-        if ($lineup->players->isNotEmpty()) {
-            return $lineup->players->values();
-        }
-
-        return $this->resolveMatchSquad($club, $match);
-    }
-
-    private function ensureMatchLineup(GameMatch $match, Club $club): Lineup
-    {
-        /** @var Lineup|null $lineup */
-        $lineup = $club->lineups()
-            ->with('players')
-            ->where('match_id', $match->id)
-            ->first();
-
-        if ($lineup && $lineup->players->isNotEmpty()) {
-            return $lineup;
-        }
-
-        /** @var Lineup|null $source */
-        $source = $club->lineups()
-            ->with('players')
-            ->whereNull('match_id')
-            ->where('is_active', true)
-            ->first();
-        if (!$source) {
-            $source = $club->lineups()
-                ->with('players')
-                ->whereNull('match_id')
-                ->where('is_template', true)
-                ->orderBy('id')
-                ->first();
-        }
-
-        $lineup = $club->lineups()->updateOrCreate(
-            ['match_id' => $match->id],
-            [
-                'name' => 'Live Match ' . $match->id,
-                'formation' => $source?->formation ?: '4-4-2',
-                'tactical_style' => $source?->tactical_style ?: 'balanced',
-                'attack_focus' => $source?->attack_focus ?: 'center',
-                'penalty_taker_player_id' => $source?->penalty_taker_player_id,
-                'free_kick_taker_player_id' => $source?->free_kick_taker_player_id,
-                'corner_left_taker_player_id' => $source?->corner_left_taker_player_id,
-                'corner_right_taker_player_id' => $source?->corner_right_taker_player_id,
-                'is_active' => true,
-                'is_template' => false,
-            ]
+        return $this->matchStrengthService->fromLiveStates(
+            $states,
+            $isHome,
+            $this->matchStrengthService->liveStyleBonus($style)
         );
-
-        if ($source && $source->players->isNotEmpty()) {
-            $pivot = $source->players->mapWithKeys(function (Player $player): array {
-                return [
-                    $player->id => [
-                        'pitch_position' => $player->pivot->pitch_position,
-                        'sort_order' => $player->pivot->sort_order,
-                        'x_coord' => $player->pivot->x_coord,
-                        'y_coord' => $player->pivot->y_coord,
-                        'is_captain' => (bool) $player->pivot->is_captain,
-                        'is_set_piece_taker' => (bool) $player->pivot->is_set_piece_taker,
-                        'is_bench' => (bool) $player->pivot->is_bench,
-                        'bench_order' => $player->pivot->bench_order,
-                    ],
-                ];
-            })->all();
-            $lineup->players()->sync($pivot);
-
-            return $lineup->load('players');
-        }
-
-        $availablePlayers = $club->players()
-            ->whereIn('status', ['active', 'transfer_listed', 'suspended'])
-            ->orderByDesc('overall')
-            ->get();
-        $selection = $this->formationPlannerService->strongestByFormation(
-            $availablePlayers,
-            '4-4-2',
-            $this->maxBenchPlayers()
-        );
-        $slots = collect($this->formationPlannerService->starterSlots('4-4-2'))->keyBy('slot');
-
-        $pivot = [];
-        $starterOrder = 1;
-        foreach ($selection['starters'] as $slot => $playerId) {
-            if (!$playerId) {
-                continue;
-            }
-
-            $slotInfo = $slots->get($slot);
-            $pivot[$playerId] = [
-                'pitch_position' => $slot,
-                'sort_order' => $starterOrder,
-                'x_coord' => $slotInfo['x'] ?? null,
-                'y_coord' => $slotInfo['y'] ?? null,
-                'is_captain' => $starterOrder === 1,
-                'is_set_piece_taker' => false,
-                'is_bench' => false,
-                'bench_order' => null,
-            ];
-            $starterOrder++;
-        }
-
-        foreach ($selection['bench'] as $index => $playerId) {
-            if (isset($pivot[$playerId])) {
-                continue;
-            }
-
-            $benchOrder = $index + 1;
-            $pivot[$playerId] = [
-                'pitch_position' => 'BANK-' . $benchOrder,
-                'sort_order' => 100 + $benchOrder,
-                'x_coord' => null,
-                'y_coord' => null,
-                'is_captain' => false,
-                'is_set_piece_taker' => false,
-                'is_bench' => true,
-                'bench_order' => $benchOrder,
-            ];
-        }
-
-        if ($pivot !== []) {
-            $lineup->players()->sync($pivot);
-        }
-
-        return $lineup->load('players');
-    }
-
-    private function attendance(Club $homeClub): int
-    {
-        $homeClub->loadMissing('stadium');
-        $capacity = (int) ($homeClub->stadium?->capacity ?? 18000);
-        $experience = (int) ($homeClub->stadium?->fan_experience ?? 60);
-        $base = max(4500, (int) round($homeClub->fanbase * (0.10 + ($experience / 1000))));
-        $variation = $this->randomInt(-2500, 4200);
-        $attendance = max(2500, $base + $variation);
-
-        return min($capacity, $attendance);
-    }
-
-    private function weather(): string
-    {
-        $weather = ['clear', 'cloudy', 'rainy', 'windy'];
-
-        return $weather[$this->randomArrayKey($weather)];
     }
 
     private function randomInt(int $min, int $max): int
     {
-        if ($this->deterministicEnabled()) {
-            return mt_rand($min, $max);
-        }
-
-        return random_int($min, $max);
-    }
-
-    private function randomArrayKey(array $values): int|string
-    {
-        if ($values === []) {
-            return 0;
-        }
-
-        if ($this->deterministicEnabled()) {
-            $keys = array_keys($values);
-            $index = mt_rand(0, max(0, count($keys) - 1));
-
-            return $keys[$index];
-        }
-
-        return array_rand($values);
+        return $this->matchRandomService->randomInt($min, $max, $this->deterministicEnabled());
     }
 
     private function randomCollectionItem(Collection $states): MatchLivePlayerState
     {
-        /** @var MatchLivePlayerState|null $fallback */
-        $fallback = $states->first();
-        if (!$fallback) {
+        /** @var MatchLivePlayerState|null $picked */
+        $picked = $this->matchRandomService->randomCollectionItem($states, $this->deterministicEnabled());
+        if (!$picked) {
             throw new \RuntimeException('Cannot pick random state from empty collection.');
         }
 
-        $items = $states->values();
-        $index = $this->randomInt(0, max(0, $items->count() - 1));
-
-        /** @var MatchLivePlayerState|null $picked */
-        $picked = $items->get($index);
-
-        return $picked ?? $fallback;
+        return $picked;
     }
 
     private function deterministicEnabled(): bool

@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Constants\PlayerPosition;
 use App\Models\Player;
 use Illuminate\Support\Collection;
 
 class FormationPlannerService
 {
-    public function __construct(private readonly PlayerPositionService $positionService)
+    public function __construct(
+        private readonly PlayerPositionService $positionService,
+        private readonly PositionMetadataService $positionMetadata
+    )
     {
     }
 
@@ -17,38 +19,22 @@ class FormationPlannerService
      */
     public function supportedFormations(): array
     {
-        return [
-            '4-4-2',
-            '4-4-2 (Holding)',
-            '4-3-3',
-            '4-3-3 (Attack)',
-            '4-3-3 (Defend)',
-            '4-3-3 (Holding)',
-            '4-3-3 (False 9)',
-            '4-2-3-1 (Wide)',
-            '4-2-3-1 (Narrow)',
-            '4-1-2-1-2 (Wide)',
-            '4-1-2-1-2 (Narrow)',
-            '4-3-2-1',
-            '4-3-1-2',
-            '4-2-2-2',
-            '4-4-1-1 (Midfield)',
-            '4-4-1-1 (Attack)',
-            '4-5-1 (Flat)',
-            '4-5-1 (Attack)',
-            '4-1-4-1',
-            '3-4-1-2',
-            '3-4-2-1',
-            '3-4-3 (Flat)',
-            '3-4-3 (Diamond)',
-            '3-1-4-2',
-            '3-5-2',
-            '3-5-1-1',
-            '5-2-1-2',
-            '5-2-2-1',
-            '5-3-2',
-            '5-4-1 (Flat)'
-        ];
+        return array_keys($this->layouts());
+    }
+
+    public function defaultFormation(): string
+    {
+        $default = (string) config('formations.default', '4-4-2');
+        $fallback = array_key_first($this->layouts()) ?: '4-4-2';
+
+        return isset($this->layouts()[$default]) ? $default : $fallback;
+    }
+
+    public function normalizeFormation(?string $formation): string
+    {
+        $normalized = trim((string) $formation);
+
+        return isset($this->layouts()[$normalized]) ? $normalized : $this->defaultFormation();
     }
 
     /**
@@ -56,281 +42,12 @@ class FormationPlannerService
      */
     public function starterSlots(string $formation): array
     {
-        return match ($formation) {
-            '4-4-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 52],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 32],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 32],
-            ],
-            '4-4-2 (Holding)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 40, 'y' => 58],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 58],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 45],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 45],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '4-3-3' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
-            ],
-            '4-3-3 (Attack)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 58],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 58],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 44],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
-            ],
-            '4-3-3 (Defend)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 35, 'y' => 60],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 65, 'y' => 60],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 50],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
-            ],
-            '4-3-3 (Holding)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 50],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 50],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
-            ],
-            '4-3-3 (False 9)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 50],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 50],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 34],
-                ['slot' => 'MS', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 36],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 34],
-            ],
-            '4-2-3-1 (Wide)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 40, 'y' => 60],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 60],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 45],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 45],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-            ],
-            '4-2-3-1 (Narrow)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 40, 'y' => 60],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 60],
-                ['slot' => 'LAM', 'label' => 'LAM', 'group' => 'MID', 'x' => 35, 'y' => 44],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'RAM', 'label' => 'RAM', 'group' => 'MID', 'x' => 65, 'y' => 44],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-            ],
-            '4-1-2-1-2 (Wide)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 48],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 48],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '4-1-2-1-2 (Narrow)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '4-2-2-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 40, 'y' => 60],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 60, 'y' => 60],
-                ['slot' => 'ZOM-L', 'label' => 'ZOM', 'group' => 'MID', 'x' => 35, 'y' => 44],
-                ['slot' => 'ZOM-R', 'label' => 'ZOM', 'group' => 'MID', 'x' => 65, 'y' => 44],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '4-3-2-1' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'LS', 'label' => 'LS', 'group' => 'FWD', 'x' => 35, 'y' => 38],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RS', 'label' => 'RS', 'group' => 'FWD', 'x' => 65, 'y' => 38],
-            ],
-            '4-3-1-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '4-4-1-1 (Midfield)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 52],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
-                ['slot' => 'MS', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 38],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 24],
-            ],
-            '4-1-4-1' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'DM', 'label' => 'DM', 'group' => 'MID', 'x' => 50, 'y' => 62],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 48],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 48],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 48],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 48],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-            ],
-            '3-5-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 30, 'y' => 74],
-                ['slot' => 'IV', 'label' => 'IV', 'group' => 'DEF', 'x' => 50, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 70, 'y' => 74],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 12, 'y' => 52],
-                ['slot' => 'DM-L', 'label' => 'DM', 'group' => 'MID', 'x' => 35, 'y' => 58],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 42],
-                ['slot' => 'DM-R', 'label' => 'DM', 'group' => 'MID', 'x' => 65, 'y' => 58],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 88, 'y' => 52],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '3-4-3 (Flat)' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 30, 'y' => 74],
-                ['slot' => 'IV', 'label' => 'IV', 'group' => 'DEF', 'x' => 50, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 70, 'y' => 74],
-                ['slot' => 'LM', 'label' => 'LM', 'group' => 'MID', 'x' => 14, 'y' => 52],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 52],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 52],
-                ['slot' => 'RM', 'label' => 'RM', 'group' => 'MID', 'x' => 86, 'y' => 52],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 32],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 28],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 32],
-            ],
-            '5-2-1-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LWB', 'label' => 'LWB', 'group' => 'DEF', 'x' => 10, 'y' => 68],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 30, 'y' => 74],
-                ['slot' => 'IV', 'label' => 'IV', 'group' => 'DEF', 'x' => 50, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 70, 'y' => 74],
-                ['slot' => 'RWB', 'label' => 'RWB', 'group' => 'DEF', 'x' => 90, 'y' => 68],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 38, 'y' => 54],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 62, 'y' => 54],
-                ['slot' => 'ZOM', 'label' => 'ZOM', 'group' => 'MID', 'x' => 50, 'y' => 44],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 28],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 28],
-            ],
-            '5-3-2' => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LWB', 'label' => 'LWB', 'group' => 'DEF', 'x' => 10, 'y' => 68],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 30, 'y' => 74],
-                ['slot' => 'IV', 'label' => 'IV', 'group' => 'DEF', 'x' => 50, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 70, 'y' => 74],
-                ['slot' => 'RWB', 'label' => 'RWB', 'group' => 'DEF', 'x' => 90, 'y' => 68],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 32, 'y' => 54],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 54],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 68, 'y' => 54],
-                ['slot' => 'ST-L', 'label' => 'MS', 'group' => 'FWD', 'x' => 43, 'y' => 30],
-                ['slot' => 'ST-R', 'label' => 'MS', 'group' => 'FWD', 'x' => 57, 'y' => 30],
-            ],
-            default => [
-                ['slot' => 'TW', 'label' => 'TW', 'group' => 'GK', 'x' => 50, 'y' => 88],
-                ['slot' => 'LV', 'label' => 'LV', 'group' => 'DEF', 'x' => 15, 'y' => 72],
-                ['slot' => 'IV-L', 'label' => 'IV', 'group' => 'DEF', 'x' => 38, 'y' => 72],
-                ['slot' => 'IV-R', 'label' => 'IV', 'group' => 'DEF', 'x' => 62, 'y' => 72],
-                ['slot' => 'RV', 'label' => 'RV', 'group' => 'DEF', 'x' => 85, 'y' => 72],
-                ['slot' => 'ZM-L', 'label' => 'ZM', 'group' => 'MID', 'x' => 35, 'y' => 52],
-                ['slot' => 'ZM', 'label' => 'ZM', 'group' => 'MID', 'x' => 50, 'y' => 48],
-                ['slot' => 'ZM-R', 'label' => 'ZM', 'group' => 'MID', 'x' => 65, 'y' => 52],
-                ['slot' => 'LF', 'label' => 'LF', 'group' => 'FWD', 'x' => 22, 'y' => 30],
-                ['slot' => 'ST', 'label' => 'MS', 'group' => 'FWD', 'x' => 50, 'y' => 24],
-                ['slot' => 'RF', 'label' => 'RF', 'group' => 'FWD', 'x' => 78, 'y' => 30],
-            ],
-        };
+        $normalized = $this->normalizeFormation($formation);
+
+        /** @var array<int, array{slot:string,label:string,group:string,x:int,y:int}> $slots */
+        $slots = $this->layouts()[$normalized] ?? $this->layouts()[$this->defaultFormation()];
+
+        return $slots;
     }
 
     /**
@@ -344,11 +61,18 @@ class FormationPlannerService
         $available = $players
             ->sortByDesc(fn(Player $player) => ($player->overall * 2) + $player->stamina + $player->morale)
             ->values();
+        $slotOrder = collect($slots)
+            ->sortBy(fn (array $slot): array => [
+                $this->slotCandidateCount($available, $slot),
+                $this->slotPriority($slot),
+            ])
+            ->values()
+            ->all();
 
         $usedIds = [];
         $starters = [];
 
-        foreach ($slots as $slot) {
+        foreach ($slotOrder as $slot) {
             $pick = $available
                 ->reject(fn(Player $player): bool => in_array($player->id, $usedIds, true))
                 ->sortByDesc(fn(Player $player): float => $this->slotScore($player, $slot))
@@ -382,13 +106,7 @@ class FormationPlannerService
             return false;
         }
 
-        return match ($group) {
-            'GK' => $playerGroup === 'GK',
-            'DEF' => in_array($playerGroup, ['DEF', 'MID'], true),
-            'MID' => in_array($playerGroup, ['MID', 'DEF', 'FWD'], true),
-            'FWD' => in_array($playerGroup, ['FWD', 'MID'], true),
-            default => false,
-        };
+        return in_array($playerGroup, $this->positionMetadata->compatibleGroups($group), true);
     }
 
     /**
@@ -396,24 +114,33 @@ class FormationPlannerService
      */
     private function slotScore(Player $player, array $slot): float
     {
-        $base = ($player->overall * 12)
-            + ($player->stamina * 0.8)
-            + ($player->morale * 0.6)
-            + (($player->sharpness ?? 50) * 0.4)
-            - (($player->fatigue ?? 0) * 0.7);
-
+        $mainPosition = $player->position_main ?: $player->position;
         $fit = $this->positionService->fitFactorWithProfile(
-            $player->position_main ?: $player->position,
+            $mainPosition,
             $player->position_second,
             $player->position_third,
             $slot['slot']
         );
 
+        if ($slot['group'] === 'GK' && $this->positionService->groupFromPosition($mainPosition) !== 'GK') {
+            return -100000.0;
+        }
+
+        $base = ($player->overall * 12)
+            + ($player->stamina * 0.8)
+            + ($player->morale * 0.6)
+            + (($player->sharpness ?? 50) * 0.4)
+            - (($player->fatigue ?? 0) * 0.7);
+        $role = $this->roleAttributeScore($player, $slot);
+
         $bonus = 0.0;
+        $mainBonus = (float) config('simulation.lineup_scoring.slot_score_bonuses.main', 120.0);
+        $secondBonus = (float) config('simulation.lineup_scoring.slot_score_bonuses.second', 70.0);
+        $thirdBonus = (float) config('simulation.lineup_scoring.slot_score_bonuses.third', 35.0);
         foreach ([
-            [$player->position_main ?: $player->position, 120.0],
-            [$player->position_second, 70.0],
-            [$player->position_third, 35.0],
+            [$player->position_main ?: $player->position, $mainBonus],
+            [$player->position_second, $secondBonus],
+            [$player->position_third, $thirdBonus],
         ] as [$position, $weight]) {
             if ($this->positionMatchesSlot((string) $position, $slot)) {
                 $bonus = max($bonus, $weight);
@@ -421,10 +148,14 @@ class FormationPlannerService
         }
 
         if ($bonus === 0.0 && $this->positionFitsGroup((string) ($player->position_main ?: $player->position), $slot['group'])) {
-            $bonus = 20.0;
+            $bonus = (float) config('simulation.lineup_scoring.slot_score_bonuses.group_fallback', 20.0);
         }
 
-        return $base + ($fit * 100.0) + $bonus;
+        $fitWeight = (float) config('simulation.lineup_scoring.fit_weight', 260.0);
+        $roleWeight = (float) config('simulation.lineup_scoring.role_weight', 3.0);
+        $lowFitPenalty = $fit < 0.80 ? (float) config('simulation.lineup_scoring.low_fit_penalty', 220.0) : 0.0;
+
+        return $base + ($role * $roleWeight) + ($fit * $fitWeight) + $bonus - $lowFitPenalty;
     }
 
     /**
@@ -445,47 +176,168 @@ class FormationPlannerService
      */
     private function slotAliases(string $slotCode, string $slotLabel): array
     {
-        $slot = $this->normalizePositionCode($slotCode);
-        $label = $this->normalizePositionCode($slotLabel);
-        $map = [
-            'TW' => ['TW', 'GK'],
-            'LV' => ['LV', 'LWB'],
-            'RV' => ['RV', 'RWB'],
-            'LWB' => ['LWB', 'LV', 'LM'],
-            'RWB' => ['RWB', 'RV', 'RM'],
-            'IV' => ['IV'],
-            'LM' => ['LM', 'LWB', 'LV', 'LF'],
-            'RM' => ['RM', 'RWB', 'RV', 'RF'],
-            'DM' => ['DM', 'ZM'],
-            'ZM' => ['ZM', 'DM', 'OM', 'ZOM'],
-            'OM' => ['OM', 'ZOM', 'LAM', 'RAM', 'ZM'],
-            'ZOM' => ['ZOM', 'OM', 'LAM', 'RAM'],
-            'LAM' => ['LAM', 'LM', 'OM', 'ZOM'],
-            'RAM' => ['RAM', 'RM', 'OM', 'ZOM'],
-            'LF' => ['LF', 'LW', 'LM', 'LS', 'ST', 'MS'],
-            'RF' => ['RF', 'RW', 'RM', 'RS', 'ST', 'MS'],
-            'LS' => ['LS', 'LF', 'ST', 'MS'],
-            'RS' => ['RS', 'RF', 'ST', 'MS'],
-            'ST' => ['ST', 'MS', 'HS', 'LS', 'RS'],
-            'MS' => ['MS', 'ST', 'HS', 'LS', 'RS'],
-            'HS' => ['HS', 'MS', 'ST', 'ZOM'],
-        ];
-
-        return array_values(array_unique(array_merge(
-            [$slot, $label],
-            $map[$slot] ?? [],
-            $map[$label] ?? []
-        )));
+        return $this->positionMetadata->slotAliases($slotCode, $slotLabel);
     }
 
     private function normalizePositionCode(?string $value): string
     {
-        $normalized = strtoupper(trim((string) $value));
-        if ($normalized === '') {
-            return '';
+        return $this->positionMetadata->normalizeCode($value);
+    }
+
+    /**
+     * @return array<string, array<int, array{slot:string,label:string,group:string,x:int,y:int}>>
+     */
+    private function layouts(): array
+    {
+        /** @var array<string, array<int, array{slot:string,label:string,group:string,x:int,y:int}>> $layouts */
+        $layouts = config('formations.layouts', []);
+
+        return $layouts;
+    }
+
+    /**
+     * @param array{slot:string,label:string,group:string,x:int,y:int} $slot
+     */
+    private function slotCandidateCount(Collection $players, array $slot): int
+    {
+        return $players
+            ->filter(function (Player $player) use ($slot): bool {
+                $fit = $this->positionService->fitFactorWithProfile(
+                    $player->position_main ?: $player->position,
+                    $player->position_second,
+                    $player->position_third,
+                    $slot['slot']
+                );
+
+                return $fit >= 0.84;
+            })
+            ->count();
+    }
+
+    /**
+     * @param array{slot:string,label:string,group:string,x:int,y:int} $slot
+     */
+    private function slotPriority(array $slot): int
+    {
+        $normalized = $this->normalizePositionCode($slot['label'] ?: $slot['slot']);
+
+        return match ($normalized) {
+            'TW' => 0,
+            'LV', 'RV', 'LWB', 'RWB' => 1,
+            'IV' => 2,
+            'DM' => 3,
+            'LM', 'RM', 'LF', 'RF', 'LS', 'RS' => 4,
+            'OM', 'ZOM', 'LAM', 'RAM' => 5,
+            'ZM' => 6,
+            'MS', 'ST', 'HS' => 7,
+            default => 8,
+        };
+    }
+
+    /**
+     * @param array{slot:string,label:string,group:string,x:int,y:int} $slot
+     */
+    private function roleAttributeScore(Player $player, array $slot): float
+    {
+        $normalized = $this->normalizePositionCode($slot['label'] ?: $slot['slot']);
+        $weights = $this->roleWeightsForSlot($normalized, $slot['group']);
+        $score = 0.0;
+
+        foreach ($weights as $attribute => $weight) {
+            $score += ((float) data_get($player, $attribute, 0)) * $weight;
         }
 
-        $base = preg_replace('/-(L|R)$/', '', $normalized);
-        return PlayerPosition::map($base);
+        return $score;
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    private function roleWeightsForSlot(string $normalizedSlot, string $group): array
+    {
+        return match ($normalizedSlot) {
+            'TW' => [
+                'overall' => 0.18,
+                'attr_defending' => 0.34,
+                'attr_tactical' => 0.18,
+                'attr_technical' => 0.14,
+                'stamina' => 0.04,
+                'morale' => 0.04,
+            ],
+            'LV', 'RV', 'LWB', 'RWB' => [
+                'overall' => 0.14,
+                'pace' => 0.10,
+                'stamina' => 0.08,
+                'physical' => 0.07,
+                'passing' => 0.06,
+                'attr_defending' => 0.22,
+                'attr_tactical' => 0.15,
+                'attr_technical' => 0.10,
+            ],
+            'IV' => [
+                'overall' => 0.16,
+                'physical' => 0.10,
+                'defending' => 0.08,
+                'passing' => 0.04,
+                'attr_defending' => 0.28,
+                'attr_tactical' => 0.18,
+                'attr_technical' => 0.06,
+            ],
+            'DM' => [
+                'overall' => 0.14,
+                'stamina' => 0.08,
+                'passing' => 0.07,
+                'defending' => 0.06,
+                'attr_defending' => 0.18,
+                'attr_tactical' => 0.22,
+                'attr_technical' => 0.12,
+                'attr_creativity' => 0.06,
+            ],
+            'LM', 'RM' => [
+                'overall' => 0.14,
+                'pace' => 0.10,
+                'passing' => 0.08,
+                'stamina' => 0.08,
+                'attr_attacking' => 0.12,
+                'attr_technical' => 0.16,
+                'attr_tactical' => 0.10,
+                'attr_creativity' => 0.12,
+            ],
+            'OM', 'ZOM', 'LAM', 'RAM' => [
+                'overall' => 0.14,
+                'passing' => 0.08,
+                'shooting' => 0.06,
+                'attr_attacking' => 0.14,
+                'attr_technical' => 0.18,
+                'attr_tactical' => 0.12,
+                'attr_creativity' => 0.18,
+            ],
+            'LF', 'RF', 'LS', 'RS' => [
+                'overall' => 0.14,
+                'pace' => 0.12,
+                'shooting' => 0.09,
+                'passing' => 0.05,
+                'attr_attacking' => 0.20,
+                'attr_technical' => 0.14,
+                'attr_creativity' => 0.10,
+                'physical' => 0.04,
+            ],
+            'MS', 'ST', 'HS' => [
+                'overall' => 0.15,
+                'shooting' => 0.12,
+                'physical' => 0.08,
+                'pace' => 0.06,
+                'attr_attacking' => 0.24,
+                'attr_technical' => 0.12,
+                'attr_tactical' => 0.06,
+                'attr_creativity' => 0.04,
+            ],
+            default => match ($group) {
+                'GK' => ['overall' => 0.20, 'attr_defending' => 0.35, 'attr_tactical' => 0.20],
+                'DEF' => ['overall' => 0.18, 'attr_defending' => 0.28, 'attr_tactical' => 0.18, 'physical' => 0.08],
+                'MID' => ['overall' => 0.16, 'attr_technical' => 0.18, 'attr_tactical' => 0.18, 'attr_creativity' => 0.12, 'passing' => 0.08],
+                default => ['overall' => 0.16, 'attr_attacking' => 0.22, 'attr_technical' => 0.14, 'shooting' => 0.10, 'pace' => 0.08],
+            },
+        };
     }
 }

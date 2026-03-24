@@ -4,6 +4,10 @@ namespace App\Services;
 
 class PlayerPositionService
 {
+    public function __construct(private readonly PositionMetadataService $positionMetadata)
+    {
+    }
+
     /**
      * Resolves a lineup slot (e.g. IV-L, ZM, ST) to a broad role group.
      */
@@ -28,61 +32,7 @@ class PlayerPositionService
      */
     public function groupFromPosition(?string $position): ?string
     {
-        $normalized = strtoupper(trim((string) $position));
-        if ($normalized === '') {
-            return null;
-        }
-
-        $map = [
-            'TW' => 'GK',
-            'GK' => 'GK',
-            'LV' => 'DEF',
-            'IV' => 'DEF',
-            'RV' => 'DEF',
-            'LWB' => 'DEF',
-            'RWB' => 'DEF',
-            'LM' => 'MID',
-            'ZM' => 'MID',
-            'RM' => 'MID',
-            'DM' => 'MID',
-            'OM' => 'MID',
-            'LAM' => 'MID',
-            'ZOM' => 'MID',
-            'RAM' => 'MID',
-            'LS' => 'FWD',
-            'MS' => 'FWD',
-            'RS' => 'FWD',
-            'ST' => 'FWD',
-            'LW' => 'FWD',
-            'RW' => 'FWD',
-            'LF' => 'FWD',
-            'RF' => 'FWD',
-            'HS' => 'FWD',
-            'DEF' => 'DEF',
-            'MID' => 'MID',
-            'FWD' => 'FWD',
-        ];
-
-        if (isset($map[$normalized])) {
-            return $map[$normalized];
-        }
-
-        $base = preg_replace('/-.*$/', '', $normalized);
-        if ($base !== $normalized && isset($map[$base])) {
-            return $map[$base];
-        }
-
-        if (str_starts_with($normalized, 'IV')) {
-            return 'DEF';
-        }
-        if (str_starts_with($normalized, 'DM') || str_starts_with($normalized, 'ZM')) {
-            return 'MID';
-        }
-        if (str_starts_with($normalized, 'ST')) {
-            return 'FWD';
-        }
-
-        return null;
+        return $this->positionMetadata->groupFromPosition($position);
     }
 
     /**

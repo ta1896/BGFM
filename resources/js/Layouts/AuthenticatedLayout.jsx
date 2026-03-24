@@ -1,20 +1,51 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { CaretDown, Gear, SignOut, List, X, Bell, Users } from '@phosphor-icons/react';
-import ThemeSwitcher from '@/Components/ThemeSwitcher';
+import { Bell } from '@phosphor-icons/react/Bell';
+import { CaretDown } from '@phosphor-icons/react/CaretDown';
+import { Gear } from '@phosphor-icons/react/Gear';
+import { List } from '@phosphor-icons/react/List';
+import { SignOut } from '@phosphor-icons/react/SignOut';
+import { Users } from '@phosphor-icons/react/Users';
+import { X } from '@phosphor-icons/react/X';
 import UserAvatar from '@/Components/UserAvatar';
 import AppHeader from '@/Components/layout/AppHeader';
-import LiveMatchesIndicator from '@/Components/layout/LiveMatchesIndicator';
 import LayoutFrame from '@/Components/layout/LayoutFrame';
 import SidebarBrand from '@/Components/layout/SidebarBrand';
-import SidebarNavigation from '@/Components/layout/SidebarNavigation';
 import { findActiveMenuLabel, transformDynamicNavigation } from '@/Layouts/navigation';
+
+const ThemeSwitcher = lazy(() => import('@/Components/ThemeSwitcher'));
+const LiveMatchesIndicator = lazy(() => import('@/Components/layout/LiveMatchesIndicator'));
+const SidebarNavigation = lazy(() => import('@/Components/layout/SidebarNavigation'));
+
+function SidebarNavigationSkeleton() {
+    return (
+        <div className="min-h-0 flex-1 space-y-3 px-3 py-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                    key={index}
+                    className="h-11 animate-pulse rounded-2xl border border-[var(--border-muted)] bg-[var(--bg-content)]/25"
+                />
+            ))}
+        </div>
+    );
+}
+
+function HeaderToolsSkeleton() {
+    return (
+        <div className="flex items-center gap-3">
+            <div className="h-9 w-24 animate-pulse rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/25" />
+            <div className="h-9 w-9 animate-pulse rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/25" />
+            <div className="h-9 w-9 animate-pulse rounded-xl border border-[var(--border-muted)] bg-[var(--bg-content)]/25" />
+        </div>
+    );
+}
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, navigation, activeClub, userClubs = [], flash, live, modules = {} } = usePage().props;
     const currentTheme = auth.theme || 'catalyst';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clubSelectorOpen, setClubSelectorOpen] = useState(false);
+    const [deferChrome, setDeferChrome] = useState(false);
     const currentRoute = route().current();
 
     const hasManagedClub = auth.isAdmin || userClubs.length > 0;
@@ -41,6 +72,29 @@ export default function AuthenticatedLayout({ header, children }) {
     // We only use the database-managed navigation now
     const activeMenuLabel = findActiveMenuLabel(dynamicManagerNav, currentRoute, 'Dashboard');
 
+    useEffect(() => {
+        let timeoutId = null;
+        let idleId = null;
+
+        const enableDeferredChrome = () => setDeferChrome(true);
+
+        if ('requestIdleCallback' in window) {
+            idleId = window.requestIdleCallback(enableDeferredChrome, { timeout: 900 });
+        } else {
+            timeoutId = window.setTimeout(enableDeferredChrome, 300);
+        }
+
+        return () => {
+            if (idleId !== null && 'cancelIdleCallback' in window) {
+                window.cancelIdleCallback(idleId);
+            }
+
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, []);
+
     return (
         <LayoutFrame
             themeClassName={`theme-${currentTheme}`}
@@ -54,7 +108,13 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
                         <span className="font-bold text-white tracking-tight">OpenWS</span>
                     </Link>
-                    <button onClick={() => setSidebarOpen((open) => !open)} className="p-2 text-[var(--text-muted)] hover:text-white">
+                    <button
+                        type="button"
+                        aria-label={sidebarOpen ? 'Seitenleiste schliessen' : 'Seitenleiste oeffnen'}
+                        aria-expanded={sidebarOpen}
+                        onClick={() => setSidebarOpen((open) => !open)}
+                        className="p-2 text-[var(--text-muted)] hover:text-white"
+                    >
                         {sidebarOpen ? <X size={24} /> : <List size={24} />}
                     </button>
                 </div>
@@ -63,14 +123,20 @@ export default function AuthenticatedLayout({ header, children }) {
                 <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 sim-sidebar-floating shadow-2xl flex h-full flex-col overflow-hidden`}>
                     <SidebarBrand href={route('dashboard')} badge="NW" title="NewGen" subtitle="Management Suite" />
 
-                    <SidebarNavigation
-                        menuGroups={dynamicManagerNav}
-                        currentRoute={currentRoute}
-                        className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar"
-                        activeTextClassName="text-[var(--text-main)] bg-[var(--bg-content)]/50"
-                        inactiveTextClassName="text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30"
-                        labelClassName="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors"
-                    />
+                    {deferChrome ? (
+                        <Suspense fallback={<SidebarNavigationSkeleton />}>
+                            <SidebarNavigation
+                                menuGroups={dynamicManagerNav}
+                                currentRoute={currentRoute}
+                                className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar"
+                                activeTextClassName="text-[var(--text-main)] bg-[var(--bg-content)]/50"
+                                inactiveTextClassName="text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-content)]/30"
+                                labelClassName="text-[10px] font-bold uppercase tracking-widest group-hover/btn:text-amber-500 transition-colors"
+                            />
+                        </Suspense>
+                    ) : (
+                        <SidebarNavigationSkeleton />
+                    )}
 
                     <div className="shrink-0 border-t border-[var(--border-muted)] bg-[var(--bg-pillar)]/50 p-4">
                         {hasManagedClub && userClubs.length > 1 && (
@@ -114,6 +180,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                 <Link
                                     href={route('profile.edit')}
+                                    aria-label="Profil bearbeiten"
                                     className="p-1.5 text-[var(--text-muted)] hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition"
                                     title="Profil"
                                 >
@@ -121,6 +188,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </Link>
 
                                 <button
+                                    type="button"
+                                    aria-label="Abmelden"
                                     onClick={() => router.post(route('logout'))}
                                     className="p-1.5 text-[var(--text-muted)] hover:text-rose-400 hover:bg-slate-700/50 rounded-lg transition"
                                     title="Logout"
@@ -143,14 +212,24 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <h1 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">{activeMenuLabel}</h1>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <LiveMatchesIndicator count={live?.matches_count ?? 0} />
-                                <ThemeSwitcher />
-                                <button className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition">
-                                    <Bell size={20} />
-                                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500 border border-black" />
-                                </button>
-                            </div>
+                            {deferChrome ? (
+                                <Suspense fallback={<HeaderToolsSkeleton />}>
+                                    <div className="flex items-center gap-4">
+                                        <LiveMatchesIndicator count={live?.matches_count ?? 0} />
+                                        <ThemeSwitcher />
+                                        <button
+                                            type="button"
+                                            aria-label="Benachrichtigungen"
+                                            className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition"
+                                        >
+                                            <Bell size={20} />
+                                            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500 border border-black" />
+                                        </button>
+                                    </div>
+                                </Suspense>
+                            ) : (
+                                <HeaderToolsSkeleton />
+                            )}
                         </div>
                     )}
                 </AppHeader>
@@ -167,6 +246,9 @@ function ClubSwitcher({ activeClub, userClubs, open, onToggle, onSelectClub }) {
     return (
         <div className="relative mb-3">
             <button
+                type="button"
+                aria-label={open ? 'Vereinsauswahl schliessen' : 'Vereinsauswahl oeffnen'}
+                aria-expanded={open}
                 onClick={onToggle}
                 className="flex w-full items-center gap-3 rounded-lg bg-[var(--bg-content)]/60 p-2 text-left hover:bg-[var(--bg-content)] transition border border-[var(--border-muted)] overflow-hidden"
             >

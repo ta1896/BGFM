@@ -33,6 +33,26 @@ export default defineConfig({
                         return 'vendor-realtime';
                     }
 
+                    if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) {
+                        return 'vendor-react';
+                    }
+
+                    if (id.includes('/node_modules/@inertiajs/')) {
+                        return 'vendor-inertia';
+                    }
+
+                    if (id.includes('/node_modules/axios/')) {
+                        return 'vendor-http';
+                    }
+
+                    if (id.includes('/node_modules/@dnd-kit/')) {
+                        return 'vendor-dnd';
+                    }
+
+                    if (id.includes('/node_modules/recharts/')) {
+                        return 'vendor-charts';
+                    }
+
                     return undefined;
                 },
             },

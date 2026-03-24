@@ -48,6 +48,91 @@ class AdminSimulationSettingsTest extends TestCase
                     'lineup' => [
                         'max_bench_players' => 9,
                     ],
+                    'lineup_scoring' => [
+                        'slot_score_bonuses' => [
+                            'main' => 140,
+                            'second' => 80,
+                            'third' => 40,
+                            'group_fallback' => 25,
+                        ],
+                    ],
+                    'team_strength' => [
+                        'weights' => [
+                            'attack' => [
+                                'shooting' => 0.2,
+                                'pace' => 0.07,
+                                'physical' => 0.04,
+                                'overall' => 0.13,
+                                'attr_attacking' => 0.21,
+                                'attr_technical' => 0.12,
+                                'attr_tactical' => 0.06,
+                                'attr_creativity' => 0.1,
+                                'attr_market' => 0.04,
+                                'potential' => 0.03,
+                                'passing' => 0.0,
+                                'defending' => 0.0,
+                                'attr_defending' => 0.0,
+                            ],
+                            'midfield' => [
+                                'passing' => 0.14,
+                                'pace' => 0.05,
+                                'defending' => 0.06,
+                                'overall' => 0.12,
+                                'attr_technical' => 0.17,
+                                'attr_tactical' => 0.16,
+                                'attr_creativity' => 0.15,
+                                'attr_defending' => 0.08,
+                                'attr_attacking' => 0.03,
+                                'attr_market' => 0.02,
+                                'potential' => 0.02,
+                                'shooting' => 0.0,
+                                'physical' => 0.0,
+                            ],
+                            'defense' => [
+                                'defending' => 0.16,
+                                'physical' => 0.06,
+                                'passing' => 0.05,
+                                'overall' => 0.11,
+                                'attr_defending' => 0.24,
+                                'attr_tactical' => 0.16,
+                                'attr_technical' => 0.09,
+                                'attr_creativity' => 0.05,
+                                'attr_market' => 0.04,
+                                'potential' => 0.04,
+                                'shooting' => 0.0,
+                                'pace' => 0.0,
+                                'attr_attacking' => 0.0,
+                            ],
+                        ],
+                        'formation_factor' => [
+                            'complete_lineup' => 1.05,
+                            'incomplete_lineup' => 0.72,
+                            'minimum_players' => 9,
+                        ],
+                        'chemistry' => [
+                            'size_bonus_cap' => 12,
+                            'fit_modifier_min' => 0.8,
+                            'fit_modifier_max' => 1.03,
+                        ],
+                    ],
+                    'match_strength' => [
+                        'weights' => [
+                            'overall' => 0.17,
+                            'shooting' => 0.07,
+                            'passing' => 0.07,
+                            'defending' => 0.06,
+                            'stamina' => 0.05,
+                            'morale' => 0.05,
+                            'attr_attacking' => 0.11,
+                            'attr_technical' => 0.1,
+                            'attr_tactical' => 0.1,
+                            'attr_defending' => 0.1,
+                            'attr_creativity' => 0.08,
+                            'attr_market' => 0.03,
+                            'potential' => 0.02,
+                        ],
+                        'home_bonus' => 4.2,
+                    ],
                     'features' => [
                         'player_conversations_enabled' => 1,
                     ],
@@ -95,6 +180,12 @@ class AdminSimulationSettingsTest extends TestCase
         $this->assertSame(['league', 'cup'], (array) config('simulation.scheduler.default_types'));
         $this->assertSame(150, (int) config('simulation.scheduler.runner_lock_seconds'));
         $this->assertSame(9, (int) config('simulation.lineup.max_bench_players'));
+        $this->assertSame(140.0, (float) config('simulation.lineup_scoring.slot_score_bonuses.main'));
+        $this->assertSame(1.05, (float) config('simulation.team_strength.formation_factor.complete_lineup'));
+        $this->assertSame(12, (int) config('simulation.team_strength.chemistry.size_bonus_cap'));
+        $this->assertSame(0.21, (float) config('simulation.team_strength.weights.attack.attr_attacking'));
+        $this->assertSame(4.2, (float) config('simulation.match_strength.home_bonus'));
+        $this->assertSame(0.11, (float) config('simulation.match_strength.weights.attr_attacking'));
         $this->assertTrue((bool) config('simulation.features.player_conversations_enabled'));
         $this->assertTrue((bool) config('simulation.observers.match_finished.enabled'));
         $this->assertFalse((bool) config('simulation.observers.match_finished.settle_match_finance'));
@@ -155,6 +246,91 @@ class AdminSimulationSettingsTest extends TestCase
                     ],
                     'lineup' => [
                         'max_bench_players' => 5,
+                    ],
+                    'lineup_scoring' => [
+                        'slot_score_bonuses' => [
+                            'main' => 120,
+                            'second' => 70,
+                            'third' => 35,
+                            'group_fallback' => 20,
+                        ],
+                    ],
+                    'team_strength' => [
+                        'weights' => [
+                            'attack' => [
+                                'shooting' => 0.18,
+                                'pace' => 0.08,
+                                'physical' => 0.05,
+                                'overall' => 0.14,
+                                'attr_attacking' => 0.22,
+                                'attr_technical' => 0.12,
+                                'attr_tactical' => 0.05,
+                                'attr_creativity' => 0.1,
+                                'attr_market' => 0.03,
+                                'potential' => 0.03,
+                                'passing' => 0.0,
+                                'defending' => 0.0,
+                                'attr_defending' => 0.0,
+                            ],
+                            'midfield' => [
+                                'passing' => 0.12,
+                                'pace' => 0.05,
+                                'defending' => 0.06,
+                                'overall' => 0.12,
+                                'attr_technical' => 0.18,
+                                'attr_tactical' => 0.18,
+                                'attr_creativity' => 0.16,
+                                'attr_defending' => 0.07,
+                                'attr_attacking' => 0.03,
+                                'attr_market' => 0.02,
+                                'potential' => 0.01,
+                                'shooting' => 0.0,
+                                'physical' => 0.0,
+                            ],
+                            'defense' => [
+                                'defending' => 0.14,
+                                'physical' => 0.06,
+                                'passing' => 0.05,
+                                'overall' => 0.12,
+                                'attr_defending' => 0.26,
+                                'attr_tactical' => 0.16,
+                                'attr_technical' => 0.1,
+                                'attr_creativity' => 0.05,
+                                'attr_market' => 0.03,
+                                'potential' => 0.03,
+                                'shooting' => 0.0,
+                                'pace' => 0.0,
+                                'attr_attacking' => 0.0,
+                            ],
+                        ],
+                        'formation_factor' => [
+                            'complete_lineup' => 1.0,
+                            'incomplete_lineup' => 0.8,
+                            'minimum_players' => 8,
+                        ],
+                        'chemistry' => [
+                            'size_bonus_cap' => 10,
+                            'fit_modifier_min' => 0.82,
+                            'fit_modifier_max' => 1.0,
+                        ],
+                    ],
+                    'match_strength' => [
+                        'weights' => [
+                            'overall' => 0.16,
+                            'shooting' => 0.06,
+                            'passing' => 0.06,
+                            'defending' => 0.06,
+                            'stamina' => 0.05,
+                            'morale' => 0.05,
+                            'attr_attacking' => 0.12,
+                            'attr_technical' => 0.1,
+                            'attr_tactical' => 0.1,
+                            'attr_defending' => 0.1,
+                            'attr_creativity' => 0.07,
+                            'attr_market' => 0.04,
+                            'potential' => 0.03,
+                        ],
+                        'home_bonus' => 3.5,
                     ],
                     'features' => [
                         'player_conversations_enabled' => 0,

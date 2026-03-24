@@ -48,7 +48,7 @@ class PlayerPosition
 
     public static function aliases(): array
     {
-        return [
+        return config('simulation.positions.aliases', [
             'GK' => self::TW,
             'LB' => self::LV,
             'CB' => self::IV,
@@ -67,7 +67,7 @@ class PlayerPosition
             'CF' => self::HS,
             'LS' => self::MS,
             'RS' => self::MS,
-        ];
+        ]);
     }
 
     public static function map(string $pos): string

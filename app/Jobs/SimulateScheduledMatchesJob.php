@@ -9,10 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Throwable;
 
 class SimulateScheduledMatchesJob implements ShouldQueue
 {
@@ -84,18 +81,50 @@ class SimulateScheduledMatchesJob implements ShouldQueue
         /** @var array<int, int> $candidateIds */
         $candidateIds = $query->pluck('id')->map(fn($id): int => (int) $id)->all();
 
+        $summary = [
+            'candidate_matches' => count($candidateIds),
+            'claimed_matches' => 0,
+            'processed_matches' => 0,
+            'failed_matches' => 0,
+            'skipped_active_claims' => 0,
+            'skipped_unclaimable' => 0,
+            'stale_claim_takeovers' => 0,
+            'run_token' => $runToken,
+        ];
+
         foreach ($candidateIds as $matchId) {
-            SimulateSingleMatchJob::dispatch(
+            $result = (new SimulateSingleMatchJob(
                 $matchId,
                 $minutesPerRun,
                 $runToken,
                 $types
-            );
+            ))->handle($tickerService);
+
+            if ($result['claimed']) {
+                $summary['claimed_matches']++;
+            }
+
+            if ($result['processed']) {
+                $summary['processed_matches']++;
+            }
+
+            if ($result['failed']) {
+                $summary['failed_matches']++;
+            }
+
+            if ($result['stale_takeover']) {
+                $summary['stale_claim_takeovers']++;
+            }
+
+            if ($result['reason'] === self::CLAIM_REASON_ACTIVE_CLAIM) {
+                $summary['skipped_active_claims']++;
+            }
+
+            if ($result['reason'] === self::CLAIM_REASON_UNCLAIMABLE) {
+                $summary['skipped_unclaimable']++;
+            }
         }
 
-        return [
-            'dispatched_matches' => count($candidateIds),
-            'run_token' => $runToken,
-        ];
+        return $summary;
     }
 }

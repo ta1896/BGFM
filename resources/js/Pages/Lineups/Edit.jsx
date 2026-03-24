@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { 
+import {
     ArrowLeft, 
     Lightning, 
     Strategy, 
@@ -16,6 +16,24 @@ import {
     MagnifyingGlass,
     Stack
 } from '@phosphor-icons/react';
+
+const ATTRIBUTE_LABELS = {
+    overall: 'Overall',
+    shooting: 'Shooting',
+    passing: 'Passing',
+    defending: 'Defending',
+    pace: 'Pace',
+    physical: 'Physical',
+    stamina: 'Stamina',
+    morale: 'Morale',
+    attr_attacking: 'Attacking',
+    attr_technical: 'Technical',
+    attr_tactical: 'Tactical',
+    attr_defending: 'Defending Attr.',
+    attr_creativity: 'Creativity',
+    attr_market: 'Market Value',
+    potential: 'Potential',
+};
 
 const PitchMarkings = () => (
     <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-40" viewBox="0 0 680 1050" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -34,54 +52,25 @@ const PitchMarkings = () => (
     </svg>
 );
 
-const normalizePositionCode = (value) => {
+const normalizePositionCode = (value, aliases = {}) => {
     const normalized = String(value ?? '').trim().toUpperCase();
     if (!normalized) return '';
 
     const base = normalized.replace(/-(L|R)$/, '');
-    if (base === 'GK') return 'TW';
-    if (base === 'LW') return 'LF';
-    if (base === 'RW') return 'RF';
-
-    return base;
+    return aliases[base] ?? base;
 };
 
-const groupFromPosition = (value) => {
-    const normalized = normalizePositionCode(value);
+const groupFromPosition = (value, positionMeta) => {
+    const normalized = normalizePositionCode(value, positionMeta.aliases);
     if (!normalized) return null;
-    if (['TW'].includes(normalized)) return 'GK';
-    if (['LV', 'IV', 'RV', 'LWB', 'RWB', 'DEF'].includes(normalized)) return 'DEF';
-    if (['LM', 'ZM', 'RM', 'DM', 'OM', 'LAM', 'ZOM', 'RAM', 'MID'].includes(normalized)) return 'MID';
-    if (['LS', 'MS', 'RS', 'ST', 'LF', 'RF', 'HS', 'FWD'].includes(normalized)) return 'FWD';
-    return null;
+
+    return positionMeta.groups[normalized] ?? null;
 };
 
-const slotAliases = (slot) => {
-    const slotCode = normalizePositionCode(slot.slot);
-    const slotLabel = normalizePositionCode(slot.label);
-    const aliasMap = {
-        TW: ['TW'],
-        LV: ['LV', 'LWB'],
-        RV: ['RV', 'RWB'],
-        LWB: ['LWB', 'LV', 'LM'],
-        RWB: ['RWB', 'RV', 'RM'],
-        IV: ['IV'],
-        LM: ['LM', 'LWB', 'LV', 'LF'],
-        RM: ['RM', 'RWB', 'RV', 'RF'],
-        DM: ['DM', 'ZM'],
-        ZM: ['ZM', 'DM', 'OM', 'ZOM'],
-        OM: ['OM', 'ZOM', 'LAM', 'RAM', 'ZM'],
-        ZOM: ['ZOM', 'OM', 'LAM', 'RAM'],
-        LAM: ['LAM', 'LM', 'OM', 'ZOM'],
-        RAM: ['RAM', 'RM', 'OM', 'ZOM'],
-        LF: ['LF', 'LM', 'LS', 'ST', 'MS'],
-        RF: ['RF', 'RM', 'RS', 'ST', 'MS'],
-        LS: ['LS', 'LF', 'ST', 'MS'],
-        RS: ['RS', 'RF', 'ST', 'MS'],
-        ST: ['ST', 'MS', 'HS', 'LS', 'RS'],
-        MS: ['MS', 'ST', 'HS', 'LS', 'RS'],
-        HS: ['HS', 'MS', 'ST', 'ZOM'],
-    };
+const slotAliases = (slot, positionMeta) => {
+    const slotCode = normalizePositionCode(slot.slot, positionMeta.aliases);
+    const slotLabel = normalizePositionCode(slot.label, positionMeta.aliases);
+    const aliasMap = positionMeta.slotAliases ?? {};
 
     return Array.from(new Set([
         slotCode,
@@ -91,17 +80,17 @@ const slotAliases = (slot) => {
     ].filter(Boolean)));
 };
 
-const playerSlotScore = (player, slot, positionFit) => {
+const playerSlotScore = (player, slot, positionFit, positionMeta, lineupScoring) => {
     const positions = [
-        normalizePositionCode(player.position_main || player.position),
-        normalizePositionCode(player.position_second),
-        normalizePositionCode(player.position_third),
+        normalizePositionCode(player.position_main || player.position, positionMeta.aliases),
+        normalizePositionCode(player.position_second, positionMeta.aliases),
+        normalizePositionCode(player.position_third, positionMeta.aliases),
     ].filter(Boolean);
-    const aliases = slotAliases(slot);
+    const aliases = slotAliases(slot, positionMeta);
 
-    const mainGroup = groupFromPosition(positions[0]);
-    const secondGroup = groupFromPosition(positions[1]);
-    const thirdGroup = groupFromPosition(positions[2]);
+    const mainGroup = groupFromPosition(positions[0], positionMeta);
+    const secondGroup = groupFromPosition(positions[1], positionMeta);
+    const thirdGroup = groupFromPosition(positions[2], positionMeta);
 
     let fit = positionFit.foreign;
     if (aliases.includes(positions[0]) || mainGroup === slot.group) fit = positionFit.main;
@@ -109,19 +98,16 @@ const playerSlotScore = (player, slot, positionFit) => {
     else if (aliases.includes(positions[2]) || thirdGroup === slot.group) fit = positionFit.third;
     else if (mainGroup === 'GK' || slot.group === 'GK') fit = positionFit.foreign_gk;
 
+    const slotScoreBonuses = lineupScoring?.slotScoreBonuses ?? {};
     const exactBonus = aliases.includes(positions[0])
-        ? 220
+        ? (slotScoreBonuses.main ?? 120)
         : aliases.includes(positions[1])
-            ? 150
+            ? (slotScoreBonuses.second ?? 70)
             : aliases.includes(positions[2])
-                ? 90
+                ? (slotScoreBonuses.third ?? 35)
                 : mainGroup === slot.group
-                    ? 45
-                    : secondGroup === slot.group
-                        ? 25
-                        : thirdGroup === slot.group
-                            ? 10
-                            : 0;
+                    ? (slotScoreBonuses.group_fallback ?? 20)
+                    : 0;
 
     return (
         (player.overall * 12)
@@ -225,9 +211,10 @@ export default function Edit({
     timeWasting,
     captainPlayerId,
     setPieces,
-    metrics: initialMetrics,
     positionFit,
-    positionAliases
+    positionMeta,
+    lineupScoring,
+    teamStrengthConfig
 }) {
     const { data, setData, put, processing, errors } = useForm({
         name: lineup.name,
@@ -274,14 +261,27 @@ export default function Edit({
         }
 
         return freeStarterSlots
-            .map((slot) => ({ ...slot, score: playerSlotScore(assigningPlayer, slot, positionFit) }))
+            .map((slot) => ({ ...slot, score: playerSlotScore(assigningPlayer, slot, positionFit, positionMeta, lineupScoring) }))
             .sort((left, right) => right.score - left.score);
-    }, [assigningPlayer, freeStarterSlots, positionFit]);
+    }, [assigningPlayer, freeStarterSlots, positionFit, positionMeta, lineupScoring]);
 
     // Client-side Strength Calculation
     const calculatedMetrics = useMemo(() => {
         const starterIds = Object.entries(data.starter_slots).filter(([slot, id]) => id !== null);
-        if (starterIds.length === 0) return { overall: 0, attack: 0, midfield: 0, defense: 0, chemistry: 0 };
+        if (starterIds.length === 0) {
+            return {
+                overall: 0,
+                attack: 0,
+                midfield: 0,
+                defense: 0,
+                chemistry: 0,
+                breakdown: {
+                    attack: [],
+                    midfield: [],
+                    defense: [],
+                }
+            };
+        }
 
         const entries = starterIds.map(([slotKey, pId]) => {
             const p = getPlayer(pId);
@@ -291,38 +291,64 @@ export default function Edit({
             
             // Simplified Fit Factor
             let fit = positionFit.foreign;
-            const pPos = (p.position_main || p.position).toUpperCase();
-            const pSec = (p.position_second || '').toUpperCase();
-            const pThird = (p.position_third || '').toUpperCase();
+            const pPos = normalizePositionCode(p.position_main || p.position, positionMeta.aliases);
+            const pSec = normalizePositionCode(p.position_second, positionMeta.aliases);
+            const pThird = normalizePositionCode(p.position_third, positionMeta.aliases);
 
-            const pGroup = groupFromPosition(pPos);
+            const pGroup = groupFromPosition(pPos, positionMeta);
             const sGroup = slotGroup;
 
             if (pGroup === sGroup) fit = positionFit.main;
-            else if (groupFromPosition(pSec) === sGroup) fit = positionFit.second;
-            else if (groupFromPosition(pThird) === sGroup) fit = positionFit.third;
+            else if (groupFromPosition(pSec, positionMeta) === sGroup) fit = positionFit.second;
+            else if (groupFromPosition(pThird, positionMeta) === sGroup) fit = positionFit.third;
             else if (pGroup === 'GK' || sGroup === 'GK') fit = positionFit.foreign_gk;
 
             return { player: p, group: sGroup, fit };
         }).filter(Boolean); // remove any null entries (player not found in pool)
 
         const calculateScore = (players, type) => {
-            if (players.length === 0) return 0;
+            if (players.length === 0) {
+                return { score: 0, contributions: [] };
+            }
+
+            const contributionTotals = {};
             const sum = players.reduce((acc, { player: p, fit }) => {
+                const weights = teamStrengthConfig?.weights?.[type] ?? {};
                 let base = 0;
-                if (type === 'attack') base = (p.shooting * 0.4) + (p.pace * 0.2) + (p.physical * 0.15) + (p.overall * 0.25);
-                else if (type === 'midfield') base = (p.passing * 0.35) + (p.pace * 0.15) + (p.defending * 0.2) + (p.overall * 0.3);
-                else base = (p.defending * 0.4) + (p.physical * 0.2) + (p.passing * 0.1) + (p.overall * 0.3);
+
+                Object.entries(weights).forEach(([attribute, weight]) => {
+                    const value = Number(p[attribute] ?? 0);
+                    const partial = value * Number(weight);
+                    base += partial;
+                    contributionTotals[attribute] = (contributionTotals[attribute] ?? 0) + partial;
+                });
 
                 const condition = ((p.stamina + p.morale) / 200) + 0.5;
                 return acc + Math.min(99, base * condition * fit);
             }, 0);
-            return sum / players.length;
+
+            const contributions = Object.entries(contributionTotals)
+                .map(([attribute, value]) => ({
+                    attribute,
+                    label: ATTRIBUTE_LABELS[attribute] ?? attribute,
+                    value: players.length ? value / players.length : 0,
+                }))
+                .sort((left, right) => right.value - left.value)
+                .slice(0, 4);
+
+            return {
+                score: sum / players.length,
+                contributions,
+            };
         };
 
-        const attScore = calculateScore(entries.filter(e => e.group === 'FWD'), 'attack');
-        const midScore = calculateScore(entries.filter(e => e.group === 'MID'), 'midfield');
-        const defScore = calculateScore(entries.filter(e => ['DEF', 'GK'].includes(e.group)), 'defense');
+        const attackMetrics = calculateScore(entries.filter(e => e.group === 'FWD'), 'attack');
+        const midfieldMetrics = calculateScore(entries.filter(e => e.group === 'MID'), 'midfield');
+        const defenseMetrics = calculateScore(entries.filter(e => ['DEF', 'GK'].includes(e.group)), 'defense');
+
+        const attScore = attackMetrics.score;
+        const midScore = midfieldMetrics.score;
+        const defScore = defenseMetrics.score;
 
         const baseOverall = (attScore + midScore + defScore) / 3;
         
@@ -330,20 +356,32 @@ export default function Edit({
         const avgMorale = entries.length ? entries.reduce((a, b) => a + b.player.morale, 0) / entries.length : 0;
         const avgStamina = entries.length ? entries.reduce((a, b) => a + b.player.stamina, 0) / entries.length : 0;
         const avgFit = entries.length ? entries.reduce((a, b) => a + b.fit, 0) / entries.length : 0;
-        const chemistry = Math.min(100, (((avgMorale + avgStamina) / 2) + (Math.min(10, entries.length) / 2)) * Math.max(0.82, Math.min(1, avgFit)));
+        const chemistryConfig = teamStrengthConfig?.chemistry ?? {};
+        const chemistry = Math.min(
+            100,
+            (((avgMorale + avgStamina) / 2) + (Math.min(chemistryConfig.size_bonus_cap ?? 10, entries.length) / 2))
+                * Math.max(chemistryConfig.fit_modifier_min ?? 0.82, Math.min(chemistryConfig.fit_modifier_max ?? 1, avgFit))
+        );
 
-        const formationFactor = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '5-3-2'].includes(data.formation) ? 1.0 : 0.95;
-        const countFactor = entries.length < 8 ? 0.8 : 1.0;
-        const overall = Math.round(Math.min(99, baseOverall * formationFactor * countFactor * (chemistry / 100)));
+        const formationFactorConfig = teamStrengthConfig?.formationFactor ?? {};
+        const countFactor = entries.length < (formationFactorConfig.minimum_players ?? 8)
+            ? (formationFactorConfig.incomplete_lineup ?? 0.8)
+            : (formationFactorConfig.complete_lineup ?? 1.0);
+        const overall = Math.round(Math.min(99, baseOverall * countFactor * (chemistry / 100)));
 
         return {
             overall,
             attack: Math.round(attScore),
             midfield: Math.round(midScore),
             defense: Math.round(defScore),
-            chemistry: Math.round(chemistry)
+            chemistry: Math.round(chemistry),
+            breakdown: {
+                attack: attackMetrics.contributions,
+                midfield: midfieldMetrics.contributions,
+                defense: defenseMetrics.contributions,
+            }
         };
-    }, [data.starter_slots, data.formation, clubPlayers, slots, positionFit]);
+    }, [data.starter_slots, slots, positionFit, positionMeta, teamStrengthConfig]);
 
     // Handle Drop to Slot
     const handleDrop = (e, slotKey, isBench = false) => {
@@ -766,6 +804,33 @@ export default function Edit({
                                         <span className="text-sm font-black text-white leading-none">{calculatedMetrics.chemistry}%</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3">
+                                {[
+                                    ['attack', 'Angriff', calculatedMetrics.breakdown.attack],
+                                    ['midfield', 'Mitte', calculatedMetrics.breakdown.midfield],
+                                    ['defense', 'Abwehr', calculatedMetrics.breakdown.defense],
+                                ].map(([key, label, rows]) => (
+                                    <div key={key} className="rounded-3xl border border-white/5 bg-[var(--bg-pillar)]/40 p-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">Top Treiber</span>
+                                        </div>
+                                        <div className="mt-4 space-y-2">
+                                            {(rows ?? []).length > 0 ? rows.map((row) => (
+                                                <div key={row.attribute} className="flex items-center justify-between rounded-2xl bg-black/20 px-3 py-2">
+                                                    <span className="text-xs font-bold text-white">{row.label}</span>
+                                                    <span className="text-[11px] font-black text-amber-400">{row.value.toFixed(1)}</span>
+                                                </div>
+                                            )) : (
+                                                <div className="rounded-2xl bg-black/20 px-3 py-2 text-xs text-[var(--text-muted)]">
+                                                    Noch keine Startelf fuer diese Zone.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Pitch Area */}

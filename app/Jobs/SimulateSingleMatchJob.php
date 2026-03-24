@@ -33,9 +33,15 @@ class SimulateSingleMatchJob implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * @return array{
+     *   claimed: bool,
+     *   processed: bool,
+     *   failed: bool,
+     *   reason: string,
+     *   stale_takeover: bool
+     * }
      */
-    public function handle(LiveMatchTickerService $tickerService): void
+    public function handle(LiveMatchTickerService $tickerService): array
     {
         $staleAfterSeconds = max(30, (int) config('simulation.scheduler.claim_stale_after_seconds', 180));
         $claimStaleBefore = now()->subSeconds($staleAfterSeconds);
@@ -51,15 +57,37 @@ class SimulateSingleMatchJob implements ShouldQueue
         $match = $claim['match'];
 
         if (!$match) {
-            return;
+            return [
+                'claimed' => false,
+                'processed' => false,
+                'failed' => false,
+                'reason' => $claim['reason'],
+                'stale_takeover' => (bool) $claim['stale_takeover'],
+            ];
         }
 
         try {
             $tickerService->tick($match, $this->minutesPerRun);
             $this->releaseClaim($match->id, $this->runToken, null);
+
+            return [
+                'claimed' => true,
+                'processed' => true,
+                'failed' => false,
+                'reason' => $claim['reason'],
+                'stale_takeover' => (bool) $claim['stale_takeover'],
+            ];
         } catch (Throwable $exception) {
             report($exception);
             $this->releaseClaim($match->id, $this->runToken, $exception);
+
+            return [
+                'claimed' => true,
+                'processed' => false,
+                'failed' => true,
+                'reason' => $claim['reason'],
+                'stale_takeover' => (bool) $claim['stale_takeover'],
+            ];
         }
     }
 

@@ -24,7 +24,9 @@ export default function LayoutFrame({
                     {header}
 
                     <main className={contentClassName}>
-                        <FlashStatus status={flashStatus} />
+                        <div className="min-h-[4.5rem]">
+                            <FlashStatus status={flashStatus} />
+                        </div>
                         <PageTransition>
                             {children}
                         </PageTransition>

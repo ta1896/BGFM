@@ -1052,18 +1052,18 @@ class MatchCenterController extends Controller
                 ->first();
 
             $players = collect();
-            $formation = '4-4-2';
+            $formation = $formationPlanner->defaultFormation();
 
             if (!$lineup) {
                 // AUTO-FILL: Generate a virtual lineup if missing
                 $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;
                 $selection = app(FormationPlannerService::class)->strongestByFormation(
                     $club->players()->whereIn('status', ['active', 'transfer_listed'])->get(),
-                    '4-4-2',
+                    $formationPlanner->defaultFormation(),
                     5
                 );
 
-                $formation = '4-4-2';
+                $formation = $formationPlanner->defaultFormation();
                 $allDraftPlayerIds = array_merge(array_values($selection['starters'] ?? []), array_values($selection['bench'] ?? []));
                 $allDraftPlayers = \App\Models\Player::query()
                     ->whereIn('id', $allDraftPlayerIds)

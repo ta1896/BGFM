@@ -8,6 +8,50 @@ import {
 } from '@phosphor-icons/react';
 import { useState } from 'react';
 
+const ATTRIBUTE_LABELS = {
+    overall: 'Overall',
+    shooting: 'Shooting',
+    passing: 'Passing',
+    defending: 'Defending',
+    pace: 'Pace',
+    physical: 'Physical',
+    stamina: 'Stamina',
+    morale: 'Morale',
+    attr_attacking: 'Attacking',
+    attr_technical: 'Technical',
+    attr_tactical: 'Tactical',
+    attr_defending: 'Defending Attr.',
+    attr_creativity: 'Creativity',
+    attr_market: 'Market Value',
+    potential: 'Potential',
+};
+
+const TEAM_STRENGTH_GROUPS = [
+    {
+        key: 'attack',
+        title: 'Attack Weighting',
+        fields: ['shooting', 'pace', 'physical', 'overall', 'attr_attacking', 'attr_technical', 'attr_tactical', 'attr_creativity', 'attr_market', 'potential'],
+    },
+    {
+        key: 'midfield',
+        title: 'Midfield Weighting',
+        fields: ['passing', 'pace', 'defending', 'overall', 'attr_technical', 'attr_tactical', 'attr_creativity', 'attr_defending', 'attr_attacking', 'attr_market', 'potential'],
+    },
+    {
+        key: 'defense',
+        title: 'Defense Weighting',
+        fields: ['defending', 'physical', 'passing', 'overall', 'attr_defending', 'attr_tactical', 'attr_technical', 'attr_creativity', 'attr_market', 'potential'],
+    },
+];
+
+const MATCH_STRENGTH_FIELDS = ['overall', 'shooting', 'passing', 'defending', 'stamina', 'morale', 'attr_attacking', 'attr_technical', 'attr_tactical', 'attr_defending', 'attr_creativity', 'attr_market', 'potential'];
+const SLOT_SCORE_BONUS_FIELDS = [
+    ['main', 'Hauptposition'],
+    ['second', 'Nebenposition'],
+    ['third', 'Dritte Position'],
+    ['group_fallback', 'Gruppen-Fallback'],
+];
+
 function buildInitialSimulation(settings, moduleSettingsSections) {
     const simulation = {
         scheduler: {
@@ -35,6 +79,38 @@ function buildInitialSimulation(settings, moduleSettingsSections) {
         },
         lineup: {
             max_bench_players: settings?.lineup?.max_bench_players ?? 5,
+        },
+        lineup_scoring: {
+            slot_score_bonuses: {
+                main: settings?.lineup_scoring?.slot_score_bonuses?.main ?? 120,
+                second: settings?.lineup_scoring?.slot_score_bonuses?.second ?? 70,
+                third: settings?.lineup_scoring?.slot_score_bonuses?.third ?? 35,
+                group_fallback: settings?.lineup_scoring?.slot_score_bonuses?.group_fallback ?? 20,
+            },
+            fit_weight: settings?.lineup_scoring?.fit_weight ?? 260,
+            role_weight: settings?.lineup_scoring?.role_weight ?? 3,
+            low_fit_penalty: settings?.lineup_scoring?.low_fit_penalty ?? 220,
+        },
+        team_strength: {
+            weights: {
+                attack: Object.fromEntries(TEAM_STRENGTH_GROUPS[0].fields.map((field) => [field, settings?.team_strength?.weights?.attack?.[field] ?? 0])),
+                midfield: Object.fromEntries(TEAM_STRENGTH_GROUPS[1].fields.map((field) => [field, settings?.team_strength?.weights?.midfield?.[field] ?? 0])),
+                defense: Object.fromEntries(TEAM_STRENGTH_GROUPS[2].fields.map((field) => [field, settings?.team_strength?.weights?.defense?.[field] ?? 0])),
+            },
+            formation_factor: {
+                complete_lineup: settings?.team_strength?.formation_factor?.complete_lineup ?? 1,
+                incomplete_lineup: settings?.team_strength?.formation_factor?.incomplete_lineup ?? 0.8,
+                minimum_players: settings?.team_strength?.formation_factor?.minimum_players ?? 8,
+            },
+            chemistry: {
+                size_bonus_cap: settings?.team_strength?.chemistry?.size_bonus_cap ?? 10,
+                fit_modifier_min: settings?.team_strength?.chemistry?.fit_modifier_min ?? 0.82,
+                fit_modifier_max: settings?.team_strength?.chemistry?.fit_modifier_max ?? 1,
+            },
+        },
+        match_strength: {
+            weights: Object.fromEntries(MATCH_STRENGTH_FIELDS.map((field) => [field, settings?.match_strength?.weights?.[field] ?? 0])),
+            home_bonus: settings?.match_strength?.home_bonus ?? 3.5,
         },
         features: {
             player_conversations_enabled: settings?.features?.player_conversations_enabled ?? false,
@@ -151,6 +227,9 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
         positionFit: true,
         liveChanges: true,
         lineupLimits: true,
+        lineupScoring: true,
+        teamStrength: true,
+        matchStrength: true,
         features: true,
         modules: true,
         observers: true
@@ -191,8 +270,13 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
     const sc = data.simulation.scheduler;
     const pf = data.simulation.position_fit;
     const lc = data.simulation.live_changes.planned_substitutions;
+    const ls = data.simulation.lineup_scoring.slot_score_bonuses;
     const ft = data.simulation.features;
     const ob = data.simulation.observers.match_finished;
+    const ts = data.simulation.team_strength.weights;
+    const tsFormation = data.simulation.team_strength.formation_factor;
+    const tsChemistry = data.simulation.team_strength.chemistry;
+    const ms = data.simulation.match_strength;
 
     return (
         <AdminLayout>
@@ -371,6 +455,274 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
                             </div>
                         )}
                     </div>
+                </div>
+
+                <div className="sim-card p-6">
+                    <SectionHeader 
+                        title="Lineup Scoring" 
+                        icon={ChartBar} 
+                        colorClass="text-amber-300"
+                        isOpen={openSections.lineupScoring}
+                        onToggle={() => toggleSection('lineupScoring')}
+                        description="Bonusse fuer Auto-Selection und Slot-Fit"
+                    />
+
+                    {openSections.lineupScoring && (
+                        <div className="mt-8 pt-8 border-t border-[var(--border-pillar)]/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                {SLOT_SCORE_BONUS_FIELDS.map(([key, label]) => (
+                                    <div key={key}>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                            {label}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={500}
+                                            step={1}
+                                            value={ls[key]}
+                                            onChange={(e) => setNested(`simulation.lineup_scoring.slot_score_bonuses.${key}`, Number(e.target.value))}
+                                            className="sim-input w-full"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 grid gap-4 md:grid-cols-3">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                        Fit Weight
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={1000}
+                                        step={1}
+                                        value={data.simulation.lineup_scoring.fit_weight}
+                                        onChange={(e) => setNested('simulation.lineup_scoring.fit_weight', Number(e.target.value))}
+                                        className="sim-input w-full"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                        Role Weight
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={25}
+                                        step={0.1}
+                                        value={data.simulation.lineup_scoring.role_weight}
+                                        onChange={(e) => setNested('simulation.lineup_scoring.role_weight', Number(e.target.value))}
+                                        className="sim-input w-full"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                        Low Fit Penalty
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={1000}
+                                        step={1}
+                                        value={data.simulation.lineup_scoring.low_fit_penalty}
+                                        onChange={(e) => setNested('simulation.lineup_scoring.low_fit_penalty', Number(e.target.value))}
+                                        className="sim-input w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="sim-card p-6">
+                    <SectionHeader 
+                        title="Team Strength Weighting" 
+                        icon={ChartBar} 
+                        colorClass="text-sky-400"
+                        isOpen={openSections.teamStrength}
+                        onToggle={() => toggleSection('teamStrength')}
+                        description="Gewichte fuer Angriff, Mitte und Abwehr"
+                    />
+
+                    {openSections.teamStrength && (
+                        <div className="mt-8 pt-8 border-t border-[var(--border-pillar)]/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <p className="text-xs text-[var(--text-muted)] mb-8">Diese Gewichte steuern die Teamstaerke-Anzeige im Lineup-Editor. 0 deaktiviert ein Attribut, 1 gibt ihm volles Gewicht.</p>
+                            <div className="grid gap-6 xl:grid-cols-3">
+                                {TEAM_STRENGTH_GROUPS.map((group) => (
+                                    <div key={group.key} className="rounded-2xl border border-[var(--border-pillar)]/50 bg-[var(--bg-content)]/20 p-5">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <h4 className="text-sm font-black uppercase tracking-widest text-white">{group.title}</h4>
+                                            <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+                                                Summe {(group.fields.reduce((sum, field) => sum + Number(ts?.[group.key]?.[field] ?? 0), 0)).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="mt-5 space-y-3">
+                                            {group.fields.map((field) => (
+                                                <div key={field}>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                                        {ATTRIBUTE_LABELS[field] ?? field}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.01}
+                                                        value={ts?.[group.key]?.[field] ?? 0}
+                                                        onChange={(e) => setNested(`simulation.team_strength.weights.${group.key}.${field}`, Number(e.target.value))}
+                                                        className="sim-input w-full"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                                <div className="rounded-2xl border border-[var(--border-pillar)]/50 bg-[var(--bg-content)]/20 p-5">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-white">Formation Factor</h4>
+                                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Complete</label>
+                                            <input
+                                                type="number"
+                                                min={0.1}
+                                                max={2}
+                                                step={0.01}
+                                                value={tsFormation.complete_lineup}
+                                                onChange={(e) => setNested('simulation.team_strength.formation_factor.complete_lineup', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Incomplete</label>
+                                            <input
+                                                type="number"
+                                                min={0.1}
+                                                max={2}
+                                                step={0.01}
+                                                value={tsFormation.incomplete_lineup}
+                                                onChange={(e) => setNested('simulation.team_strength.formation_factor.incomplete_lineup', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Min Players</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={11}
+                                                step={1}
+                                                value={tsFormation.minimum_players}
+                                                onChange={(e) => setNested('simulation.team_strength.formation_factor.minimum_players', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-[var(--border-pillar)]/50 bg-[var(--bg-content)]/20 p-5">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-white">Chemistry</h4>
+                                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Size Bonus Cap</label>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                max={25}
+                                                step={1}
+                                                value={tsChemistry.size_bonus_cap}
+                                                onChange={(e) => setNested('simulation.team_strength.chemistry.size_bonus_cap', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Fit Min</label>
+                                            <input
+                                                type="number"
+                                                min={0.1}
+                                                max={1.5}
+                                                step={0.01}
+                                                value={tsChemistry.fit_modifier_min}
+                                                onChange={(e) => setNested('simulation.team_strength.chemistry.fit_modifier_min', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Fit Max</label>
+                                            <input
+                                                type="number"
+                                                min={0.1}
+                                                max={1.5}
+                                                step={0.01}
+                                                value={tsChemistry.fit_modifier_max}
+                                                onChange={(e) => setNested('simulation.team_strength.chemistry.fit_modifier_max', Number(e.target.value))}
+                                                className="sim-input w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="sim-card p-6">
+                    <SectionHeader 
+                        title="Match Strength Weighting" 
+                        icon={ChartBar} 
+                        colorClass="text-violet-400"
+                        isOpen={openSections.matchStrength}
+                        onToggle={() => toggleSection('matchStrength')}
+                        description="Gewichte fuer die eigentliche Match-Berechnung"
+                    />
+
+                    {openSections.matchStrength && (
+                        <div className="mt-8 pt-8 border-t border-[var(--border-pillar)]/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <p className="text-xs text-[var(--text-muted)] mb-8">Diese Werte fliessen in die Match-Staerke der Simulation ein. Der Heimbonus wird separat addiert.</p>
+                            <div className="mb-6 flex justify-end">
+                                <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-violet-300">
+                                    Summe {(MATCH_STRENGTH_FIELDS.reduce((sum, field) => sum + Number(ms.weights?.[field] ?? 0), 0)).toFixed(2)}
+                                </span>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                {MATCH_STRENGTH_FIELDS.map((field) => (
+                                    <div key={field}>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                            {ATTRIBUTE_LABELS[field] ?? field}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={1}
+                                            step={0.01}
+                                            value={ms.weights?.[field] ?? 0}
+                                            onChange={(e) => setNested(`simulation.match_strength.weights.${field}`, Number(e.target.value))}
+                                            className="sim-input w-full"
+                                        />
+                                    </div>
+                                ))}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                                        Home Bonus
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={25}
+                                        step={0.1}
+                                        value={ms.home_bonus}
+                                        onChange={(e) => setNested('simulation.match_strength.home_bonus', Number(e.target.value))}
+                                        className="sim-input w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="sim-card p-6">

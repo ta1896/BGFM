@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Constants\PlayerPosition;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
 use App\Services\FormationPlannerService;
 use App\Services\PlayerLoadService;
+use App\Services\PositionMetadataService;
 use App\Services\PlayerMoraleService;
 use App\Services\SquadHierarchyService;
 use App\Services\TeamStrengthCalculator;
@@ -92,22 +92,28 @@ class LineupsController extends Controller
             abort(403, 'Dieses Match gehoert nicht zu deinem Verein.');
         }
 
-        // Find existing lineup
+        $opponentName = $match->home_club_id === $club->id
+            ? ($match->awayClub->name ?? 'Gegner')
+            : ($match->homeClub->name ?? 'Gegner');
+
+        $baseName = 'Spieltag ' . ($match->matchday ?? '-') . ' vs ' . $opponentName;
         $lineup = $club->lineups()->where('match_id', $match->id)->first();
+        $lineupName = $this->uniqueLineupName(
+            $club,
+            $baseName,
+            $lineup?->id,
+            $match->id
+        );
 
-        // Create if missing
-        if (!$lineup) {
-            $lineupName = 'Spieltag ' . $match->matchday . ' vs ' .
-                ($match->home_club_id === $club->id ? $match->awayClub->name : $match->homeClub->name);
-
-            $lineup = $club->lineups()->create([
-                'match_id' => $match->id,
-                'name' => substr($lineupName, 0, 120),
-                'formation' => '4-4-2',
+        $lineup = $club->lineups()->updateOrCreate(
+            ['match_id' => $match->id],
+            [
+                'name' => $lineupName,
+                'formation' => config('formations.default', '4-4-2'),
                 'is_active' => true,
                 'notes' => 'Automatisch erstellt fuer Match #' . $match->id,
-            ]);
-        }
+            ]
+        );
 
         return redirect()->route('lineups.edit', $lineup);
     }
@@ -117,13 +123,15 @@ class LineupsController extends Controller
     //  CREATE
     // ────────────────────────────────────────────────────────
 
-    public function create(Request $request): \Inertia\Response
+    public function create(Request $request, FormationPlannerService $planner): \Inertia\Response
     {
         /** @var Club $club */
         $club = app()->has('activeClub') ? app('activeClub') : $this->resolveClub($request);
 
         return \Inertia\Inertia::render('Lineups/Create', [
             'club' => $club,
+            'formations' => $planner->supportedFormations(),
+            'defaultFormation' => $planner->defaultFormation(),
         ]);
     }
 
@@ -190,6 +198,7 @@ class LineupsController extends Controller
         SquadHierarchyService $squadHierarchyService,
         PlayerMoraleService $playerMoraleService,
         PlayerLoadService $playerLoadService,
+        PositionMetadataService $positionMetadata,
     ): \Inertia\Response {
         $this->authorizeLineup($request, $lineup);
         $lineup->load(['club.user', 'players', 'match.homeClub', 'match.awayClub']);
@@ -230,10 +239,9 @@ class LineupsController extends Controller
 
         $draft = $this->draftFromLineup($sourceLineup);
 
-        $formation = (string) $request->query('formation', $draft['formation'] ?? '4-4-2');
-        if (!in_array($formation, $planner->supportedFormations(), true)) {
-            $formation = '4-4-2';
-        }
+        $formation = $planner->normalizeFormation(
+            (string) $request->query('formation', $draft['formation'] ?? $planner->defaultFormation())
+        );
 
         $slots = $planner->starterSlots($formation);
         $maxBenchPlayers = $this->maxBenchPlayers();
@@ -292,6 +300,12 @@ class LineupsController extends Controller
                 'passing' => $player->passing,
                 'defending' => $player->defending,
                 'physical' => $player->physical,
+                'attr_attacking' => $player->attr_attacking,
+                'attr_technical' => $player->attr_technical,
+                'attr_tactical' => $player->attr_tactical,
+                'attr_defending' => $player->attr_defending,
+                'attr_creativity' => $player->attr_creativity,
+                'attr_market' => $player->attr_market,
                 'stamina' => $player->stamina,
                 'morale' => $player->morale,
                 'fatigue' => $player->fatigue,
@@ -320,10 +334,12 @@ class LineupsController extends Controller
                 'match_date' => $match->match_date,
                 'match_time' => $match->match_time,
                 'home_club' => $match->homeClub ? [
+                    'name' => $match->homeClub->name,
                     'short_name' => $match->homeClub->short_name,
                     'logo_url' => $match->homeClub->logo_url,
                 ] : null,
                 'away_club' => $match->awayClub ? [
+                    'name' => $match->awayClub->name,
                     'short_name' => $match->awayClub->short_name,
                     'logo_url' => $match->awayClub->logo_url,
                 ] : null,
@@ -361,7 +377,39 @@ class LineupsController extends Controller
                 'foreign' => (float) config('simulation.position_fit.foreign', 0.76),
                 'foreign_gk' => (float) config('simulation.position_fit.foreign_gk', 0.55),
             ],
-            'positionAliases' => PlayerPosition::aliases(),
+            'positionMeta' => [
+                'aliases' => $positionMetadata->aliases(),
+                'groups' => $positionMetadata->groups(),
+                'slotAliases' => $positionMetadata->slotAliasesMap(),
+                'groupFallbacks' => collect(['GK', 'DEF', 'MID', 'FWD'])
+                    ->mapWithKeys(fn (string $group): array => [$group => $positionMetadata->compatibleGroups($group)])
+                    ->all(),
+            ],
+            'lineupScoring' => [
+                'slotScoreBonuses' => [
+                    'main' => (float) config('simulation.lineup_scoring.slot_score_bonuses.main', 120.0),
+                    'second' => (float) config('simulation.lineup_scoring.slot_score_bonuses.second', 70.0),
+                    'third' => (float) config('simulation.lineup_scoring.slot_score_bonuses.third', 35.0),
+                    'group_fallback' => (float) config('simulation.lineup_scoring.slot_score_bonuses.group_fallback', 20.0),
+                ],
+            ],
+            'teamStrengthConfig' => [
+                'weights' => [
+                    'attack' => (array) config('simulation.team_strength.weights.attack', []),
+                    'midfield' => (array) config('simulation.team_strength.weights.midfield', []),
+                    'defense' => (array) config('simulation.team_strength.weights.defense', []),
+                ],
+                'formationFactor' => [
+                    'complete_lineup' => (float) config('simulation.team_strength.formation_factor.complete_lineup', 1.0),
+                    'incomplete_lineup' => (float) config('simulation.team_strength.formation_factor.incomplete_lineup', 0.8),
+                    'minimum_players' => (int) config('simulation.team_strength.formation_factor.minimum_players', 8),
+                ],
+                'chemistry' => [
+                    'size_bonus_cap' => (int) config('simulation.team_strength.chemistry.size_bonus_cap', 10),
+                    'fit_modifier_min' => (float) config('simulation.team_strength.chemistry.fit_modifier_min', 0.82),
+                    'fit_modifier_max' => (float) config('simulation.team_strength.chemistry.fit_modifier_max', 1.0),
+                ],
+            ],
         ]);
     }
 
@@ -413,9 +461,7 @@ class LineupsController extends Controller
 
         // ── Auto-Fill ───────────────────────────────────────
         if ($action === 'auto_pick') {
-            $formation = in_array($validated['formation'], $planner->supportedFormations(), true)
-                ? $validated['formation']
-                : '4-4-2';
+            $formation = $planner->normalizeFormation($validated['formation']);
 
             $selection = $planner->strongestByFormation(
                 $club->players()->whereIn('status', ['active', 'transfer_listed'])->get(),
@@ -601,7 +647,7 @@ class LineupsController extends Controller
     {
         if (!$lineup) {
             return [
-                'formation' => '4-4-2',
+                'formation' => config('formations.default', '4-4-2'),
                 'mentality' => 'normal',
                 'aggression' => 'normal',
                 'line_height' => 'normal',
@@ -627,7 +673,7 @@ class LineupsController extends Controller
         }
 
         return [
-            'formation' => $lineup->formation ?: '4-4-2',
+            'formation' => $lineup->formation ?: config('formations.default', '4-4-2'),
             'mentality' => $lineup->mentality ?? 'normal',
             'aggression' => $lineup->aggression ?? 'normal',
             'line_height' => $lineup->line_height ?? 'normal',
@@ -682,11 +728,47 @@ class LineupsController extends Controller
         return max(1, min(10, (int) config('simulation.lineup.max_bench_players', 5)));
     }
 
+    private function uniqueLineupName(Club $club, string $baseName, ?int $ignoreLineupId = null, ?int $matchId = null): string
+    {
+        $baseName = trim($baseName);
+        $fallbackSuffix = $matchId ? ' #' . $matchId : '';
+        $candidate = substr($baseName, 0, 120);
+
+        $exists = fn(string $name): bool => $club->lineups()
+            ->where('name', $name)
+            ->when($ignoreLineupId, fn ($query) => $query->where('id', '!=', $ignoreLineupId))
+            ->exists();
+
+        if (!$exists($candidate)) {
+            return $candidate;
+        }
+
+        if ($matchId) {
+            $candidateWithMatchId = substr($baseName . $fallbackSuffix, 0, 120);
+            if (!$exists($candidateWithMatchId)) {
+                return $candidateWithMatchId;
+            }
+        }
+
+        $counter = 2;
+        while ($counter <= 999) {
+            $suffix = ' (' . $counter . ')';
+            $trimmedBase = substr($baseName, 0, max(1, 120 - strlen($suffix)));
+            $numberedCandidate = $trimmedBase . $suffix;
+
+            if (!$exists($numberedCandidate)) {
+                return $numberedCandidate;
+            }
+
+            $counter++;
+        }
+
+        return substr($baseName . ' ' . uniqid(), 0, 120);
+    }
+
     private function syncPlayersFromRequest(Lineup $lineup, FormationPlannerService $planner, array $validated, Request $request): void
     {
-        $formation = in_array($validated['formation'], $planner->supportedFormations(), true)
-            ? $validated['formation']
-            : '4-4-2';
+        $formation = $planner->normalizeFormation($validated['formation']);
 
         $slots = $planner->starterSlots($formation);
         $maxBenchPlayers = $this->maxBenchPlayers();

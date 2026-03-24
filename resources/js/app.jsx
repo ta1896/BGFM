@@ -1,5 +1,10 @@
 // Deployment trigger: Updated Vite path and storage permissions
 import './bootstrap';
+import '@fontsource/outfit/300.css';
+import '@fontsource/outfit/400.css';
+import '@fontsource/outfit/500.css';
+import '@fontsource/outfit/600.css';
+import '@fontsource/outfit/700.css';
 import '../css/app.css';
 
 import { createRoot } from 'react-dom/client';

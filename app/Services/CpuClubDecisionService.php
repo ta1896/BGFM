@@ -125,7 +125,7 @@ class CpuClubDecisionService
         $fwd = $players->filter(fn(Player $player) => $this->positionService->groupFromPosition($player->position) === 'FWD')->count();
 
         if ($def >= 4 && $mid >= 4) {
-            return '4-4-2';
+            return config('formations.default', '4-4-2');
         }
 
         if ($def >= 3 && $mid >= 5) {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { 
     Selection, ChartBar, ShieldCheck, Broadcast, TrendUp, Lightning, Smiley, Info, Heartbeat, 
@@ -8,15 +8,7 @@ import {
     UsersThree, FirstAidKit, ArrowsLeftRight, Flag, Ruler, Footprints, TShirt 
 } from '@phosphor-icons/react';
 import { POSITIONS, POSITION_COORDS } from '@/constants/positions';
-import {
-    Radar,
-    RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
-    ResponsiveContainer,
-    Tooltip,
-} from 'recharts';
+const PlayerRadarChart = lazy(() => import('@/Pages/Players/components/PlayerRadarChart'));
 
 
 const moduleActionIconMap = {
@@ -288,68 +280,6 @@ function TabButton({ active, onClick, icon: Icon, children }) {
     );
 }
 
-const RadarTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-slate-950/90 border border-amber-500/30 px-4 py-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/70 leading-none mb-1 text-nowrap">
-                            {payload[0].payload.fullLabel}
-                        </span>
-                        <span className="text-xl font-black text-white italic leading-none">
-                            {payload[0].value}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    return null;
-};
-
-function PlayerRadarChart({ stats }) {
-    const data = stats.map(s => ({
-        subject: s.label.substring(0, 3).toUpperCase(),
-        fullLabel: s.label,
-        value: s.value,
-        fullMark: 99,
-    }));
-
-    return (
-        <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-                    <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                    <PolarAngleAxis 
-                        dataKey="subject" 
-                        tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 900 }} 
-                    />
-                    <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 99]} 
-                        tick={false} 
-                        axisLine={false} 
-                    />
-                    <Tooltip content={<RadarTooltip />} cursor={false} />
-                    <Radar
-                        name="Player"
-                        dataKey="value"
-                        stroke="#f59e0b"
-                        strokeWidth={3}
-                        fill="#f59e0b"
-                        fillOpacity={0.35}
-                        dot={{ r: 3, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
-                        activeDot={{ r: 5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
-                        animationDuration={1500}
-                    />
-                </RadarChart>
-            </ResponsiveContainer>
-        </div>
-    );
-}
-
 export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
     const isGK = player.position === 'TW' || player.position === 'GK';
 
@@ -403,7 +333,9 @@ export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions =
                     <div className="space-y-6">
                         <div className="flex items-center justify-center py-6 px-4 rounded-3xl border border-white/[0.03] bg-black/20 relative">
                              <div className="absolute top-4 left-4 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-50">Radar</div>
-                             <PlayerRadarChart stats={stats.filter(s => s.label !== 'Marktwert-Stärke')} size={240} />
+                             <Suspense fallback={<div className="h-[300px] w-full animate-pulse rounded-2xl bg-white/[0.03]" />}>
+                                 <PlayerRadarChart stats={stats.filter(s => s.label !== 'Marktwert-Stärke')} />
+                             </Suspense>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
