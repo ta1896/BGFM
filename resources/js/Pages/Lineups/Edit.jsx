@@ -15,6 +15,7 @@ import {
     Selection,
     CheckCircle,
     CaretDown,
+    CaretUp,
     MagnifyingGlass,
     Minus,
     Plus,
@@ -365,6 +366,7 @@ export default function Edit({
     const [assigningPlayerId, setAssigningPlayerId] = useState(null);
     const [activeTab, setActiveTab] = useState('kader'); // kader, taktik, spezial
     const [radialMenu, setRadialMenu] = useState({ isOpen: false, playerId: null, slot: null });
+    const [explainExpanded, setExplainExpanded] = useState(true);
 
     const handleInstructionToggle = (playerId, instructionId) => {
         const current = data.player_instructions[playerId] || [];
@@ -1054,6 +1056,64 @@ export default function Edit({
                                         </div>
 
                                         <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Target size={14} weight="bold" />
+                                                Weitere Standards
+                                            </h4>
+                                            <div className="space-y-3">
+                                                {[
+                                                    { label: 'Freistoss Fern', key: 'free_kick_far_player_id' },
+                                                    { label: 'Ecke Rechts', key: 'corner_right_taker_player_id' },
+                                                ].map(role => (
+                                                    <div key={role.key}>
+                                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{role.label}</label>
+                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full text-[10px]">
+                                                            <option value="">- Auto -</option>
+                                                            {Array.from(selectedPlayerIds).map(id => {
+                                                                const p = getPlayer(id);
+                                                                return <option key={id} value={id}>{p?.last_name || p?.full_name}</option>;
+                                                            })}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Shield size={14} weight="bold" />
+                                                Varianten & Verteidigung
+                                            </h4>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Eckball-Verteidigung</label>
+                                                    <select
+                                                        value={data.corner_marking_strategy}
+                                                        onChange={e => setData('corner_marking_strategy', e.target.value)}
+                                                        className="sim-select w-full text-[10px]"
+                                                    >
+                                                        <option value="zonal">Raumdeckung</option>
+                                                        <option value="player">Manndeckung</option>
+                                                        <option value="hybrid">Hybrid</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Freistoss-Verteidigung</label>
+                                                    <select
+                                                        value={data.free_kick_marking_strategy}
+                                                        onChange={e => setData('free_kick_marking_strategy', e.target.value)}
+                                                        className="sim-select w-full text-[10px]"
+                                                    >
+                                                        <option value="zonal">Raumdeckung</option>
+                                                        <option value="player">Manndeckung</option>
+                                                        <option value="hybrid">Hybrid</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
                                             <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                                                 <Users size={14} weight="bold" />
                                                 Rollen
@@ -1129,99 +1189,135 @@ export default function Edit({
                                 </div>
                             </div>
 
-                            <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                                <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-5">
-                                    <div className="mb-4 flex items-center justify-between gap-3">
-                                        <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Warum diese XI?</div>
-                                            <div className="mt-1 text-sm font-black text-white">Chemie, Formation und Haupttreiber</div>
-                                        </div>
+                            <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-5">
+                                <button
+                                    type="button"
+                                    onClick={() => setExplainExpanded((current) => !current)}
+                                    className="flex w-full items-start justify-between gap-4 text-left"
+                                >
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Warum diese XI?</div>
+                                        <div className="mt-1 text-sm font-black text-white">Chemie, Formation und Haupttreiber</div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
                                         <Strategy size={16} weight="fill" className="text-cyan-300" />
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-300">
+                                            {explainExpanded ? <CaretUp size={16} weight="bold" /> : <CaretDown size={16} weight="bold" />}
+                                        </div>
                                     </div>
+                                </button>
 
-                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                {!explainExpanded && (
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-4">
                                         <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Basisstärke</div>
-                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.baseOverall}</div>
-                                            <div className="mt-1 text-[10px] font-bold text-white/60">vor Chemie und Kaderfaktor</div>
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Basis</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.baseOverall}</div>
                                         </div>
                                         <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Formationsfaktor</div>
-                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.formationFactor.toFixed(2)}</div>
-                                            <div className="mt-1 text-[10px] font-bold text-white/60">{calculatedMetrics.explain.starters} Starter aktiv</div>
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Faktor</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.formationFactor.toFixed(2)}</div>
                                         </div>
-                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 sm:col-span-2 xl:col-span-1">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Chemie-Mix</div>
-                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.chemistry}%</div>
-                                            <div className="mt-1 text-[10px] font-bold text-white/60">
-                                                Moral {calculatedMetrics.explain.avgMorale} · Fitness {calculatedMetrics.explain.avgStamina}
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Chemie</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.chemistry}%</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Schwächster Fit</div>
+                                            <div className="mt-1 text-lg font-black text-white">
+                                                {calculatedMetrics.explain.weakestFits[0]?.fit?.toFixed(2) ?? '-'}
                                             </div>
                                         </div>
                                     </div>
+                                )}
 
-                                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.05] px-4 py-3">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">Ø Fit</div>
-                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.avgFit.toFixed(2)}</div>
-                                        </div>
-                                        <div className="rounded-2xl border border-amber-400/15 bg-amber-500/[0.05] px-4 py-3">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">Fit-Modifikator</div>
-                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.fitModifier.toFixed(2)}</div>
-                                        </div>
-                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größenbonus</div>
-                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.sizeBonus.toFixed(1)}</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größte Treiber</div>
-                                        <div className="grid gap-2 sm:grid-cols-2">
-                                            {calculatedMetrics.explain.topDrivers.map((driver) => (
-                                                <div key={driver.attribute} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
-                                                    <span className="text-[10px] font-black text-white">{driver.label}</span>
-                                                    <span className="text-[10px] font-black text-amber-300">{driver.value.toFixed(1)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-5">
-                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                {explainExpanded && (
+                                    <div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
                                         <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Schwächste Fits</div>
-                                            <div className="mt-1 text-sm font-black text-white">Die riskantesten Slots in der Startelf</div>
-                                        </div>
-                                        <Target size={16} weight="fill" className="text-amber-400" />
-                                    </div>
-
-                                    <div className="space-y-2.5">
-                                        {calculatedMetrics.explain.weakestFits.map((entry) => (
-                                            <div key={entry.id} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <div className="truncate text-[11px] font-black text-white">{entry.name}</div>
-                                                        <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.slot}</div>
-                                                    </div>
-                                                    <div className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
-                                                        entry.fit < 0.8
-                                                            ? 'border-rose-400/20 bg-rose-500/10 text-rose-200'
-                                                            : entry.fit < 1
-                                                                ? 'border-amber-400/20 bg-amber-500/10 text-amber-200'
-                                                                : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
-                                                    }`}>
-                                                        Fit {entry.fit.toFixed(2)}
-                                                    </div>
+                                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Basisstärke</div>
+                                                    <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.baseOverall}</div>
+                                                    <div className="mt-1 text-[10px] font-bold text-white/60">vor Chemie und Kaderfaktor</div>
                                                 </div>
-                                                <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold">
-                                                    <span className="text-white/60">Effektiv</span>
-                                                    <span className="text-white">{entry.effectiveOverall}</span>
+                                                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Formationsfaktor</div>
+                                                    <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.formationFactor.toFixed(2)}</div>
+                                                    <div className="mt-1 text-[10px] font-bold text-white/60">{calculatedMetrics.explain.starters} Starter aktiv</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 sm:col-span-2 xl:col-span-1">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Chemie-Mix</div>
+                                                    <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.chemistry}%</div>
+                                                    <div className="mt-1 text-[10px] font-bold text-white/60">
+                                                        Moral {calculatedMetrics.explain.avgMorale} · Fitness {calculatedMetrics.explain.avgStamina}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        ))}
+
+                                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                                                <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.05] px-4 py-3">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">Ø Fit</div>
+                                                    <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.avgFit.toFixed(2)}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-amber-400/15 bg-amber-500/[0.05] px-4 py-3">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">Fit-Modifikator</div>
+                                                    <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.fitModifier.toFixed(2)}</div>
+                                                </div>
+                                                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größenbonus</div>
+                                                    <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.sizeBonus.toFixed(1)}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <div className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größte Treiber</div>
+                                                <div className="grid gap-2 sm:grid-cols-2">
+                                                    {calculatedMetrics.explain.topDrivers.map((driver) => (
+                                                        <div key={driver.attribute} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
+                                                            <span className="text-[10px] font-black text-white">{driver.label}</span>
+                                                            <span className="text-[10px] font-black text-amber-300">{driver.value.toFixed(1)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="mb-4 flex items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Schwächste Fits</div>
+                                                    <div className="mt-1 text-sm font-black text-white">Die riskantesten Slots in der Startelf</div>
+                                                </div>
+                                                <Target size={16} weight="fill" className="text-amber-400" />
+                                            </div>
+
+                                            <div className="space-y-2.5">
+                                                {calculatedMetrics.explain.weakestFits.map((entry) => (
+                                                    <div key={entry.id} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="truncate text-[11px] font-black text-white">{entry.name}</div>
+                                                                <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.slot}</div>
+                                                            </div>
+                                                            <div className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                                                entry.fit < 0.8
+                                                                    ? 'border-rose-400/20 bg-rose-500/10 text-rose-200'
+                                                                    : entry.fit < 1
+                                                                        ? 'border-amber-400/20 bg-amber-500/10 text-amber-200'
+                                                                        : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+                                                            }`}>
+                                                                Fit {entry.fit.toFixed(2)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold">
+                                                            <span className="text-white/60">Effektiv</span>
+                                                            <span className="text-white">{entry.effectiveOverall}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Pitch Area */}

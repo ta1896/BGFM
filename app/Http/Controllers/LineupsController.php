@@ -157,7 +157,7 @@ class LineupsController extends Controller
                 'string',
                 'max:120',
                 Rule::unique('lineups', 'name')
-                    ->where(fn(Builder $query) => $query->where('club_id', $club->id)),
+                    ->where(fn($query) => $query->where('club_id', $club->id)),
             ],
             'formation' => ['required', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -446,7 +446,7 @@ class LineupsController extends Controller
                 'string',
                 'max:120',
                 Rule::unique('lineups', 'name')
-                    ->where(fn(Builder $query) => $query->where('club_id', $club->id))
+                    ->where(fn($query) => $query->where('club_id', $club->id))
                     ->ignore($lineup->id),
             ],
             'formation' => ['required', 'string', 'max:20'],
