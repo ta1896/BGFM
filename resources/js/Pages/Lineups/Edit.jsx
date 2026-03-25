@@ -37,14 +37,6 @@ const TACTICAL_POSITION_GROUPS = {
     'LS': 'FWD', 'MS': 'FWD', 'RS': 'FWD', 'ST': 'FWD', 'LW': 'FWD', 'RW': 'FWD', 'LF': 'FWD', 'RF': 'FWD', 'HS': 'FWD'
 };
 
-const FIT_FACTORS = {
-    main: 1.00,
-    second: 0.92,
-    third: 0.84,
-    foreign: 0.76,
-    foreign_gk: 0.55
-};
-
 const calculatePositionPenalty = (player, slotPos) => {
     if (!player || !slotPos) return 0;
     
@@ -65,11 +57,6 @@ const calculatePositionPenalty = (player, slotPos) => {
     if (playerGroup === 'FWD' && slotGroup === 'DEF') return -25;
     
     return -15; // Typical out of position (e.g. DEF to MID)
-};
-
-const getEffectiveRating = (player, slotPos) => {
-    const penalty = calculatePositionPenalty(player, slotPos);
-    return Math.round(player.overall * (1 + penalty / 100));
 };
 
 const ATTRIBUTE_LABELS = {
@@ -143,6 +130,51 @@ const slotAliases = (slot, positionMeta) => {
     ].filter(Boolean)));
 };
 
+const resolveFitFactor = (player, slot, positionFit, positionMeta) => {
+    if (!player || !slot) {
+        return positionFit.foreign;
+    }
+
+    const slotGroup = typeof slot === 'string'
+        ? groupFromPosition(slot, positionMeta)
+        : slot.group;
+    const aliases = typeof slot === 'string'
+        ? [normalizePositionCode(slot, positionMeta.aliases)].filter(Boolean)
+        : slotAliases(slot, positionMeta);
+    const positions = [
+        normalizePositionCode(player.position_main || player.position, positionMeta.aliases),
+        normalizePositionCode(player.position_second, positionMeta.aliases),
+        normalizePositionCode(player.position_third, positionMeta.aliases),
+    ].filter(Boolean);
+
+    const mainGroup = groupFromPosition(positions[0], positionMeta);
+    const secondGroup = groupFromPosition(positions[1], positionMeta);
+    const thirdGroup = groupFromPosition(positions[2], positionMeta);
+
+    if (aliases.includes(positions[0]) || mainGroup === slotGroup) return positionFit.main;
+    if (aliases.includes(positions[1]) || secondGroup === slotGroup) return positionFit.second;
+    if (aliases.includes(positions[2]) || thirdGroup === slotGroup) return positionFit.third;
+    if (mainGroup === 'GK' || slotGroup === 'GK') return positionFit.foreign_gk;
+
+    return positionFit.foreign;
+};
+
+const buildSelectionWithoutPlayer = (starterSlots, benchSlots, playerId) => {
+    const normalizedPlayerId = parseInt(playerId, 10);
+
+    return {
+        starterSlots: Object.fromEntries(
+            Object.entries(starterSlots).map(([slotKey, value]) => [
+                slotKey,
+                parseInt(value, 10) === normalizedPlayerId ? null : value,
+            ])
+        ),
+        benchSlots: benchSlots.map((value) => (
+            parseInt(value, 10) === normalizedPlayerId ? null : value
+        )),
+    };
+};
+
 const playerSlotScore = (player, slot, positionFit, positionMeta, lineupScoring) => {
     const positions = [
         normalizePositionCode(player.position_main || player.position, positionMeta.aliases),
@@ -155,11 +187,7 @@ const playerSlotScore = (player, slot, positionFit, positionMeta, lineupScoring)
     const secondGroup = groupFromPosition(positions[1], positionMeta);
     const thirdGroup = groupFromPosition(positions[2], positionMeta);
 
-    let fit = positionFit.foreign;
-    if (aliases.includes(positions[0]) || mainGroup === slot.group) fit = positionFit.main;
-    else if (aliases.includes(positions[1]) || secondGroup === slot.group) fit = positionFit.second;
-    else if (aliases.includes(positions[2]) || thirdGroup === slot.group) fit = positionFit.third;
-    else if (mainGroup === 'GK' || slot.group === 'GK') fit = positionFit.foreign_gk;
+    const fit = resolveFitFactor(player, slot, positionFit, positionMeta);
 
     const slotScoreBonuses = lineupScoring?.slotScoreBonuses ?? {};
     const exactBonus = aliases.includes(positions[0])
@@ -316,39 +344,6 @@ export default function Edit({
     const [activeTab, setActiveTab] = useState('kader'); // kader, taktik, spezial
     const [radialMenu, setRadialMenu] = useState({ isOpen: false, playerId: null, slot: null });
 
-    const getPositionGroup = (pos) => TACTICAL_POSITION_GROUPS[pos?.toUpperCase()] || null;
-
-    const getEffectiveRating = (player, slotCode) => {
-        if (!player || !slotCode) return null;
-
-        const slotPos = slotCode.split('-')[0]; // Handle IV-L, etc.
-        const assignedGroup = getPositionGroup(slotPos);
-        const mainGroup = getPositionGroup(player.position_main);
-        const secondGroup = getPositionGroup(player.position_second);
-        const thirdGroup = getPositionGroup(player.position_third);
-
-        let factor = FIT_FACTORS.foreign;
-
-        if (player.position_main === slotPos || (mainGroup && assignedGroup === mainGroup)) {
-            factor = FIT_FACTORS.main;
-        } else if (player.position_second === slotPos || (secondGroup && assignedGroup === secondGroup)) {
-            factor = FIT_FACTORS.second;
-        } else if (player.position_third === slotPos || (thirdGroup && assignedGroup === thirdGroup)) {
-            factor = FIT_FACTORS.third;
-        }
-
-        // GK Special Case
-        if ((mainGroup === 'GK' && assignedGroup !== 'GK') || (mainGroup !== 'GK' && assignedGroup === 'GK')) {
-            factor = Math.min(factor, FIT_FACTORS.foreign_gk);
-        }
-
-        return {
-            original: player.overall,
-            effective: Math.round(player.overall * factor),
-            factor: factor
-        };
-    };
-
     const handleInstructionToggle = (playerId, instructionId) => {
         const current = data.player_instructions[playerId] || [];
         const next = current.includes(instructionId)
@@ -377,6 +372,7 @@ export default function Edit({
     }, [data.starter_slots, data.bench_slots]);
 
     const playerById = useMemo(() => Object.fromEntries(clubPlayers.map((player) => [player.id, player])), [clubPlayers]);
+    const slotByKey = useMemo(() => Object.fromEntries(slots.map((slot) => [slot.slot, slot])), [slots]);
     const getPlayer = (id) => playerById[parseInt(id)] ?? null;
     const freeStarterSlots = useMemo(() => slots.filter((slot) => !data.starter_slots[slot.slot]), [slots, data.starter_slots]);
     const firstFreeBenchIndex = useMemo(() => data.bench_slots.findIndex((id) => !id), [data.bench_slots]);
@@ -450,24 +446,13 @@ export default function Edit({
         const entries = starterIds.map(([slotKey, pId]) => {
             const p = getPlayer(pId);
             if (!p) return null; // player not found in pool — skip
-            const slot = slots.find(s => s.slot === slotKey);
-            const slotGroup = slot ? slot.group : null;
-            
-            // Simplified Fit Factor
-            let fit = positionFit.foreign;
-            const pPos = normalizePositionCode(p.position_main || p.position, positionMeta.aliases);
-            const pSec = normalizePositionCode(p.position_second, positionMeta.aliases);
-            const pThird = normalizePositionCode(p.position_third, positionMeta.aliases);
+            const slot = slotByKey[slotKey];
 
-            const pGroup = groupFromPosition(pPos, positionMeta);
-            const sGroup = slotGroup;
-
-            if (pGroup === sGroup) fit = positionFit.main;
-            else if (groupFromPosition(pSec, positionMeta) === sGroup) fit = positionFit.second;
-            else if (groupFromPosition(pThird, positionMeta) === sGroup) fit = positionFit.third;
-            else if (pGroup === 'GK' || sGroup === 'GK') fit = positionFit.foreign_gk;
-
-            return { player: p, group: sGroup, fit };
+            return {
+                player: p,
+                group: slot?.group ?? null,
+                fit: resolveFitFactor(p, slot, positionFit, positionMeta),
+            };
         }).filter(Boolean); // remove any null entries (player not found in pool)
 
         const calculateScore = (players, type) => {
@@ -545,7 +530,7 @@ export default function Edit({
                 defense: defenseMetrics.contributions,
             }
         };
-    }, [data.starter_slots, slots, positionFit, positionMeta, teamStrengthConfig]);
+    }, [data.starter_slots, slotByKey, positionFit, positionMeta, teamStrengthConfig]);
 
     // Handle Drop to Slot
     const handleDrop = (e, slotKey, isBench = false) => {
@@ -557,15 +542,11 @@ export default function Edit({
     };
 
     const assignPlayer = (playerId, targetSlot, isBench = false) => {
-        const newStarters = { ...data.starter_slots };
-        const newBench = [...data.bench_slots];
-
-        Object.keys(newStarters).forEach(k => {
-            if (parseInt(newStarters[k]) === playerId) newStarters[k] = null;
-        });
-        
-        const benchIndex = newBench.indexOf(playerId);
-        if (benchIndex !== -1) newBench[benchIndex] = null;
+        const { starterSlots: newStarters, benchSlots: newBench } = buildSelectionWithoutPlayer(
+            data.starter_slots,
+            data.bench_slots,
+            playerId
+        );
 
         if (isBench) {
             newBench[targetSlot] = playerId;
@@ -582,15 +563,11 @@ export default function Edit({
     };
 
     const removePlayer = (playerId) => {
-        const newStarters = { ...data.starter_slots };
-        const newBench = [...data.bench_slots];
-
-        Object.keys(newStarters).forEach(k => {
-            if (parseInt(newStarters[k]) === playerId) newStarters[k] = null;
-        });
-        
-        const benchIndex = newBench.indexOf(playerId);
-        if (benchIndex !== -1) newBench[benchIndex] = null;
+        const { starterSlots: newStarters, benchSlots: newBench } = buildSelectionWithoutPlayer(
+            data.starter_slots,
+            data.bench_slots,
+            playerId
+        );
 
         setData({
             ...data,
@@ -608,12 +585,12 @@ export default function Edit({
             return;
         }
 
-        const newBench = [...data.bench_slots];
+        const { starterSlots: newStarters, benchSlots: newBench } = buildSelectionWithoutPlayer(
+            data.starter_slots,
+            data.bench_slots,
+            playerId
+        );
         newBench[firstFreeBenchIndex] = playerId;
-        const newStarters = { ...data.starter_slots };
-        Object.keys(newStarters).forEach(k => {
-            if (parseInt(newStarters[k]) === playerId) newStarters[k] = null;
-        });
         setData({
             ...data,
             starter_slots: newStarters,
@@ -1105,7 +1082,7 @@ export default function Edit({
                                                                 <span className="text-xs font-black text-white leading-none mb-0.5">{p.shirt_number}</span>
                                                                 <div className="flex items-center gap-0.5">
                                                                     <span className={`text-[8px] font-black leading-none ${penalty < 0 ? 'text-rose-400' : 'text-amber-500'}`}>
-                                                                        {getEffectiveRating(p, slot.slot.split('-')[0])}
+                                                                        {Math.round(p.overall * resolveFitFactor(p, slot, positionFit, positionMeta))}
                                                                     </span>
                                                                     {penalty < 0 && (
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500" title={`Positions-Abzug: ${penalty}%`} />
