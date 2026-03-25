@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\PlayerTransferHistory;
 use App\Modules\DataCenter\Services\ScraperService;
+use App\Services\PlayerPerformanceService;
 
 class PlayerController extends Controller
 {
@@ -265,6 +266,7 @@ class PlayerController extends Controller
         PlayerLoadService $playerLoadService,
         InjuryManagementService $injuryManagementService,
         ModuleManager $modules,
+        PlayerPerformanceService $performanceService,
     ): \Inertia\Response
     {
         $conversationsEnabled = (bool) config('simulation.features.player_conversations_enabled', false);
@@ -448,6 +450,8 @@ class PlayerController extends Controller
                 'physical' => $player->physical,
                 'stamina' => $player->stamina,
                 'morale' => $player->morale,
+                'seasonal_performance' => $performanceService->getSeasonalSummary($player),
+                'shot_map' => $performanceService->getShotMap($player),
                 'attr_attacking' => $player->attr_attacking,
                 'attr_technical' => $player->attr_technical,
                 'attr_tactical' => $player->attr_tactical,

@@ -134,7 +134,7 @@ class NarrativeEngine
             'substitution' => "Wechsel bei {$clubName}: {$playerName} kommt neu ins Spiel.",
             'foul' => "Foulspiel von {$playerName}.",
             'chance' => "Großchance für {$playerName}!",
-            'corner' => "Eckstoß für {$clubName}.",
+            'corner' => "Eckstoß für {$clubName}, getreten von {$playerName}.",
             'free_kick' => "Freistoß für {$clubName} nach Foul an {$playerName}.",
             'offside' => "Abseits! {$playerName} stand im Abseits.",
             'shot' => "{$playerName} zieht ab! Schuss für {$clubName}.",

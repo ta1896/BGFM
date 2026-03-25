@@ -9,13 +9,21 @@ import {
     PlayerOverviewTab,
     PlayerContractTab,
     PlayerShowHeader,
+    PerformanceTab,
 } from '@/Pages/Players/components/ShowSections';
 import TransferHistory from '@/Pages/Players/components/TransferHistory';
 
 export default function Show({ player, careerStats, recentMatches, isOwner, positions, squadDynamics, modulePlayerActions = [] }) {
     const { features } = usePage().props;
     const playerConversationsEnabled = !!features?.player_conversations_enabled;
+    const [isPending, startTransition] = React.useTransition();
     const [activeTab, setActiveTab] = useState('overview');
+
+    const handleTabChange = (tab) => {
+        startTransition(() => {
+            setActiveTab(tab);
+        });
+    };
     const { data, setData, patch, processing } = useForm({
         market_value: player.market_value,
         position: player.position,
@@ -75,7 +83,7 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
             <Head title={player.full_name} />
 
             <div className="mx-auto max-w-[1400px] space-y-8">
-                <PlayerShowHeader player={player} isOwner={isOwner} activeTab={activeTab} onTabChange={setActiveTab} />
+                <PlayerShowHeader player={player} isOwner={isOwner} activeTab={activeTab} onTabChange={handleTabChange} />
 
                 <div className="min-h-[500px]">
                     {activeTab === 'overview' && (
@@ -86,6 +94,7 @@ export default function Show({ player, careerStats, recentMatches, isOwner, posi
                             onModuleAction={handleModuleAction}
                         />
                     )}
+                    {activeTab === 'performance' && <PerformanceTab player={player} />}
                     {activeTab === 'career' && <PlayerCareerTab careerStats={careerStats} />}
                     {activeTab === 'contract' && (
                         <PlayerContractTab

@@ -168,10 +168,35 @@ class MatchSimulationService
         $multiplier = 1.0;
         if ($lineup) {
             $mods = $this->tacticalManager->getTacticalModifiers($lineup);
+            
+            // Average the core modifiers
             $multiplier = (($mods['attack'] + $mods['defense'] + $mods['possession']) / 3);
+
+            // Apply individual instruction bonuses to the team multiplier
+            $instructionBonus = 0;
+            foreach ($players as $player) {
+                /** @var Player $player */
+                $instructions = $this->parseInstructions($player);
+                if (in_array('playmaker', $instructions)) $instructionBonus += 0.01;
+                if (in_array('tight_marking', $instructions)) $instructionBonus += 0.005;
+                if (in_array('stay_back', $instructions)) $instructionBonus += 0.005;
+            }
+            $multiplier += $instructionBonus;
         }
 
         return $this->matchStrengthService->fromPlayers($players, $isHome, $multiplier);
+    }
+
+    private function parseInstructions(Player $player): array
+    {
+        $raw = $player->pivot->instructions ?? '[]';
+        if (is_array($raw)) return $raw;
+        
+        try {
+            return json_decode($raw, true) ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     private function rollGoals(float $attackStrength, float $defenseStrength): int
@@ -198,23 +223,63 @@ class MatchSimulationService
         $events = [];
         for ($i = 0; $i < $goalCount; $i++) {
             /** @var Player $scorer */
-            $scorer = $this->weightedPlayerPick($squad, static fn(Player $player) => $player->shooting + $player->overall);
+            $scorer = $this->weightedPlayerPick($squad, function(Player $player) {
+                $weight = $player->shooting + $player->overall;
+                $instructions = $this->parseInstructions($player);
+                
+                if (in_array('shoot_on_sight', $instructions)) $weight *= 1.25;
+                if (in_array('run_behind', $instructions)) $weight *= 1.15;
+                if (in_array('stay_back', $instructions)) $weight *= 0.5;
+                
+                return $weight;
+            });
 
-            $assist = null;
-            if ($squad->count() > 1 && mt_rand(1, 100) <= 72) {
-                $assistCandidates = $squad->where('id', '!=', $scorer->id)->values();
-                $assist = $this->randomCollectionItem($assistCandidates);
-            }
+            $lineup = ($clubId === (int) $match->home_club_id) 
+                ? ($match->home_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->homeClub, $match))
+                : ($match->away_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->awayClub, $match));
+
+            $opponentLineup = ($clubId === (int) $match->home_club_id)
+                ? ($match->away_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->awayClub, $match))
+                : ($match->home_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->homeClub, $match));
 
             $goalType = mt_rand(1, 100);
-            if ($goalType <= 60)
-                $type = 'aus dem Spiel';
-            elseif ($goalType <= 85)
-                $type = 'Kopfball';
-            elseif ($goalType <= 95)
-                $type = 'Fernschuss';
-            else
-                $type = 'Abstauber';
+            $type = 'aus dem Spiel';
+            $assist = null;
+
+            if ($goalType > 95) {
+                $type = 'Elfmeter';
+                if ($lineup && $lineup->penalty_taker_player_id) {
+                    $taker = $squad->firstWhere('id', $lineup->penalty_taker_player_id);
+                    if ($taker) $scorer = $taker;
+                }
+            } else {
+                if ($squad->count() > 1 && mt_rand(1, 100) <= 72) {
+                    $assistCandidates = $squad->where('id', '!=', $scorer->id)->values();
+                    $assist = $this->randomCollectionItem($assistCandidates);
+                }
+
+                // Marking Strategy Impact
+                $headerChance = 25; // Base 25% (85 - 60)
+                if ($opponentLineup) {
+                    $strategy = $opponentLineup->corner_marking_strategy ?? 'zonal';
+                    if ($strategy === 'zonal') $headerChance -= 5;
+                    elseif ($strategy === 'player') $headerChance += 3;
+                }
+
+                if ($goalType <= 60)
+                    $type = 'aus dem Spiel';
+                elseif ($goalType <= (60 + $headerChance))
+                    $type = 'Kopfball';
+                else
+                    $type = 'Fernschuss';
+            }
+
+            $xg = round(mt_rand(35, 95) / 100, 2);
+            $xgot = round(mt_rand(75, 99) / 100, 2);
+            $foot = ($type === 'Kopfball') ? 'head' : (mt_rand(1, 100) <= 65 ? 'right' : 'left');
+            $situation = ($type === 'Elfmeter') ? 'penalty' : (mt_rand(1, 100) <= 15 ? 'set_piece' : 'open_play');
+            $x = mt_rand(35, 65);
+            $y = mt_rand(85, 98);
 
             $events[] = [
                 'minute' => mt_rand(4, 90),
@@ -229,9 +294,14 @@ class MatchSimulationService
                 'assister_player_id' => $assist?->id,
                 'event_type' => 'goal',
                 'metadata' => [
-                    'xg_bucket' => mt_rand(8, 35) / 100,
+                    'xg' => $xg,
+                    'xgot' => $xgot,
                     'goal_type' => $type,
                     'assister_name' => $assist?->full_name,
+                    'foot' => $foot,
+                    'situation' => $situation,
+                    'x' => $x,
+                    'y' => $y,
                 ],
             ];
         }
@@ -250,7 +320,15 @@ class MatchSimulationService
         $yellowCount = mt_rand(0, 3);
         for ($i = 0; $i < $yellowCount; $i++) {
             /** @var Player $player */
-            $player = $this->weightedPlayerPick($squad, static fn(Player $p) => max(10, 120 - $p->defending));
+            $player = $this->weightedPlayerPick($squad, function(Player $p) {
+                $weight = max(10, 120 - $p->defending);
+                $instructions = $this->parseInstructions($p);
+
+                if (in_array('tight_marking', $instructions)) $weight *= 1.5;
+                if (in_array('stay_back', $instructions)) $weight *= 0.8;
+
+                return $weight;
+            });
             $events[] = [
                 'minute' => mt_rand(8, 90),
                 'second' => mt_rand(0, 59),
@@ -285,7 +363,16 @@ class MatchSimulationService
         $chanceCount = mt_rand(2, 4);
         for ($i = 0; $i < $chanceCount; $i++) {
             /** @var Player $player */
-            $player = $this->weightedPlayerPick($squad, static fn(Player $p) => $p->shooting + $p->pace);
+            $player = $this->weightedPlayerPick($squad, function(Player $p) {
+                $weight = $p->shooting + $p->pace;
+                $instructions = $this->parseInstructions($p);
+
+                if (in_array('run_behind', $instructions)) $weight *= 1.3;
+                if (in_array('dribble_more', $instructions)) $weight *= 1.2;
+                if (in_array('target_man', $instructions)) $weight *= 1.1;
+
+                return $weight;
+            });
             $events[] = [
                 'minute' => mt_rand(2, 90),
                 'second' => mt_rand(0, 59),
@@ -408,6 +495,24 @@ class MatchSimulationService
 
             /** @var Player $player */
             $player = $this->randomCollectionItem($squad);
+            
+            // Try to use assigned takers if available in the lineup
+            $lineup = ($clubId === (int) $match->home_club_id) 
+                ? ($match->home_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->homeClub, $match))
+                : ($match->away_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->awayClub, $match));
+
+            if ($lineup) {
+                if ($type === 'corner') {
+                    $takerId = (mt_rand(1, 100) <= 50) ? $lineup->corner_left_taker_player_id : $lineup->corner_right_taker_player_id;
+                    $taker = $squad->firstWhere('id', $takerId);
+                    if ($taker) $player = $taker;
+                } elseif ($type === 'free_kick') {
+                    $takerId = (mt_rand(1, 100) <= 50) ? $lineup->free_kick_near_player_id : $lineup->free_kick_far_player_id;
+                    $taker = $squad->firstWhere('id', $takerId);
+                    if ($taker) $player = $taker;
+                }
+            }
+
             $clubName = ($clubId === (int) $match->home_club_id) ? ($match->homeClub->short_name ?? $match->homeClub->name) : ($match->awayClub->short_name ?? $match->awayClub->name);
 
             $eventData = [
@@ -431,13 +536,29 @@ class MatchSimulationService
                 $eventData['opponent_player_id'] = $opponent->id;
             }
 
+            $metadata = null;
+            if ($type === 'shot') {
+                $xg = round(mt_rand(2, 40) / 100, 2);
+                $onTarget = mt_rand(1, 100) <= ($player->shooting * 0.4 + 20);
+                $xgot = $onTarget ? round(mt_rand(10, 80) / 100, 2) : 0;
+                $metadata = [
+                    'xg' => $xg,
+                    'xgot' => $xgot,
+                    'on_target' => $onTarget,
+                    'foot' => mt_rand(1, 100) <= 15 ? 'head' : (mt_rand(1, 100) <= 60 ? 'right' : 'left'),
+                    'situation' => mt_rand(1, 100) <= 10 ? 'set_piece' : 'open_play',
+                    'x' => mt_rand(20, 80),
+                    'y' => mt_rand(65, 95),
+                ];
+            }
+
             $events[] = array_merge([
                 'minute' => mt_rand(1, 90),
                 'second' => mt_rand(0, 59),
                 'club_id' => $clubId,
                 'player_id' => $player->id,
                 'event_type' => $type,
-                'metadata' => null,
+                'metadata' => $metadata,
             ], $eventData);
         }
 
@@ -463,26 +584,49 @@ class MatchSimulationService
 
     private function createPlayerStats(GameMatch $match, Collection $homePlayers, Collection $awayPlayers): array
     {
-        $goalEvents = $match->events()->where('event_type', 'goal')->get();
-        $yellowEvents = $match->events()->where('event_type', 'yellow_card')->get();
-        $redEvents = $match->events()->where('event_type', 'red_card')->get();
+        $allEvents = $match->events()->get();
+        $goalEvents = $allEvents->where('event_type', 'goal');
+        $yellowEvents = $allEvents->where('event_type', 'yellow_card');
+        $redEvents = $allEvents->where('event_type', 'red_card');
+        $allShotEvents = $allEvents->whereIn('event_type', ['goal', 'shot']);
 
-        $build = function (Collection $players, int $clubId) use ($match, $goalEvents, $yellowEvents, $redEvents): array {
-            return $players->values()->map(function (Player $player, int $index) use ($match, $clubId, $goalEvents, $yellowEvents, $redEvents) {
+        $build = function (Collection $players, int $clubId) use ($match, $goalEvents, $yellowEvents, $redEvents, $allShotEvents): array {
+            return $players->values()->map(function (Player $player, int $index) use ($match, $clubId, $goalEvents, $yellowEvents, $redEvents, $allShotEvents) {
                 $goals = $goalEvents->where('player_id', $player->id)->count();
                 $assists = $goalEvents->where('assister_player_id', $player->id)->count();
                 $yellow = $yellowEvents->where('player_id', $player->id)->count();
                 $red = $redEvents->where('player_id', $player->id)->count();
-
-                $baseRating = 5.8
-                    + ($player->overall / 50)
-                    + ($goals * 0.7)
-                    + ($assists * 0.4)
-                    - ($yellow * 0.25)
-                    - ($red * 0.9)
-                    + ((mt_rand(0, 30) - 15) / 100);
+                $shots = $allShotEvents->where('player_id', $player->id)->count();
+                
+                // Aggregate xG/xGOT from events (if stored there) or simulate
+                $xg = (float) $allShotEvents->where('player_id', $player->id)->sum(fn($e) => $e->metadata['xg'] ?? 0.05);
+                $xgot = (float) $allShotEvents->where('player_id', $player->id)->sum(fn($e) => $e->metadata['xgot'] ?? 0.0);
 
                 $role = $index < 11 ? 'starter' : 'bench';
+                $mins = $role === 'starter' ? mt_rand(65, 96) : ($index < 14 ? mt_rand(5, 25) : 0);
+
+                // Simulate granular stats based on player attributes and role
+                $isDef = in_array($player->position, ['IV', 'LV', 'RV', 'DM']);
+                $isMid = in_array($player->position, ['ZM', 'LM', 'RM', 'OM']);
+                $basePasses = $isMid ? 45 : ($isDef ? 35 : 15);
+                $passesAttempted = max(5, $basePasses + mt_rand(-10, 20));
+                $passAccuracy = ($player->passing / 100) * (mt_rand(85, 115) / 100);
+                $passesCompleted = (int) round($passesAttempted * min(0.98, $passAccuracy));
+
+                $longBallsAttempted = max(0, mt_rand(0, 8));
+                $longBallsCompleted = (int) round($longBallsAttempted * ($player->passing / 120));
+
+                $duelsTotal = mt_rand(5, 15);
+                $duelsWon = (int) round($duelsTotal * (($player->physical + $player->defending) / 200) * (mt_rand(80, 120) / 100));
+
+                $baseRating = 6.0
+                    + ($player->overall / 60)
+                    + ($goals * 0.85)
+                    + ($assists * 0.5)
+                    - ($yellow * 0.25)
+                    - ($red * 1.0)
+                    + (($passesCompleted / max(1, $passesAttempted)) * 0.5)
+                    + ((mt_rand(0, 30) - 15) / 100);
 
                 return [
                     'match_id' => $match->id,
@@ -491,13 +635,32 @@ class MatchSimulationService
                     'lineup_role' => $role,
                     'position_code' => $this->matchPlayerRoleService->positionCodeForStat($player),
                     'rating' => max(3.5, min(10.0, round($baseRating, 2))),
-                    'minutes_played' => $role === 'starter' ? mt_rand(65, 96) : mt_rand(0, 26),
+                    'minutes_played' => $mins,
                     'goals' => $goals,
                     'assists' => $assists,
+                    'xg' => $xg,
+                    'xgot' => $xgot,
                     'yellow_cards' => $yellow,
                     'red_cards' => $red,
-                    'shots' => max(0, $goals + mt_rand(0, 4)),
-                    'passes_completed' => mt_rand(12, 74),
+                    'shots' => $shots,
+                    'passes_completed' => $passesCompleted,
+                    'passes_attempted' => $passesAttempted,
+                    'long_balls_completed' => $longBallsCompleted,
+                    'long_balls_attempted' => $longBallsAttempted,
+                    'chances_created' => max(0, $assists + mt_rand(0, 2)),
+                    'big_chances_created' => max(0, $assists + mt_rand(0, 1)),
+                    'dribbles_completed' => mt_rand(0, 4),
+                    'dribbles_attempted' => mt_rand(0, 6),
+                    'duels_won' => $duelsWon,
+                    'duels_total' => $duelsTotal,
+                    'aerials_won' => mt_rand(0, 5),
+                    'aerials_total' => mt_rand(0, 8),
+                    'interceptions' => $isDef ? mt_rand(1, 6) : mt_rand(0, 2),
+                    'recoveries' => mt_rand(2, 10),
+                    'clearances' => $isDef ? mt_rand(2, 8) : 0,
+                    'tackles_won' => (int) ($duelsWon * 0.4),
+                    'tackles_lost' => (int) (($duelsTotal - $duelsWon) * 0.4),
+                    'saves' => ($player->position === 'TW') ? mt_rand(1, 7) : 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

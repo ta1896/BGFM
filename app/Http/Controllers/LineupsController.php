@@ -14,6 +14,7 @@ use App\Services\TeamStrengthCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\Builder;
 
 class LineupsController extends Controller
 {
@@ -28,7 +29,7 @@ class LineupsController extends Controller
 
         // Find next match to show directly
         $nextMatch = GameMatch::query()
-            ->where(function ($query) use ($club): void {
+            ->where(function (Builder $query) use ($club) {
                 $query->where('home_club_id', $club->id)
                     ->orWhere('away_club_id', $club->id);
             })
@@ -41,9 +42,15 @@ class LineupsController extends Controller
             return $this->match($request, $nextMatch);
         }
 
+        // Fallback: If no match is scheduled, show the active lineup (template) directly in the editor
+        $activeLineup = $club->lineups()->where('is_active', true)->first();
+        if ($activeLineup) {
+            return redirect()->route('lineups.edit', $activeLineup);
+        }
+
         // 1. Fetch upcoming matches for the club (as backup if no match selected)
         $matches = GameMatch::query()
-            ->where(function ($query) use ($club): void {
+            ->where(function (Builder $query) use ($club) {
                 $query->where('home_club_id', $club->id)
                     ->orWhere('away_club_id', $club->id);
             })
@@ -92,6 +99,7 @@ class LineupsController extends Controller
             abort(403, 'Dieses Match gehoert nicht zu deinem Verein.');
         }
 
+        /** @var \App\Models\GameMatch $match */
         $opponentName = $match->home_club_id === $club->id
             ? ($match->awayClub->name ?? 'Gegner')
             : ($match->homeClub->name ?? 'Gegner');
@@ -101,7 +109,7 @@ class LineupsController extends Controller
         $lineupName = $this->uniqueLineupName(
             $club,
             $baseName,
-            $lineup?->id,
+            $lineup ? $lineup->id : null,
             $match->id
         );
 
@@ -149,7 +157,7 @@ class LineupsController extends Controller
                 'string',
                 'max:120',
                 Rule::unique('lineups', 'name')
-                    ->where(fn($query) => $query->where('club_id', $club->id)),
+                    ->where(fn(Builder $query) => $query->where('club_id', $club->id)),
             ],
             'formation' => ['required', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -260,7 +268,7 @@ class LineupsController extends Controller
         }
 
         $clubMatches = GameMatch::query()
-            ->where(function ($query) use ($club): void {
+            ->where(function (Builder $query) use ($club) {
                 $query->where('home_club_id', $club->id)
                     ->orWhere('away_club_id', $club->id);
             })
@@ -279,7 +287,10 @@ class LineupsController extends Controller
                 'id' => $lineup->id,
                 'name' => $lineup->name,
                 'match_id' => $lineup->match_id,
+                'is_template' => (bool)$lineup->is_template,
+                'is_active' => (bool)$lineup->is_active,
             ],
+            'isReadOnly' => $lineup->match_id === null && !$lineup->is_template && !$lineup->is_active,
             'club' => [
                 'id' => $club->id,
                 'name' => $club->name,
@@ -315,7 +326,7 @@ class LineupsController extends Controller
                 'squad_role' => $player->squad_role,
                 'medical_status' => $player->medical_status,
                 'injury_risk' => $playerLoadService->injuryRisk($player),
-                'promise_pressure' => max(0, optional($player->playtimePromises->sortByDesc('id')->first())->expected_minutes_share - optional($player->playtimePromises->sortByDesc('id')->first())->fulfilled_ratio),
+                'promise_pressure' => max(0, (optional($player->playtimePromises->sortByDesc('id')->first())->expected_minutes_share ?? 0) - (optional($player->playtimePromises->sortByDesc('id')->first())->fulfilled_ratio ?? 0)),
                 'medical_clearance' => optional($player->injuries->where('status', 'active')->sortByDesc('id')->first())->availability_status,
                 'selection_warning' => in_array(optional($player->injuries->where('status', 'active')->sortByDesc('id')->first())->availability_status, ['unavailable', 'bench_only'], true)
                     ? 'medical_hold'
@@ -369,6 +380,8 @@ class LineupsController extends Controller
                 'free_kick_far_player_id' => (int) ($draft['free_kick_far_player_id'] ?? $lineup->free_kick_far_player_id),
                 'corner_left_taker_player_id' => (int) ($draft['corner_left_taker_player_id'] ?? $lineup->corner_left_taker_player_id),
                 'corner_right_taker_player_id' => (int) ($draft['corner_right_taker_player_id'] ?? $lineup->corner_right_taker_player_id),
+                'corner_marking_strategy' => $draft['corner_marking_strategy'] ?? $lineup->corner_marking_strategy ?? 'zonal',
+                'free_kick_marking_strategy' => $draft['free_kick_marking_strategy'] ?? $lineup->free_kick_marking_strategy ?? 'zonal',
             ],
             'metrics' => $metrics,
             'positionFit' => [
@@ -433,7 +446,7 @@ class LineupsController extends Controller
                 'string',
                 'max:120',
                 Rule::unique('lineups', 'name')
-                    ->where(fn($query) => $query->where('club_id', $club->id))
+                    ->where(fn(Builder $query) => $query->where('club_id', $club->id))
                     ->ignore($lineup->id),
             ],
             'formation' => ['required', 'string', 'max:20'],
@@ -451,8 +464,15 @@ class LineupsController extends Controller
             'free_kick_far_player_id' => ['nullable', 'integer'],
             'corner_left_taker_player_id' => ['nullable', 'integer'],
             'corner_right_taker_player_id' => ['nullable', 'integer'],
+            'corner_marking_strategy' => ['nullable', 'string', 'in:zonal,player,hybrid'],
+            'free_kick_marking_strategy' => ['nullable', 'string', 'in:zonal,player,hybrid'],
+            'pressing_intensity' => ['nullable', 'string', 'in:low,normal,high,extreme'],
+            'line_of_engagement' => ['nullable', 'string', 'in:deep,normal,high'],
+            'pressing_trap' => ['nullable', 'string', 'in:none,inside,outside'],
+            'cross_engagement' => ['nullable', 'string', 'in:none,stop,invite'],
             'starter_slots' => ['array'],
             'bench_slots' => ['array'],
+            'player_instructions' => ['nullable', 'array'],
             'action' => ['nullable', 'in:save,auto_pick,save_as_template'],
             'template_name' => ['nullable', 'string', 'max:120'],
             'save_as_template' => ['nullable'],
@@ -513,6 +533,12 @@ class LineupsController extends Controller
                 'free_kick_far_player_id' => ($validated['free_kick_far_player_id'] ?? 0) ?: null,
                 'corner_left_taker_player_id' => ($validated['corner_left_taker_player_id'] ?? 0) ?: null,
                 'corner_right_taker_player_id' => ($validated['corner_right_taker_player_id'] ?? 0) ?: null,
+                'corner_marking_strategy' => $validated['corner_marking_strategy'] ?? 'zonal',
+                'free_kick_marking_strategy' => $validated['free_kick_marking_strategy'] ?? 'zonal',
+                'pressing_intensity' => $validated['pressing_intensity'] ?? 'normal',
+                'line_of_engagement' => $validated['line_of_engagement'] ?? 'normal',
+                'pressing_trap' => $validated['pressing_trap'] ?? 'none',
+                'cross_engagement' => $validated['cross_engagement'] ?? 'none',
             ];
 
             if ($template) {
@@ -551,6 +577,12 @@ class LineupsController extends Controller
             'free_kick_far_player_id' => ($validated['free_kick_far_player_id'] ?? 0) ?: null,
             'corner_left_taker_player_id' => ($validated['corner_left_taker_player_id'] ?? 0) ?: null,
             'corner_right_taker_player_id' => ($validated['corner_right_taker_player_id'] ?? 0) ?: null,
+            'corner_marking_strategy' => $validated['corner_marking_strategy'] ?? 'zonal',
+            'free_kick_marking_strategy' => $validated['free_kick_marking_strategy'] ?? 'zonal',
+            'pressing_intensity' => $validated['pressing_intensity'] ?? 'normal',
+            'line_of_engagement' => $validated['line_of_engagement'] ?? 'normal',
+            'pressing_trap' => $validated['pressing_trap'] ?? 'none',
+            'cross_engagement' => $validated['cross_engagement'] ?? 'none',
         ]);
 
         $this->syncPlayersFromRequest($lineup, $planner, $validated, $request);
@@ -689,6 +721,11 @@ class LineupsController extends Controller
             'free_kick_far_player_id' => $lineup->free_kick_far_player_id,
             'corner_left_taker_player_id' => $lineup->corner_left_taker_player_id,
             'corner_right_taker_player_id' => $lineup->corner_right_taker_player_id,
+            'corner_marking_strategy' => $lineup->corner_marking_strategy ?? 'zonal',
+            'free_kick_marking_strategy' => $lineup->free_kick_marking_strategy ?? 'zonal',
+            'player_instructions' => $lineup->players->mapWithKeys(fn($p) => [
+                $p->id => is_string($p->pivot->instructions) ? json_decode($p->pivot->instructions, true) : $p->pivot->instructions
+            ])->filter()->all(),
         ];
     }
 
@@ -711,12 +748,12 @@ class LineupsController extends Controller
 
     /**
      * @param mixed $draft
+     * @param int $maxBenchPlayers
      * @return array<int, int|null>
      */
     private function normalizeBenchDraft(mixed $draft, int $maxBenchPlayers): array
     {
         $source = is_array($draft) ? $draft : [];
-
         return collect($source)
             ->map(fn($value) => is_numeric($value) ? (int) $value : null)
             ->take($maxBenchPlayers)
@@ -770,14 +807,11 @@ class LineupsController extends Controller
     private function syncPlayersFromRequest(Lineup $lineup, FormationPlannerService $planner, array $validated, Request $request): void
     {
         $formation = $planner->normalizeFormation($validated['formation']);
-
+        /** @var array $slots */
         $slots = $planner->starterSlots($formation);
         $maxBenchPlayers = $this->maxBenchPlayers();
 
-        $starterInput = collect($request->input('starter_slots', []))
-            ->map(fn($value) => is_numeric($value) ? (int) $value : null)
-            ->all();
-
+        $starterInput = $request->input('starter_slots', []);
         $benchInput = collect($request->input('bench_slots', []))
             ->map(fn($value) => is_numeric($value) ? (int) $value : null)
             ->filter()
@@ -785,34 +819,54 @@ class LineupsController extends Controller
             ->take($maxBenchPlayers)
             ->all();
 
+        $playerInstructions = $request->input('player_instructions', []);
         $captainId = (int) ($validated['captain_player_id'] ?? 0);
 
         $pivot = [];
         foreach ($slots as $index => $slot) {
-            $playerId = (int) ($starterInput[$slot['slot']] ?? 0);
+            /** @var array $slot */
+            $slot = (array)$slot;
+            $slotKey = (string) ($slot['slot'] ?? '');
+            if (!$slotKey) continue;
+
+            $playerId = (int) ($starterInput[$slotKey] ?? 0);
             if ($playerId <= 0) {
                 continue;
             }
 
-            $pivot[$playerId] = [
-                'pitch_position' => $slot['slot'],
+            $instructions = $playerInstructions[$playerId] ?? [];
+
+            /** @var int $pId */
+            $pId = (int)$playerId;
+            $pivot[$pId] = [
+                'pitch_position' => $slotKey,
                 'sort_order' => $index + 1,
-                'x_coord' => $slot['x'],
-                'y_coord' => $slot['y'],
+                'x_coord' => $slot['x'] ?? 0,
+                'y_coord' => $slot['y'] ?? 0,
                 'is_captain' => $captainId === $playerId,
                 'is_set_piece_taker' => false,
                 'is_bench' => false,
                 'bench_order' => null,
+                'instructions' => !empty($instructions) ? json_encode($instructions) : null,
             ];
         }
 
+        foreach (['penalty_taker', 'free_kick_near', 'free_kick_far', 'corner_left', 'corner_right'] as $type) {
+            $takerId = (int)($validated["{$type}_player_id"] ?? 0);
+            if ($takerId > 0 && isset($pivot[$takerId])) {
+                $pivot[$takerId]['is_set_piece_taker'] = true;
+            }
+        }
         foreach ($benchInput as $index => $playerId) {
-            if (isset($pivot[$playerId])) {
+            $pId = (int)$playerId;
+            if (!$pId || isset($pivot[$pId])) {
                 continue;
             }
 
             $order = $index + 1;
-            $pivot[$playerId] = [
+            $instructions = $playerInstructions[$pId] ?? [];
+
+            $pivot[$pId] = [
                 'pitch_position' => 'BANK-' . $order,
                 'sort_order' => 100 + $order,
                 'x_coord' => null,
@@ -821,6 +875,7 @@ class LineupsController extends Controller
                 'is_set_piece_taker' => false,
                 'is_bench' => true,
                 'bench_order' => $order,
+                'instructions' => !empty($instructions) ? json_encode($instructions) : null,
             ];
         }
 
@@ -854,6 +909,7 @@ class LineupsController extends Controller
                 'is_set_piece_taker' => false,
                 'is_bench' => false,
                 'bench_order' => null,
+                'instructions' => null,
             ];
         }
 
@@ -872,6 +928,7 @@ class LineupsController extends Controller
                 'is_set_piece_taker' => false,
                 'is_bench' => true,
                 'bench_order' => $order,
+                'instructions' => null,
             ];
         }
 

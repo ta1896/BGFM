@@ -167,6 +167,7 @@ class MatchLineupService
                     'is_set_piece_taker' => (bool) $player->pivot->is_set_piece_taker,
                     'is_bench' => (bool) $player->pivot->is_bench,
                     'bench_order' => $player->pivot->bench_order,
+                    'instructions' => $player->pivot->instructions,
                 ],
             ];
         })->all();

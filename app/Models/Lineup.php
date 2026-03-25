@@ -27,6 +27,12 @@ class Lineup extends Model
         'free_kick_far_player_id',
         'corner_left_taker_player_id',
         'corner_right_taker_player_id',
+        'corner_marking_strategy',
+        'free_kick_marking_strategy',
+        'pressing_intensity',
+        'line_of_engagement',
+        'pressing_trap',
+        'cross_engagement',
         'is_active',
         'is_template',
         'notes',
@@ -62,6 +68,7 @@ class Lineup extends Model
             'is_set_piece_taker',
             'is_bench',
             'bench_order',
+            'instructions',
         ])
             ->withTimestamps()
             ->orderByPivot('is_bench')

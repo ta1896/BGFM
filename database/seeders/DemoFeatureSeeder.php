@@ -433,23 +433,53 @@ class DemoFeatureSeeder extends Seeder
         $assistIndex = 1;
 
         foreach ($players as $index => $player) {
+            $isStarter = $index < 11;
+            $minutes = $isStarter ? 90 : 0;
+            $shots = $index < 3 ? 3 - $index : ($index < 5 ? 1 : 0);
+            $shotsOnTarget = min($shots, $index === 0 ? $goals + 1 : 1);
+            
             MatchPlayerStat::create([
                 'match_id' => $match->id,
                 'club_id' => $clubId,
                 'player_id' => $player->id,
-                'lineup_role' => $index < 11 ? 'starter' : 'bench',
+                'lineup_role' => $isStarter ? 'starter' : 'bench',
                 'position_code' => $player->position_main,
                 'rating' => $index === 0 && $goals > 0 ? 8.2 : (6.4 + (($index % 5) * 0.3)),
-                'minutes_played' => $index < 11 ? 90 : 0,
+                'minutes_played' => $minutes,
                 'goals' => $index === 0 ? $goals : 0,
                 'assists' => $index === $assistIndex && $goals > 0 ? min(1, $goals) : 0,
                 'yellow_cards' => $index === 4 && !$home ? 1 : 0,
                 'red_cards' => 0,
-                'shots' => $index < 3 ? 3 - $index : 0,
+                
+                // New granular stats
+                'xg' => $index === 0 ? ($goals * 0.45) + 0.12 : ($shots * 0.08),
+                'xgot' => $index === 0 ? ($goals * 0.65) : ($shotsOnTarget * 0.15),
+                'shots' => $shots,
+                'shots_on_target' => $shotsOnTarget,
+                
                 'passes_completed' => 22 + ($index * 2),
-                'passes_failed' => 3 + ($index % 4),
+                'passes_attempted' => 28 + ($index * 2),
+                'passes_failed' => (28 + ($index * 2)) - (22 + ($index * 2)),
+                'long_balls_completed' => $index >= 2 && $index <= 5 ? 3 : 1,
+                'long_balls_attempted' => $index >= 2 && $index <= 5 ? 5 : 2,
+                
+                'chances_created' => $index >= 4 && $index <= 8 ? 2 : 0,
+                'big_chances_created' => $index === 5 ? 1 : 0,
+                
                 'tackles_won' => $index >= 3 && $index <= 6 ? 2 + ($index % 2) : 0,
                 'tackles_lost' => $index >= 3 && $index <= 6 ? 1 : 0,
+                'interceptions' => $index >= 1 && $index <= 5 ? 2 : 0,
+                'recoveries' => 5 + ($index % 3),
+                'clearances' => $index >= 1 && $index <= 4 ? 4 : 0,
+                
+                'duels_won' => 4 + ($index % 4),
+                'duels_total' => 8 + ($index % 3),
+                'aerials_won' => $index >= 1 && $index <= 4 ? 3 : 0,
+                'aerials_total' => $index >= 1 && $index <= 4 ? 5 : 1,
+                
+                'dribbles_completed' => $index >= 7 ? 2 : 0,
+                'dribbles_attempted' => $index >= 7 ? 3 : 0,
+                
                 'saves' => $index === 0 && $player->position_main === 'TW' ? 3 : 0,
             ]);
         }

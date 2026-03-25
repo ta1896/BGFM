@@ -1,21 +1,76 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import {
     ArrowLeft, 
     Lightning, 
     Strategy, 
+    Users,
+    House,
+    ArrowArcLeft,
+    HandPointing,
+    SoccerBall,
+    Trophy,
+    UsersThree,
+    Selection,
+    CheckCircle,
     CaretDown,
-    Calendar,
-    Target,
+    MagnifyingGlass,
+    Minus,
     Plus,
-    X,
+    Target,
+    Shield,
+    Gear,
     Trash,
     FloppyDisk,
-    MagicWand,
-    MagnifyingGlass,
-    Stack
+    Stack,
+    X,
+    Calendar,
+    MagicWand
 } from '@phosphor-icons/react';
+import RadialMenu from '@/Components/RadialMenu';
+
+const TACTICAL_POSITION_GROUPS = {
+    'TW': 'GK', 'GK': 'GK',
+    'LV': 'DEF', 'IV': 'DEF', 'RV': 'DEF', 'LWB': 'DEF', 'RWB': 'DEF',
+    'LM': 'MID', 'ZM': 'MID', 'RM': 'MID', 'DM': 'MID', 'OM': 'MID', 'LAM': 'MID', 'ZOM': 'MID', 'RAM': 'MID',
+    'LS': 'FWD', 'MS': 'FWD', 'RS': 'FWD', 'ST': 'FWD', 'LW': 'FWD', 'RW': 'FWD', 'LF': 'FWD', 'RF': 'FWD', 'HS': 'FWD'
+};
+
+const FIT_FACTORS = {
+    main: 1.00,
+    second: 0.92,
+    third: 0.84,
+    foreign: 0.76,
+    foreign_gk: 0.55
+};
+
+const calculatePositionPenalty = (player, slotPos) => {
+    if (!player || !slotPos) return 0;
+    
+    const playerPos = player.position;
+    if (playerPos === slotPos) return 0;
+
+    // Direct mapping match?
+    if (TACTICAL_POSITION_GROUPS[playerPos] === TACTICAL_POSITION_GROUPS[slotPos]) {
+        return -5; // Same group but different specific position
+    }
+
+    // Major group mismatch
+    const playerGroup = TACTICAL_POSITION_GROUPS[playerPos];
+    const slotGroup = TACTICAL_POSITION_GROUPS[slotPos];
+
+    if (playerGroup === 'GK' || slotGroup === 'GK') return -45; // GK out of position or field player in goal
+    if (playerGroup === 'DEF' && slotGroup === 'FWD') return -25;
+    if (playerGroup === 'FWD' && slotGroup === 'DEF') return -25;
+    
+    return -15; // Typical out of position (e.g. DEF to MID)
+};
+
+const getEffectiveRating = (player, slotPos) => {
+    const penalty = calculatePositionPenalty(player, slotPos);
+    return Math.round(player.overall * (1 + penalty / 100));
+};
 
 const ATTRIBUTE_LABELS = {
     overall: 'Overall',
@@ -128,7 +183,7 @@ const playerSlotScore = (player, slot, positionFit, positionMeta, lineupScoring)
     );
 };
 
-const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, onRemove }) => {
+const PlayerCard = React.memo(({ player, isSelected, onDragStart, onAddPitch, onAddBench, onRemove }) => {
     return (
         <div
             draggable
@@ -197,7 +252,7 @@ const PlayerCard = ({ player, isSelected, onDragStart, onAddPitch, onAddBench, o
             </div>
         </div>
     );
-};
+});
 
 export default function Edit({ 
     lineup, 
@@ -222,7 +277,8 @@ export default function Edit({
     positionFit,
     positionMeta,
     lineupScoring,
-    teamStrengthConfig
+    teamStrengthConfig,
+    isReadOnly = false
 }) {
     const { data, setData, put, processing, errors } = useForm({
         name: lineup.name,
@@ -239,16 +295,71 @@ export default function Edit({
         free_kick_far_player_id: setPieces.free_kick_far_player_id,
         corner_left_taker_player_id: setPieces.corner_left_taker_player_id,
         corner_right_taker_player_id: setPieces.corner_right_taker_player_id,
+        corner_marking_strategy: setPieces.corner_marking_strategy || 'zonal',
+        free_kick_marking_strategy: setPieces.free_kick_marking_strategy || 'zonal',
         starter_slots: starterDraft,
         // Pad bench to maxBenchPlayers so all slot dropzones render correctly
         bench_slots: Array.from({ length: maxBenchPlayers }, (_, i) => benchDraft[i] ?? null),
+        player_instructions: lineup.player_instructions || {},
+        pressing_intensity: lineup.pressing_intensity || 'normal',
+        line_of_engagement: lineup.line_of_engagement || 'normal',
+        pressing_trap: lineup.pressing_trap || 'none',
+        cross_engagement: lineup.cross_engagement || 'none',
         action: 'save',
         template_name: ''
     });
 
     const [searchTerm, setSearchTerm] = useState('');
+    const deferredSearchTerm = useDeferredValue(searchTerm);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const [assigningPlayerId, setAssigningPlayerId] = useState(null);
+    const [activeTab, setActiveTab] = useState('kader'); // kader, taktik, spezial
+    const [radialMenu, setRadialMenu] = useState({ isOpen: false, playerId: null, slot: null });
+
+    const getPositionGroup = (pos) => TACTICAL_POSITION_GROUPS[pos?.toUpperCase()] || null;
+
+    const getEffectiveRating = (player, slotCode) => {
+        if (!player || !slotCode) return null;
+
+        const slotPos = slotCode.split('-')[0]; // Handle IV-L, etc.
+        const assignedGroup = getPositionGroup(slotPos);
+        const mainGroup = getPositionGroup(player.position_main);
+        const secondGroup = getPositionGroup(player.position_second);
+        const thirdGroup = getPositionGroup(player.position_third);
+
+        let factor = FIT_FACTORS.foreign;
+
+        if (player.position_main === slotPos || (mainGroup && assignedGroup === mainGroup)) {
+            factor = FIT_FACTORS.main;
+        } else if (player.position_second === slotPos || (secondGroup && assignedGroup === secondGroup)) {
+            factor = FIT_FACTORS.second;
+        } else if (player.position_third === slotPos || (thirdGroup && assignedGroup === thirdGroup)) {
+            factor = FIT_FACTORS.third;
+        }
+
+        // GK Special Case
+        if ((mainGroup === 'GK' && assignedGroup !== 'GK') || (mainGroup !== 'GK' && assignedGroup === 'GK')) {
+            factor = Math.min(factor, FIT_FACTORS.foreign_gk);
+        }
+
+        return {
+            original: player.overall,
+            effective: Math.round(player.overall * factor),
+            factor: factor
+        };
+    };
+
+    const handleInstructionToggle = (playerId, instructionId) => {
+        const current = data.player_instructions[playerId] || [];
+        const next = current.includes(instructionId)
+            ? current.filter(id => id !== instructionId)
+            : [...current, instructionId];
+        
+        setData('player_instructions', {
+            ...data.player_instructions,
+            [playerId]: next
+        });
+    };
     const [positionFilter, setPositionFilter] = useState('ALL');
     const [collapsedGroups, setCollapsedGroups] = useState({
         GK: false,
@@ -270,7 +381,7 @@ export default function Edit({
     const freeStarterSlots = useMemo(() => slots.filter((slot) => !data.starter_slots[slot.slot]), [slots, data.starter_slots]);
     const firstFreeBenchIndex = useMemo(() => data.bench_slots.findIndex((id) => !id), [data.bench_slots]);
     const assigningPlayer = useMemo(() => assigningPlayerId ? getPlayer(assigningPlayerId) : null, [assigningPlayerId, playerById]);
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const normalizedSearch = deferredSearchTerm.trim().toLowerCase();
     const assignableStarterSlots = useMemo(() => {
         if (!assigningPlayer) {
             return [];
@@ -651,206 +762,299 @@ export default function Edit({
                             </button>
                             <button 
                                 type="submit"
-                                disabled={processing}
-                                className="sim-btn-primary flex-[2] sm:flex-none justify-center px-6 sm:px-10 py-3 flex items-center gap-2"
+                                disabled={processing || isReadOnly}
+                                title={isReadOnly ? 'Kein Spiel geplant - Speichern deaktiviert' : ''}
+                                className={`flex-[2] sm:flex-none justify-center px-6 sm:px-10 py-3 flex items-center gap-2 ${
+                                    isReadOnly ? 'bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed' : 'sim-btn-primary'
+                                }`}
                             >
-                                <FloppyDisk size={18} weight="bold" className="shrink-0" />
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">Speichern</span>
+                                <FloppyDisk size={18} weight={isReadOnly ? "thin" : "bold"} className="shrink-0" />
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest truncate">
+                                    {isReadOnly ? 'GESPERRT' : 'Speichern'}
+                                </span>
                             </button>
                         </div>
-                    </div>
-
-                    <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr_320px] gap-8">
-                        {/* Left Sidebar: Tactics */}
-                        <aside className="space-y-6 order-3 lg:order-1">
-                            <div className="sim-card p-6 bg-[#0c1222]/80 backdrop-blur-xl border-[var(--border-muted)]">
-                                <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <Strategy size={16} weight="bold" />
-                                    STRATEGIE
-                                </h3>
-                                
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Formation</label>
-                                        <select 
-                                            value={data.formation}
-                                            onChange={e => setData('formation', e.target.value)}
-                                            className="sim-select w-full"
-                                        >
-                                            {formations.map(f => <option key={f} value={f}>{f}</option>)}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Mentalität</label>
-                                        <select 
-                                            value={data.mentality}
-                                            onChange={e => setData('mentality', e.target.value)}
-                                            className="sim-select w-full"
-                                        >
-                                            <option value="defensive">Defensiv</option>
-                                            <option value="counter">Konter</option>
-                                            <option value="normal">Normal</option>
-                                            <option value="offensive">Offensiv</option>
-                                            <option value="all_out">Brechstange</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Aggressivität</label>
-                                        <select 
-                                            value={data.aggression}
-                                            onChange={e => setData('aggression', e.target.value)}
-                                            className="sim-select w-full"
-                                        >
-                                            <option value="cautious">Vorsichtig</option>
-                                            <option value="normal">Normal</option>
-                                            <option value="aggressive">Aggressiv</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="pt-4 space-y-3">
-                                        {/* Abseitsfalle */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setData('offside_trap', !data.offside_trap)}
-                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all duration-200 group ${
-                                                data.offside_trap
-                                                    ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_12px_rgba(217,177,92,0.08)]'
-                                                    : 'bg-[var(--bg-pillar)]/60 border-[var(--border-pillar)] hover:border-[var(--border-pillar)]'
-                                            }`}
-                                        >
-                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.offside_trap ? 'text-amber-500' : 'text-[var(--text-muted)] group-hover:text-slate-300'}`}>
-                                                Abseitsfalle
-                                            </span>
-                                            <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${data.offside_trap ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-all duration-300 ${data.offside_trap ? 'left-5' : 'left-0.5'}`} />
-                                            </div>
-                                        </button>
-
-                                        {/* Zeitspiel */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setData('time_wasting', !data.time_wasting)}
-                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all duration-200 group ${
-                                                data.time_wasting
-                                                    ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.08)]'
-                                                    : 'bg-[var(--bg-pillar)]/60 border-[var(--border-pillar)] hover:border-[var(--border-pillar)]'
-                                            }`}
-                                        >
-                                            <span className={`text-xs font-black uppercase tracking-wider transition-colors ${data.time_wasting ? 'text-amber-300' : 'text-[var(--text-muted)] group-hover:text-slate-300'}`}>
-                                                Zeitspiel
-                                            </span>
-                                            <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${data.time_wasting ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-all duration-300 ${data.time_wasting ? 'left-5' : 'left-0.5'}`} />
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
+                    </div>                    <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8">
+                        {/* Sidebar: Navigation Tabs */}
+                        <aside className="space-y-6 flex flex-col h-[600px] lg:h-[800px] order-2 lg:order-1">
+                            {/* Tabs Navigation */}
+                            <div className="flex bg-[#0c1222]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1 gap-1">
+                                {[
+                                    { id: 'kader', label: 'Kader', icon: <Users size={14} weight="bold" /> },
+                                    { id: 'taktik', label: 'Taktik', icon: <Strategy size={14} weight="bold" /> },
+                                    { id: 'spezial', label: 'Spezial', icon: <Target size={14} weight="bold" /> }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                            activeTab === tab.id
+                                                ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(217,177,92,0.3)]'
+                                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {tab.id === 'kader' ? <Users size={14} weight="bold" /> : tab.id === 'taktik' ? <Strategy size={14} weight="bold" /> : <Selection size={14} weight="bold" />}
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
 
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)]">
-                                <h3 className="text-xs font-black text-cyan-300 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <Stack size={16} weight="bold" />
-                                    VORLAGEN
-                                </h3>
+                            {/* Tab Content */}
+                            <div className="flex-1 overflow-hidden">
+                                {activeTab === 'kader' && (
+                                    <div className="flex flex-col h-full sim-card p-4 sm:p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                        <div className="relative mb-4">
+                                            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Spieler suchen..."
+                                                value={searchTerm}
+                                                onChange={e => setSearchTerm(e.target.value)}
+                                                className="sim-input pl-10 py-2.5 text-xs w-full"
+                                            />
+                                        </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Vorlage laden</label>
-                                        <div className="flex gap-2">
-                                            <select
-                                                value={selectedTemplateId}
-                                                onChange={(e) => setSelectedTemplateId(e.target.value)}
-                                                className="sim-select w-full"
-                                            >
-                                                <option value="">Vorlage waehlen</option>
-                                                {templates.map((template) => (
-                                                    <option key={template.id} value={template.id}>
-                                                        {template.name} ({template.players_count})
-                                                    </option>
-                                                ))}
-                                            </select>
+                                        <div className="mb-4 flex flex-wrap gap-1.5">
                                             <button
                                                 type="button"
-                                                onClick={handleApplyTemplate}
-                                                disabled={!selectedTemplateId}
-                                                className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:border-cyan-400/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                                onClick={() => setPositionFilter('ALL')}
+                                                className={`rounded-xl border px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                    positionFilter === 'ALL'
+                                                        ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                                        : 'border-white/5 bg-white/5 text-slate-500 hover:text-white'
+                                                }`}
                                             >
-                                                Laden
+                                                Alle
                                             </button>
+                                            {POSITION_GROUPS.map((group) => (
+                                                <button
+                                                    key={group.key}
+                                                    type="button"
+                                                    onClick={() => setPositionFilter(group.key)}
+                                                    className={`rounded-xl border px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                        positionFilter === group.key
+                                                            ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-200'
+                                                            : 'border-white/5 bg-white/5 text-slate-500 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {group.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                            {POSITION_GROUPS.map((group) => {
+                                                const players = groupedPoolPlayers[group.key] ?? [];
+                                                const isCollapsed = collapsedGroups[group.key];
+                                                if (positionFilter !== 'ALL' && positionFilter !== group.key) return null;
+                                                return (
+                                                    <div key={group.key} className="rounded-2xl border border-white/5 bg-black/20">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleGroup(group.key)}
+                                                            className="flex w-full items-center justify-between px-3 py-2 text-left"
+                                                        >
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{group.label} ({players.length})</span>
+                                                            <CaretDown size={12} className={`text-slate-600 transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
+                                                        </button>
+                                                        {!isCollapsed && (
+                                                            <div className="p-2 space-y-1.5">
+                                                                {players.map(p => (
+                                                                    <PlayerCard 
+                                                                        key={p.id}
+                                                                        player={p}
+                                                                        isSelected={selectedPlayerIds.has(p.id)}
+                                                                        onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
+                                                                        onAddPitch={addPitchAuto}
+                                                                        onAddBench={addBenchAuto}
+                                                                        onRemove={removePlayer}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
+                                )}
 
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Aktuelle Elf als Vorlage</label>
-                                        <input
-                                            value={data.template_name}
-                                            onChange={(e) => setData('template_name', e.target.value)}
-                                            placeholder="z.B. Standard Heimspiel"
-                                            className="sim-input w-full py-2.5 text-xs"
-                                        />
-                                        {errors.template_name && (
-                                            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-rose-400">{errors.template_name}</p>
-                                        )}
+                                {activeTab === 'taktik' && (
+                                    <div className="space-y-4 overflow-y-auto h-full custom-scrollbar pr-1">
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Strategy size={14} weight="bold" />
+                                                Grundordnung
+                                            </h4>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Formation</label>
+                                                    <select value={data.formation} onChange={e => setData('formation', e.target.value)} className="sim-select w-full text-xs">
+                                                        {formations.map(f => <option key={f} value={f}>{f}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Mentalität</label>
+                                                    <select value={data.mentality} onChange={e => setData('mentality', e.target.value)} className="sim-select w-full text-xs">
+                                                        <option value="very_defensive">Sehr Defensiv</option>
+                                                        <option value="defensive">Defensiv</option>
+                                                        <option value="normal">Normal</option>
+                                                        <option value="offensive">Offensiv</option>
+                                                        <option value="very_offensive">Sehr Offensiv</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Target size={14} weight="bold" />
+                                                Defensiv-Taktik
+                                            </h4>
+                                            <div className="space-y-5">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1.5">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pressing-Intensität</label>
+                                                        <span className="text-[9px] font-black text-rose-500 uppercase">
+                                                            {data.pressing_intensity === 'low' ? 'Wenig' : data.pressing_intensity === 'high' ? 'Extrem' : 'Normal'}
+                                                        </span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" min="low" max="high" step="1"
+                                                        value={data.pressing_intensity}
+                                                        onChange={e => setData('pressing_intensity', e.target.value)}
+                                                        className="w-full accent-rose-500 opacity-70" 
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1.5">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Abwehrlinie</label>
+                                                        <span className="text-[9px] font-black text-amber-500 uppercase">{data.line_height}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" min="20" max="80"
+                                                        value={data.line_height}
+                                                        onChange={e => setData('line_height', e.target.value)}
+                                                        className="w-full accent-amber-500 opacity-70" 
+                                                    />
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setData('offside_trap', !data.offside_trap)}
+                                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                                            data.offside_trap ? 'border-amber-500/40 bg-amber-500/10 text-amber-500' : 'border-white/5 bg-white/5 text-slate-500'
+                                                        }`}
+                                                    >
+                                                        Abseitsfalle
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setData('time_wasting', !data.time_wasting)}
+                                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                                            data.time_wasting ? 'border-amber-500/40 bg-amber-500/10 text-amber-500' : 'border-white/5 bg-white/5 text-slate-500'
+                                                        }`}
+                                                    >
+                                                        Zeitspiel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                )}
 
-                                    <button
-                                        type="button"
-                                        onClick={handleSaveTemplate}
-                                        className="w-full rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-200 transition-all hover:border-amber-400/50 hover:text-white"
-                                    >
-                                        Vorlage speichern
-                                    </button>
-                                </div>
-                            </div>
+                                {activeTab === 'spezial' && (
+                                    <div className="space-y-4 overflow-y-auto h-full custom-scrollbar pr-1">
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Target size={14} weight="bold" />
+                                                Standardschützen
+                                            </h4>
+                                            <div className="space-y-3">
+                                                {[
+                                                    { label: 'Elfmeter', key: 'penalty_taker_player_id' },
+                                                    { label: 'Freistöße', key: 'free_kick_near_player_id' },
+                                                    { label: 'Ecken', key: 'corner_left_taker_player_id' }
+                                                ].map(role => (
+                                                    <div key={role.key}>
+                                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{role.label}</label>
+                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full text-[10px]">
+                                                            <option value="">- Auto -</option>
+                                                            {Array.from(selectedPlayerIds).map(id => {
+                                                                const p = getPlayer(id);
+                                                                return <option key={id} value={id}>{p?.last_name || p?.full_name}</option>;
+                                                            })}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
 
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-[var(--border-muted)]">
-                                <h3 className="text-xs font-black text-amber-600 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <Target size={16} weight="bold" />
-                                    ROLLEN
-                                </h3>
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Users size={14} weight="bold" />
+                                                Rollen
+                                            </h4>
+                                            <div>
+                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Kapitän</label>
+                                                <select value={data.captain_player_id} onChange={e => setData('captain_player_id', e.target.value)} className="sim-select w-full text-[10px]">
+                                                    <option value="">- Wählen -</option>
+                                                    {Array.from(selectedPlayerIds).map(id => {
+                                                        const p = getPlayer(id);
+                                                        return <option key={id} value={id}>{p?.full_name}</option>;
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Kapitän</label>
-                                        <select 
-                                            value={data.captain_player_id}
-                                            onChange={e => setData('captain_player_id', e.target.value)}
-                                            className="sim-select w-full py-1.5 text-xs"
-                                        >
-                                            <option value="">- Wählen -</option>
-                                            {Array.from(selectedPlayerIds).map(id => {
-                                                const p = getPlayer(id);
-                                                return <option key={id} value={id}>{p?.full_name}</option>
-                                            })}
-                                        </select>
+                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Stack size={14} weight="bold" />
+                                                Vorlagen
+                                            </h4>
+                                            <div className="space-y-3">
+                                                <div className="flex gap-2">
+                                                    <select value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)} className="sim-select flex-1 text-[10px]">
+                                                        <option value="">Laden...</option>
+                                                        {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                    </select>
+                                                    <button type="button" onClick={handleApplyTemplate} className="px-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] uppercase font-black">OK</button>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <input value={data.template_name} onChange={e => setData('template_name', e.target.value)} placeholder="Name..." className="sim-input flex-1 text-[10px]" />
+                                                    <button type="button" onClick={handleSaveTemplate} className="px-3 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] uppercase font-black"><FloppyDisk size={14} /></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </aside>
 
-                        {/* Center: The Pitch */}
-                        <main className="space-y-8 order-1 lg:order-2">
+                        {/* Center/Right: The Pitch */}
+                        <main className="order-1 lg:order-2 space-y-8 flex flex-col">
                             {/* Metrics Bar */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-3xl bg-[var(--bg-pillar)]/60 border border-white/5">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-3xl bg-[#0c1222]/80 backdrop-blur-xl border border-white/5">
                                 <div className="flex items-center gap-6 px-4">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">STÄRKE</span>
                                         <span className="text-2xl font-black text-white italic leading-none">{calculatedMetrics.overall}</span>
                                     </div>
-                                    <div className="h-8 w-px bg-[var(--bg-content)]" />
+                                    <div className="h-8 w-px bg-white/5" />
                                     <div className="flex gap-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">ANGRIFF</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ANGRIFF</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.attack}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">MITTE</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">MITTE</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.midfield}</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">ABWEHR</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ABWEHR</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.defense}</span>
                                         </div>
                                     </div>
@@ -865,46 +1069,16 @@ export default function Edit({
                                 </div>
                             </div>
 
-                            <div className="grid gap-4 md:grid-cols-3">
-                                {[
-                                    ['attack', 'Angriff', calculatedMetrics.breakdown.attack],
-                                    ['midfield', 'Mitte', calculatedMetrics.breakdown.midfield],
-                                    ['defense', 'Abwehr', calculatedMetrics.breakdown.defense],
-                                ].map(([key, label, rows]) => (
-                                    <div key={key} className="rounded-3xl border border-white/5 bg-[var(--bg-pillar)]/40 p-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">Top Treiber</span>
-                                        </div>
-                                        <div className="mt-4 space-y-2">
-                                            {(rows ?? []).length > 0 ? rows.map((row) => (
-                                                <div key={row.attribute} className="flex items-center justify-between rounded-2xl bg-black/20 px-3 py-2">
-                                                    <span className="text-xs font-bold text-white">{row.label}</span>
-                                                    <span className="text-[11px] font-black text-amber-400">{row.value.toFixed(1)}</span>
-                                                </div>
-                                            )) : (
-                                                <div className="rounded-2xl bg-black/20 px-3 py-2 text-xs text-[var(--text-muted)]">
-                                                    Noch keine Startelf fuer diese Zone.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
                             {/* Pitch Area */}
                             <div className="relative aspect-[68/105] w-full max-w-[500px] mx-auto bg-[#0a0a0a] rounded-[2rem] shadow-2xl overflow-hidden border-8 border-[#1a1a1a]">
-                                <div className="absolute inset-0 bg-gradient-to-b from-amber-900/5 to-transparent z-10 pointer-events-none" />
                                 <PitchMarkings />
+                                <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent z-10 pointer-events-none" />
                                 
-                                {/* Grass Texture */}
-                                <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" 
-                                     style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 10%, rgba(0,0,0,0.1) 10%, rgba(0,0,0,0.1) 20%)' }} />
-
                                 <div className="absolute inset-x-8 inset-y-12 z-20">
                                     {slots.map(slot => {
                                         const pId = data.starter_slots[slot.slot];
                                         const p = getPlayer(pId);
+                                        const penalty = calculatePositionPenalty(p, slot.slot.split('-')[0]);
 
                                         return (
                                             <div 
@@ -914,22 +1088,36 @@ export default function Edit({
                                                 className="absolute flex flex-col items-center group/slot"
                                                 style={{ left: `${slot.x}%`, top: `${slot.y}%`, transform: 'translate(-50%, -50%)' }}
                                             >
-                                                <div className={`w-14 h-14 rounded-full border-2 transition-all duration-300 flex items-center justify-center relative ${
-                                                    p ? 'bg-[var(--bg-pillar)] border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
-                                                      : 'bg-black/20 border-white/10 hover:border-white/30 hover:bg-white/5 border-dashed'
-                                                }`}>
+                                                <div 
+                                                    className={`w-14 h-14 rounded-full border-2 transition-all duration-300 flex items-center justify-center relative cursor-pointer ${
+                                                        p ? 'bg-[#1a1c2e] border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
+                                                          : 'bg-black/20 border-white/10 hover:border-white/30 border-dashed'
+                                                    }`}
+                                                    onClick={(e) => {
+                                                        if (p) {
+                                                            setRadialMenu({ isOpen: true, playerId: p.id, slot: slot.slot, x: e.clientX, y: e.clientY });
+                                                        }
+                                                    }}
+                                                >
                                                     {p ? (
                                                         <>
                                                             <div className="flex flex-col items-center">
                                                                 <span className="text-xs font-black text-white leading-none mb-0.5">{p.shirt_number}</span>
-                                                                <span className="text-[8px] font-black text-amber-500 leading-none">{p.overall}</span>
+                                                                <div className="flex items-center gap-0.5">
+                                                                    <span className={`text-[8px] font-black leading-none ${penalty < 0 ? 'text-rose-400' : 'text-amber-500'}`}>
+                                                                        {getEffectiveRating(p, slot.slot.split('-')[0])}
+                                                                    </span>
+                                                                    {penalty < 0 && (
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" title={`Positions-Abzug: ${penalty}%`} />
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             {parseInt(data.captain_player_id) === p.id && (
                                                                 <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-black shadow-lg">C</div>
                                                             )}
                                                             <button 
                                                                 type="button"
-                                                                onClick={() => removePlayer(p.id)}
+                                                                onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }}
                                                                 className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover/slot:opacity-100 transition-opacity"
                                                             >
                                                                 <X size={10} weight="bold" />
@@ -941,7 +1129,14 @@ export default function Edit({
                                                 </div>
                                                 {p && (
                                                     <div className="mt-1 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/5">
-                                                        <span className="text-[9px] font-black text-white uppercase truncate max-w-[60px] block">{p.last_name}</span>
+                                                        <span className="text-[9px] font-black text-white uppercase truncate max-w-[60px] block text-center leading-tight">
+                                                            {p.last_name}
+                                                        </span>
+                                                        <div className="flex justify-center gap-0.5 mt-0.5">
+                                                            {(data.player_instructions[p.id] || []).slice(0, 3).map(inst => (
+                                                                <div key={inst} className="w-1 h-1 rounded-full bg-cyan-400" />
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -951,9 +1146,9 @@ export default function Edit({
                             </div>
 
                             {/* Bench */}
-                            <div className="sim-card p-6 bg-[var(--bg-pillar)]/40 border-[var(--border-pillar)]/40">
+                            <div className="sim-card p-6 bg-[#0c1222]/80 border-white/5">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Auswechselbank</h3>
+                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Auswechselbank</h3>
                                     <span className="text-[9px] font-bold text-slate-600">Max. {maxBenchPlayers}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-4">
@@ -964,18 +1159,18 @@ export default function Edit({
                                                 key={idx}
                                                 onDragOver={e => e.preventDefault()}
                                                 onDrop={e => handleDrop(e, idx, true)}
-                                                className={`w-16 h-16 rounded-2xl border-2 transition-all flex flex-col items-center justify-center group/bench relative ${
-                                                    p ? 'bg-[var(--bg-pillar)] border-amber-600/40' 
+                                                className={`w-14 h-14 rounded-2xl border-2 transition-all flex flex-col items-center justify-center group/bench relative ${
+                                                    p ? 'bg-[#1a1c2e] border-amber-600/40' 
                                                       : 'bg-black/20 border-white/5 border-dashed hover:border-white/10'
                                                 }`}
                                             >
                                                 {p ? (
                                                     <>
                                                         <span className="text-xs font-black text-white leading-none mb-1">{p.shirt_number}</span>
-                                                        <span className="text-[8px] font-black text-[var(--text-muted)] uppercase truncate max-w-[50px]">{p.last_name}</span>
+                                                        <span className="text-[8px] font-black text-slate-500 uppercase truncate max-w-[50px]">{p.last_name}</span>
                                                         <button 
                                                             type="button"
-                                                            onClick={() => removePlayer(p.id)}
+                                                            onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }}
                                                             className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover/bench:opacity-100 transition-opacity shadow-lg"
                                                         >
                                                             <X size={10} weight="bold" />
@@ -990,173 +1185,18 @@ export default function Edit({
                                 </div>
                             </div>
                         </main>
-
-                        {/* Right Sidebar: Player Pool */}
-                        <aside className="space-y-6 flex flex-col h-[500px] lg:h-full overflow-hidden min-h-[500px] lg:min-h-[800px] order-2 lg:order-3">
-                            <div className="sim-card p-4 sm:p-6 bg-[#0c1222]/80 border-[var(--border-muted)] flex flex-col h-full">
-                                <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest mb-4">SPIELER-POOL</h3>
-                                
-                                <div className="relative mb-6">
-                                    <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Suchen..."
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="sim-input pl-10 py-2.5 text-xs w-full"
-                                    />
-                                </div>
-
-                                <div className="mb-6 flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setPositionFilter('ALL')}
-                                        className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-                                            positionFilter === 'ALL'
-                                                ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                                                : 'border-[var(--border-pillar)] bg-[var(--bg-content)]/30 text-[var(--text-muted)] hover:text-white'
-                                        }`}
-                                    >
-                                        Alle
-                                    </button>
-                                    {POSITION_GROUPS.map((group) => (
-                                        <button
-                                            key={group.key}
-                                            type="button"
-                                            onClick={() => setPositionFilter(group.key)}
-                                            className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-                                                positionFilter === group.key
-                                                    ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-200'
-                                                    : 'border-[var(--border-pillar)] bg-[var(--bg-content)]/30 text-[var(--text-muted)] hover:text-white'
-                                            }`}
-                                        >
-                                            {group.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {assigningPlayer && (
-                                    <div className="mb-4 rounded-3xl border border-amber-500/20 bg-amber-500/8 p-4">
-                                        <div className="mb-3 flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Position waehlen</p>
-                                                <p className="text-sm font-black text-white">{assigningPlayer.full_name}</p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setAssigningPlayerId(null)}
-                                                className="rounded-full border border-white/10 p-1 text-slate-400 transition-colors hover:text-white"
-                                            >
-                                                <X size={14} weight="bold" />
-                                            </button>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2">
-                                            {assignableStarterSlots.map((slot) => (
-                                                <button
-                                                    key={slot.slot}
-                                                    type="button"
-                                                    onClick={() => assignPlayer(assigningPlayer.id, slot.slot)}
-                                                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left transition-all hover:border-amber-400/40 hover:bg-amber-500/10"
-                                                >
-                                                    <span className="block text-[10px] font-black uppercase tracking-widest text-white">{slot.label}</span>
-                                                    <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">{slot.slot}</span>
-                                                </button>
-                                            ))}
-
-                                            {firstFreeBenchIndex !== -1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => addBenchAuto(assigningPlayer.id)}
-                                                    className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-left transition-all hover:border-cyan-400/40 hover:text-white"
-                                                >
-                                                    <span className="block text-[10px] font-black uppercase tracking-widest text-cyan-200">Bank</span>
-                                                    <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">B-{firstFreeBenchIndex + 1}</span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {assignableStarterSlots.length === 0 && firstFreeBenchIndex === -1 && (
-                                            <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-rose-300">
-                                                Keine freie Position verfuegbar.
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                    {POSITION_GROUPS.map((group) => {
-                                        const players = groupedPoolPlayers[group.key] ?? [];
-                                        const isCollapsed = collapsedGroups[group.key];
-
-                                        if (positionFilter !== 'ALL' && positionFilter !== group.key) {
-                                            return null;
-                                        }
-
-                                        return (
-                                            <div key={group.key} className="rounded-3xl border border-[var(--border-pillar)]/30 bg-[var(--bg-content)]/20">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleGroup(group.key)}
-                                                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">{group.label}</span>
-                                                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                                            {players.length}
-                                                        </span>
-                                                    </div>
-                                                    <CaretDown
-                                                        size={14}
-                                                        weight="bold"
-                                                        className={`text-[var(--text-muted)] transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
-                                                    />
-                                                </button>
-
-                                                {!isCollapsed && (
-                                                    <div className="space-y-2 border-t border-[var(--border-pillar)]/20 px-3 py-3">
-                                                        {players.length > 0 ? players.map((p) => (
-                                                            <PlayerCard 
-                                                                key={p.id}
-                                                                player={p}
-                                                                isSelected={selectedPlayerIds.has(p.id)}
-                                                                onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
-                                                                onAddPitch={addPitchAuto}
-                                                                onAddBench={addBenchAuto}
-                                                                onRemove={removePlayer}
-                                                            />
-                                                        )) : (
-                                                            <div className="rounded-2xl border border-dashed border-white/10 px-3 py-4 text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                                                Keine Spieler
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </aside>
                     </div>
                 </form>
             </div>
 
-            <style dangerouslySetInnerHTML={{ __html: `
-                .sim-pitch {
-                    background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
-                }
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: var(--bg-content);
-                    border-radius: 9999px;
-                }
-            `}} />
+            <RadialMenu
+                isOpen={radialMenu.isOpen}
+                onClose={() => setRadialMenu({ ...radialMenu, isOpen: false })}
+                playerId={radialMenu.playerId}
+                selectedInstructions={data.player_instructions[radialMenu.playerId] || []}
+                onToggleInstruction={(instId) => handleInstructionToggle(radialMenu.playerId, instId)}
+                position={radialMenu.slot}
+            />
         </AuthenticatedLayout>
     );
 }

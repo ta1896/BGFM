@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class MatchCenterController extends Controller
 {
@@ -159,8 +160,8 @@ class MatchCenterController extends Controller
     {
         $matches = GameMatch::query()
             ->where('status', 'played')
-            ->whereKeyNot($currentMatchId)
-            ->where(function ($query) use ($clubId): void {
+            ->where('id', '!=', $currentMatchId)
+            ->where(function (Builder $query) use ($clubId) {
                 $query->where('home_club_id', $clubId)
                     ->orWhere('away_club_id', $clubId);
             })
@@ -390,7 +391,7 @@ class MatchCenterController extends Controller
             ->orderByDesc('overall')
             ->first();
 
-        if ($homeAttacker && $awayDefender) {
+        if ($homeAttacker instanceof \App\Models\Player && $awayDefender instanceof \App\Models\Player) {
             $duels[] = [
                 'label' => 'Angriff vs Abwehr',
                 'home' => [

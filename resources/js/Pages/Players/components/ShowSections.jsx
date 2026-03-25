@@ -9,6 +9,8 @@ import {
 } from '@phosphor-icons/react';
 import { POSITIONS, POSITION_COORDS } from '@/constants/positions';
 const PlayerRadarChart = lazy(() => import('@/Pages/Players/components/PlayerRadarChart'));
+import PerformanceTab from '@/Pages/Players/components/PerformanceTab';
+export { PerformanceTab };
 
 
 const moduleActionIconMap = {
@@ -25,7 +27,7 @@ const moduleActionAccentMap = {
     slate: 'border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 text-slate-200',
 };
 
-export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
+export const PlayerShowHeader = React.memo(function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
     return (
         <>
             <div className="flex items-center justify-between">
@@ -59,7 +61,7 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                             <div className="absolute inset-0 rounded-full bg-cyan-500/20 opacity-0 blur-2xl transition-opacity group-hover:opacity-100" />
                             <div className="relative h-48 w-48 rounded-full border border-[var(--border-muted)] bg-gradient-to-br from-slate-800 to-slate-950 p-2 shadow-2xl md:h-56 md:w-56">
                                 <img
-                                    loading="lazy"
+                                    fetchpriority="high"
                                     src={player.photo_url}
                                     alt={player.full_name}
                                     className="h-full w-full rounded-full object-cover mix-blend-luminosity transition-all duration-500 hover:mix-blend-normal"
@@ -188,6 +190,7 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
                 <nav className="no-scrollbar flex items-center overflow-x-auto border-t border-[var(--border-muted)] bg-black/20 px-8">
                     {[
                         ['overview', 'Uebersicht', ChartBar],
+                        ['performance', 'Leistung', Target],
                         ['career', 'Karriere', Trophy],
                         ['contract', 'Vertrag & Dynamik', IdentificationBadge],
                         ['matches', 'Spiele', SoccerBall],
@@ -203,9 +206,9 @@ export function PlayerShowHeader({ player, isOwner, activeTab, onTabChange }) {
             </div>
         </>
     );
-}
+});
 
-function StatRing({ value, max = 99, label, color = 'emerald' }) {
+const StatRing = React.memo(function StatRing({ value, max = 99, label, color = 'emerald' }) {
     const radius = 24;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (value / max) * circumference;
@@ -226,9 +229,9 @@ function StatRing({ value, max = 99, label, color = 'emerald' }) {
             <span className="mt-1 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
         </div>
     );
-}
+});
 
-function ResultCircle({ result }) {
+const ResultCircle = React.memo(function ResultCircle({ result }) {
     const colors = {
         W: 'bg-emerald-500',
         D: 'bg-slate-500',
@@ -240,18 +243,18 @@ function ResultCircle({ result }) {
             {result}
         </div>
     );
-}
+});
 
-function StatCircle({ value }) {
+const StatCircle = React.memo(function StatCircle({ value }) {
     if (!value || value === 0) return <span className="text-slate-600 font-bold">-</span>;
     return (
         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black text-black shadow-md border border-slate-200">
             {value}
         </div>
     );
-}
+});
 
-function RatingBadge({ rating }) {
+const RatingBadge = React.memo(function RatingBadge({ rating }) {
     let colorClass = 'bg-slate-800 text-slate-400';
     if (rating >= 9.5) colorClass = 'bg-[#3b82f6] text-white'; // Blue for 10
     else if (rating >= 8.5) colorClass = 'bg-[#4f46e5] text-white'; // Indigo
@@ -264,9 +267,9 @@ function RatingBadge({ rating }) {
             {rating > 0 ? rating.toFixed(1) : '-'}
         </div>
     );
-}
+});
 
-function TabButton({ active, onClick, icon: Icon, children }) {
+const TabButton = React.memo(function TabButton({ active, onClick, icon: Icon, children }) {
     return (
         <button
             onClick={onClick}
@@ -278,9 +281,9 @@ function TabButton({ active, onClick, icon: Icon, children }) {
             {children}
         </button>
     );
-}
+});
 
-export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
+export const PlayerOverviewTab = React.memo(function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions = [], onModuleAction }) {
     const isGK = player.position === 'TW' || player.position === 'GK';
 
     const stats = isGK ? [
@@ -439,9 +442,9 @@ export function PlayerOverviewTab({ player, squadDynamics, modulePlayerActions =
             </div>
         </div>
     );
-}
+});
 
-export function PlayerContractTab({ player, modulePlayerActions = [], onModuleAction }) {
+export const PlayerContractTab = React.memo(function PlayerContractTab({ player, modulePlayerActions = [], onModuleAction }) {
     return (
         <div className="grid gap-8 lg:grid-cols-2">
             <div className="sim-card bg-black/20 p-8 shadow-2xl overflow-hidden relative">
@@ -491,9 +494,9 @@ export function PlayerContractTab({ player, modulePlayerActions = [], onModuleAc
             </div>
         </div>
     );
-}
+});
 
-function ProgressBar({ label, value, positive, compact = false }) {
+const ProgressBar = React.memo(function ProgressBar({ label, value, positive, compact = false }) {
     return (
         <div className={compact ? "mb-4 last:mb-0" : "mb-8 last:mb-0"}>
             <div className={compact ? "mb-2 flex justify-between px-1" : "mb-4 flex justify-between px-1"}>
@@ -505,18 +508,18 @@ function ProgressBar({ label, value, positive, compact = false }) {
             </div>
         </div>
     );
-}
+});
 
-function CompactInfoRow({ label, value }) {
+const CompactInfoRow = React.memo(function CompactInfoRow({ label, value }) {
     return (
         <div className="flex items-center justify-between border-b border-white/[0.03] py-2 last:border-0 grow">
             <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
             <span className="text-[11px] font-black text-white italic truncate ml-4 translate-y-[1px]">{value}</span>
         </div>
     );
-}
+});
 
-function PlayerPositionPitch({ player }) {
+const PlayerPositionPitch = React.memo(function PlayerPositionPitch({ player }) {
     const mainPos = player.position;
     const secondPos = player.position_second;
     const thirdPos = player.position_third;
@@ -565,9 +568,9 @@ function PlayerPositionPitch({ player }) {
             </div>
         </div>
     );
-}
+});
 
-function PlayerAttributesBio({ player }) {
+const PlayerAttributesBio = React.memo(function PlayerAttributesBio({ player }) {
     const strengths = [];
     const weaknesses = [];
 
@@ -605,8 +608,8 @@ function PlayerAttributesBio({ player }) {
             if (isDefensiveBackup && ![POSITIONS.IV, POSITIONS.TW].includes(player.position)) strengths.push('Defensiv-Backup');
             if (isOffensiveBackup && ![POSITIONS.MS].includes(player.position)) strengths.push('Offensiv-Option');
             if (isMidfieldBackup && ![POSITIONS.ZM, POSITIONS.OM, POSITIONS.DM].includes(player.position)) strengths.push('Mittelfeld-Allrounder');
-        }
-    }
+}
+}
 
     if (strengths.length === 0) strengths.push(isGK ? 'Zuverlässiger Torwart' : 'Vielseitiger Allrounder');
 
@@ -644,18 +647,18 @@ function PlayerAttributesBio({ player }) {
             </div>
         </div>
     );
-}
+});
 
-function InfoRow({ label, value }) {
+const InfoRow = React.memo(function InfoRow({ label, value }) {
     return (
         <div className="flex items-center justify-between border-b border-[var(--border-pillar)] py-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
             <span className="text-xs font-black text-white">{value}</span>
         </div>
     );
-}
+});
 
-export function PlayerCareerTab({ careerStats }) {
+export const PlayerCareerTab = React.memo(function PlayerCareerTab({ careerStats }) {
     return (
         <div className="sim-card overflow-hidden p-0">
             <div className="overflow-x-auto">
@@ -692,9 +695,9 @@ export function PlayerCareerTab({ careerStats }) {
             </div>
         </div>
     );
-}
+});
 
-export function PlayerMatchesTab({ player, recentMatches }) {
+export const PlayerMatchesTab = React.memo(function PlayerMatchesTab({ player, recentMatches }) {
     if (!recentMatches || recentMatches.length === 0) {
         return (
             <div className="sim-card border border-dashed border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-20 text-center">
@@ -858,7 +861,7 @@ export function PlayerMatchesTab({ player, recentMatches }) {
             </div>
         </div>
     );
-}
+});
 
 function ClubSide({ side, active, align = 'start' }) {
     return (
@@ -879,7 +882,7 @@ function MiniStat({ label, value }) {
     );
 }
 
-export function PlayerHistoryTab({ squadDynamics, playerConversationsEnabled = false }) {
+export const PlayerHistoryTab = React.memo(function PlayerHistoryTab({ squadDynamics, playerConversationsEnabled = false }) {
     return (
         <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
             <div className="sim-card p-8">
@@ -1002,7 +1005,7 @@ export function PlayerHistoryTab({ squadDynamics, playerConversationsEnabled = f
             )}
         </div>
     );
-}
+});
 
 function decisionAccentClasses(accent) {
     return {
@@ -1015,7 +1018,7 @@ function decisionAccentClasses(accent) {
     }[accent] || 'bg-slate-500/10 text-slate-300';
 }
 
-export function PlayerCustomizeTab({
+export const PlayerCustomizeTab = React.memo(function PlayerCustomizeTab({
     isOwner,
     data,
     setData,
@@ -1215,7 +1218,7 @@ export function PlayerCustomizeTab({
             )}
         </div>
     );
-}
+});
 
 function QuickBadge({ label, value, tone = 'good' }) {
     const toneClasses = tone === 'bad'

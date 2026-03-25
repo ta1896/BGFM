@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\ClubController as AdminClubController;
 use App\Http\Controllers\Admin\CompetitionController as AdminCompetitionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\LineupController as AdminLineupController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\SimulationController as AdminSimulationController;
@@ -129,8 +128,6 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::post('/players/{player}/sync-history', [AdminPlayerController::class, 'syncTransferHistory'])->name('players.sync-history');
         Route::post('/players/{player}/sync-sofascore', [AdminPlayerController::class, 'syncSofascore'])->name('players.sync-sofascore');
         Route::resource('players', AdminPlayerController::class);
-        Route::resource('lineups', AdminLineupController::class);
-        Route::post('/lineups/{lineup}/activate', [AdminLineupController::class, 'activate'])->name('lineups.activate');
         Route::post('/competition-seasons/{competitionSeason}/fixtures', [LeagueController::class, 'generateFixtures'])->name('competition-seasons.generate-fixtures');
         Route::post('/simulation/process-matchday', [AdminSimulationController::class, 'processMatchday'])->name('simulation.process-matchday')->middleware('throttle:heavy_task');
 

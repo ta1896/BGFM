@@ -72,6 +72,7 @@ class TacticalManager
         $lineHeight = $lineup->line_height ?? 'normal';
         switch ($lineHeight) {
             case 'deep':
+            case 'low':
                 $modifiers['defense'] *= 1.10;
                 $modifiers['counter_vulnerability'] -= 0.15;
                 $modifiers['pressing'] -= 0.20;
@@ -86,6 +87,57 @@ class TacticalManager
                 $modifiers['pressing'] += 0.20;
                 $modifiers['counter_vulnerability'] += 0.25;
                 break;
+        }
+
+        // 3b. Line of Engagement
+        $lineEngagement = $lineup->line_of_engagement ?? 'normal';
+        switch ($lineEngagement) {
+            case 'low':
+                $modifiers['pressing'] -= 0.10;
+                $modifiers['possession'] *= 0.95;
+                break;
+            case 'high':
+                $modifiers['pressing'] += 0.15;
+                $modifiers['counter_vulnerability'] += 0.10;
+                break;
+            case 'very_high':
+                $modifiers['pressing'] += 0.25;
+                $modifiers['counter_vulnerability'] += 0.20;
+                break;
+        }
+
+        // 3c. Pressing Intensity
+        $pressingIntensity = $lineup->pressing_intensity ?? 'normal';
+        switch ($pressingIntensity) {
+            case 'low':
+                $modifiers['pressing'] -= 0.15;
+                $modifiers['aggression'] *= 0.85;
+                break;
+            case 'high':
+                $modifiers['pressing'] += 0.15;
+                $modifiers['aggression'] *= 1.15;
+                $modifiers['card_chance'] *= 1.10;
+                break;
+            case 'very_high':
+                $modifiers['pressing'] += 0.30;
+                $modifiers['aggression'] *= 1.30;
+                $modifiers['card_chance'] *= 1.25;
+                break;
+        }
+
+        // 3d. Pressing Traps
+        $pressingTrap = $lineup->pressing_trap ?? 'none';
+        if ($pressingTrap === 'inside') {
+            $modifiers['possession'] *= 0.98; // Harder to keep ball if pressing in center
+            $modifiers['interception_chance'] = ($modifiers['interception_chance'] ?? 1.0) * 1.10;
+        } elseif ($pressingTrap === 'outside') {
+            $modifiers['interception_chance'] = ($modifiers['interception_chance'] ?? 1.0) * 1.05;
+        }
+
+        // 3e. Cross Engagement
+        if (($lineup->cross_engagement ?? 'allow') === 'prevent') {
+            $modifiers['defense'] *= 1.05;
+            $modifiers['pressing'] += 0.05;
         }
 
         // 4. Offside Trap (Abseitsfalle)
