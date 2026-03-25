@@ -1647,6 +1647,78 @@ const ExpectedLineupLight = ({ homeClub, awayClub, lineupPreview }) => (
     </div>
 );
 
+const SimulationDebugPanel = ({ homeClub, awayClub, comparison }) => {
+    const renderClubColumn = (club, metrics, accent = 'cyan') => {
+        const debug = metrics?.debug;
+        const accentTone = accent === 'amber' ? 'text-amber-200' : 'text-cyan-200';
+        const pillTone = accent === 'amber'
+            ? 'border-amber-400/20 bg-amber-400/10 text-amber-100'
+            : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-100';
+
+        return (
+            <div key={club?.id} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className={`truncate text-sm font-black ${accentTone}`}>{club?.short_name || club?.name}</div>
+                        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                            Kernspieler {debug?.core_player_count ?? 0}
+                        </div>
+                    </div>
+                    <div className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${pillTone}`}>
+                        Starke {Number(metrics?.strength || 0).toFixed(1)}
+                    </div>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+                        <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Moralmodell</div>
+                        <div className="mt-1 text-sm font-black text-white">{debug?.morale_source || '-'}</div>
+                        <div className="mt-1 text-[10px] font-bold text-white/60">{Number(debug?.morale_value || 0).toFixed(1)} im Schnitt</div>
+                    </div>
+                    <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+                        <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Fitnessmodell</div>
+                        <div className="mt-1 text-sm font-black text-white">{debug?.fitness_source || '-'}</div>
+                        <div className="mt-1 text-[10px] font-bold text-white/60">{Number(debug?.fitness_value || 0).toFixed(1)} im Schnitt</div>
+                    </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Staerke traegt vor allem</div>
+                    {(debug?.strength_top_players || []).length > 0 ? debug.strength_top_players.map((player, index) => (
+                        <div key={`${club?.id}-strength-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
+                            <div className="min-w-0">
+                                <div className="truncate text-[10px] font-black text-white">{player.name}</div>
+                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{player.position}</div>
+                            </div>
+                            <div className="text-[10px] font-black text-white/75">{Number(player.value || 0).toFixed(1)} OVR</div>
+                        </div>
+                    )) : (
+                        <div className="rounded-xl border border-dashed border-[var(--border-pillar)] px-3 py-3 text-sm text-[var(--text-muted)]">
+                            Keine Treiber verfuegbar.
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="sim-card p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Simulation Debug</div>
+                    <div className="mt-1 text-sm font-black text-white">Woraus die Vorschau ihre Werte ableitet</div>
+                </div>
+                <Lightning size={16} weight="fill" className="text-amber-400" />
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+                {renderClubColumn(homeClub, comparison?.home, 'cyan')}
+                {renderClubColumn(awayClub, comparison?.away, 'amber')}
+            </div>
+        </div>
+    );
+};
+
 const PreMatchReport = ({ homeClub, awayClub, comparison, report }) => (
     <div className="space-y-6">
         <div className="sim-card overflow-hidden p-0">
@@ -1679,6 +1751,8 @@ const PreMatchReport = ({ homeClub, awayClub, comparison, report }) => (
                         <ComparisonDuelRow label="Moral" homeValue={comparison?.home?.morale} awayValue={comparison?.away?.morale} formatter={(value) => Number(value || 0).toFixed(1)} />
                         <ComparisonDuelRow label="Fitness" homeValue={comparison?.home?.fitness} awayValue={comparison?.away?.fitness} formatter={(value) => Number(value || 0).toFixed(1)} />
                     </div>
+
+                    <SimulationDebugPanel homeClub={homeClub} awayClub={awayClub} comparison={comparison} />
                 </div>
 
                 <div className="space-y-4">

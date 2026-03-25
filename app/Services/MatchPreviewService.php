@@ -160,6 +160,7 @@ class MatchPreviewService
             ->get($selects);
 
         $corePlayers = $players->sortByDesc('overall')->take(14)->values();
+        $fitnessMetric = $this->resolveFitnessMetric($corePlayers, $scoreColumns);
         $moraleMetric = in_array('morale', $scoreColumns, true)
             ? $corePlayers->avg('morale')
             : $corePlayers->avg('happiness');
@@ -169,7 +170,16 @@ class MatchPreviewService
             'avg_age' => round((float) ($players->avg('age') ?? 0), 1),
             'strength' => round((float) ($corePlayers->avg('overall') ?? 0), 1),
             'morale' => round((float) ($moraleMetric ?? 0), 1),
-            'fitness' => round($this->resolveFitnessMetric($corePlayers, $scoreColumns), 1),
+            'fitness' => round($fitnessMetric, 1),
+            'debug' => [
+                'core_player_count' => $corePlayers->count(),
+                'morale_source' => $this->resolveMoraleMetricLabel($scoreColumns),
+                'fitness_source' => $this->resolveFitnessMetricLabel($scoreColumns),
+                'strength_top_players' => $this->topPlayerPayloads($corePlayers, 'overall'),
+                'market_value_top_players' => $this->topPlayerPayloads($players, 'market_value'),
+                'fitness_value' => round($fitnessMetric, 1),
+                'morale_value' => round((float) ($moraleMetric ?? 0), 1),
+            ],
         ];
     }
 
@@ -205,6 +215,46 @@ class MatchPreviewService
         }
 
         return 0.0;
+    }
+
+    private function resolveMoraleMetricLabel(array $scoreColumns): string
+    {
+        return in_array('morale', $scoreColumns, true) ? 'Morale' : 'Happiness';
+    }
+
+    private function resolveFitnessMetricLabel(array $scoreColumns): string
+    {
+        if (in_array('stamina', $scoreColumns, true)) {
+            return 'Stamina';
+        }
+
+        if (in_array('sharpness', $scoreColumns, true) && in_array('fatigue', $scoreColumns, true)) {
+            return 'Sharpness/Fatigue Mix';
+        }
+
+        if (in_array('sharpness', $scoreColumns, true)) {
+            return 'Sharpness';
+        }
+
+        if (in_array('fatigue', $scoreColumns, true)) {
+            return 'Fatigue Inverse';
+        }
+
+        return 'No Fitness Data';
+    }
+
+    private function topPlayerPayloads(Collection $players, string $metric): array
+    {
+        return $players
+            ->sortByDesc(fn ($player) => (float) ($player->{$metric} ?? 0))
+            ->take(3)
+            ->map(fn ($player) => [
+                'name' => $player->full_name,
+                'position' => (string) ($player->position_main ?: $player->position ?: '-'),
+                'value' => round((float) ($player->{$metric} ?? 0), $metric === 'market_value' ? 0 : 1),
+            ])
+            ->values()
+            ->all();
     }
 
     private function recentForm(int $clubId, int $currentMatchId): array

@@ -28,7 +28,7 @@ import {
     Calendar,
     MagicWand
 } from '@phosphor-icons/react';
-import RadialMenu from '@/Components/RadialMenu';
+import RadialMenu, { INSTRUCTION_LABELS } from '@/Components/RadialMenu';
 
 const TACTICAL_POSITION_GROUPS = {
     'TW': 'GK', 'GK': 'GK',
@@ -84,6 +84,14 @@ const POSITION_GROUPS = [
     { key: 'MID', label: 'Mittelfeld' },
     { key: 'FWD', label: 'Sturm' },
 ];
+
+const instructionLabelsForPlayer = (instructions = []) => (
+    instructions
+        .map((instructionId) => ({
+            id: instructionId,
+            label: INSTRUCTION_LABELS[instructionId] ?? instructionId,
+        }))
+);
 
 const PitchMarkings = () => (
     <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-40" viewBox="0 0 680 1050" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -211,7 +219,9 @@ const playerSlotScore = (player, slot, positionFit, positionMeta, lineupScoring)
     );
 };
 
-const PlayerCard = React.memo(({ player, isSelected, onDragStart, onAddPitch, onAddBench, onRemove }) => {
+const PlayerCard = React.memo(({ player, isSelected, instructions = [], onDragStart, onAddPitch, onAddBench, onRemove }) => {
+    const visibleInstructions = instructionLabelsForPlayer(instructions).slice(0, 2);
+
     return (
         <div
             draggable
@@ -246,6 +256,18 @@ const PlayerCard = React.memo(({ player, isSelected, onDragStart, onAddPitch, on
                                         ? 'Medical Risk'
                                         : 'Promise Druck'}
                         </p>
+                    )}
+                    {visibleInstructions.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                            {visibleInstructions.map((instruction) => (
+                                <span
+                                    key={instruction.id}
+                                    className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-500/10 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.12em] text-cyan-200"
+                                >
+                                    {instruction.label}
+                                </span>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>
@@ -349,11 +371,15 @@ export default function Edit({
         const next = current.includes(instructionId)
             ? current.filter(id => id !== instructionId)
             : [...current, instructionId];
-        
-        setData('player_instructions', {
-            ...data.player_instructions,
-            [playerId]: next
-        });
+
+        const nextInstructions = { ...data.player_instructions };
+        if (next.length > 0) {
+            nextInstructions[playerId] = next;
+        } else {
+            delete nextInstructions[playerId];
+        }
+
+        setData('player_instructions', nextInstructions);
     };
     const [positionFilter, setPositionFilter] = useState('ALL');
     const [collapsedGroups, setCollapsedGroups] = useState({
@@ -439,7 +465,19 @@ export default function Edit({
                     attack: [],
                     midfield: [],
                     defense: [],
-                }
+                },
+                explain: {
+                    starters: 0,
+                    baseOverall: 0,
+                    formationFactor: 0,
+                    avgMorale: 0,
+                    avgStamina: 0,
+                    avgFit: 0,
+                    sizeBonus: 0,
+                    fitModifier: 0,
+                    weakestFits: [],
+                    topDrivers: [],
+                },
             };
         }
 
@@ -450,6 +488,8 @@ export default function Edit({
 
             return {
                 player: p,
+                slotKey,
+                slotLabel: slot?.label ?? slotKey,
                 group: slot?.group ?? null,
                 fit: resolveFitFactor(p, slot, positionFit, positionMeta),
             };
@@ -506,10 +546,11 @@ export default function Edit({
         const avgStamina = entries.length ? entries.reduce((a, b) => a + b.player.stamina, 0) / entries.length : 0;
         const avgFit = entries.length ? entries.reduce((a, b) => a + b.fit, 0) / entries.length : 0;
         const chemistryConfig = teamStrengthConfig?.chemistry ?? {};
+        const sizeBonus = Math.min(chemistryConfig.size_bonus_cap ?? 10, entries.length) / 2;
+        const fitModifier = Math.max(chemistryConfig.fit_modifier_min ?? 0.82, Math.min(chemistryConfig.fit_modifier_max ?? 1, avgFit));
         const chemistry = Math.min(
             100,
-            (((avgMorale + avgStamina) / 2) + (Math.min(chemistryConfig.size_bonus_cap ?? 10, entries.length) / 2))
-                * Math.max(chemistryConfig.fit_modifier_min ?? 0.82, Math.min(chemistryConfig.fit_modifier_max ?? 1, avgFit))
+            (((avgMorale + avgStamina) / 2) + sizeBonus) * fitModifier
         );
 
         const formationFactorConfig = teamStrengthConfig?.formationFactor ?? {};
@@ -517,6 +558,17 @@ export default function Edit({
             ? (formationFactorConfig.incomplete_lineup ?? 0.8)
             : (formationFactorConfig.complete_lineup ?? 1.0);
         const overall = Math.round(Math.min(99, baseOverall * countFactor * (chemistry / 100)));
+
+        const driverTotals = entries.reduce((totals, { player, group }) => {
+            const type = group === 'FWD' ? 'attack' : group === 'MID' ? 'midfield' : 'defense';
+            const weights = teamStrengthConfig?.weights?.[type] ?? {};
+
+            Object.entries(weights).forEach(([attribute, weight]) => {
+                totals[attribute] = (totals[attribute] ?? 0) + (Number(player[attribute] ?? 0) * Number(weight));
+            });
+
+            return totals;
+        }, {});
 
         return {
             overall,
@@ -528,7 +580,35 @@ export default function Edit({
                 attack: attackMetrics.contributions,
                 midfield: midfieldMetrics.contributions,
                 defense: defenseMetrics.contributions,
-            }
+            },
+            explain: {
+                starters: entries.length,
+                baseOverall: Math.round(baseOverall),
+                formationFactor: Number(countFactor.toFixed(2)),
+                avgMorale: Math.round(avgMorale),
+                avgStamina: Math.round(avgStamina),
+                avgFit: Number(avgFit.toFixed(2)),
+                sizeBonus: Number(sizeBonus.toFixed(1)),
+                fitModifier: Number(fitModifier.toFixed(2)),
+                weakestFits: entries
+                    .map(({ player, slotLabel, fit }) => ({
+                        id: player.id,
+                        name: player.last_name || player.full_name,
+                        slot: slotLabel,
+                        fit: Number(fit.toFixed(2)),
+                        effectiveOverall: Math.round(player.overall * fit),
+                    }))
+                    .sort((left, right) => left.fit - right.fit)
+                    .slice(0, 4),
+                topDrivers: Object.entries(driverTotals)
+                    .map(([attribute, value]) => ({
+                        attribute,
+                        label: ATTRIBUTE_LABELS[attribute] ?? attribute,
+                        value: entries.length ? Number((value / entries.length).toFixed(1)) : 0,
+                    }))
+                    .sort((left, right) => right.value - left.value)
+                    .slice(0, 4),
+            },
         };
     }, [data.starter_slots, slotByKey, positionFit, positionMeta, teamStrengthConfig]);
 
@@ -844,6 +924,7 @@ export default function Edit({
                                                                         key={p.id}
                                                                         player={p}
                                                                         isSelected={selectedPlayerIds.has(p.id)}
+                                                                        instructions={data.player_instructions[p.id] || []}
                                                                         onDragStart={(e, id) => e.dataTransfer.setData('playerId', id)}
                                                                         onAddPitch={addPitchAuto}
                                                                         onAddBench={addBenchAuto}
@@ -1048,6 +1129,101 @@ export default function Edit({
                                 </div>
                             </div>
 
+                            <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                                <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-5">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Warum diese XI?</div>
+                                            <div className="mt-1 text-sm font-black text-white">Chemie, Formation und Haupttreiber</div>
+                                        </div>
+                                        <Strategy size={16} weight="fill" className="text-cyan-300" />
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Basisstärke</div>
+                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.baseOverall}</div>
+                                            <div className="mt-1 text-[10px] font-bold text-white/60">vor Chemie und Kaderfaktor</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Formationsfaktor</div>
+                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.explain.formationFactor.toFixed(2)}</div>
+                                            <div className="mt-1 text-[10px] font-bold text-white/60">{calculatedMetrics.explain.starters} Starter aktiv</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 sm:col-span-2 xl:col-span-1">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Chemie-Mix</div>
+                                            <div className="mt-1 text-xl font-black text-white">{calculatedMetrics.chemistry}%</div>
+                                            <div className="mt-1 text-[10px] font-bold text-white/60">
+                                                Moral {calculatedMetrics.explain.avgMorale} · Fitness {calculatedMetrics.explain.avgStamina}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                                        <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.05] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">Ø Fit</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.avgFit.toFixed(2)}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-amber-400/15 bg-amber-500/[0.05] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">Fit-Modifikator</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.fitModifier.toFixed(2)}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größenbonus</div>
+                                            <div className="mt-1 text-lg font-black text-white">{calculatedMetrics.explain.sizeBonus.toFixed(1)}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <div className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">Größte Treiber</div>
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            {calculatedMetrics.explain.topDrivers.map((driver) => (
+                                                <div key={driver.attribute} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
+                                                    <span className="text-[10px] font-black text-white">{driver.label}</span>
+                                                    <span className="text-[10px] font-black text-amber-300">{driver.value.toFixed(1)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-5">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Schwächste Fits</div>
+                                            <div className="mt-1 text-sm font-black text-white">Die riskantesten Slots in der Startelf</div>
+                                        </div>
+                                        <Target size={16} weight="fill" className="text-amber-400" />
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                        {calculatedMetrics.explain.weakestFits.map((entry) => (
+                                            <div key={entry.id} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="truncate text-[11px] font-black text-white">{entry.name}</div>
+                                                        <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.slot}</div>
+                                                    </div>
+                                                    <div className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                                        entry.fit < 0.8
+                                                            ? 'border-rose-400/20 bg-rose-500/10 text-rose-200'
+                                                            : entry.fit < 1
+                                                                ? 'border-amber-400/20 bg-amber-500/10 text-amber-200'
+                                                                : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+                                                    }`}>
+                                                        Fit {entry.fit.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold">
+                                                    <span className="text-white/60">Effektiv</span>
+                                                    <span className="text-white">{entry.effectiveOverall}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Pitch Area */}
                             <div className="relative mx-auto aspect-[68/105] w-full max-w-[500px] overflow-hidden rounded-[1.5rem] border-4 border-[#1a1a1a] bg-[#0a0a0a] shadow-2xl sm:rounded-[2rem] sm:border-8">
                                 <PitchMarkings />
@@ -1111,11 +1287,18 @@ export default function Edit({
                                                         <span className="block max-w-[46px] truncate text-center text-[7px] font-black leading-tight text-white uppercase sm:max-w-[60px] sm:text-[9px]">
                                                             {p.last_name}
                                                         </span>
-                                                        <div className="flex justify-center gap-0.5 mt-0.5">
-                                                            {(data.player_instructions[p.id] || []).slice(0, 3).map(inst => (
-                                                                <div key={inst} className="w-1 h-1 rounded-full bg-cyan-400" />
-                                                            ))}
-                                                        </div>
+                                                        {(data.player_instructions[p.id] || []).length > 0 && (
+                                                            <div className="mt-1 flex max-w-[72px] flex-wrap justify-center gap-1">
+                                                                {instructionLabelsForPlayer(data.player_instructions[p.id]).slice(0, 2).map((instruction) => (
+                                                                    <span
+                                                                        key={instruction.id}
+                                                                        className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-1 py-0.5 text-[6px] font-black uppercase tracking-[0.08em] text-cyan-200"
+                                                                    >
+                                                                        {instruction.label}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -1147,6 +1330,11 @@ export default function Edit({
                                                     <>
                                                         <span className="text-xs font-black text-white leading-none mb-1">{p.shirt_number}</span>
                                                         <span className="text-[8px] font-black text-slate-500 uppercase truncate max-w-[50px]">{p.last_name}</span>
+                                                        {(data.player_instructions[p.id] || []).length > 0 && (
+                                                            <span className="mt-1 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-1.5 py-0.5 text-[6px] font-black uppercase tracking-[0.08em] text-cyan-200">
+                                                                {instructionLabelsForPlayer(data.player_instructions[p.id])[0]?.label}
+                                                            </span>
+                                                        )}
                                                         <button 
                                                             type="button"
                                                             onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }}
@@ -1172,9 +1360,9 @@ export default function Edit({
                 isOpen={radialMenu.isOpen}
                 onClose={() => setRadialMenu({ ...radialMenu, isOpen: false })}
                 playerId={radialMenu.playerId}
-                selectedInstructions={data.player_instructions[radialMenu.playerId] || []}
-                onToggleInstruction={(instId) => handleInstructionToggle(radialMenu.playerId, instId)}
-                position={radialMenu.slot}
+                activeInstructions={data.player_instructions[radialMenu.playerId] || []}
+                onSelect={(instId) => handleInstructionToggle(radialMenu.playerId, instId)}
+                playerPosition={slotByKey[radialMenu.slot]?.group ?? 'MID'}
             />
         </AuthenticatedLayout>
     );

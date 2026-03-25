@@ -31,14 +31,34 @@ const INSTRUCTIONS = {
     ]
 };
 
-const RadialMenu = ({ isOpen, onClose, onSelect, activeInstructions = [], playerPosition = 'MID' }) => {
+export const INSTRUCTION_LABELS = Object.values(INSTRUCTIONS)
+    .flat()
+    .reduce((map, instruction) => ({
+        ...map,
+        [instruction.id]: instruction.label,
+    }), {});
+
+const RadialMenu = ({
+    isOpen,
+    onClose,
+    onSelect,
+    onToggleInstruction,
+    activeInstructions = [],
+    selectedInstructions = [],
+    playerPosition = 'MID',
+    position,
+}) => {
     if (!isOpen) return null;
 
     // Determine which instructions to show based on position group
+    const normalizedPosition = position || playerPosition;
     let currentInstructions = INSTRUCTIONS.MIDFIELD;
-    if (playerPosition === 'GK') currentInstructions = []; // No special instructions for GK for now
-    else if (playerPosition === 'DEF') currentInstructions = [ ...INSTRUCTIONS.DEFENSIVE, ...INSTRUCTIONS.MIDFIELD.slice(-1) ];
-    else if (playerPosition === 'FWD') currentInstructions = [ ...INSTRUCTIONS.ATTACKING, ...INSTRUCTIONS.MIDFIELD.slice(-1) ];
+    if (normalizedPosition === 'GK') currentInstructions = []; // No special instructions for GK for now
+    else if (normalizedPosition === 'DEF') currentInstructions = [ ...INSTRUCTIONS.DEFENSIVE, ...INSTRUCTIONS.MIDFIELD.slice(-1) ];
+    else if (normalizedPosition === 'FWD') currentInstructions = [ ...INSTRUCTIONS.ATTACKING, ...INSTRUCTIONS.MIDFIELD.slice(-1) ];
+
+    const resolvedInstructions = activeInstructions.length > 0 ? activeInstructions : selectedInstructions;
+    const handleSelect = onSelect || onToggleInstruction;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in zoom-in duration-200">
@@ -60,12 +80,12 @@ const RadialMenu = ({ isOpen, onClose, onSelect, activeInstructions = [], player
                     const x = Math.cos((angle - 90) * (Math.PI / 180)) * radius;
                     const y = Math.sin((angle - 90) * (Math.PI / 180)) * radius;
                     
-                    const isActive = activeInstructions.includes(item.id);
+                    const isActive = resolvedInstructions.includes(item.id);
 
                     return (
                         <button
                             key={item.id}
-                            onClick={() => onSelect(item.id)}
+                            onClick={() => handleSelect?.(item.id)}
                             className={`absolute z-40 group flex flex-col items-center justify-center transition-all duration-300 transform hover:scale-110`}
                             style={{ 
                                 left: `calc(50% + ${x}px)`, 
