@@ -79,6 +79,49 @@ const ATTRIBUTE_LABELS = {
     potential: 'Potential',
 };
 
+const MARKING_STRATEGY_OPTIONS = [
+    {
+        value: 'zonal',
+        label: 'Raumdeckung',
+        description: 'Stabil im Raum, gut fuer klare Zonen und zweite Baelle.',
+    },
+    {
+        value: 'player',
+        label: 'Manndeckung',
+        description: 'Direkter Zugriff auf Gegenspieler, aber anfaelliger fuer Chaos.',
+    },
+    {
+        value: 'hybrid',
+        label: 'Hybrid',
+        description: 'Mischt Raum und Mann fuer mehr Balance bei Standards.',
+    },
+];
+
+const MENTALITY_OPTIONS = [
+    { value: 'very_defensive', label: 'Sehr Defensiv', tone: 'Absichern' },
+    { value: 'defensive', label: 'Defensiv', tone: 'Kontrolliert' },
+    { value: 'normal', label: 'Normal', tone: 'Ausgewogen' },
+    { value: 'offensive', label: 'Offensiv', tone: 'Mutig' },
+    { value: 'very_offensive', label: 'Sehr Offensiv', tone: 'Volles Risiko' },
+];
+
+const PRESSING_LABELS = {
+    low: 'Wenig',
+    normal: 'Normal',
+    high: 'Hoch',
+    extreme: 'Extrem',
+};
+
+const LINE_HEIGHT_UI = {
+    '20': 'Sehr Tief',
+    '30': 'Tief',
+    '40': 'Kompakt',
+    '50': 'Normal',
+    '60': 'Hoch',
+    '70': 'Sehr Hoch',
+    '80': 'Maximal',
+};
+
 const POSITION_GROUPS = [
     { key: 'GK', label: 'Torwart' },
     { key: 'DEF', label: 'Abwehr' },
@@ -366,7 +409,7 @@ export default function Edit({
     const [assigningPlayerId, setAssigningPlayerId] = useState(null);
     const [activeTab, setActiveTab] = useState('kader'); // kader, taktik, spezial
     const [radialMenu, setRadialMenu] = useState({ isOpen: false, playerId: null, slot: null });
-    const [explainExpanded, setExplainExpanded] = useState(true);
+    const [explainExpanded, setExplainExpanded] = useState(false);
 
     const handleInstructionToggle = (playerId, instructionId) => {
         const current = data.player_instructions[playerId] || [];
@@ -949,22 +992,39 @@ export default function Edit({
                                                 <Strategy size={14} weight="bold" />
                                                 Grundordnung
                                             </h4>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Formation</label>
-                                                    <select value={data.formation} onChange={e => setData('formation', e.target.value)} className="sim-select w-full text-xs">
+                                            <div className="grid gap-3">
+                                                <div className="rounded-2xl border border-amber-400/10 bg-gradient-to-br from-amber-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                    <div className="mb-2 flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <div className="text-[9px] font-black uppercase tracking-[0.28em] text-amber-500/70">Struktur am Ball</div>
+                                                            <label className="mt-1 block text-[11px] font-black uppercase tracking-wider text-slate-100">Formation</label>
+                                                        </div>
+                                                        <div className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-amber-200">
+                                                            {data.formation}
+                                                        </div>
+                                                    </div>
+                                                    <select value={data.formation} onChange={e => setData('formation', e.target.value)} className="sim-select w-full border-amber-500/20 bg-[#08111f]/90 text-xs">
                                                         {formations.map(f => <option key={f} value={f}>{f}</option>)}
                                                     </select>
                                                 </div>
-                                                <div>
-                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Mentalität</label>
-                                                    <select value={data.mentality} onChange={e => setData('mentality', e.target.value)} className="sim-select w-full text-xs">
-                                                        <option value="very_defensive">Sehr Defensiv</option>
-                                                        <option value="defensive">Defensiv</option>
-                                                        <option value="normal">Normal</option>
-                                                        <option value="offensive">Offensiv</option>
-                                                        <option value="very_offensive">Sehr Offensiv</option>
+                                                <div className="rounded-2xl border border-amber-400/10 bg-gradient-to-br from-amber-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                    <div className="mb-2 flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <div className="text-[9px] font-black uppercase tracking-[0.28em] text-amber-500/70">Risiko & Haltung</div>
+                                                            <label className="mt-1 block text-[11px] font-black uppercase tracking-wider text-slate-100">Mentalität</label>
+                                                        </div>
+                                                        <div className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-amber-200">
+                                                            {MENTALITY_OPTIONS.find(option => option.value === data.mentality)?.label || 'Normal'}
+                                                        </div>
+                                                    </div>
+                                                    <select value={data.mentality} onChange={e => setData('mentality', e.target.value)} className="sim-select w-full border-amber-500/20 bg-[#08111f]/90 text-xs">
+                                                        {MENTALITY_OPTIONS.map(option => (
+                                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                                        ))}
                                                     </select>
+                                                    <div className="mt-2 text-[10px] text-amber-100/70">
+                                                        {MENTALITY_OPTIONS.find(option => option.value === data.mentality)?.tone || 'Ausgewogen'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -974,54 +1034,127 @@ export default function Edit({
                                                 <Target size={14} weight="bold" />
                                                 Defensiv-Taktik
                                             </h4>
-                                            <div className="space-y-5">
-                                                <div>
-                                                    <div className="flex justify-between items-center mb-1.5">
-                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pressing-Intensität</label>
-                                                        <span className="text-[9px] font-black text-rose-500 uppercase">
-                                                            {data.pressing_intensity === 'low' ? 'Wenig' : data.pressing_intensity === 'high' ? 'Extrem' : 'Normal'}
+                                            <div className="space-y-4">
+                                                <div className="rounded-2xl border border-rose-400/10 bg-gradient-to-br from-rose-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <label className="text-[9px] font-black uppercase tracking-[0.28em] text-rose-300">Pressing-Intensität</label>
+                                                        <span className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-rose-200">
+                                                            {PRESSING_LABELS[data.pressing_intensity] || 'Normal'}
                                                         </span>
                                                     </div>
-                                                    <input 
-                                                        type="range" min="low" max="high" step="1"
-                                                        value={data.pressing_intensity}
-                                                        onChange={e => setData('pressing_intensity', e.target.value)}
-                                                        className="w-full accent-rose-500 opacity-70" 
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="4"
+                                                        step="1"
+                                                        value={{ low: 1, normal: 2, high: 3, extreme: 4 }[data.pressing_intensity] ?? 2}
+                                                        onChange={e => setData('pressing_intensity', ({ 1: 'low', 2: 'normal', 3: 'high', 4: 'extreme' }[e.target.value] || 'normal'))}
+                                                        className="w-full accent-rose-500"
                                                     />
+                                                    <div className="mt-2 flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
+                                                        <span>Passiv</span>
+                                                        <span>Extrem</span>
+                                                    </div>
                                                 </div>
 
-                                                <div>
-                                                    <div className="flex justify-between items-center mb-1.5">
-                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Abwehrlinie</label>
-                                                        <span className="text-[9px] font-black text-amber-500 uppercase">{data.line_height}%</span>
+                                                <div className="rounded-2xl border border-amber-400/10 bg-gradient-to-br from-amber-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <label className="text-[9px] font-black uppercase tracking-[0.28em] text-amber-300">Abwehrlinie</label>
+                                                        <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-amber-200">
+                                                            {LINE_HEIGHT_UI[String(data.line_height)] || `${data.line_height}%`}
+                                                        </span>
                                                     </div>
-                                                    <input 
-                                                        type="range" min="20" max="80"
+                                                    <input
+                                                        type="range"
+                                                        min="20"
+                                                        max="80"
+                                                        step="10"
                                                         value={data.line_height}
                                                         onChange={e => setData('line_height', e.target.value)}
-                                                        className="w-full accent-amber-500 opacity-70" 
+                                                        className="w-full accent-amber-500"
                                                     />
+                                                    <div className="mt-2 flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
+                                                        <span>Tief</span>
+                                                        <span>Hoch</span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex gap-2">
+                                                <div className="grid grid-cols-2 gap-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => setData('offside_trap', !data.offside_trap)}
-                                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                                                            data.offside_trap ? 'border-amber-500/40 bg-amber-500/10 text-amber-500' : 'border-white/5 bg-white/5 text-slate-500'
+                                                        className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                                                            data.offside_trap ? 'border-amber-500/40 bg-amber-500/10 text-amber-200' : 'border-white/6 bg-white/[0.04] text-slate-500 hover:border-white/12'
                                                         }`}
                                                     >
-                                                        Abseitsfalle
+                                                        <div className="text-[10px] font-black uppercase tracking-widest">Abseitsfalle</div>
+                                                        <div className="mt-1 text-[10px] leading-4 opacity-80">Linie schiebt aggressiver nach vorne.</div>
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => setData('time_wasting', !data.time_wasting)}
-                                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                                                            data.time_wasting ? 'border-amber-500/40 bg-amber-500/10 text-amber-500' : 'border-white/5 bg-white/5 text-slate-500'
+                                                        className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                                                            data.time_wasting ? 'border-amber-500/40 bg-amber-500/10 text-amber-200' : 'border-white/6 bg-white/[0.04] text-slate-500 hover:border-white/12'
                                                         }`}
                                                     >
-                                                        Zeitspiel
+                                                        <div className="text-[10px] font-black uppercase tracking-widest">Zeitspiel</div>
+                                                        <div className="mt-1 text-[10px] leading-4 opacity-80">Mehr Kontrolle, weniger offenes Tempo.</div>
                                                     </button>
+                                                </div>
+
+                                                <div className="rounded-2xl border border-white/6 bg-white/[0.03] p-3 sm:p-4">
+                                                    <div className="mb-3">
+                                                        <div className="text-[9px] font-black uppercase tracking-[0.28em] text-slate-500">Standards gegen uns</div>
+                                                        <div className="mt-1 text-[11px] font-black uppercase tracking-wider text-slate-100">Manndeckung & Varianten</div>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {[
+                                                            { key: 'corner_marking_strategy', label: 'Eckball-Verteidigung' },
+                                                            { key: 'free_kick_marking_strategy', label: 'Freistoß-Verteidigung' },
+                                                        ].map(section => (
+                                                            <div key={section.key}>
+                                                                <div className="mb-2 flex items-center justify-between gap-3">
+                                                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">{section.label}</div>
+                                                                    <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300">
+                                                                        {MARKING_STRATEGY_OPTIONS.find(option => option.value === data[section.key])?.label || 'Auto'}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid gap-2">
+                                                                    {MARKING_STRATEGY_OPTIONS.map(option => {
+                                                                        const active = data[section.key] === option.value;
+                                                                        return (
+                                                                            <button
+                                                                                key={`${section.key}-${option.value}`}
+                                                                                type="button"
+                                                                                onClick={() => setData(section.key, option.value)}
+                                                                                className={`flex w-full items-start justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition-all ${
+                                                                                    active
+                                                                                        ? 'border-emerald-400/40 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(52,211,153,0.12)]'
+                                                                                        : 'border-white/6 bg-[#10182d]/80 hover:border-white/12 hover:bg-white/[0.05]'
+                                                                                }`}
+                                                                            >
+                                                                                <div>
+                                                                                    <div className={`text-[11px] font-black uppercase tracking-wide ${active ? 'text-emerald-200' : 'text-slate-100'}`}>
+                                                                                        {option.label}
+                                                                                    </div>
+                                                                                    <div className={`mt-1 text-[10px] leading-4 ${active ? 'text-emerald-100/80' : 'text-slate-400'}`}>
+                                                                                        {option.description}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                                                                                    active
+                                                                                        ? 'border-emerald-300/40 bg-emerald-300/15 text-emerald-200'
+                                                                                        : 'border-white/10 bg-white/[0.04] text-slate-500'
+                                                                                }`}>
+                                                                                    <CheckCircle size={14} weight={active ? 'fill' : 'regular'} />
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1035,15 +1168,27 @@ export default function Edit({
                                                 <Target size={14} weight="bold" />
                                                 Standardschützen
                                             </h4>
-                                            <div className="space-y-3">
+                                            <div className="grid gap-3">
                                                 {[
                                                     { label: 'Elfmeter', key: 'penalty_taker_player_id' },
                                                     { label: 'Freistöße', key: 'free_kick_near_player_id' },
                                                     { label: 'Ecken', key: 'corner_left_taker_player_id' }
                                                 ].map(role => (
-                                                    <div key={role.key}>
-                                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{role.label}</label>
-                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full text-[10px]">
+                                                    <div key={role.key} className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-cyan-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                        <div className="mb-2 flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <div className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-500/70">
+                                                                    {role.key === 'penalty_taker_player_id' ? 'Direkter Abschluss' : role.key === 'free_kick_near_player_id' ? 'Nahe Distanz' : 'Linke Seite'}
+                                                                </div>
+                                                                <label className="mt-1 block text-[11px] font-black uppercase tracking-wider text-slate-100">{role.label}</label>
+                                                            </div>
+                                                            <div className="max-w-[52%] truncate rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-200">
+                                                                {data[role.key]
+                                                                    ? (getPlayer(data[role.key])?.last_name || getPlayer(data[role.key])?.full_name || 'Auto')
+                                                                    : 'Auto'}
+                                                            </div>
+                                                        </div>
+                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full border-cyan-500/20 bg-[#08111f]/90 text-[10px]">
                                                             <option value="">- Auto -</option>
                                                             {Array.from(selectedPlayerIds).map(id => {
                                                                 const p = getPlayer(id);
@@ -1060,14 +1205,26 @@ export default function Edit({
                                                 <Target size={14} weight="bold" />
                                                 Weitere Standards
                                             </h4>
-                                            <div className="space-y-3">
+                                            <div className="grid gap-3">
                                                 {[
                                                     { label: 'Freistoss Fern', key: 'free_kick_far_player_id' },
                                                     { label: 'Ecke Rechts', key: 'corner_right_taker_player_id' },
                                                 ].map(role => (
-                                                    <div key={role.key}>
-                                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{role.label}</label>
-                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full text-[10px]">
+                                                    <div key={role.key} className="rounded-2xl border border-sky-400/10 bg-gradient-to-br from-sky-500/[0.06] via-[#0f1728] to-[#0a1020] p-3 sm:p-4">
+                                                        <div className="mb-2 flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <div className="text-[9px] font-black uppercase tracking-[0.28em] text-sky-500/70">
+                                                                    {role.key === 'free_kick_far_player_id' ? 'Weite Distanz' : 'Rechte Seite'}
+                                                                </div>
+                                                                <label className="mt-1 block text-[11px] font-black uppercase tracking-wider text-slate-100">{role.label}</label>
+                                                            </div>
+                                                            <div className="max-w-[52%] truncate rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-sky-200">
+                                                                {data[role.key]
+                                                                    ? (getPlayer(data[role.key])?.last_name || getPlayer(data[role.key])?.full_name || 'Auto')
+                                                                    : 'Auto'}
+                                                            </div>
+                                                        </div>
+                                                        <select value={data[role.key] || ''} onChange={e => setData(role.key, e.target.value)} className="sim-select w-full border-sky-500/20 bg-[#08111f]/90 text-[10px]">
                                                             <option value="">- Auto -</option>
                                                             {Array.from(selectedPlayerIds).map(id => {
                                                                 const p = getPlayer(id);
@@ -1076,40 +1233,6 @@ export default function Edit({
                                                         </select>
                                                     </div>
                                                 ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
-                                            <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                                <Shield size={14} weight="bold" />
-                                                Varianten & Verteidigung
-                                            </h4>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Eckball-Verteidigung</label>
-                                                    <select
-                                                        value={data.corner_marking_strategy}
-                                                        onChange={e => setData('corner_marking_strategy', e.target.value)}
-                                                        className="sim-select w-full text-[10px]"
-                                                    >
-                                                        <option value="zonal">Raumdeckung</option>
-                                                        <option value="player">Manndeckung</option>
-                                                        <option value="hybrid">Hybrid</option>
-                                                    </select>
-                                                </div>
-
-                                                <div>
-                                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Freistoss-Verteidigung</label>
-                                                    <select
-                                                        value={data.free_kick_marking_strategy}
-                                                        onChange={e => setData('free_kick_marking_strategy', e.target.value)}
-                                                        className="sim-select w-full text-[10px]"
-                                                    >
-                                                        <option value="zonal">Raumdeckung</option>
-                                                        <option value="player">Manndeckung</option>
-                                                        <option value="hybrid">Hybrid</option>
-                                                    </select>
-                                                </div>
                                             </div>
                                         </div>
 

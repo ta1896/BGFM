@@ -1,18 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Lightning, Play } from '@phosphor-icons/react';
 import {
     HighlightsTab,
     OverviewTab,
     LineupPitch,
+    Live2DTab,
+    LiveTableTab,
     MatchTabs,
     PlayersTab,
     ScoreHero,
     StatsTab,
     TickerTab,
-    LiveTableTab,
 } from '@/Pages/Matches/components/MatchCenterSections';
+import LiveLineupEditorTab from '@/Pages/Matches/components/LiveLineupEditorTab';
 
 export default function Show({
     id,
@@ -39,8 +41,13 @@ export default function Show({
     manageable_club_ids,
     module_panels,
     live_table,
+    live_lineup_editor,
+    live_pitch,
 }) {
+    const { activeClub } = usePage().props;
     const [tab, setTab] = useState(status === 'scheduled' ? 'overview' : 'ticker');
+    const [commandBusy, setCommandBusy] = useState(false);
+    const [liveCommandFeedback, setLiveCommandFeedback] = useState(null);
     const [liveState, setLiveState] = useState({
         status,
         live_minute,
@@ -53,6 +60,9 @@ export default function Show({
         planned_substitutions,
         live_table,
         module_panels,
+        lineups,
+        live_lineup_editor,
+        live_pitch,
     });
     const fetchState = useCallback(async () => {
         try {
@@ -81,6 +91,9 @@ export default function Show({
                 planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
                 live_table: data.live_table || prev.live_table,
                 module_panels: data.module_panels || prev.module_panels,
+                lineups: data.lineups || prev.lineups,
+                live_lineup_editor: data.live_lineup_editor || prev.live_lineup_editor,
+                live_pitch: data.live_pitch || prev.live_pitch,
             }));
         } catch {}
     }, [id]);
@@ -105,6 +118,7 @@ export default function Show({
     const simulate = () => router.post(route('matches.simulate', id));
     const startLive = () => router.post(route('matches.live-start', id));
     const postMatchCommand = useCallback(async (routeName, payload) => {
+        setCommandBusy(true);
         try {
             const response = await fetch(route(routeName, id), {
                 method: 'POST',
@@ -118,10 +132,18 @@ export default function Show({
             });
 
             if (!response.ok) {
+                let message = 'Aktion konnte nicht angewendet werden.';
+                try {
+                    const errorData = await response.json();
+                    const firstError = Object.values(errorData?.errors || {}).flat()[0];
+                    message = firstError || errorData?.message || message;
+                } catch {}
+                setLiveCommandFeedback({ type: 'error', message });
                 return;
             }
 
             const data = await response.json();
+            setLiveCommandFeedback({ type: 'success', message: data?.status || 'Aenderung uebernommen.' });
             setLiveState((prev) => ({
                 ...prev,
                 ...data,
@@ -132,16 +154,28 @@ export default function Show({
                 planned_substitutions: data.planned_substitutions || prev.planned_substitutions,
                 live_table: data.live_table || prev.live_table,
                 module_panels: data.module_panels || prev.module_panels,
+                lineups: data.lineups || prev.lineups,
+                live_lineup_editor: data.live_lineup_editor || prev.live_lineup_editor,
+                live_pitch: data.live_pitch || prev.live_pitch,
             }));
-        } catch {}
+        } catch {
+            setLiveCommandFeedback({ type: 'error', message: 'Netzwerkfehler beim Anwenden der Live-Aktion.' });
+        } finally {
+            setCommandBusy(false);
+        }
     }, [id]);
 
     const homeState = liveState.team_states?.[String(home_club?.id)];
     const awayState = liveState.team_states?.[String(away_club?.id)];
-    const homeLineup = lineups?.[String(home_club?.id)];
-    const awayLineup = lineups?.[String(away_club?.id)];
+    const homeLineup = liveState.lineups?.[String(home_club?.id)];
+    const awayLineup = liveState.lineups?.[String(away_club?.id)];
     const allActions = liveState.actions || [];
     const highlightCount = allActions.filter((action) => ['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution'].includes(action.action_type)).length;
+    const activeClubId = Number(activeClub?.id || 0);
+    const canManageLiveLineup = activeClubId > 0
+        && manageable_club_ids?.includes(activeClubId)
+        && [home_club?.id, away_club?.id].includes(activeClubId)
+        && !['scheduled', 'played'].includes(liveState.status);
 
     const tabs = [
         ...(liveState.status === 'scheduled' ? [
@@ -149,8 +183,10 @@ export default function Show({
         ] : [
             { key: 'ticker', label: 'Ticker', count: allActions.length },
             { key: 'highlights', label: 'Highlight', count: highlightCount },
+            { key: '2d', label: '2D' },
             { key: 'overview', label: 'Uebersicht' },
             { key: 'lineup', label: 'Aufstellung' },
+            ...(canManageLiveLineup ? [{ key: 'live-lineup', label: 'Live-Taktik' }] : []),
             { key: 'stats', label: 'Statistiken' },
             ...(liveState.live_table?.rows?.length ? [{ key: 'live-table', label: 'Livetabelle' }] : []),
             { key: 'players', label: 'Spieler' },
@@ -223,6 +259,16 @@ export default function Show({
                         />
                     )}
 
+                    {tab === '2d' && liveState.status !== 'scheduled' && (
+                        <Live2DTab
+                            homeClub={home_club}
+                            awayClub={away_club}
+                            livePitch={liveState.live_pitch}
+                            liveMinute={liveState.live_minute}
+                            displayMinute={liveState.display_minute}
+                        />
+                    )}
+
                     {tab === 'lineup' && liveState.status !== 'scheduled' && (
                         <div className="sim-card p-6">
                             <LineupPitch
@@ -233,6 +279,20 @@ export default function Show({
                                 livePlayerStates={liveState.player_states}
                             />
                         </div>
+                    )}
+
+                    {tab === 'live-lineup' && canManageLiveLineup && (
+                        <LiveLineupEditorTab
+                            clubs={[home_club, away_club]}
+                            lineups={liveState.lineups}
+                            manageableClubIds={manageable_club_ids}
+                            liveLineupEditor={liveState.live_lineup_editor}
+                            teamStates={liveState.team_states}
+                            busy={commandBusy}
+                            feedback={liveCommandFeedback}
+                            onSync={(clubId, payload) => postMatchCommand('matches.live.lineup.sync', { club_id: clubId, ...payload })}
+                            onSubstitute={(clubId, payload) => postMatchCommand('matches.live.substitute', { club_id: clubId, ...payload })}
+                        />
                     )}
 
                     {tab === 'stats' && liveState.status !== 'scheduled' && <StatsTab homeState={homeState} awayState={awayState} />}

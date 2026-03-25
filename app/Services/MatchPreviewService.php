@@ -101,6 +101,8 @@ class MatchPreviewService
                     'fit_factor' => round($fitFactor, 2),
                     'overall' => (int) $player->overall,
                     'photo_url' => $player->photo_url,
+                    'is_captain' => (bool) $player->pivot->is_captain,
+                    'instructions' => $this->normalizeInstructions($player->pivot->instructions ?? null),
                 ];
 
                 $layout = $slotLayouts->get(strtoupper($slot));
@@ -120,7 +122,26 @@ class MatchPreviewService
                 'club_id' => $clubId,
                 'formation' => $formation,
                 'tactical_style' => $lineup ? (string) $lineup->tactical_style : 'balanced',
+                'mentality' => $lineup ? (string) ($lineup->mentality ?? 'normal') : 'normal',
+                'aggression' => $lineup ? (string) ($lineup->aggression ?? 'normal') : 'normal',
+                'line_height' => $lineup ? (string) ($lineup->line_height ?? 'normal') : 'normal',
                 'attack_focus' => $lineup ? (string) $lineup->attack_focus : 'center',
+                'offside_trap' => $lineup ? (bool) $lineup->offside_trap : false,
+                'time_wasting' => $lineup ? (bool) $lineup->time_wasting : false,
+                'pressing_intensity' => $lineup ? (string) ($lineup->pressing_intensity ?? 'normal') : 'normal',
+                'line_of_engagement' => $lineup ? (string) ($lineup->line_of_engagement ?? 'normal') : 'normal',
+                'pressing_trap' => $lineup ? (string) ($lineup->pressing_trap ?? 'none') : 'none',
+                'cross_engagement' => $lineup ? (string) ($lineup->cross_engagement ?? 'none') : 'none',
+                'corner_marking_strategy' => $lineup ? (string) ($lineup->corner_marking_strategy ?? 'zonal') : 'zonal',
+                'free_kick_marking_strategy' => $lineup ? (string) ($lineup->free_kick_marking_strategy ?? 'zonal') : 'zonal',
+                'captain_player_id' => $lineup ? (int) ($lineup->players->firstWhere('pivot.is_captain', true)?->id ?? 0) : 0,
+                'set_pieces' => [
+                    'penalty_taker_player_id' => $lineup ? (int) ($lineup->penalty_taker_player_id ?? 0) : 0,
+                    'free_kick_near_player_id' => $lineup ? (int) ($lineup->free_kick_near_player_id ?? 0) : 0,
+                    'free_kick_far_player_id' => $lineup ? (int) ($lineup->free_kick_far_player_id ?? 0) : 0,
+                    'corner_left_taker_player_id' => $lineup ? (int) ($lineup->corner_left_taker_player_id ?? 0) : 0,
+                    'corner_right_taker_player_id' => $lineup ? (int) ($lineup->corner_right_taker_player_id ?? 0) : 0,
+                ],
                 'starters' => $mappedPlayers
                     ->where('is_bench', false)
                     ->where('is_removed', false)
@@ -142,6 +163,23 @@ class MatchPreviewService
         }
 
         return $lineups;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function normalizeInstructions(mixed $instructions): array
+    {
+        if (is_string($instructions)) {
+            $decoded = json_decode($instructions, true);
+            return is_array($decoded) ? array_values(array_map('strval', $decoded)) : [];
+        }
+
+        if (is_array($instructions)) {
+            return array_values(array_map('strval', $instructions));
+        }
+
+        return [];
     }
 
     private function comparisonMetrics(Club $club): array

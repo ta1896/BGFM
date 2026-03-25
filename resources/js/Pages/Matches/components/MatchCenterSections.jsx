@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import {
     SoccerBall,
@@ -1146,6 +1146,293 @@ export const LineupPitch = ({ homeClub, awayClub, homeLineup, awayLineup, livePl
         <HalfPitch club={awayClub} lineup={awayLineup} accent="gold" livePlayerStates={livePlayerStates} />
     </div>
 );
+
+const FULL_PITCH_ZONE_STRIPES = [
+    { left: '0%', width: '33.333%', className: 'bg-cyan-500/[0.035]' },
+    { left: '33.333%', width: '33.333%', className: 'bg-white/[0.02]' },
+    { left: '66.666%', width: '33.334%', className: 'bg-amber-500/[0.035]' },
+];
+
+const FullPitchSVG = () => (
+    <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-35" viewBox="0 0 1000 600" preserveAspectRatio="none" fill="none">
+        <g stroke="white" strokeWidth="2" fill="none" opacity="0.85">
+            <rect x="1" y="1" width="998" height="598" rx="10" />
+            <line x1="500" y1="0" x2="500" y2="600" />
+            <circle cx="500" cy="300" r="70" />
+            <circle cx="500" cy="300" r="3.5" fill="white" />
+            <rect x="1" y="180" width="120" height="240" />
+            <rect x="1" y="235" width="40" height="130" />
+            <circle cx="110" cy="300" r="3.5" fill="white" />
+            <rect x="879" y="180" width="120" height="240" />
+            <rect x="959" y="235" width="40" height="130" />
+            <circle cx="890" cy="300" r="3.5" fill="white" />
+        </g>
+    </svg>
+);
+
+const actionTypeLabel = (type) => EVENT_LABELS[type] || type || 'Aktion';
+
+const get2DRowFactor = (slot = '') => {
+    const normalized = String(slot || '').toUpperCase();
+
+    if (normalized.startsWith('TW') || normalized.startsWith('GK')) return 0;
+    if (normalized.startsWith('IV') || normalized.startsWith('CB') || normalized.startsWith('LV') || normalized.startsWith('RV') || normalized.startsWith('LB') || normalized.startsWith('RB') || normalized.startsWith('LWB') || normalized.startsWith('RWB')) return 1;
+    if (normalized.startsWith('DM')) return 2;
+    if (normalized.startsWith('ZM') || normalized.startsWith('CM') || normalized.startsWith('LM') || normalized.startsWith('RM')) return 3;
+    if (normalized.startsWith('OM') || normalized.startsWith('ZOM') || normalized.startsWith('CAM') || normalized.startsWith('LAM') || normalized.startsWith('RAM')) return 4;
+    return 5;
+};
+
+const get2DWidthBias = (slot = '') => {
+    const normalized = String(slot || '').toUpperCase();
+
+    if (normalized.includes('L') && !normalized.includes('IV-R')) return -1;
+    if (normalized.includes('R') && !normalized.includes('IV-L')) return 1;
+    if (normalized.startsWith('LM') || normalized.startsWith('LF') || normalized.startsWith('LW')) return -1;
+    if (normalized.startsWith('RM') || normalized.startsWith('RF') || normalized.startsWith('RW')) return 1;
+    return 0;
+};
+
+export const Live2DTab = ({ homeClub, awayClub, livePitch, liveMinute, displayMinute }) => {
+    const players = livePitch?.players || [];
+    const ball = livePitch?.ball || { x: 50, y: 50 };
+    const trail = livePitch?.trail || [];
+    const zoneLabel = livePitch?.zone?.label || 'Keine aktive Zone';
+    const latestAction = livePitch?.latest_action;
+    const attackingClubId = livePitch?.attacking_club_id;
+    const attackingClub = attackingClubId === homeClub?.id ? homeClub : attackingClubId === awayClub?.id ? awayClub : null;
+    const zone = livePitch?.zone || null;
+    const animationPoints = useMemo(() => {
+        const orderedTrail = [...trail].reverse().map((point) => ({
+            x: Number(point.x ?? 50),
+            y: Number(point.y ?? 50),
+        }));
+
+        if (orderedTrail.length === 0) {
+            return [{ x: Number(ball.x ?? 50), y: Number(ball.y ?? 50) }];
+        }
+
+        const lastPoint = orderedTrail[orderedTrail.length - 1];
+        if (lastPoint.x !== Number(ball.x ?? 50) || lastPoint.y !== Number(ball.y ?? 50)) {
+            orderedTrail.push({ x: Number(ball.x ?? 50), y: Number(ball.y ?? 50) });
+        }
+
+        return orderedTrail;
+    }, [ball.x, ball.y, trail]);
+    const [frameIndex, setFrameIndex] = useState(Math.max(animationPoints.length - 1, 0));
+
+    useEffect(() => {
+        setFrameIndex(Math.max(animationPoints.length - 1, 0));
+    }, [animationPoints]);
+
+    useEffect(() => {
+        if (animationPoints.length <= 1) {
+            return undefined;
+        }
+
+        const interval = window.setInterval(() => {
+            setFrameIndex((current) => (current + 1) % animationPoints.length);
+        }, 650);
+
+        return () => window.clearInterval(interval);
+    }, [animationPoints]);
+
+    const animatedBall = animationPoints[frameIndex] || ball;
+
+    return (
+        <div className="grid gap-5 xl:grid-cols-[1.45fr_0.55fr]">
+            <div className="sim-card overflow-hidden p-0">
+                <div className="flex flex-wrap items-center gap-3 border-b border-white/5 bg-[var(--bg-pillar)]/60 px-5 py-4">
+                    <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">2D Live-Ansicht</div>
+                        <div className="mt-1 text-sm font-black text-white">
+                            {latestAction?.narrative?.trim() || 'Live-Szene aus der Zonenlogik'}
+                        </div>
+                    </div>
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">
+                            {formatMatchMinute(liveMinute, displayMinute)}
+                        </div>
+                        <div className="rounded-full border border-cyan-400/15 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">
+                            {zoneLabel}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative p-4 sm:p-5">
+                    <div
+                        className="relative overflow-hidden rounded-[28px] border border-emerald-400/12"
+                        style={{ minHeight: 360, background: 'radial-gradient(circle at 50% 50%, rgba(34,197,94,0.18) 0%, rgba(8,20,13,0.98) 78%)' }}
+                    >
+                        {FULL_PITCH_ZONE_STRIPES.map((stripe) => (
+                            <div
+                                key={`${stripe.left}-${stripe.width}`}
+                                className={`pointer-events-none absolute inset-y-0 ${stripe.className}`}
+                                style={{ left: stripe.left, width: stripe.width }}
+                            />
+                        ))}
+
+                        <FullPitchSVG />
+
+                        <div className="pointer-events-none absolute inset-y-0 left-[20%] w-px border-l border-dashed border-white/10" />
+                        <div className="pointer-events-none absolute inset-y-0 left-[40%] w-px border-l border-dashed border-white/8" />
+                        <div className="pointer-events-none absolute inset-y-0 left-[60%] w-px border-l border-dashed border-white/8" />
+                        <div className="pointer-events-none absolute inset-y-0 left-[80%] w-px border-l border-dashed border-white/10" />
+
+                        <div className="pointer-events-none absolute left-0 right-0 top-[20%] h-px border-t border-dashed border-white/10" />
+                        <div className="pointer-events-none absolute left-0 right-0 top-[40%] h-px border-t border-dashed border-white/8" />
+                        <div className="pointer-events-none absolute left-0 right-0 top-[60%] h-px border-t border-dashed border-white/8" />
+                        <div className="pointer-events-none absolute left-0 right-0 top-[80%] h-px border-t border-dashed border-white/10" />
+
+                        {trail.map((point, index) => (
+                            <div
+                                key={`${point.x}-${point.y}-${index}`}
+                                className={`pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border ${
+                                    point.club_id === homeClub?.id
+                                        ? 'border-cyan-300/60 bg-cyan-300/40'
+                                        : 'border-amber-300/60 bg-amber-300/40'
+                                }`}
+                                style={{ left: `${point.x}%`, top: `${point.y}%`, opacity: point.opacity }}
+                            />
+                        ))}
+
+                        {players.map((player) => (
+                            (() => {
+                                const isAttackingTeam = player.club_id === attackingClubId;
+                                const rowFactor = get2DRowFactor(player.slot);
+                                const widthBias = get2DWidthBias(player.slot);
+                                const laneShift = zone?.lane?.key === 'left_wing'
+                                    ? -6
+                                    : zone?.lane?.key === 'left_halfspace'
+                                      ? -3
+                                      : zone?.lane?.key === 'right_halfspace'
+                                        ? 3
+                                        : zone?.lane?.key === 'right_wing'
+                                          ? 6
+                                          : 0;
+                                const thirdPush = zone?.third?.key === 'build_up'
+                                    ? -4
+                                    : zone?.third?.key === 'midfield'
+                                      ? 1
+                                      : 6;
+                                const attackDepthShift = isAttackingTeam
+                                    ? Math.max(0, thirdPush - (rowFactor === 0 ? 6 : rowFactor * 0.6))
+                                    : Math.min(0, (thirdPush - 2) * 0.65 - ((5 - rowFactor) * 0.35));
+                                const compactnessShift = isAttackingTeam
+                                    ? laneShift * (0.45 + (widthBias * 0.1))
+                                    : laneShift * 0.2;
+                                const attractionX = (animatedBall.x - player.x) * (player.is_highlighted ? 0.08 : isAttackingTeam ? 0.03 : 0.018);
+                                const attractionY = (animatedBall.y - player.y) * (player.is_highlighted ? 0.08 : isAttackingTeam ? 0.028 : 0.016);
+                                const pulse = ((frameIndex + player.player_id) % 2 === 0 ? 1 : -1) * (player.is_highlighted ? 0.9 : 0.35);
+                                const stagger = ((player.player_id % 5) - 2) * 0.45;
+                                const renderX = Math.max(3, Math.min(97, player.x + attackDepthShift + attractionX + stagger));
+                                const renderY = Math.max(
+                                    4,
+                                    Math.min(96, player.y + compactnessShift + attractionY + pulse - (widthBias * laneShift * 0.08)),
+                                );
+
+                                return (
+                                    <div
+                                        key={player.player_id}
+                                        className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-linear"
+                                        style={{ left: `${renderX}%`, top: `${renderY}%` }}
+                                    >
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div
+                                                className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-black shadow-lg ${
+                                                    player.is_home
+                                                        ? 'border-cyan-300/70 bg-cyan-300/15 text-cyan-100'
+                                                        : 'border-amber-300/70 bg-amber-300/15 text-amber-100'
+                                                } ${
+                                                    player.is_highlighted ? 'ring-4 ring-white/10' : ''
+                                                } ${
+                                                    player.is_sent_off || player.is_injured ? 'opacity-45 saturate-0' : ''
+                                                }`}
+                                            >
+                                                {player.slot?.slice(0, 2) || 'SP'}
+                                                {player.is_highlighted && (
+                                                    <span className="absolute -inset-1 animate-pulse rounded-full border border-white/20" />
+                                                )}
+                                            </div>
+                                            <div className="rounded-full border border-black/20 bg-black/35 px-2 py-0.5 text-center text-[8px] font-black uppercase tracking-[0.12em] text-white/85">
+                                                {player.name?.split(' ').pop()?.slice(0, 10)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()
+                        ))}
+
+                        <div
+                            className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-linear"
+                            style={{ left: `${animatedBall.x}%`, top: `${animatedBall.y}%` }}
+                        >
+                            <div className="relative">
+                                <div className="absolute inset-0 animate-pulse rounded-full bg-white/25 blur-md" />
+                                <div className="relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.35)]">
+                                    <SoccerBall size={11} weight="fill" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="absolute left-4 top-4 rounded-2xl border border-cyan-400/15 bg-black/30 px-3 py-2 backdrop-blur">
+                            <div className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-200">Heim greift nach rechts an</div>
+                            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/65">Gast spiegelt die Formation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="sim-card p-5">
+                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Aktive Szene</div>
+                    <div className="space-y-3">
+                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                            <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Aktion</div>
+                            <div className="mt-2 text-lg font-black text-white">{actionTypeLabel(latestAction?.action_type)}</div>
+                            <div className="mt-2 text-sm text-white/75">
+                                {latestAction?.player_name || 'Kein aktiver Spieler'}{latestAction?.opponent_player_name ? ` vs ${latestAction.opponent_player_name}` : ''}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.06] p-4">
+                                <div className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-200">Zone</div>
+                                <div className="mt-2 text-sm font-black text-white">{zoneLabel}</div>
+                            </div>
+                            <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] p-4">
+                                <div className="text-[9px] font-black uppercase tracking-[0.16em] text-amber-200">Ballbesitz</div>
+                                <div className="mt-2 text-sm font-black text-white">{attackingClub?.short_name || attackingClub?.name || 'Offen'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="sim-card p-5">
+                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Legende</div>
+                    <div className="space-y-2.5 text-[11px] text-white/75">
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex h-3 w-3 rounded-full border border-cyan-300/70 bg-cyan-300/20" />
+                            Heimspieler
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex h-3 w-3 rounded-full border border-amber-300/70 bg-amber-300/20" />
+                            Gastspieler
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex h-3 w-3 rounded-full border border-white bg-white" />
+                            Ballposition
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex h-3 w-3 rounded-full border border-white/40 bg-white/10 ring-2 ring-white/10" />
+                            Aktive Szene
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export const KeyEventsStrip = ({ actions = [] }) => {
     if (actions.length === 0) {

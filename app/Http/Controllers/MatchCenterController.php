@@ -8,7 +8,9 @@ use App\Services\LiveMatchTickerService;
 use App\Services\MatchCenterPanelService;
 use App\Services\MatchPreviewService;
 use App\Services\MatchCenterStateService;
+use App\Services\MatchLiveLineupService;
 use App\Services\MatchSimulationService;
+use App\Services\FormationPlannerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -240,6 +242,55 @@ class MatchCenterController extends Controller
         ));
     }
 
+    public function liveSyncLineup(
+        Request $request,
+        GameMatch $match,
+        MatchLiveLineupService $matchLiveLineupService
+    ): JsonResponse {
+        $manageableClubIds = $this->manageableClubIds($request, $match);
+        $validated = $request->validate([
+            'club_id' => ['required', 'integer'],
+            'formation' => ['required', 'string', 'max:20'],
+            'mentality' => ['nullable', 'string', 'in:defensive,counter,normal,offensive,all_out'],
+            'aggression' => ['nullable', 'string', 'in:cautious,normal,aggressive'],
+            'line_height' => ['nullable', 'string', 'in:deep,normal,high,very_high'],
+            'attack_focus' => ['nullable', 'string', 'in:center,left,right,both_wings'],
+            'offside_trap' => ['nullable', 'boolean'],
+            'time_wasting' => ['nullable', 'boolean'],
+            'captain_player_id' => ['nullable', 'integer'],
+            'penalty_taker_player_id' => ['nullable', 'integer'],
+            'free_kick_near_player_id' => ['nullable', 'integer'],
+            'free_kick_far_player_id' => ['nullable', 'integer'],
+            'corner_left_taker_player_id' => ['nullable', 'integer'],
+            'corner_right_taker_player_id' => ['nullable', 'integer'],
+            'corner_marking_strategy' => ['nullable', 'string', 'in:zonal,player,hybrid'],
+            'free_kick_marking_strategy' => ['nullable', 'string', 'in:zonal,player,hybrid'],
+            'pressing_intensity' => ['nullable', 'string', 'in:low,normal,high,extreme'],
+            'line_of_engagement' => ['nullable', 'string', 'in:deep,normal,high'],
+            'pressing_trap' => ['nullable', 'string', 'in:none,inside,outside'],
+            'cross_engagement' => ['nullable', 'string', 'in:none,stop,invite'],
+            'starter_slots' => ['required', 'array'],
+            'bench_slots' => ['nullable', 'array'],
+            'player_instructions' => ['nullable', 'array'],
+        ]);
+
+        $clubId = (int) $validated['club_id'];
+        abort_unless(in_array($clubId, $manageableClubIds, true), 403);
+
+        $matchLiveLineupService->sync($match, $clubId, $validated);
+        $match->refresh();
+        $this->loadMatchStateRelations($match, false);
+
+        return response()->json($this->statePayload(
+            $request,
+            $match,
+            app(LeagueTableService::class),
+            app(MatchPreviewService::class),
+            app(MatchCenterStateService::class),
+            app(MatchCenterPanelService::class),
+        ));
+    }
+
     public function liveState(Request $request, GameMatch $match): JsonResponse
     {
         $this->ensureReadable($request, $match);
@@ -305,7 +356,7 @@ class MatchCenterController extends Controller
             'events.club',
             'playerStats:id,match_id,player_id,club_id,rating,goals,assists,minutes_played,shots',
             'playerStats.player:id,first_name,last_name',
-            'liveTeamStates:id,match_id,club_id,tactical_style,phase,possession_seconds,actions_count,dangerous_attacks,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,corners_won,shots,shots_on_target,expected_goals,yellow_cards,red_cards,substitutions_used,tactical_changes_count,last_tactical_change_minute,last_substitution_minute',
+            'liveTeamStates:id,match_id,club_id,tactical_style,phase,possession_seconds,actions_count,dangerous_attacks,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,corners_won,shots,shots_on_target,expected_goals,yellow_cards,red_cards,substitutions_used,tactical_changes_count,last_tactical_change_minute,last_substitution_minute,current_ball_carrier_player_id,last_set_piece_taker_player_id,last_set_piece_type,last_set_piece_minute',
             'livePlayerStates:id,match_id,club_id,player_id,slot,is_on_pitch,is_sent_off,is_injured,fit_factor,minutes_played,ball_contacts,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,fouls_suffered,shots,shots_on_target,goals,assists,yellow_cards,red_cards,saves',
             'livePlayerStates.player:id,first_name,last_name,photo_path',
             'liveActions:id,match_id,club_id,player_id,opponent_player_id,minute,second,sequence,action_type,outcome,narrative,x_coord,y_coord,metadata',
@@ -341,8 +392,24 @@ class MatchCenterController extends Controller
         );
 
         $payload['module_panels'] = $matchCenterPanelService->build($match, $payload);
+        $payload['live_lineup_editor'] = $this->liveLineupEditorPayload(app(FormationPlannerService::class));
 
         return $payload;
+    }
+
+    private function liveLineupEditorPayload(FormationPlannerService $formationPlanner): array
+    {
+        $formations = $formationPlanner->supportedFormations();
+
+        return [
+            'formations' => $formations,
+            'slots_by_formation' => collect($formations)
+                ->mapWithKeys(fn (string $formation): array => [
+                    $formation => $formationPlanner->starterSlots($formation),
+                ])
+                ->all(),
+            'max_bench_players' => max(1, min(10, (int) config('simulation.lineup.max_bench_players', 5))),
+        ];
     }
 
 }

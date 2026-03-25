@@ -16,6 +16,7 @@ class Lineup extends Model
         'match_id',
         'name',
         'formation',
+        'tactical_style',
         'mentality',
         'aggression',
         'line_height',

@@ -19,6 +19,107 @@ class MatchCenterStateService
             default => ucfirst((string) $match->status),
         };
 
+        $teamStates = $match->liveTeamStates
+            ->mapWithKeys(function ($state): array {
+                return [
+                    (string) $state->club_id => [
+                        'club_id' => (int) $state->club_id,
+                        'tactical_style' => (string) $state->tactical_style,
+                        'phase' => (string) ($state->phase ?? ''),
+                        'possession_seconds' => (int) $state->possession_seconds,
+                        'actions_count' => (int) $state->actions_count,
+                        'dangerous_attacks' => (int) $state->dangerous_attacks,
+                        'pass_attempts' => (int) $state->pass_attempts,
+                        'pass_completions' => (int) $state->pass_completions,
+                        'tackle_attempts' => (int) $state->tackle_attempts,
+                        'tackle_won' => (int) $state->tackle_won,
+                        'fouls_committed' => (int) $state->fouls_committed,
+                        'corners_won' => (int) $state->corners_won,
+                        'shots' => (int) $state->shots,
+                        'shots_on_target' => (int) $state->shots_on_target,
+                        'expected_goals' => (float) $state->expected_goals,
+                        'yellow_cards' => (int) $state->yellow_cards,
+                        'red_cards' => (int) $state->red_cards,
+                        'substitutions_used' => (int) $state->substitutions_used,
+                        'tactical_changes_count' => (int) $state->tactical_changes_count,
+                        'last_tactical_change_minute' => $state->last_tactical_change_minute !== null ? (int) $state->last_tactical_change_minute : null,
+                        'last_substitution_minute' => $state->last_substitution_minute !== null ? (int) $state->last_substitution_minute : null,
+                        'current_ball_carrier_player_id' => $state->current_ball_carrier_player_id !== null ? (int) $state->current_ball_carrier_player_id : null,
+                        'last_set_piece_taker_player_id' => $state->last_set_piece_taker_player_id !== null ? (int) $state->last_set_piece_taker_player_id : null,
+                        'last_set_piece_type' => $state->last_set_piece_type !== null ? (string) $state->last_set_piece_type : null,
+                        'last_set_piece_minute' => $state->last_set_piece_minute !== null ? (int) $state->last_set_piece_minute : null,
+                    ],
+                ];
+            })
+            ->all();
+
+        $playerStates = $match->livePlayerStates
+            ->map(function ($state): array {
+                return [
+                    'player_id' => (int) $state->player_id,
+                    'club_id' => (int) $state->club_id,
+                    'player_name' => $state->player?->full_name,
+                    'slot' => (string) ($state->slot ?? ''),
+                    'is_on_pitch' => (bool) $state->is_on_pitch,
+                    'is_sent_off' => (bool) $state->is_sent_off,
+                    'is_injured' => (bool) $state->is_injured,
+                    'fit_factor' => (float) $state->fit_factor,
+                    'minutes_played' => (int) $state->minutes_played,
+                    'ball_contacts' => (int) $state->ball_contacts,
+                    'pass_attempts' => (int) $state->pass_attempts,
+                    'pass_completions' => (int) $state->pass_completions,
+                    'tackle_attempts' => (int) $state->tackle_attempts,
+                    'tackle_won' => (int) $state->tackle_won,
+                    'fouls_committed' => (int) $state->fouls_committed,
+                    'fouls_suffered' => (int) $state->fouls_suffered,
+                    'shots' => (int) $state->shots,
+                    'shots_on_target' => (int) $state->shots_on_target,
+                    'goals' => (int) $state->goals,
+                    'assists' => (int) $state->assists,
+                    'yellow_cards' => (int) $state->yellow_cards,
+                    'red_cards' => (int) $state->red_cards,
+                    'saves' => (int) $state->saves,
+                    'photo_url' => $state->player?->photo_url,
+                ];
+            })
+            ->values()
+            ->all();
+
+        $actions = ($match->liveActions->isNotEmpty() ? $match->liveActions : $match->events)
+            ->sortByDesc(fn ($item) => ($item->minute * 100000) + ($item->second * 1000) + ($item->sequence ?? 0))
+            ->take(400)
+            ->values()
+            ->map(function ($item): array {
+                $isAction = isset($item->action_type);
+                $metadata = is_array($item->metadata) ? $item->metadata : [];
+                $assisterName = $isAction ? ($metadata['assister_name'] ?? null) : $item->assister?->full_name;
+
+                return [
+                    'id' => (int) $item->id,
+                    'minute' => (int) $item->minute,
+                    'display_minute' => $this->displayMinute((int) $item->minute, $metadata),
+                    'second' => (int) $item->second,
+                    'sequence' => (int) ($item->sequence ?? 0),
+                    'club_id' => $item->club_id !== null ? (int) $item->club_id : null,
+                    'club_short_name' => $item->club?->short_name ?: $item->club?->name,
+                    'club_logo_url' => $item->club?->logo_url,
+                    'player_id' => $item->player_id !== null ? (int) $item->player_id : null,
+                    'player_name' => $item->player?->full_name,
+                    'player_photo_url' => $item->player?->photo_url,
+                    'assister_name' => $assisterName,
+                    'opponent_player_id' => $isAction && $item->opponent_player_id !== null ? (int) $item->opponent_player_id : null,
+                    'opponent_player_name' => $isAction ? $item->opponentPlayer?->full_name : null,
+                    'opponent_player_photo_url' => $isAction ? $item->opponentPlayer?->photo_url : null,
+                    'action_type' => (string) ($isAction ? $item->action_type : $item->event_type),
+                    'outcome' => (string) ($item->outcome ?? ''),
+                    'narrative' => (string) ($item->narrative ?? ''),
+                    'x_coord' => $isAction && $item->x_coord !== null ? (float) $item->x_coord : null,
+                    'y_coord' => $isAction && $item->y_coord !== null ? (float) $item->y_coord : null,
+                    'metadata' => $metadata,
+                ];
+            })
+            ->all();
+
         return [
             'id' => $match->id,
             'status' => $match->status,
@@ -52,66 +153,8 @@ class MatchCenterStateService
                     ];
                 })
                 ->all(),
-            'team_states' => $match->liveTeamStates
-                ->mapWithKeys(function ($state): array {
-                    return [
-                        (string) $state->club_id => [
-                            'club_id' => (int) $state->club_id,
-                            'tactical_style' => (string) $state->tactical_style,
-                            'phase' => (string) ($state->phase ?? ''),
-                            'possession_seconds' => (int) $state->possession_seconds,
-                            'actions_count' => (int) $state->actions_count,
-                            'dangerous_attacks' => (int) $state->dangerous_attacks,
-                            'pass_attempts' => (int) $state->pass_attempts,
-                            'pass_completions' => (int) $state->pass_completions,
-                            'tackle_attempts' => (int) $state->tackle_attempts,
-                            'tackle_won' => (int) $state->tackle_won,
-                            'fouls_committed' => (int) $state->fouls_committed,
-                            'corners_won' => (int) $state->corners_won,
-                            'shots' => (int) $state->shots,
-                            'shots_on_target' => (int) $state->shots_on_target,
-                            'expected_goals' => (float) $state->expected_goals,
-                            'yellow_cards' => (int) $state->yellow_cards,
-                            'red_cards' => (int) $state->red_cards,
-                            'substitutions_used' => (int) $state->substitutions_used,
-                            'tactical_changes_count' => (int) $state->tactical_changes_count,
-                            'last_tactical_change_minute' => $state->last_tactical_change_minute !== null ? (int) $state->last_tactical_change_minute : null,
-                            'last_substitution_minute' => $state->last_substitution_minute !== null ? (int) $state->last_substitution_minute : null,
-                        ],
-                    ];
-                })
-                ->all(),
-            'player_states' => $match->livePlayerStates
-                ->map(function ($state): array {
-                    return [
-                        'player_id' => (int) $state->player_id,
-                        'club_id' => (int) $state->club_id,
-                        'player_name' => $state->player?->full_name,
-                        'slot' => (string) ($state->slot ?? ''),
-                        'is_on_pitch' => (bool) $state->is_on_pitch,
-                        'is_sent_off' => (bool) $state->is_sent_off,
-                        'is_injured' => (bool) $state->is_injured,
-                        'fit_factor' => (float) $state->fit_factor,
-                        'minutes_played' => (int) $state->minutes_played,
-                        'ball_contacts' => (int) $state->ball_contacts,
-                        'pass_attempts' => (int) $state->pass_attempts,
-                        'pass_completions' => (int) $state->pass_completions,
-                        'tackle_attempts' => (int) $state->tackle_attempts,
-                        'tackle_won' => (int) $state->tackle_won,
-                        'fouls_committed' => (int) $state->fouls_committed,
-                        'fouls_suffered' => (int) $state->fouls_suffered,
-                        'shots' => (int) $state->shots,
-                        'shots_on_target' => (int) $state->shots_on_target,
-                        'goals' => (int) $state->goals,
-                        'assists' => (int) $state->assists,
-                        'yellow_cards' => (int) $state->yellow_cards,
-                        'red_cards' => (int) $state->red_cards,
-                        'saves' => (int) $state->saves,
-                        'photo_url' => $state->player?->photo_url,
-                    ];
-                })
-                ->values()
-                ->all(),
+            'team_states' => $teamStates,
+            'player_states' => $playerStates,
             'final_stats' => $match->playerStats
                 ->map(function ($stat): array {
                     return [
@@ -127,40 +170,8 @@ class MatchCenterStateService
                 })
                 ->values()
                 ->all(),
-            'actions' => ($match->liveActions->isNotEmpty() ? $match->liveActions : $match->events)
-                ->sortByDesc(fn ($item) => ($item->minute * 100000) + ($item->second * 1000) + ($item->sequence ?? 0))
-                ->take(400)
-                ->values()
-                ->map(function ($item): array {
-                    $isAction = isset($item->action_type);
-                    $metadata = is_array($item->metadata) ? $item->metadata : [];
-                    $assisterName = $isAction ? ($metadata['assister_name'] ?? null) : $item->assister?->full_name;
-
-                    return [
-                        'id' => (int) $item->id,
-                        'minute' => (int) $item->minute,
-                        'display_minute' => $this->displayMinute((int) $item->minute, $metadata),
-                        'second' => (int) $item->second,
-                        'sequence' => (int) ($item->sequence ?? 0),
-                        'club_id' => $item->club_id !== null ? (int) $item->club_id : null,
-                        'club_short_name' => $item->club?->short_name ?: $item->club?->name,
-                        'club_logo_url' => $item->club?->logo_url,
-                        'player_id' => $item->player_id !== null ? (int) $item->player_id : null,
-                        'player_name' => $item->player?->full_name,
-                        'player_photo_url' => $item->player?->photo_url,
-                        'assister_name' => $assisterName,
-                        'opponent_player_id' => $isAction && $item->opponent_player_id !== null ? (int) $item->opponent_player_id : null,
-                        'opponent_player_name' => $isAction ? $item->opponentPlayer?->full_name : null,
-                        'opponent_player_photo_url' => $isAction ? $item->opponentPlayer?->photo_url : null,
-                        'action_type' => (string) ($isAction ? $item->action_type : $item->event_type),
-                        'outcome' => (string) ($item->outcome ?? ''),
-                        'narrative' => (string) ($item->narrative ?? ''),
-                        'x_coord' => $isAction ? (float) $item->x_coord : null,
-                        'y_coord' => $isAction ? (float) $item->y_coord : null,
-                        'metadata' => $metadata,
-                    ];
-                })
-                ->all(),
+            'actions' => $actions,
+            'live_pitch' => $this->livePitchPayload($match, $lineups, $actions, $teamStates, $playerStates),
             'planned_substitutions' => $match->plannedSubstitutions
                 ->map(function ($plan): array {
                     return [
@@ -312,5 +323,164 @@ class MatchCenterStateService
         }
 
         return (string) max(0, $minute);
+    }
+
+    private function livePitchPayload(
+        GameMatch $match,
+        array $lineups,
+        array $actions,
+        array $teamStates,
+        array $playerStates,
+    ): array {
+        $latestAction = collect($actions)->first(fn (array $action): bool => is_numeric($action['x_coord'] ?? null) && is_numeric($action['y_coord'] ?? null))
+            ?? ($actions[0] ?? null);
+
+        $homeClubId = (int) $match->home_club_id;
+        $awayClubId = (int) $match->away_club_id;
+        $attackingClubId = (int) ($latestAction['club_id'] ?? 0);
+
+        if ($attackingClubId === 0) {
+            $attackingClubId = $this->dominantPossessionClubId($homeClubId, $awayClubId, $teamStates) ?? $homeClubId;
+        }
+
+        $ballCarrierId = (int) (
+            $teamStates[(string) $attackingClubId]['current_ball_carrier_player_id']
+            ?? $latestAction['player_id']
+            ?? 0
+        );
+
+        $ball = [
+            'x' => $this->normalizePercent($latestAction['x_coord'] ?? ($attackingClubId === $awayClubId ? 35 : 65), 50),
+            'y' => $this->normalizePercent($latestAction['y_coord'] ?? 50, 50),
+            'carrier_player_id' => $ballCarrierId > 0 ? $ballCarrierId : null,
+        ];
+
+        $trail = collect($actions)
+            ->filter(fn (array $action): bool => is_numeric($action['x_coord'] ?? null) && is_numeric($action['y_coord'] ?? null))
+            ->take(6)
+            ->values()
+            ->map(fn (array $action, int $index): array => [
+                'x' => $this->normalizePercent($action['x_coord'] ?? null, 50),
+                'y' => $this->normalizePercent($action['y_coord'] ?? null, 50),
+                'opacity' => max(0.18, 1 - ($index * 0.15)),
+                'action_type' => (string) ($action['action_type'] ?? ''),
+                'club_id' => $action['club_id'] ?? null,
+            ])
+            ->all();
+
+        $highlightPlayerIds = collect([
+            $latestAction['player_id'] ?? null,
+            $latestAction['opponent_player_id'] ?? null,
+            $ballCarrierId > 0 ? $ballCarrierId : null,
+        ])
+            ->filter()
+            ->map(fn ($value): int => (int) $value)
+            ->unique()
+            ->values()
+            ->all();
+
+        return [
+            'ball' => $ball,
+            'zone' => $this->resolvePitchZone($ball['x'], $ball['y'], $attackingClubId === $awayClubId),
+            'attacking_club_id' => $attackingClubId > 0 ? $attackingClubId : null,
+            'phase' => $attackingClubId > 0 ? ($teamStates[(string) $attackingClubId]['phase'] ?? null) : null,
+            'latest_action' => $latestAction ? [
+                'id' => (int) ($latestAction['id'] ?? 0),
+                'minute' => (int) ($latestAction['minute'] ?? 0),
+                'display_minute' => (string) ($latestAction['display_minute'] ?? '0'),
+                'action_type' => (string) ($latestAction['action_type'] ?? ''),
+                'narrative' => (string) ($latestAction['narrative'] ?? ''),
+                'player_name' => $latestAction['player_name'] ?? null,
+                'opponent_player_name' => $latestAction['opponent_player_name'] ?? null,
+                'assister_name' => $latestAction['assister_name'] ?? null,
+            ] : null,
+            'trail' => $trail,
+            'players' => array_merge(
+                $this->pitchPlayersForClub($lineups[(string) $homeClubId] ?? null, $playerStates, false, $highlightPlayerIds),
+                $this->pitchPlayersForClub($lineups[(string) $awayClubId] ?? null, $playerStates, true, $highlightPlayerIds),
+            ),
+        ];
+    }
+
+    private function dominantPossessionClubId(int $homeClubId, int $awayClubId, array $teamStates): ?int
+    {
+        $homePossession = (int) ($teamStates[(string) $homeClubId]['possession_seconds'] ?? 0);
+        $awayPossession = (int) ($teamStates[(string) $awayClubId]['possession_seconds'] ?? 0);
+
+        return $homePossession >= $awayPossession ? $homeClubId : $awayClubId;
+    }
+
+    private function pitchPlayersForClub(?array $lineup, array $playerStates, bool $mirror, array $highlightPlayerIds): array
+    {
+        if (!is_array($lineup)) {
+            return [];
+        }
+
+        $stateByPlayerId = collect($playerStates)->keyBy('player_id');
+
+        return collect($lineup['starters'] ?? [])
+            ->map(function (array $player) use ($stateByPlayerId, $mirror, $highlightPlayerIds, $lineup): ?array {
+                $playerId = (int) ($player['id'] ?? 0);
+                $state = $stateByPlayerId->get($playerId);
+
+                if (is_array($state) && array_key_exists('is_on_pitch', $state) && !$state['is_on_pitch']) {
+                    return null;
+                }
+
+                $depth = $this->normalizePercent($player['pitch_y'] ?? null, 50);
+                $width = $this->normalizePercent($player['pitch_x'] ?? null, 50);
+
+                return [
+                    'player_id' => $playerId,
+                    'club_id' => (int) ($lineup['club_id'] ?? 0),
+                    'name' => (string) ($player['name'] ?? ''),
+                    'slot' => (string) ($player['slot'] ?? ''),
+                    'x' => $mirror ? $depth : 100 - $depth,
+                    'y' => $width,
+                    'fit_factor' => (float) ($state['fit_factor'] ?? $player['fit_factor'] ?? 1),
+                    'is_highlighted' => in_array($playerId, $highlightPlayerIds, true),
+                    'is_sent_off' => (bool) ($state['is_sent_off'] ?? false),
+                    'is_injured' => (bool) ($state['is_injured'] ?? false),
+                    'is_home' => !$mirror,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function normalizePercent(mixed $value, float $fallback): float
+    {
+        if (!is_numeric($value)) {
+            return $fallback;
+        }
+
+        return max(0, min(100, round((float) $value, 1)));
+    }
+
+    private function resolvePitchZone(float $x, float $y, bool $invert): array
+    {
+        $relativeX = $invert ? 100 - $x : $x;
+
+        $third = match (true) {
+            $relativeX < 33.34 => ['key' => 'build_up', 'label' => 'Aufbauzone'],
+            $relativeX < 66.67 => ['key' => 'midfield', 'label' => 'Mittelfeldzone'],
+            default => ['key' => 'final_third', 'label' => 'Angriffszone'],
+        };
+
+        $lane = match (true) {
+            $y < 20 => ['key' => 'left_wing', 'label' => 'Linker Fluegel'],
+            $y < 40 => ['key' => 'left_halfspace', 'label' => 'Linker Halbraum'],
+            $y < 60 => ['key' => 'center', 'label' => 'Zentrum'],
+            $y < 80 => ['key' => 'right_halfspace', 'label' => 'Rechter Halbraum'],
+            default => ['key' => 'right_wing', 'label' => 'Rechter Fluegel'],
+        };
+
+        return [
+            'key' => $third['key'] . ':' . $lane['key'],
+            'third' => $third,
+            'lane' => $lane,
+            'label' => $third['label'] . ' · ' . $lane['label'],
+        ];
     }
 }
