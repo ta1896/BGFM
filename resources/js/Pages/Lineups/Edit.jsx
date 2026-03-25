@@ -751,11 +751,13 @@ export default function Edit({
                                 </span>
                             </button>
                         </div>
-                    </div>                    <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8">
+                    </div>
+
+                    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[380px_1fr] lg:gap-8">
                         {/* Sidebar: Navigation Tabs */}
-                        <aside className="space-y-6 flex flex-col h-[600px] lg:h-[800px] order-2 lg:order-1">
+                        <aside className="order-2 flex flex-col gap-4 lg:order-1 lg:h-[800px] lg:gap-6">
                             {/* Tabs Navigation */}
-                            <div className="flex bg-[#0c1222]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1 gap-1">
+                            <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-2xl border border-white/5 bg-[#0c1222]/80 p-1 backdrop-blur-xl">
                                 {[
                                     { id: 'kader', label: 'Kader', icon: <Users size={14} weight="bold" /> },
                                     { id: 'taktik', label: 'Taktik', icon: <Strategy size={14} weight="bold" /> },
@@ -765,7 +767,7 @@ export default function Edit({
                                         key={tab.id}
                                         type="button"
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        className={`flex min-w-[120px] flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all sm:min-w-0 ${
                                             activeTab === tab.id
                                                 ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(217,177,92,0.3)]'
                                                 : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -778,9 +780,9 @@ export default function Edit({
                             </div>
 
                             {/* Tab Content */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="lg:flex-1 lg:overflow-hidden">
                                 {activeTab === 'kader' && (
-                                    <div className="flex flex-col h-full sim-card p-4 sm:p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
+                                    <div className="sim-card flex flex-col bg-[#0c1222]/80 border-[var(--border-muted)] p-4 sm:p-5 lg:h-full">
                                         <div className="relative mb-4">
                                             <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                             <input 
@@ -820,7 +822,7 @@ export default function Edit({
                                             ))}
                                         </div>
 
-                                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                        <div className="space-y-2 custom-scrollbar lg:flex-1 lg:overflow-y-auto lg:pr-1">
                                             {POSITION_GROUPS.map((group) => {
                                                 const players = groupedPoolPlayers[group.key] ?? [];
                                                 const isCollapsed = collapsedGroups[group.key];
@@ -858,7 +860,7 @@ export default function Edit({
                                 )}
 
                                 {activeTab === 'taktik' && (
-                                    <div className="space-y-4 overflow-y-auto h-full custom-scrollbar pr-1">
+                                    <div className="space-y-4 custom-scrollbar lg:h-full lg:overflow-y-auto lg:pr-1">
                                         <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
                                             <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                                                 <Strategy size={14} weight="bold" />
@@ -944,7 +946,7 @@ export default function Edit({
                                 )}
 
                                 {activeTab === 'spezial' && (
-                                    <div className="space-y-4 overflow-y-auto h-full custom-scrollbar pr-1">
+                                    <div className="space-y-4 custom-scrollbar lg:h-full lg:overflow-y-auto lg:pr-1">
                                         <div className="sim-card p-5 bg-[#0c1222]/80 border-[var(--border-muted)]">
                                             <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                                 <Target size={14} weight="bold" />
@@ -993,16 +995,16 @@ export default function Edit({
                                                 Vorlagen
                                             </h4>
                                             <div className="space-y-3">
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-col gap-2 sm:flex-row">
                                                     <select value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)} className="sim-select flex-1 text-[10px]">
                                                         <option value="">Laden...</option>
                                                         {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                                     </select>
-                                                    <button type="button" onClick={handleApplyTemplate} className="px-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] uppercase font-black">OK</button>
+                                                    <button type="button" onClick={handleApplyTemplate} className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-[10px] font-black uppercase text-cyan-400">OK</button>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-col gap-2 sm:flex-row">
                                                     <input value={data.template_name} onChange={e => setData('template_name', e.target.value)} placeholder="Name..." className="sim-input flex-1 text-[10px]" />
-                                                    <button type="button" onClick={handleSaveTemplate} className="px-3 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] uppercase font-black"><FloppyDisk size={14} /></button>
+                                                    <button type="button" onClick={handleSaveTemplate} className="inline-flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase text-amber-500"><FloppyDisk size={14} /></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1012,16 +1014,16 @@ export default function Edit({
                         </aside>
 
                         {/* Center/Right: The Pitch */}
-                        <main className="order-1 lg:order-2 space-y-8 flex flex-col">
+                        <main className="order-1 flex flex-col space-y-6 lg:order-2 lg:space-y-8">
                             {/* Metrics Bar */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-3xl bg-[#0c1222]/80 backdrop-blur-xl border border-white/5">
-                                <div className="flex items-center gap-6 px-4">
+                            <div className="flex flex-col gap-4 rounded-3xl border border-white/5 bg-[#0c1222]/80 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col gap-4 px-1 sm:flex-row sm:items-center sm:gap-6 sm:px-4">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">STÄRKE</span>
                                         <span className="text-2xl font-black text-white italic leading-none">{calculatedMetrics.overall}</span>
                                     </div>
-                                    <div className="h-8 w-px bg-white/5" />
-                                    <div className="flex gap-4">
+                                    <div className="hidden h-8 w-px bg-white/5 sm:block" />
+                                    <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-4">
                                         <div className="flex flex-col">
                                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ANGRIFF</span>
                                             <span className="text-sm font-black text-white">{calculatedMetrics.attack}</span>
@@ -1037,7 +1039,7 @@ export default function Edit({
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2 sm:justify-start">
                                     <Lightning size={16} weight="fill" className="text-amber-500" />
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest leading-none">CHEMIE</span>
@@ -1047,11 +1049,11 @@ export default function Edit({
                             </div>
 
                             {/* Pitch Area */}
-                            <div className="relative aspect-[68/105] w-full max-w-[500px] mx-auto bg-[#0a0a0a] rounded-[2rem] shadow-2xl overflow-hidden border-8 border-[#1a1a1a]">
+                            <div className="relative mx-auto aspect-[68/105] w-full max-w-[500px] overflow-hidden rounded-[1.5rem] border-4 border-[#1a1a1a] bg-[#0a0a0a] shadow-2xl sm:rounded-[2rem] sm:border-8">
                                 <PitchMarkings />
                                 <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent z-10 pointer-events-none" />
                                 
-                                <div className="absolute inset-x-8 inset-y-12 z-20">
+                                <div className="absolute inset-x-4 inset-y-8 z-20 sm:inset-x-8 sm:inset-y-12">
                                     {slots.map(slot => {
                                         const pId = data.starter_slots[slot.slot];
                                         const p = getPlayer(pId);
@@ -1066,7 +1068,7 @@ export default function Edit({
                                                 style={{ left: `${slot.x}%`, top: `${slot.y}%`, transform: 'translate(-50%, -50%)' }}
                                             >
                                                 <div 
-                                                    className={`w-14 h-14 rounded-full border-2 transition-all duration-300 flex items-center justify-center relative cursor-pointer ${
+                                                    className={`relative flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all duration-300 cursor-pointer sm:h-14 sm:w-14 ${
                                                         p ? 'bg-[#1a1c2e] border-amber-500/60 shadow-[0_0_20px_rgba(217,177,92,0.2)]' 
                                                           : 'bg-black/20 border-white/10 hover:border-white/30 border-dashed'
                                                     }`}
@@ -1079,9 +1081,9 @@ export default function Edit({
                                                     {p ? (
                                                         <>
                                                             <div className="flex flex-col items-center">
-                                                                <span className="text-xs font-black text-white leading-none mb-0.5">{p.shirt_number}</span>
+                                                                <span className="mb-0.5 text-[10px] font-black leading-none text-white sm:text-xs">{p.shirt_number}</span>
                                                                 <div className="flex items-center gap-0.5">
-                                                                    <span className={`text-[8px] font-black leading-none ${penalty < 0 ? 'text-rose-400' : 'text-amber-500'}`}>
+                                                                    <span className={`text-[7px] font-black leading-none sm:text-[8px] ${penalty < 0 ? 'text-rose-400' : 'text-amber-500'}`}>
                                                                         {Math.round(p.overall * resolveFitFactor(p, slot, positionFit, positionMeta))}
                                                                     </span>
                                                                     {penalty < 0 && (
@@ -1090,23 +1092,23 @@ export default function Edit({
                                                                 </div>
                                                             </div>
                                                             {parseInt(data.captain_player_id) === p.id && (
-                                                                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-black shadow-lg">C</div>
+                                                                <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-slate-900 bg-amber-500 text-[8px] font-black text-black shadow-lg sm:h-5 sm:w-5 sm:border-2 sm:text-[10px]">C</div>
                                                             )}
                                                             <button 
                                                                 type="button"
                                                                 onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }}
-                                                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover/slot:opacity-100 transition-opacity"
+                                                                className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-100 transition-opacity sm:h-5 sm:w-5 sm:opacity-0 sm:group-hover/slot:opacity-100"
                                                             >
                                                                 <X size={10} weight="bold" />
                                                             </button>
                                                         </>
                                                     ) : (
-                                                        <span className="text-[9px] font-black text-white/30 uppercase tracking-tighter">{slot.label}</span>
+                                                        <span className="text-[7px] font-black text-white/30 uppercase tracking-tighter sm:text-[9px]">{slot.label}</span>
                                                     )}
                                                 </div>
                                                 {p && (
-                                                    <div className="mt-1 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/5">
-                                                        <span className="text-[9px] font-black text-white uppercase truncate max-w-[60px] block text-center leading-tight">
+                                                    <div className="mt-1 rounded border border-white/5 bg-black/60 px-1.5 py-0.5 backdrop-blur-md sm:px-2">
+                                                        <span className="block max-w-[46px] truncate text-center text-[7px] font-black leading-tight text-white uppercase sm:max-w-[60px] sm:text-[9px]">
                                                             {p.last_name}
                                                         </span>
                                                         <div className="flex justify-center gap-0.5 mt-0.5">
@@ -1123,12 +1125,12 @@ export default function Edit({
                             </div>
 
                             {/* Bench */}
-                            <div className="sim-card p-6 bg-[#0c1222]/80 border-white/5">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="sim-card border-white/5 bg-[#0c1222]/80 p-4 sm:p-6">
+                                <div className="mb-4 flex items-center justify-between gap-3">
                                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Auswechselbank</h3>
                                     <span className="text-[9px] font-bold text-slate-600">Max. {maxBenchPlayers}</span>
                                 </div>
-                                <div className="flex flex-wrap gap-4">
+                                <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-4">
                                     {data.bench_slots.map((pId, idx) => {
                                         const p = getPlayer(pId);
                                         return (
@@ -1136,7 +1138,7 @@ export default function Edit({
                                                 key={idx}
                                                 onDragOver={e => e.preventDefault()}
                                                 onDrop={e => handleDrop(e, idx, true)}
-                                                className={`w-14 h-14 rounded-2xl border-2 transition-all flex flex-col items-center justify-center group/bench relative ${
+                                                className={`relative flex h-14 w-full flex-col items-center justify-center rounded-2xl border-2 transition-all group/bench sm:h-14 sm:w-14 ${
                                                     p ? 'bg-[#1a1c2e] border-amber-600/40' 
                                                       : 'bg-black/20 border-white/5 border-dashed hover:border-white/10'
                                                 }`}
@@ -1148,7 +1150,7 @@ export default function Edit({
                                                         <button 
                                                             type="button"
                                                             onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }}
-                                                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover/bench:opacity-100 transition-opacity shadow-lg"
+                                                            className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white opacity-100 transition-opacity shadow-lg sm:opacity-0 sm:group-hover/bench:opacity-100"
                                                         >
                                                             <X size={10} weight="bold" />
                                                         </button>

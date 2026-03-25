@@ -195,19 +195,19 @@ function Toggle({ label, desc, checked, onChange }) {
 function SectionHeader({ title, icon: Icon, colorClass, isOpen, onToggle, description }) {
     return (
         <div 
-            className="flex items-center justify-between cursor-pointer group"
+            className="flex items-start justify-between gap-3 cursor-pointer group"
             onClick={onToggle}
         >
-            <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg bg-white/5 border border-white/10 ${colorClass}`}>
+            <div className="flex min-w-0 items-start gap-3">
+                <div className={`shrink-0 p-2 rounded-lg bg-white/5 border border-white/10 ${colorClass}`}>
                     <Icon size={18} weight="duotone" />
                 </div>
-                <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-white">{title}</h3>
+                <div className="min-w-0">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-white sm:text-base">{title}</h3>
                     {description && <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-bold uppercase tracking-wider">{description}</p>}
                 </div>
             </div>
-            <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+            <div className={`shrink-0 pt-1 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
                 <CaretDown size={18} className="text-[var(--text-muted)] group-hover:text-white" />
             </div>
         </div>
@@ -283,20 +283,20 @@ export default function Index({ simulationSettings: s, moduleSettingsSections = 
         <AdminLayout>
             <Head title="Simulation Settings" />
 
-            <form onSubmit={handleSubmit} className="space-y-8 pb-20">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Simulation Setup</h2>
+            <form onSubmit={handleSubmit} className="space-y-6 pb-24 sm:space-y-8 sm:pb-20">
+                <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h2 className="text-xl font-black text-white tracking-tight uppercase italic sm:text-2xl">Simulation Setup</h2>
                         <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Engine-Konfiguration</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Link href={route('admin.training-types.index')} className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200 transition hover:bg-cyan-500/20">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:items-center">
+                        <Link href={route('admin.training-types.index')} className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200 transition hover:bg-cyan-500/20 sm:px-5">
                             Training Types
                         </Link>
                         <button
                             type="submit"
                             disabled={processing}
-                            className="sim-btn-primary px-8 py-3 flex items-center gap-2"
+                            className="sim-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8"
                         >
                             <FloppyDisk size={18} weight="bold" />
                             Speichern

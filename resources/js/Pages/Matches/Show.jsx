@@ -161,7 +161,7 @@ export default function Show({
         <AuthenticatedLayout>
             <Head title={`${home_club?.short_name || home_club?.name || 'Heim'} vs ${away_club?.short_name || away_club?.name || 'Gast'}`} />
 
-            <div className="mx-auto max-w-[1300px] space-y-8">
+            <div className="mx-auto max-w-[1300px] space-y-6 sm:space-y-8">
                 <Link href={route('league.matches')} className="flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] transition-colors hover:text-amber-500">
                     <ArrowLeft size={14} weight="bold" />
                     Spielplan
@@ -184,12 +184,12 @@ export default function Show({
                 />
 
                 {can_simulate && liveState.status !== 'played' && (
-                    <div className="flex items-center gap-3">
-                        <button onClick={simulate} className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/20 px-6 py-3 font-mono text-[10px] font-black uppercase tracking-widest text-amber-500 transition-all hover:bg-amber-500/30">
+                    <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-center">
+                        <button onClick={simulate} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/20 px-5 py-3 font-mono text-[10px] font-black uppercase tracking-widest text-amber-500 transition-all hover:bg-amber-500/30 sm:px-6">
                             <Lightning size={16} weight="fill" /> Simulieren
                         </button>
                         {liveState.status === 'scheduled' && (
-                            <button onClick={startLive} className="flex items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/20 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/30">
+                            <button onClick={startLive} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/20 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/30 sm:px-6">
                                 <Play size={16} weight="fill" /> Live-Ticker starten
                             </button>
                         )}

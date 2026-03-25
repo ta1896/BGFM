@@ -1266,12 +1266,12 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
 };
 
 export const MatchTabs = ({ entries, activeTab, onChange }) => (
-    <nav className="flex w-fit flex-wrap items-center gap-1 rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/60 p-1">
+    <nav className="no-scrollbar flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/60 p-1">
         {entries.map((entry) => (
             <button
                 key={entry.key}
                 onClick={() => onChange(entry.key)}
-                className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all sm:px-5 ${
                     activeTab === entry.key ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-[var(--text-muted)] hover:text-slate-300'
                 }`}
             >
