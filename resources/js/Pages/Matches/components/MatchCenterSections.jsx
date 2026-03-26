@@ -331,7 +331,7 @@ const styleOptions = [
 
 const TIMELINE_TYPES = new Set(['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution', 'var_check', 'var_decision']);
 
-const getTimelineEvents = (actions = []) => actions
+const getTimelineEvents = (actions) => (Array.isArray(actions) ? actions : [])
     .filter((action) => TIMELINE_TYPES.has(action.action_type))
     .slice()
     .sort((a, b) => {
@@ -343,7 +343,7 @@ const getTimelineEvents = (actions = []) => actions
         return Number(a.second || 0) - Number(b.second || 0);
     });
 
-const getScorelineEvents = (actions = []) => actions
+const getScorelineEvents = (actions) => (Array.isArray(actions) ? actions : [])
     .filter((action) => ['goal', 'own_goal'].includes(action.action_type))
     .slice()
     .sort((a, b) => {
@@ -398,12 +398,12 @@ const formatMatchMinute = (minute, displayMinute = null) => {
     return `${value}'`;
 };
 
-const buildScorelineLookup = (actions = [], homeClubId) => {
+const buildScorelineLookup = (actions, homeClubId) => {
     let home = 0;
     let away = 0;
     const lookup = {};
 
-    actions
+    (Array.isArray(actions) ? actions : [])
         .slice()
         .sort((a, b) => {
             const minuteDiff = Number(a.minute || 0) - Number(b.minute || 0);
@@ -444,7 +444,7 @@ const buildScorelineLookup = (actions = [], homeClubId) => {
 };
 
 export const ModulePanels = ({ panels = [] }) => {
-    if (panels.length === 0) {
+    if (!Array.isArray(panels) || panels.length === 0) {
         return null;
     }
 
@@ -1565,7 +1565,7 @@ export const Live2DTab = ({ homeClub, awayClub, livePitch, liveMinute, displayMi
 };
 
 export const KeyEventsStrip = ({ actions = [] }) => {
-    if (actions.length === 0) {
+    if (!Array.isArray(actions) || actions.length === 0) {
         return null;
     }
 
@@ -1806,9 +1806,9 @@ export const ShotMap = ({ data }) => {
     );
 };
 
-export const MatchTabs = ({ entries, activeTab, onChange }) => (
+export const MatchTabs = ({ entries = [], activeTab, onChange }) => (
     <nav className="no-scrollbar flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/60 p-1">
-        {entries.map((entry) => (
+        {(Array.isArray(entries) ? entries : []).map((entry) => (
             <button
                 key={entry.key}
                 onClick={() => onChange(entry.key)}
@@ -2394,9 +2394,10 @@ export const PreviewTab = ({ comparison }) => (
     </div>
 );
 
-export const TickerTab = ({ actions, homeClubId, status }) => (
+export const TickerTab = ({ actions = [], homeClubId, status }) => (
     (() => {
-        const scoreLookup = buildScorelineLookup(actions, homeClubId);
+        const safeActions = Array.isArray(actions) ? actions : [];
+        const scoreLookup = buildScorelineLookup(safeActions, homeClubId);
 
         return (
             <div className="space-y-5">
@@ -2404,7 +2405,7 @@ export const TickerTab = ({ actions, homeClubId, status }) => (
                     <div className="flex items-center gap-3 border-b border-white/5 bg-[var(--bg-pillar)]/60 px-6 py-4">
                         <SoccerBall size={18} weight="fill" className="text-amber-500" />
                         <h3 className="text-xs font-black uppercase tracking-widest text-white">Spielverlauf</h3>
-                        <span className="ml-auto text-[9px] font-black uppercase tracking-widest text-slate-600">{actions.length} Aktionen</span>
+                        <span className="ml-auto text-[9px] font-black uppercase tracking-widest text-slate-600">{safeActions.length} Aktionen</span>
                     </div>
                     {status === 'played' && (
                         <div className="border-b border-emerald-400/15 bg-emerald-500/8 px-6 py-3">
@@ -2417,14 +2418,14 @@ export const TickerTab = ({ actions, homeClubId, status }) => (
                             </div>
                         </div>
                     )}
-                    {actions.length === 0 ? (
+                    {safeActions.length === 0 ? (
                         <div className="p-20 text-center">
                             <SoccerBall size={48} weight="thin" className="mx-auto mb-6 text-slate-700" />
                             <p className="text-sm font-bold italic uppercase tracking-widest text-[var(--text-muted)]">Noch keine Aktionen.</p>
                         </div>
                     ) : (
                         <div className="custom-scrollbar max-h-[70vh] overflow-y-auto">
-                            {actions.map((action, index) => (
+                            {safeActions.map((action, index) => (
                                 <TickerItem
                                     key={`${action.id}-${index}`}
                                     action={action}
@@ -2470,7 +2471,7 @@ export const StatsTab = ({ homeState, awayState }) => (
 );
 
 export const LiveTableTab = ({ liveTable }) => {
-    if (!liveTable?.rows?.length) {
+    if (!liveTable || !Array.isArray(liveTable.rows) || liveTable.rows.length === 0) {
         return (
             <div className="sim-card p-8">
                 <p className="py-10 text-center italic text-[var(--text-muted)]">Fuer dieses Spiel ist keine Livetabelle verfuegbar.</p>
@@ -2555,10 +2556,10 @@ export const LiveTableTab = ({ liveTable }) => {
     );
 };
 
-export const PlayersTab = ({ clubs, finalStats }) => (
+export const PlayersTab = ({ clubs = [], finalStats = [] }) => (
     <div className="grid gap-8 md:grid-cols-2">
-        {clubs.map((club) => {
-            const players = finalStats.filter((stat) => stat.club_id === club?.id).sort((a, b) => b.rating - a.rating);
+        {(Array.isArray(clubs) ? clubs : []).map((club) => {
+            const players = (Array.isArray(finalStats) ? finalStats : []).filter((stat) => stat.club_id === club?.id).sort((a, b) => b.rating - a.rating);
 
             return (
                 <div key={club?.id} className="sim-card overflow-hidden p-0">
