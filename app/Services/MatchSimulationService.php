@@ -520,6 +520,26 @@ class MatchSimulationService
             else
                 $type = 'midfield_possession';
 
+            // --- Pressing Triggers Integration ---
+            $lineup = ($clubId === (int) $match->home_club_id) 
+                ? ($match->home_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->homeClub, $match))
+                : ($match->away_lineup ?? $this->matchLineupService->resolvePreferredLineup($match->awayClub, $match));
+
+            if ($lineup) {
+                $mods = $this->tacticalManager->getTacticalModifiers($lineup);
+                
+                // If a pressing trigger is active, we increase the chance for a turnover or foul
+                $hasTriggerActive = ($mods['pressing_on_backpass'] ?? false) 
+                                 || ($mods['pressing_on_reception'] ?? false) 
+                                 || ($mods['pressing_on_wings'] ?? false);
+
+                if ($hasTriggerActive && mt_rand(1, 100) <= 15) {
+                    // 15% chance to "lock in" a pressing event if triggers are active
+                    $type = (mt_rand(1, 100) <= 70) ? 'turnover' : 'foul';
+                }
+            }
+            // --- End Pressing Triggers ---
+
             /** @var Player $player */
             $player = $this->randomCollectionItem($squad);
             

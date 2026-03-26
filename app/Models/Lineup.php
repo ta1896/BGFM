@@ -34,6 +34,7 @@ class Lineup extends Model
         'line_of_engagement',
         'pressing_trap',
         'cross_engagement',
+        'pressing_triggers',
         'is_active',
         'is_template',
         'notes',
@@ -44,6 +45,7 @@ class Lineup extends Model
         return [
             'is_active' => 'boolean',
             'is_template' => 'boolean',
+            'pressing_triggers' => 'array',
         ];
     }
 

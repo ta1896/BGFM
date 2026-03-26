@@ -470,6 +470,7 @@ class LineupsController extends Controller
             'line_of_engagement' => ['nullable', 'string', 'in:deep,normal,high'],
             'pressing_trap' => ['nullable', 'string', 'in:none,inside,outside'],
             'cross_engagement' => ['nullable', 'string', 'in:none,stop,invite'],
+            'pressing_triggers' => ['nullable', 'array'],
             'starter_slots' => ['array'],
             'bench_slots' => ['array'],
             'player_instructions' => ['nullable', 'array'],
@@ -539,6 +540,7 @@ class LineupsController extends Controller
                 'line_of_engagement' => $validated['line_of_engagement'] ?? 'normal',
                 'pressing_trap' => $validated['pressing_trap'] ?? 'none',
                 'cross_engagement' => $validated['cross_engagement'] ?? 'none',
+                'pressing_triggers' => $validated['pressing_triggers'] ?? [],
             ];
 
             if ($template) {
@@ -583,6 +585,7 @@ class LineupsController extends Controller
             'line_of_engagement' => $validated['line_of_engagement'] ?? 'normal',
             'pressing_trap' => $validated['pressing_trap'] ?? 'none',
             'cross_engagement' => $validated['cross_engagement'] ?? 'none',
+            'pressing_triggers' => $validated['pressing_triggers'] ?? [],
         ]);
 
         $this->syncPlayersFromRequest($lineup, $planner, $validated, $request);
@@ -713,6 +716,7 @@ class LineupsController extends Controller
             'attack_focus' => $lineup->attack_focus ?? 'center',
             'offside_trap' => $lineup->offside_trap ?? false,
             'time_wasting' => $lineup->time_wasting ?? false,
+            'pressing_triggers' => $lineup->pressing_triggers ?? [],
             'starter_slots' => $starterSlots,
             'bench_slots' => array_values($benchSlots),
             'captain_player_id' => $lineup->players->firstWhere('pivot.is_captain', true)?->id,

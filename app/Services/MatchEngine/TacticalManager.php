@@ -152,6 +152,18 @@ class TacticalManager
             $modifiers['attack'] *= 0.90; // Slower buildup
         }
 
+        // 6. Pressing Triggers (Pressing-Auslöser)
+        $triggers = $lineup->pressing_triggers ?? [];
+        if (in_array('backpass', $triggers)) {
+            $modifiers['pressing_on_backpass'] = true;
+        }
+        if (in_array('ball_reception', $triggers)) {
+            $modifiers['pressing_on_reception'] = true;
+        }
+        if (in_array('wings', $triggers)) {
+            $modifiers['pressing_on_wings'] = true;
+        }
+
         return $modifiers;
     }
 }

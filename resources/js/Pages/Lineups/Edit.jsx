@@ -399,6 +399,7 @@ export default function Edit({
         line_of_engagement: lineup.line_of_engagement || 'normal',
         pressing_trap: lineup.pressing_trap || 'none',
         cross_engagement: lineup.cross_engagement || 'none',
+        pressing_triggers: lineup.pressing_triggers || [],
         action: 'save',
         template_name: ''
     });
@@ -1054,6 +1055,50 @@ export default function Edit({
                                                     <div className="mt-2 flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
                                                         <span>Passiv</span>
                                                         <span>Extrem</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-2xl border border-rose-400/10 bg-gradient-to-br from-rose-500/[0.06] via-[#0f1728] to-[#0a1020] p-4">
+                                                    <div className="mb-3">
+                                                        <label className="text-[9px] font-black uppercase tracking-[0.28em] text-rose-300">Pressing-Auslöser</label>
+                                                        <div className="mt-1 text-[10px] text-slate-400">Wann soll das Team intensiv pressen?</div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {[
+                                                            { id: 'backpass', label: 'Rückpässe', desc: 'Presst, wenn der Gegner nach hinten spielt.' },
+                                                            { id: 'ball_reception', label: 'Ballannahme', desc: 'Presst sofort bei Ballannahme des Gegners.' },
+                                                            { id: 'wings', label: 'Am Flügel', desc: 'Gezieltes Pressing an den Seitenlinien.' }
+                                                        ].map(trigger => {
+                                                            const isActive = (data.pressing_triggers || []).includes(trigger.id);
+                                                            return (
+                                                                <button
+                                                                    key={trigger.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const current = data.pressing_triggers || [];
+                                                                        const next = isActive 
+                                                                            ? current.filter(id => id !== trigger.id)
+                                                                            : [...current, trigger.id];
+                                                                        setData('pressing_triggers', next);
+                                                                    }}
+                                                                    className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+                                                                        isActive 
+                                                                            ? 'border-rose-500/40 bg-rose-500/10 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.1)]' 
+                                                                            : 'border-white/5 bg-white/[0.02] text-slate-500 hover:border-white/10 hover:bg-white/[0.04]'
+                                                                    }`}
+                                                                >
+                                                                    <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                                                                        isActive ? 'border-rose-400 bg-rose-500 text-white' : 'border-white/20 bg-black/20'
+                                                                    }`}>
+                                                                        {isActive && <CheckCircle size={10} weight="bold" />}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className={`text-[10px] font-black uppercase tracking-wider ${isActive ? 'text-rose-200' : 'text-slate-300'}`}>{trigger.label}</div>
+                                                                        <div className="text-[9px] leading-tight text-slate-500 mt-0.5">{trigger.desc}</div>
+                                                                    </div>
+                                                                </button>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
 

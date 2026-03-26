@@ -24,6 +24,7 @@ use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\StadiumController;
 use App\Http\Controllers\TeamOfTheDayController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\PatchlogController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/roadmap-board/items', [RoadmapBoardController::class, 'storeItem'])->name('roadmap-board.items.store');
     Route::patch('/roadmap-board/items/{roadmapItem}', [RoadmapBoardController::class, 'updateItem'])->name('roadmap-board.items.update');
     Route::post('/roadmap-board/items/{roadmapItem}/comments', [RoadmapBoardController::class, 'storeComment'])->name('roadmap-board.comments.store');
+    Route::get('/patchlogs', [PatchlogController::class, 'index'])->name('patchlogs.index');
 
     // WebAuthn Routes
     \Laragear\WebAuthn\Http\Routes::routes();
