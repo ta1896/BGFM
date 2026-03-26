@@ -39,6 +39,11 @@ class PatchlogController extends Controller
                                 'description' => 'Flüssigere Übergänge zwischen Lauf-, Schuss- und Zweikampf-Animationen in der 2D-Ansicht.',
                                 'type' => 'visual',
                             ],
+                            [
+                                'title' => 'Taktische Pressing-Auslöser',
+                                'description' => 'Neue Detail-Einstellungen für das Defensivverhalten: Pressing bei Rückpässen, Ballannahme oder gezielt am Flügel.',
+                                'type' => 'feature',
+                            ],
                         ],
                     ],
                     [
