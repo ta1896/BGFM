@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ClubAchievement;
 use App\Models\Club;
 use App\Models\Competition;
 use App\Models\CompetitionSeason;
@@ -75,6 +76,7 @@ class TestFactorySeeder extends Seeder
             [$admin, $manager] = $this->createUsers();
             $country = $this->createCountry();
             $season = $this->createSeason($seedYear);
+            $managedClub = null;
 
             for ($leagueIndex = 1; $leagueIndex <= $leagueCount; $leagueIndex++) {
                 $competition = $this->createCompetition($country, $leagueIndex);
@@ -108,6 +110,10 @@ class TestFactorySeeder extends Seeder
                     ]);
 
                     $clubs->push($club);
+
+                    if ($leagueIndex === 1 && $clubIndex === 1) {
+                        $managedClub = $club;
+                    }
                 }
 
                 app(FixtureGeneratorService::class)->generateRoundRobin($competitionSeason->load('season'));
@@ -116,6 +122,10 @@ class TestFactorySeeder extends Seeder
                 if ($leagueIndex === 1) {
                     $this->simulateDetailedTestMatches($competitionSeason);
                 }
+            }
+
+            if ($managedClub instanceof Club) {
+                $this->createTrophyCabinetHistory($managedClub, $country, $seedYear);
             }
 
             // Avoid "unused variable" optimizations and keep explicit that both users are part of the data set.
@@ -127,8 +137,17 @@ class TestFactorySeeder extends Seeder
     private function cleanupPreviousFactoryData(): void
     {
         // 1. Matches & Actions
-        $testCompIds = Competition::query()->where('short_name', 'like', 'TSTL%')->pluck('id');
-        $testSeasonIds = Season::query()->where('name', 'like', 'TEST-%')->pluck('id');
+        $testCompIds = Competition::query()
+            ->where(function ($query) {
+                $query->where('short_name', 'like', 'TSTL%')
+                    ->orWhere('short_name', 'like', 'TSTNC%')
+                    ->orWhere('short_name', 'like', 'TSTIC%');
+            })
+            ->pluck('id');
+        $testSeasonIds = Season::query()
+            ->where('name', 'like', 'TEST-%')
+            ->orWhere('name', 'like', 'TROPHY-%')
+            ->pluck('id');
 
         // Find matches via competition_season
         $matches = GameMatch::query()
@@ -150,6 +169,7 @@ class TestFactorySeeder extends Seeder
         $clubIds = Club::query()->where('slug', 'like', 'tst-l%')->pluck('id');
 
         if ($clubIds->isNotEmpty()) {
+            ClubAchievement::query()->whereIn('club_id', $clubIds)->delete();
             Lineup::query()->whereIn('club_id', $clubIds)->delete();
             PlayerContract::query()->whereIn('club_id', $clubIds)->delete();
             SeasonClubRegistration::query()->whereIn('club_id', $clubIds)->delete();
@@ -160,6 +180,15 @@ class TestFactorySeeder extends Seeder
             // Players table doesn't have club_id in NewGen usually? It works via Contracts.
             // But we should delete players that have NO contracts or are "Test Player"?
             Player::query()->where('last_name', 'like', 'Testplayer%')->delete();
+        }
+
+        if ($testCompIds->isNotEmpty() || $testSeasonIds->isNotEmpty()) {
+            ClubAchievement::query()
+                ->whereIn('competition_season_id', CompetitionSeason::query()
+                    ->whereIn('competition_id', $testCompIds)
+                    ->whereIn('season_id', $testSeasonIds)
+                    ->pluck('id'))
+                ->delete();
         }
 
         // 3. Competitions & Seasons
@@ -546,6 +575,79 @@ class TestFactorySeeder extends Seeder
             foreach ($actions as $action) {
                 MatchLiveAction::create($action);
             }
+        }
+    }
+
+    private function createTrophyCabinetHistory(Club $club, Country $country, int $seedYear): void
+    {
+        $entries = [
+            ['offset' => 5, 'competition' => 'Test Meisterschaft', 'short_name' => 'TSTL-H', 'type' => 'league', 'scope' => 'domestic', 'achievement_type' => 'league_winner', 'title' => 'Meister Test Meisterschaft'],
+            ['offset' => 4, 'competition' => 'Test Pokal', 'short_name' => 'TSTNC-1', 'type' => 'cup', 'scope' => 'domestic', 'achievement_type' => 'cup_winner_national', 'title' => 'Pokalsieger Test Pokal'],
+            ['offset' => 3, 'competition' => 'Test Europa Cup', 'short_name' => 'TSTIC-1', 'type' => 'cup', 'scope' => 'international', 'achievement_type' => 'cup_winner_intl', 'title' => 'Internationaler Pokalsieger Test Europa Cup'],
+            ['offset' => 2, 'competition' => 'Test Meisterschaft', 'short_name' => 'TSTL-H', 'type' => 'league', 'scope' => 'domestic', 'achievement_type' => 'league_winner', 'title' => 'Meister Test Meisterschaft'],
+            ['offset' => 1, 'competition' => 'Test Super Cup', 'short_name' => 'TSTNC-2', 'type' => 'cup', 'scope' => 'domestic', 'achievement_type' => 'cup_winner_national', 'title' => 'Pokalsieger Test Super Cup'],
+            ['offset' => 0, 'competition' => 'Test Champions Trophy', 'short_name' => 'TSTIC-2', 'type' => 'cup', 'scope' => 'international', 'achievement_type' => 'cup_winner_intl', 'title' => 'Internationaler Pokalsieger Test Champions Trophy'],
+        ];
+
+        foreach ($entries as $index => $entry) {
+            $startYear = $seedYear - (int) $entry['offset'];
+            $season = Season::firstOrCreate(
+                ['name' => sprintf('TROPHY-%d/%d', $startYear, $startYear + 1)],
+                [
+                    'start_date' => Carbon::create($startYear, 7, 1)->toDateString(),
+                    'end_date' => Carbon::create($startYear + 1, 6, 30)->toDateString(),
+                    'is_current' => false,
+                ]
+            );
+
+            $competition = Competition::firstOrCreate(
+                ['short_name' => (string) $entry['short_name']],
+                [
+                    'country_id' => $entry['scope'] === 'domestic' ? $country->id : null,
+                    'name' => (string) $entry['competition'],
+                    'type' => (string) $entry['type'],
+                    'scope' => (string) $entry['scope'],
+                    'tier' => 1,
+                    'is_active' => true,
+                ]
+            );
+
+            $competitionSeason = CompetitionSeason::firstOrCreate(
+                [
+                    'competition_id' => $competition->id,
+                    'season_id' => $season->id,
+                ],
+                [
+                    'format' => $entry['type'] === 'league' ? 'round_robin' : 'knockout',
+                    'matchdays' => $entry['type'] === 'league' ? 34 : 7,
+                    'points_win' => 3,
+                    'points_draw' => 1,
+                    'points_loss' => 0,
+                    'promoted_slots' => 0,
+                    'relegated_slots' => 0,
+                    'is_finished' => true,
+                ]
+            );
+
+            $winnerField = match ($entry['achievement_type']) {
+                'league_winner' => 'league_winner_club_id',
+                'cup_winner_intl' => 'intl_cup_winner_club_id',
+                default => 'national_cup_winner_club_id',
+            };
+
+            $competitionSeason->forceFill([$winnerField => $club->id, 'is_finished' => true])->save();
+
+            ClubAchievement::updateOrCreate(
+                [
+                    'club_id' => $club->id,
+                    'competition_season_id' => $competitionSeason->id,
+                    'type' => $entry['achievement_type'],
+                ],
+                [
+                    'title' => $entry['title'] . ' (' . $season->name . ')',
+                    'achieved_at' => Carbon::create($startYear + 1, 5, 20 + $index)->toDateString(),
+                ]
+            );
         }
     }
 }

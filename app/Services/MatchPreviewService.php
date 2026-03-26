@@ -101,7 +101,7 @@ class MatchPreviewService
                     'fit_factor' => round($fitFactor, 2),
                     'overall' => (int) $player->overall,
                     'photo_url' => $player->photo_url,
-                    'is_captain' => (bool) $player->pivot->is_captain,
+                    'is_captain' => (bool) ($player->pivot->is_captain ?? false),
                     'instructions' => $this->normalizeInstructions($player->pivot->instructions ?? null),
                 ];
 
@@ -633,6 +633,8 @@ class MatchPreviewService
                 'sort_order' => $sortOrder,
                 'is_bench' => $isBench,
                 'bench_order' => $benchOrder,
+                'is_captain' => false,
+                'instructions' => [],
             ],
         ];
     }

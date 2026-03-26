@@ -142,6 +142,44 @@ class ClubController extends Controller
             return $p;
         });
 
+        $trophyCabinet = $club->achievements
+            ->sortByDesc(function ($achievement) {
+                return $achievement->competitionSeason?->season?->id
+                    ?? $achievement->achieved_at?->timestamp
+                    ?? 0;
+            })
+            ->values()
+            ->map(function ($achievement) {
+                $competition = $achievement->competitionSeason?->competition;
+                $season = $achievement->competitionSeason?->season;
+
+                $type = match ($achievement->type) {
+                    'league_winner' => 'league',
+                    'cup_winner_intl' => 'international_cup',
+                    default => 'national_cup',
+                };
+
+                $categoryLabel = match ($achievement->type) {
+                    'league_winner' => 'Ligatitel',
+                    'cup_winner_intl' => 'Internationaler Pokal',
+                    default => 'Nationaler Pokal',
+                };
+
+                return [
+                    'id' => $achievement->id,
+                    'type' => $type,
+                    'category_label' => $categoryLabel,
+                    'title' => $achievement->title,
+                    'competition_name' => $competition?->name ?? 'Wettbewerb',
+                    'competition_short_name' => $competition?->short_name ?: $competition?->name ?: 'Wettbewerb',
+                    'competition_logo_url' => $competition?->logo_url,
+                    'season_name' => $season?->name ?? 'Unbekannte Saison',
+                    'achieved_at' => $achievement->achieved_at?->format('d.m.Y'),
+                    'scope' => $competition?->scope,
+                    'competition_type' => $competition?->type,
+                ];
+            });
+
         return Inertia::render('Clubs/Show', [
             'club' => $club,
             'seasons' => $seasons,
@@ -149,6 +187,15 @@ class ClubController extends Controller
             'overallStats' => $overallStats,
             'seasonStats' => $seasonStats,
             'players' => $players,
+            'trophyCabinet' => [
+                'total' => $trophyCabinet->count(),
+                'by_type' => [
+                    'league' => $trophyCabinet->where('type', 'league')->count(),
+                    'national_cup' => $trophyCabinet->where('type', 'national_cup')->count(),
+                    'international_cup' => $trophyCabinet->where('type', 'international_cup')->count(),
+                ],
+                'items' => $trophyCabinet,
+            ],
             'isOwner' => $club->user_id === $request->user()->id,
         ]);
     }
