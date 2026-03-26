@@ -11,7 +11,7 @@ class AddPatchlogsNavigationSeeder extends Seeder
     public function run(): void
     {
         $parent = NavigationItem::where('label', 'Buero')
-            ->where('group', 'manager')
+            ->where('group', 'manager_with_club')
             ->first();
 
         if ($parent) {
