@@ -28,6 +28,8 @@ import {
     CheckCircle,
     ArrowsClockwise,
 } from '@phosphor-icons/react';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 
 const ACTION_CONFIG = {
     goal: { Icon: SoccerBall, color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
@@ -136,25 +138,6 @@ const getTeamVisuals = (isHomeAction) => ({
         : 'border-amber-400/20 bg-amber-400/8',
 });
 
-const PlayerNameLink = ({ playerId, name, className = '', title }) => {
-    if (!name) {
-        return null;
-    }
-
-    if (!playerId) {
-        return <span className={className}>{name}</span>;
-    }
-
-    return (
-        <Link
-            href={route('players.show', playerId)}
-            className={`${className} underline decoration-white/15 underline-offset-4 transition-colors hover:text-white hover:decoration-current`}
-            title={title || `${name} ansehen`}
-        >
-            {name}
-        </Link>
-    );
-};
 
 const ClubLogo = ({ club, className = '', imgClassName = '' }) => {
     const [hasError, setHasError] = React.useState(false);
@@ -576,8 +559,8 @@ export const ModulePanels = ({ panels = [] }) => {
                                                         </div>
                                                         <div className="mt-1 flex items-center gap-2">
                                                             <div className="truncate text-lg font-black tracking-tight text-white">
-                                                                <PlayerNameLink
-                                                                    playerId={award.player_id}
+                                                                <PlayerLink
+                                                                    id={award.player_id}
                                                                     name={award.player_name || award.club_name || award.label}
                                                                     className="text-white hover:text-amber-300 transition-colors"
                                                                 />
@@ -730,7 +713,7 @@ export const ScoreHero = ({ home_club, away_club, home_score, away_score, status
                 <div className="grid w-fit grid-cols-[7rem_2.25rem_3.25rem] items-center justify-center gap-1.5">
                     <div className={`text-right font-['Outfit'] text-[0.72rem] font-bold leading-none text-white ${isHomeAction ? tone : 'text-white/35'}`}>
                         {isHomeAction ? (
-                            <PlayerNameLink playerId={action.player_id} name={actorName} className={tone} title={`${actorName} ansehen`} />
+                            <PlayerLink id={action.player_id} name={actorName} className={tone} title={`${actorName} ansehen`} />
                         ) : '\u00a0'}
                     </div>
                     <div className="text-center font-['Outfit'] text-[0.68rem] font-semibold leading-none text-[#8aa8bc]">
@@ -900,11 +883,11 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                             <div className="min-w-0">
                                 <div className="text-sm text-slate-300">{firstName}</div>
                                 <div className="truncate text-3xl font-black leading-none text-white">
-                                    <PlayerNameLink playerId={action.player_id} name={lastName} className="text-white" title={scorerName} />
+                                    <PlayerLink id={action.player_id} name={lastName} className="text-white" title={scorerName} />
                                 </div>
                                 {action.assister_name && (
                                     <div className={`mt-2 text-sm ${teamVisuals.text}`}>
-                                        Assist: <PlayerNameLink playerId={null} name={action.assister_name} className={teamVisuals.text} />
+                                        Assist: <PlayerLink id={action.assister_player_id} name={action.assister_name} className={teamVisuals.text} />
                                     </div>
                                 )}
                             </div>
@@ -966,7 +949,7 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                         <div className="min-w-0 flex-1">
                             <div className="text-xs text-[var(--text-muted)]">{outgoingFirst}</div>
                             <div className="truncate text-2xl font-black leading-none text-white">
-                                <PlayerNameLink playerId={action.opponent_player_id} name={outgoingLast} className="text-white" title={outgoingName} />
+                                <PlayerLink id={action.opponent_player_id} name={outgoingLast} className="text-white" title={outgoingName} />
                             </div>
                         </div>
                         <div className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-rose-200">
@@ -978,7 +961,7 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                         <div className="min-w-0 flex-1 text-right">
                             <div className="text-xs text-[var(--text-muted)]">{incomingFirst}</div>
                             <div className="truncate text-2xl font-black leading-none text-white">
-                                <PlayerNameLink playerId={action.player_id} name={incomingLast} className="text-white" title={incomingName} />
+                                <PlayerLink id={action.player_id} name={incomingLast} className="text-white" title={incomingName} />
                             </div>
                         </div>
                         <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[var(--bg-pillar)]">
@@ -1089,7 +1072,7 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                                 <span className={`${color} mr-1.5`}>{EVENT_LABELS[action.action_type] || action.action_type}</span>
                                 {action.player_name && (
                                     <span className="text-slate-100">
-                                        <PlayerNameLink playerId={action.player_id} name={action.player_name} className="text-slate-100" />
+                                        <PlayerLink id={action.player_id} name={action.player_name} className="text-slate-100" />
                                     </span>
                                 )}
                                 {action.assister_name && <span className="text-[0.76rem] text-[var(--text-muted)]"> (V: {action.assister_name})</span>}
@@ -1101,7 +1084,7 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                                 {EVENT_LABELS[action.action_type] || action.action_type}
                                 {action.player_name && (
                                     <span className="ml-1 text-slate-200">
-                                        <PlayerNameLink playerId={action.player_id} name={action.player_name} className="text-slate-200" />
+                                        <PlayerLink id={action.player_id} name={action.player_name} className="text-slate-200" />
                                     </span>
                                 )}
                             </p>
@@ -1449,37 +1432,56 @@ export const Live2DTab = ({ homeClub, awayClub, livePitch, liveMinute, displayMi
                                 const compactnessShift = isAttackingTeam
                                     ? laneShift * (0.45 + (widthBias * 0.1))
                                     : laneShift * 0.2;
-                                const attractionX = (animatedBall.x - player.x) * (player.is_highlighted ? 0.08 : isAttackingTeam ? 0.03 : 0.018);
-                                const attractionY = (animatedBall.y - player.y) * (player.is_highlighted ? 0.08 : isAttackingTeam ? 0.028 : 0.016);
-                                const pulse = ((frameIndex + player.player_id) % 2 === 0 ? 1 : -1) * (player.is_highlighted ? 0.9 : 0.35);
+
+                                const dx = animatedBall.x - player.x;
+                                const dy = animatedBall.y - player.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                const isShooting = (latestAction?.action_type === 'goal' || latestAction?.action_type === 'chance') && player.player_id === latestAction?.player_id;
+                                const isTackling = (latestAction?.action_type === 'tackle' || latestAction?.action_type === 'foul') && (player.player_id === latestAction?.player_id || player.player_id === latestAction?.opponent_player_id);
+                                
+                                const attractionX = dx * (player.is_highlighted ? 0.08 : isShooting ? 0.12 : isAttackingTeam ? 0.03 : 0.018);
+                                const attractionY = dy * (player.is_highlighted ? 0.08 : isShooting ? 0.12 : isAttackingTeam ? 0.028 : 0.016);
+                                
+                                const intensity = Math.min(1.5, dist / 20);
+                                const pulse = ((frameIndex + player.player_id) % 2 === 0 ? 1 : -1) * (player.is_highlighted ? 0.9 : 0.2 + intensity * 0.3);
                                 const stagger = ((player.player_id % 5) - 2) * 0.45;
+                                
                                 const renderX = Math.max(3, Math.min(97, player.x + attackDepthShift + attractionX + stagger));
                                 const renderY = Math.max(
                                     4,
                                     Math.min(96, player.y + compactnessShift + attractionY + pulse - (widthBias * laneShift * 0.08)),
                                 );
 
+                                // Animation Blending: Adjust duration and easing based on state
+                                const animDuration = isShooting ? '400ms' : isTackling ? '500ms' : '850ms';
+                                const animEasing = isShooting ? 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' : isTackling ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'cubic-bezier(0.4, 0, 0.2, 1)';
+
                                 return (
                                     <div
                                         key={player.player_id}
-                                        className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-linear"
-                                        style={{ left: `${renderX}%`, top: `${renderY}%` }}
+                                        className="absolute -translate-x-1/2 -translate-y-1/2 transition-all"
+                                        style={{ 
+                                            left: `${renderX}%`, 
+                                            top: `${renderY}%`,
+                                            transitionDuration: animDuration,
+                                            transitionTimingFunction: animEasing
+                                        }}
                                     >
                                         <div className="flex flex-col items-center gap-1">
                                             <div
-                                                className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-black shadow-lg ${
+                                                className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-[9px] font-black shadow-lg transition-transform ${
                                                     player.is_home
                                                         ? 'border-cyan-300/70 bg-cyan-300/15 text-cyan-100'
                                                         : 'border-amber-300/70 bg-amber-300/15 text-amber-100'
                                                 } ${
-                                                    player.is_highlighted ? 'ring-4 ring-white/10' : ''
+                                                    player.is_highlighted ? 'ring-4 ring-white/10 scale-110' : 'scale-100'
                                                 } ${
                                                     player.is_sent_off || player.is_injured ? 'opacity-45 saturate-0' : ''
-                                                }`}
+                                                } ${isShooting ? 'ring-4 ring-white shadow-[0_0_25px_rgba(255,255,255,0.6)] !scale-125' : ''} ${isTackling ? 'shadow-[0_0_20px_rgba(255,255,255,0.3)] !skew-x-12' : ''}`}
                                             >
                                                 {player.slot?.slice(0, 2) || 'SP'}
-                                                {player.is_highlighted && (
-                                                    <span className="absolute -inset-1 animate-pulse rounded-full border border-white/20" />
+                                                {(player.is_highlighted || isShooting) && (
+                                                    <span className={`absolute -inset-1 rounded-full border border-white/20 ${isShooting ? 'animate-ping' : 'animate-pulse'}`} />
                                                 )}
                                             </div>
                                             <div className="rounded-full border border-black/20 bg-black/35 px-2 py-0.5 text-center text-[8px] font-black uppercase tracking-[0.12em] text-white/85">
@@ -1656,8 +1658,8 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                                                         <span>{formatTimelineLabel(action)}</span>
                                                     </div>
                                                     <div className="mt-2 text-base font-semibold leading-snug text-white">
-                                                        <PlayerNameLink
-                                                            playerId={action.player_id || action.opponent_player_id}
+                                                        <PlayerLink
+                                                            id={action.player_id || action.opponent_player_id}
                                                             name={primaryPlayer}
                                                             className="text-white"
                                                         />

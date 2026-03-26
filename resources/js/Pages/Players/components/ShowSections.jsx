@@ -7,6 +7,8 @@ import {
     ClockCounterClockwise, FloppyDisk, IdentificationBadge, SoccerBall, Target, Trophy, 
     UsersThree, FirstAidKit, ArrowsLeftRight, Flag, Ruler, Footprints, TShirt 
 } from '@phosphor-icons/react';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 import { POSITIONS, POSITION_COORDS } from '@/constants/positions';
 const PlayerRadarChart = lazy(() => import('@/Pages/Players/components/PlayerRadarChart'));
 import PerformanceTab from '@/Pages/Players/components/PerformanceTab';
@@ -152,15 +154,19 @@ export const PlayerShowHeader = React.memo(function PlayerShowHeader({ player, i
 
                             <div className="flex flex-wrap items-center justify-center gap-8 lg:justify-start">
                                 {player.club ? (
-                                    <Link href={route('clubs.show', player.club.id)} className="group flex items-center gap-4">
+                                    <div className="group flex items-center gap-4">
                                         <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/5 p-2 transition-all group-hover:border-cyan-500/30">
                                             <img loading="lazy" src={player.club.logo_url} className="h-full w-full object-contain" alt={player.club.name} />
                                         </div>
                                         <div>
                                             <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Aktueller Verein</p>
-                                            <p className="text-lg font-black uppercase tracking-tighter text-white italic transition-colors group-hover:text-cyan-400">{player.club.name}</p>
+                                            <ClubLink
+                                                id={player.club.id}
+                                                name={player.club.name}
+                                                className="text-lg font-black uppercase tracking-tighter text-white italic transition-colors hover:text-cyan-400"
+                                            />
                                         </div>
-                                    </Link>
+                                    </div>
                                 ) : (
                                     <div className="flex items-center gap-4 opacity-50">
                                         <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-content)] font-black italic text-slate-600">?</div>
@@ -741,18 +747,22 @@ export const PlayerMatchesTab = React.memo(function PlayerMatchesTab({ player, r
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
                                                     <img src={stat.match?.home_club?.logo_url} className="h-5 w-5 object-contain" alt="H" />
-                                                    <span className={`text-sm font-black italic tracking-tight ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
-                                                        {stat.match?.home_club?.short_name}
-                                                    </span>
+                                                    <ClubLink
+                                                        id={stat.match?.home_club_id}
+                                                        name={stat.match?.home_club?.short_name}
+                                                        className={`text-sm font-black italic tracking-tight ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}
+                                                    />
                                                 </div>
                                                 <span className="text-sm font-black text-white italic">{stat.match?.home_score}</span>
                                             </div>
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
                                                     <img src={stat.match?.away_club?.logo_url} className="h-5 w-5 object-contain" alt="A" />
-                                                    <span className={`text-sm font-black italic tracking-tight ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
-                                                        {stat.match?.away_club?.short_name}
-                                                    </span>
+                                                    <ClubLink
+                                                        id={stat.match?.away_club_id}
+                                                        name={stat.match?.away_club?.short_name}
+                                                        className={`text-sm font-black italic tracking-tight ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}
+                                                    />
                                                 </div>
                                                 <span className="text-sm font-black text-white italic">{stat.match?.away_score}</span>
                                             </div>
@@ -827,18 +837,22 @@ export const PlayerMatchesTab = React.memo(function PlayerMatchesTab({ player, r
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <img src={stat.match?.home_club?.logo_url} className="h-4 w-4 object-contain" alt="H" />
-                                    <span className={`text-xs font-black italic ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
-                                        {stat.match?.home_club?.short_name}
-                                    </span>
+                                    <ClubLink
+                                        id={stat.match?.home_club_id}
+                                        name={stat.match?.home_club?.short_name}
+                                        className={`text-xs font-black italic ${stat.match?.home_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}
+                                    />
                                 </div>
                                 <span className="text-xs font-black text-white italic">{stat.match?.home_score}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <img src={stat.match?.away_club?.logo_url} className="h-4 w-4 object-contain" alt="A" />
-                                    <span className={`text-xs font-black italic ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}>
-                                        {stat.match?.away_club?.short_name}
-                                    </span>
+                                    <ClubLink
+                                        id={stat.match?.away_club_id}
+                                        name={stat.match?.away_club?.short_name}
+                                        className={`text-xs font-black italic ${stat.match?.away_club_id === player.club_id ? 'text-white' : 'text-slate-400'}`}
+                                    />
                                 </div>
                                 <span className="text-xs font-black text-white italic">{stat.match?.away_score}</span>
                             </div>

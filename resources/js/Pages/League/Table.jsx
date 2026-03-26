@@ -5,6 +5,7 @@ import { Trophy, Minus, ArrowUp, ArrowDown, Crown, ShieldCheck } from '@phosphor
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import SectionCard from '@/Components/SectionCard';
+import ClubLink from '@/Components/ClubLink';
 
 function DiffBadge({ diff }) {
     if (!diff || diff === 0) {
@@ -105,12 +106,11 @@ export default function Table({ competitionSeasons, activeCompetitionSeason, tab
                                                     />
                                                 </div>
                                                 <div className="flex min-w-0 items-center gap-3">
-                                                    <Link
-                                                        href={route('clubs.show', row.club_id ?? row.club?.id)}
+                                                    <ClubLink
+                                                        id={row.club_id ?? row.club?.id}
+                                                        name={row.club?.name || row.club_name}
                                                         className={`truncate text-sm font-black uppercase tracking-tight transition-colors hover:text-[var(--accent-primary)] ${isOwned ? 'text-[var(--text-main)]' : 'text-slate-300'}`}
-                                                    >
-                                                        {row.club?.name || row.club_name}
-                                                    </Link>
+                                                    />
                                                     {position === 1 && <Crown size={14} weight="fill" className="shrink-0 text-amber-400" />}
                                                     {isOwned && <ShieldCheck size={14} weight="fill" className="shrink-0 text-[var(--accent-primary)]" />}
                                                 </div>

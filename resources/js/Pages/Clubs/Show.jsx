@@ -12,6 +12,8 @@ import {
     Trophy,
     Users,
 } from '@phosphor-icons/react';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 
 const tabs = [
     { id: 'overview', label: 'Uebersicht' },
@@ -197,7 +199,7 @@ export default function Show({
                                                                 <img src={player.photo_url} className="h-full w-full object-cover" alt="" />
                                                             </div>
                                                             <span className="text-sm font-bold text-white transition-colors group-hover:text-amber-500">
-                                                                {player.first_name} {player.last_name}
+                                                                <PlayerLink id={player.id} name={`${player.first_name} ${player.last_name}`} className="text-white hover:text-amber-500" />
                                                             </span>
                                                         </div>
                                                     </td>
@@ -383,7 +385,9 @@ export default function Show({
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">{entry.legend_type_label}</p>
-                                                    <h4 className="text-xl font-black text-white">{entry.player.name}</h4>
+                                                    <h4 className="text-xl font-black text-white">
+                                                        <PlayerLink id={entry.player.id} name={entry.player.name} className="text-white hover:text-amber-500" />
+                                                    </h4>
                                                     <p className="text-[10px] font-bold uppercase tracking-widest text-amber-100/40">Aufgenommen {entry.inducted_at}</p>
                                                 </div>
                                             </div>

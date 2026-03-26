@@ -1,6 +1,8 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 
 export default function Index({ auth, activeClub, unreadCount, seasons, activeSeasonId, topScorers, topAssists, topRatings, teamStats }) {
     const handleSeasonChange = (e) => {
@@ -23,12 +25,10 @@ export default function Index({ auth, activeClub, unreadCount, seasons, activeSe
                                 <img loading="lazy" src={item.player?.photo_url || '/images/default-player.png'} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <Link href={route('players.show', item.player_id)} className="text-sm font-bold text-white hover:text-cyan-400 transition-colors truncate block">
-                                    {item.player?.full_name}
-                                </Link>
+                                <PlayerLink id={item.player_id} name={item.player?.full_name} className="text-sm font-bold text-white hover:text-cyan-400 transition-colors truncate block" />
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <img loading="lazy" src={item.club?.logo_url} className="w-3.5 h-3.5 object-contain opacity-70" />
-                                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-wider truncate">{item.club?.short_name}</span>
+                                    <ClubLink id={item.club?.id} name={item.club?.short_name} className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-wider truncate hover:text-cyan-400" />
                                 </div>
                             </div>
                             <div className="text-right">

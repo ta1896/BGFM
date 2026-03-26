@@ -104,16 +104,11 @@ export default function TransferHistory({ player, isOwner }) {
                                                     <ArrowsLeftRight className="w-4 h-4 text-[var(--text-muted)] opacity-20" />
                                                 )}
                                             </div>
-                                            {entry.left_club_id ? (
-                                                <Link 
-                                                    href={route('clubs.show', entry.left_club_id)}
-                                                    className="text-xs font-black text-amber-500/80 hover:text-amber-500 transition-colors uppercase italic tracking-tight"
-                                                >
-                                                    {entry.left_club_name}
-                                                </Link>
-                                            ) : (
-                                                <span className="text-xs font-black text-[var(--text-muted)] uppercase italic tracking-tight opacity-70">{entry.left_club_name}</span>
-                                            )}
+                                            <ClubLink
+                                                id={entry.left_club_id}
+                                                name={entry.left_club_name}
+                                                className="text-xs font-black text-amber-500/80 hover:text-amber-500 transition-colors uppercase italic tracking-tight"
+                                            />
                                         </div>
                                     </td>
                                     <td className="px-6 py-5 text-center">
@@ -130,16 +125,11 @@ export default function TransferHistory({ player, isOwner }) {
                                                     <ArrowsLeftRight className="w-4 h-4 text-[var(--text-muted)] opacity-20" />
                                                 )}
                                             </div>
-                                            {entry.joined_club_id ? (
-                                                <Link 
-                                                    href={route('clubs.show', entry.joined_club_id)}
-                                                    className="text-xs font-black text-amber-500/80 hover:text-amber-500 transition-colors uppercase italic tracking-tight"
-                                                >
-                                                    {entry.joined_club_name}
-                                                </Link>
-                                            ) : (
-                                                <span className="text-xs font-black text-[var(--text-muted)] uppercase italic tracking-tight opacity-70">{entry.joined_club_name}</span>
-                                            )}
+                                            <ClubLink
+                                                id={entry.joined_club_id}
+                                                name={entry.joined_club_name}
+                                                className="text-xs font-black text-amber-500/80 hover:text-amber-500 transition-colors uppercase italic tracking-tight"
+                                            />
                                         </div>
                                     </td>
                                     <td className="px-6 py-5 text-right">

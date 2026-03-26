@@ -1,6 +1,8 @@
 import React from 'react';
 import { router } from '@inertiajs/react';
 import { Calendar, Funnel, Star, Trophy } from '@phosphor-icons/react';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 
 export function TeamOfTheDayHeader({ teams, selectedTeam, onTeamChange }) {
     return (
@@ -95,9 +97,11 @@ function PitchPlayer({ entry }) {
                 </div>
             </div>
             <div className="rounded-full border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/90 px-3 py-1 shadow-md backdrop-blur-sm">
-                <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-tighter text-white">
-                    {entry.player.last_name}
-                </span>
+                <PlayerLink
+                    id={entry.player.id}
+                    name={entry.player.last_name}
+                    className="whitespace-nowrap text-[10px] font-black uppercase tracking-tighter text-white hover:text-yellow-500"
+                />
             </div>
         </div>
     );
@@ -128,9 +132,11 @@ export function TeamOfTheDayDetails({ entries }) {
                                     <img loading="lazy" src={entry.player?.photo_url} className="h-full w-full object-cover" alt={entry.player?.last_name} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-white transition-colors group-hover:text-yellow-500">{entry.player?.last_name}</p>
+                                    <p className="text-sm font-medium text-white transition-colors group-hover:text-yellow-500">
+                                        <PlayerLink id={entry.player?.id} name={entry.player?.last_name} className="text-white hover:text-yellow-500" />
+                                    </p>
                                     <p className="text-[10px] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
-                                        {entry.player?.position} - {entry.player?.club?.name}
+                                        {entry.player?.position} - <ClubLink id={entry.player?.club?.id} name={entry.player?.club?.name} className="text-[var(--text-muted)] hover:text-yellow-500" />
                                     </p>
                                 </div>
                             </div>

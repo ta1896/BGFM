@@ -9,6 +9,8 @@ import { FirstAidKit } from '@phosphor-icons/react/FirstAidKit';
 import { FlagPennant } from '@phosphor-icons/react/FlagPennant';
 import { Handshake } from '@phosphor-icons/react/Handshake';
 import { UsersThree } from '@phosphor-icons/react/UsersThree';
+import PlayerLink from '@/Components/PlayerLink';
+import ClubLink from '@/Components/ClubLink';
 
 const taskPriorityTone = {
     sofort: 'border-rose-400/20 bg-rose-400/10 text-rose-200',
@@ -39,7 +41,11 @@ const ManagerLiveRow = ({ manager }) => (
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="truncate text-[11px] font-black uppercase tracking-[0.08em] text-white">{manager.manager}</div>
-                    <div className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/70">{manager.club?.name || 'Ohne Verein'}</div>
+                    <ClubLink
+                        id={manager.club?.id}
+                        name={manager.club?.name || 'Ohne Verein'}
+                        className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/70 block hover:text-cyan-300 transition-colors"
+                    />
                 </div>
                 <div className="shrink-0 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-200">
                     {manager.last_seen_label}
@@ -136,7 +142,7 @@ export default function DashboardDeferredSections({
                             </div>
                             <div className="space-y-2.5">
                                 {medicalDesk.critical_cases.map((player) => (
-                                    <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20">
+                                    <PlayerLink key={player.id} id={player.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20">
                                         <img loading="lazy" src={player.photo_url} alt={player.name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
                                         <div className="min-w-0 flex-1">
                                             <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.name}</div>
@@ -158,7 +164,7 @@ export default function DashboardDeferredSections({
                                                 {player.expected_return ? `ETA ${player.expected_return}` : 'laufend'}
                                             </div>
                                         </div>
-                                    </Link>
+                                    </PlayerLink>
                                 ))}
                             </div>
                         </section>
@@ -176,13 +182,13 @@ export default function DashboardDeferredSections({
                                         </div>
                                         <div className="space-y-2">
                                             {squadPulse.manual_role_players.map((player) => (
-                                                <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-fuchsia-400/30">
+                                                <PlayerLink key={player.id} id={player.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-fuchsia-400/30">
                                                     <img loading="lazy" src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
                                                     <div className="min-w-0 flex-1">
                                                         <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
                                                         <div className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-200">{player.squad_role}</div>
                                                     </div>
-                                                </Link>
+                                                </PlayerLink>
                                             ))}
                                         </div>
                                     </div>
@@ -196,7 +202,7 @@ export default function DashboardDeferredSections({
                                         </div>
                                         <div className="space-y-2">
                                             {squadPulse.pressure_players.map((player) => (
-                                                <Link key={player.id} href={route('players.show', player.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-amber-400/30">
+                                                <PlayerLink key={player.id} id={player.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 transition-colors hover:border-amber-400/30">
                                                     <img loading="lazy" src={player.photo_url} alt={player.full_name} className="h-9 w-9 rounded-xl border border-white/10 object-cover" />
                                                     <div className="min-w-0 flex-1">
                                                         <div className="truncate text-[11px] font-black uppercase tracking-[0.06em] text-white">{player.full_name}</div>
@@ -204,7 +210,7 @@ export default function DashboardDeferredSections({
                                                             {player.promise_status === 'broken' ? 'Gebrochen' : 'Kritisch'} / Mood {player.happiness}%
                                                         </div>
                                                     </div>
-                                                </Link>
+                                                </PlayerLink>
                                             ))}
                                         </div>
                                     </div>
@@ -358,7 +364,7 @@ export default function DashboardDeferredSections({
                         <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Manager Decisions</h2>
                         <div className="space-y-3">
                             {managerDecisions.map((decision, idx) => (
-                                <Link key={`${decision.kind}-${decision.player_id}-${idx}`} href={route('players.show', decision.player_id)} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20">
+                                <PlayerLink key={`${decision.kind}-${decision.player_id}-${idx}`} id={decision.player_id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20">
                                     <img loading="lazy" src={decision.photo_url} alt={decision.player_name} className="h-10 w-10 rounded-xl border border-white/10 object-cover" />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-start justify-between gap-3">
@@ -399,7 +405,7 @@ export default function DashboardDeferredSections({
                                             </div>
                                         </div>
                                     </div>
-                                </Link>
+                                </PlayerLink>
                             ))}
                         </div>
                     </section>
