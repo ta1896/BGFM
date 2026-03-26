@@ -145,6 +145,33 @@ class MatchSimulationService
             $eventData['sequence'] = $sequence++;
             $eventData['narrative'] = $this->narrativeEngine->generate($eventData['event_type'], $eventData);
             $events[] = $eventData;
+
+            // VAR Implementation: 15% chance for VAR on goals (open play or penalty)
+            $isGoal = $eventData['event_type'] === 'goal';
+            $isPenalty = ($eventData['metadata']['situation'] ?? '') === 'penalty';
+            if (($isGoal || $isPenalty) && mt_rand(1, 100) <= 20) {
+                $lastEvent = end($events);
+                
+                // Add Check Event
+                $checkEvent = $lastEvent;
+                $checkEvent['event_type'] = 'var_check';
+                $checkEvent['sequence'] = $sequence++;
+                $checkEvent['second'] = ($checkEvent['second'] + 2) % 60;
+                $checkEvent['narrative'] = "VAR-CHECK: Der Schiedsrichter überprüft ein mögliches " . ($isPenalty ? 'Foulspiel' : 'Abseits') . "...";
+                $checkEvent['metadata'] = array_merge($checkEvent['metadata'] ?? [], ['var_status' => 'checking']);
+                $events[] = $checkEvent;
+
+                // Add Decision Event (15 seconds later)
+                $decisionEvent = $lastEvent;
+                $decisionEvent['event_type'] = 'var_decision';
+                $decisionEvent['sequence'] = $sequence++;
+                $decisionEvent['second'] = ($decisionEvent['second'] + 15) % 60;
+                if ($decisionEvent['second'] < 15) $decisionEvent['minute']++;
+                
+                $decisionEvent['narrative'] = "ENTSCHEIDUNG BESTÄTIGT! Das Tor zählt und die Zuschauer beben vor Freude!";
+                $decisionEvent['metadata'] = array_merge($decisionEvent['metadata'] ?? [], ['var_status' => 'confirmed']);
+                $events[] = $decisionEvent;
+            }
         }
 
         $duration = round((microtime(true) - $startTime) * 1000, 2);

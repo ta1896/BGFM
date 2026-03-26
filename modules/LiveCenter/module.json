@@ -83,6 +83,16 @@
                 "icon": "broadcast",
                 "priority": 20,
                 "enabled_when": "simulation.modules.live_center.match_panel_enabled"
+            },
+            {
+                "key": "live-center-match-shotmap",
+                "title": "Schusskarte",
+                "description": "Visualisierung aller Torschüsse, xG-Werte und Abschlussmuster.",
+                "route": "live-ticker.index",
+                "accent": "emerald",
+                "icon": "crosshair",
+                "priority": 25,
+                "enabled_when": "simulation.modules.live_center.match_panel_enabled"
             }
         ],
         "notifications": []

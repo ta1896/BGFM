@@ -147,6 +147,8 @@ class NarrativeEngine
             'kickoff' => "Das Spiel wurde angepfiffen.",
             'half_time' => "Halbzeitpause. Die Spieler begeben sich in die Kabinen.",
             'full_time' => "Das Spiel ist beendet.",
+            'var_check' => "Überprüfung läuft... Der Schiedsrichter wird über Funk kontaktiert (VAR).",
+            'var_decision' => "ENTSCHEIDUNG: Die Prüfung ist abgeschlossen.",
             default => "Ereignis: {$eventType} durch {$playerName} ({$clubName}).",
         };
     }

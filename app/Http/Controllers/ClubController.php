@@ -7,6 +7,7 @@ use App\Models\GameMatch;
 use App\Models\Season;
 use App\Services\ClubFinanceLedgerService;
 use App\Services\StatisticsAggregationService;
+use App\Services\ClubHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -115,8 +116,12 @@ class ClubController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Club $club, StatisticsAggregationService $statisticsAggregationService): Response
-    {
+    public function show(
+        Request $request, 
+        Club $club, 
+        StatisticsAggregationService $statisticsAggregationService,
+        ClubHistoryService $historyService
+    ): Response {
         $club->load([
             'players' => fn($query) => $query->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")->orderByDesc('overall'),
             'user',
@@ -197,6 +202,9 @@ class ClubController extends Controller
                 'items' => $trophyCabinet,
             ],
             'isOwner' => $club->user_id === $request->user()->id,
+            'hallOfFame' => $historyService->getHallOfFame($club),
+            'clubRecords' => $historyService->getRecords($club),
+            'historicalComparison' => $historyService->getHistoricalComparison($club, $seasonStats),
         ]);
     }
 

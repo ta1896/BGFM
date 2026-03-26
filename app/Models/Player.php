@@ -329,9 +329,14 @@ class Player extends Model
         return $this->hasMany(PlayerConversation::class);
     }
 
-    public function transferHistories(): HasMany
+    public function transferHistory(): HasMany
     {
         return $this->hasMany(PlayerTransferHistory::class)->orderByDesc('transfer_date');
+    }
+
+    public function hallOfFameEntries(): HasMany
+    {
+        return $this->hasMany(ClubHallOfFame::class);
     }
 
     public function getFullNameAttribute(): string

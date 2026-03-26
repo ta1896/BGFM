@@ -1,6 +1,23 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import RoadmapLayout from '@/Layouts/RoadmapLayout';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    rectSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
     ArrowBendUpRight,
     CaretDown,
@@ -15,6 +32,8 @@ import {
     Target,
     TrendUp,
     User,
+    X,
+    DotsSixVertical,
 } from '@phosphor-icons/react';
 
 const statusTone = {
@@ -48,10 +67,12 @@ const sizeLabel = {
     huge: 'Gross',
 };
 
-const orderedStatuses = ['in_progress', 'planned', 'done', 'cancelled'];
-
-export default function Index({ items, groups, topItems, statusOptions, categoryOptions, sizeOptions }) {
+export default function Index({ items: initialItems, groups: initialGroups, topItems, statusOptions, categoryOptions, sizeOptions }) {
     const { auth } = usePage().props;
+    const [items, setItems] = useState(initialItems);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [isReordering, setIsReordering] = useState(false);
+
     const createForm = useForm({
         title: '',
         summary: '',
@@ -62,9 +83,9 @@ export default function Index({ items, groups, topItems, statusOptions, category
         priority: 3,
         effort: 3,
     });
+
     const [commentDrafts, setCommentDrafts] = useState({});
     const [tagDrafts, setTagDrafts] = useState({});
-    const [openItems, setOpenItems] = useState(() => new Set(topItems.slice(0, 1).map((item) => item.id)));
     const [filters, setFilters] = useState({
         query: '',
         status: 'all',
@@ -73,9 +94,23 @@ export default function Index({ items, groups, topItems, statusOptions, category
         tag: 'all',
     });
 
+    useEffect(() => {
+        setItems(initialItems);
+    }, [initialItems]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
     const availableTags = useMemo(() => {
         const seen = new Set();
-
         return items
             .flatMap((item) => item.tags || [])
             .filter((tag) => {
@@ -94,9 +129,9 @@ export default function Index({ items, groups, topItems, statusOptions, category
         done: items.filter((item) => item.status === 'done').length,
     }), [items]);
 
-    const filteredGroups = useMemo(() => {
+    const filteredItems = useMemo(() => {
         const query = filters.query.trim().toLowerCase();
-        const matches = (item) => {
+        return items.filter((item) => {
             if (filters.status !== 'all' && item.status !== filters.status) return false;
             if (filters.category !== 'all' && item.category !== filters.category) return false;
             if (filters.size !== 'all' && item.size_bucket !== filters.size) return false;
@@ -112,13 +147,34 @@ export default function Index({ items, groups, topItems, statusOptions, category
                 item.updater?.name,
                 ...(item.tags || []),
             ].filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
-        };
+        });
+    }, [filters, items]);
 
-        return orderedStatuses.reduce((acc, statusKey) => {
-            acc[statusKey] = (groups[statusKey] || []).filter(matches);
-            return acc;
-        }, {});
-    }, [filters, groups]);
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+
+        if (active && over && active.id !== over.id) {
+            setItems((current) => {
+                const oldIndex = current.findIndex((i) => i.id === active.id);
+                const newIndex = current.findIndex((i) => i.id === over.id);
+                const nextItems = arrayMove(current, oldIndex, newIndex);
+
+                // Send to backend
+                const reorderData = nextItems.map((item, index) => ({
+                    id: item.id,
+                    sort_order: index + 1,
+                }));
+
+                router.post(route('roadmap-board.reorder'), { items: reorderData }, {
+                    preserveScroll: true,
+                    onStart: () => setIsReordering(true),
+                    onFinish: () => setIsReordering(false),
+                });
+
+                return nextItems;
+            });
+        }
+    };
 
     const submitCreate = (event) => {
         event.preventDefault();
@@ -132,7 +188,16 @@ export default function Index({ items, groups, topItems, statusOptions, category
     };
 
     const updateItem = (itemId, field, value) => {
-        router.patch(route('roadmap-board.items.update', itemId), { [field]: value }, { preserveScroll: true });
+        router.patch(route('roadmap-board.items.update', itemId), { [field]: value }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // If the updated item is currently open in modal, update it
+                const updatedItem = page.props.items.find(i => i.id === itemId);
+                if (selectedItem?.id === itemId) {
+                    setSelectedItem(updatedItem);
+                }
+            }
+        });
     };
 
     const submitComment = (itemId) => {
@@ -141,7 +206,13 @@ export default function Index({ items, groups, topItems, statusOptions, category
 
         router.post(route('roadmap-board.comments.store', itemId), { body }, {
             preserveScroll: true,
-            onSuccess: () => setCommentDrafts((current) => ({ ...current, [itemId]: '' })),
+            onSuccess: (page) => {
+                setCommentDrafts((current) => ({ ...current, [itemId]: '' }));
+                const updatedItem = page.props.items.find(i => i.id === itemId);
+                if (selectedItem?.id === itemId) {
+                    setSelectedItem(updatedItem);
+                }
+            },
         });
     };
 
@@ -158,195 +229,318 @@ export default function Index({ items, groups, topItems, statusOptions, category
         updateItem(item.id, 'tags', (item.tags || []).filter((tag) => tag !== tagToRemove));
     };
 
-    const toggleItem = (itemId) => {
-        setOpenItems((current) => {
-            const next = new Set(current);
-            if (next.has(itemId)) next.delete(itemId);
-            else next.add(itemId);
-            return next;
-        });
-    };
-
     return (
         <RoadmapLayout user={auth?.user}>
             <Head title="Roadmap Board" />
 
             <div className="space-y-6 pb-10">
-                <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-                    <div className="rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(12,16,22,0.94),rgba(15,20,27,0.9))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.34)] sm:p-6">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div className="max-w-2xl">
-                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200/75">Community Roadmap</div>
-                                <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white sm:text-[2.2rem]">
-                                    Oeffentliche Roadmap-Optik, aber mit voller Kontrolle.
-                                </h2>
-                                <p className="mt-3 text-sm leading-7 text-slate-300">
-                                    Die Eintraege sind wie in einer oeffentlichen Produkt-Roadmap aufgebaut: Kategorie links, Status rechts, Diskussion und Steuerung im aufklappbaren Detailbereich.
-                                </p>
-                            </div>
-
+                {/* Header Section */}
+                <section className="rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(12,16,22,0.94),rgba(15,20,27,0.9))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.34)] sm:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="max-w-2xl">
+                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200/75">Community Roadmap</div>
+                            <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white sm:text-[2.2rem]">
+                                Roadmap Board Redesign
+                            </h2>
+                            <p className="mt-3 text-sm leading-7 text-slate-300">
+                                Erkunde unsere Vision. Sortiere die Kacheln per Drag & Drop, um Prioritaeten festzulegen. Klicke auf eine Kachel fuer Details.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {isReordering && (
+                                <div className="flex items-center gap-2 rounded-full bg-cyan-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100 border border-cyan-300/20">
+                                    <div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400"></div>
+                                    Speichert...
+                                </div>
+                            )}
                             <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-3">
                                 <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">Angemeldet als</div>
                                 <div className="mt-1 text-sm font-black text-white">{auth?.user?.name}</div>
                             </div>
                         </div>
-
-                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            <SummaryCard icon={Stack} label="Eintraege" value={stats.total} />
-                            <SummaryCard icon={Target} label="Aktiv" value={stats.active} />
-                            <SummaryCard icon={ChatCircleDots} label="Kommentare" value={stats.comments} />
-                            <SummaryCard icon={Checks} label="Fertig" value={stats.done} />
-                        </div>
                     </div>
 
-                    <div className="rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(14,18,22,0.95),rgba(13,18,24,0.92))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.34)] sm:p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/10">
-                                <TrendUp size={18} weight="duotone" className="text-amber-100" />
-                            </div>
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-100/75">Prioritaetsliste</div>
-                                <div className="mt-1 text-lg font-black text-white">Als naechstes bauen</div>
-                            </div>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                            {topItems.map((item, index) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => toggleItem(item.id)}
-                                    className="w-full rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition-all hover:border-white/14 hover:bg-white/[0.05]"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-amber-300/20 bg-amber-400/10 px-2 text-[10px] font-black text-amber-100">
-                                                    {index + 1}
-                                                </span>
-                                                <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${categoryTone[item.category] || categoryTone.mid}`}>
-                                                    {categoryLabel[item.category] || item.category}
-                                                </span>
-                                            </div>
-                                            <div className="mt-2 text-sm font-black text-white">{item.title}</div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-sm font-black text-amber-100">{normalizeScore(item.weighted_score)}%</div>
-                                            {openItems.has(item.id) ? (
-                                                <CaretDown size={16} weight="bold" className="text-white/55" />
-                                            ) : (
-                                                <CaretRight size={16} weight="bold" className="text-white/55" />
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {openItems.has(item.id) ? (
-                                        <div className="mt-4 border-t border-white/8 pt-4">
-                                            <p className="text-sm leading-6 text-slate-300">{item.summary}</p>
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                <MetaTag label={statusLabel[item.status] || item.status} />
-                                                <MetaTag label={`Prioritaet ${item.priority}`} />
-                                                <MetaTag label={`Aufwand ${item.effort}`} />
-                                                {item.updated_at ? <MetaTag label={`Aktualisiert ${item.updated_at}`} /> : null}
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <SummaryCard icon={Stack} label="Eintraege" value={stats.total} />
+                        <SummaryCard icon={Target} label="Aktiv" value={stats.active} />
+                        <SummaryCard icon={ChatCircleDots} label="Kommentare" value={stats.comments} />
+                        <SummaryCard icon={Checks} label="Fertig" value={stats.done} />
                     </div>
                 </section>
 
-                <section className="rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(13,17,22,0.95),rgba(10,15,21,0.94))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.34)] sm:p-6">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10">
-                            <NotePencil size={18} weight="duotone" className="text-cyan-100" />
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100/75">Neuer Eintrag</div>
-                            <div className="mt-1 text-lg font-black text-white">Roadmap-Punkt anlegen</div>
-                        </div>
+                {/* Filters Section */}
+                <section className="rounded-[24px] border border-white/8 bg-black/20 p-4">
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+                        <input value={filters.query} onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))} className={fieldClassName} placeholder="Suche..." />
+                        <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className={fieldClassName}>
+                            <option value="all">Alle Status</option>
+                            {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                        <select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))} className={fieldClassName}>
+                            <option value="all">Alle Kategorien</option>
+                            {categoryOptions.map((option) => <option key={option.value} value={option.value}>{categoryLabel[option.value] || option.label}</option>)}
+                        </select>
+                        <select value={filters.size} onChange={(event) => setFilters((current) => ({ ...current, size: event.target.value }))} className={fieldClassName}>
+                            <option value="all">Alle Groessen</option>
+                            {sizeOptions.map((option) => <option key={option.value} value={option.value}>{sizeLabel[option.value] || option.label}</option>)}
+                        </select>
+                        <select value={filters.tag} onChange={(event) => setFilters((current) => ({ ...current, tag: event.target.value }))} className={fieldClassName}>
+                            <option value="all">Alle Tags</option>
+                            {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                        </select>
                     </div>
+                </section>
 
-                    <form onSubmit={submitCreate} className="mt-5 grid gap-3 xl:grid-cols-[1.05fr_1.2fr_0.9fr_0.9fr_0.6fr_0.6fr_0.5fr_0.5fr_auto]">
-                        <input value={createForm.data.title} onChange={(event) => createForm.setData('title', event.target.value)} className={fieldClassName} placeholder="Titel" />
-                        <input value={createForm.data.summary} onChange={(event) => createForm.setData('summary', event.target.value)} className={fieldClassName} placeholder="Kurze Beschreibung" />
+                {/* Create Item Form (Collapsed/Simple) */}
+                <section className="rounded-[28px] border border-white/8 bg-[linear-gradient(160deg,rgba(13,17,22,0.95),rgba(10,15,21,0.94))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.34)] sm:p-6">
+                    <form onSubmit={submitCreate} className="grid gap-3 lg:grid-cols-[1fr_2fr_1fr_1fr_auto]">
+                        <input value={createForm.data.title} onChange={(event) => createForm.setData('title', event.target.value)} className={fieldClassName} placeholder="Titel des neuen Konzepts" />
+                        <input value={createForm.data.summary} onChange={(event) => createForm.setData('summary', event.target.value)} className={fieldClassName} placeholder="Kurze Beschreibung..." />
                         <select value={createForm.data.category} onChange={(event) => createForm.setData('category', event.target.value)} className={fieldClassName}>
                             {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
-                        <input value={Array.isArray(createForm.data.tags) ? createForm.data.tags.join(', ') : ''} onChange={(event) => createForm.setData('tags', parseTags(event.target.value))} className={fieldClassName} placeholder="Tags, mit Komma" />
                         <select value={createForm.data.status} onChange={(event) => createForm.setData('status', event.target.value)} className={fieldClassName}>
                             {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
-                        <select value={createForm.data.size_bucket} onChange={(event) => createForm.setData('size_bucket', event.target.value)} className={fieldClassName}>
-                            {sizeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                        </select>
-                        <select value={createForm.data.priority} onChange={(event) => createForm.setData('priority', Number(event.target.value))} className={fieldClassName}>
-                            {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>P{value}</option>)}
-                        </select>
-                        <select value={createForm.data.effort} onChange={(event) => createForm.setData('effort', Number(event.target.value))} className={fieldClassName}>
-                            {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>E{value}</option>)}
-                        </select>
-                        <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-[18px] border border-cyan-300/20 bg-cyan-400/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-cyan-100 transition-all hover:border-cyan-300/30 hover:bg-cyan-400/15 disabled:opacity-60" disabled={createForm.processing}>
+                        <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-[18px] border border-cyan-300/20 bg-cyan-400/10 px-6 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-cyan-100 transition-all hover:border-cyan-300/30 hover:bg-cyan-400/15 disabled:opacity-60" disabled={createForm.processing}>
                             <ArrowBendUpRight size={14} weight="bold" />
                             Anlegen
                         </button>
                     </form>
                 </section>
 
-                <section className="rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,20,0.96),rgba(15,15,18,0.98))] shadow-[0_20px_70px_rgba(0,0,0,0.34)]">
-                    <div className="border-b border-white/8 px-5 py-4 sm:px-6">
-                        <div className="flex flex-wrap items-end justify-between gap-4">
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">Alle Eintraege</div>
-                                <div className="mt-1 text-lg font-black text-white">Roadmap-Liste</div>
-                            </div>
+                {/* Tiles Grid with DnD */}
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext
+                        items={filteredItems.map(i => i.id)}
+                        strategy={rectSortingStrategy}
+                    >
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {filteredItems.map((item) => (
+                                <SortableItem
+                                    key={item.id}
+                                    item={item}
+                                    onClick={() => setSelectedItem(item)}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            </div>
 
-                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                                <input value={filters.query} onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))} className={fieldClassName} placeholder="Suche..." />
-                                <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className={fieldClassName}>
-                                    <option value="all">Alle Status</option>
-                                    {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                                </select>
-                                <select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))} className={fieldClassName}>
-                                    <option value="all">Alle Kategorien</option>
-                                    {categoryOptions.map((option) => <option key={option.value} value={option.value}>{categoryLabel[option.value] || option.label}</option>)}
-                                </select>
-                                <select value={filters.size} onChange={(event) => setFilters((current) => ({ ...current, size: event.target.value }))} className={fieldClassName}>
-                                    <option value="all">Alle Groessen</option>
-                                    {sizeOptions.map((option) => <option key={option.value} value={option.value}>{sizeLabel[option.value] || option.label}</option>)}
-                                </select>
-                                <select value={filters.tag} onChange={(event) => setFilters((current) => ({ ...current, tag: event.target.value }))} className={fieldClassName}>
-                                    <option value="all">Alle Tags</option>
-                                    {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
-                                </select>
+            {/* Detail Overlay / Modal */}
+            {selectedItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[32px] border border-white/12 bg-[#0c1016] shadow-[0_50px_100px_rgba(0,0,0,0.6)]">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${categoryTone[selectedItem.category] || categoryTone.mid}`}>
+                                    {categoryLabel[selectedItem.category] || selectedItem.category}
+                                </span>
+                                <h3 className="text-xl font-black text-white">{selectedItem.title}</h3>
+                            </div>
+                            <button
+                                onClick={() => setSelectedItem(null)}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-white/60 transition-all hover:bg-white/10 hover:text-white"
+                            >
+                                <X size={20} weight="bold" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="overflow-y-auto px-6 py-6" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+                            <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+                                <div className="space-y-6">
+                                    <section>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42 mb-3">Beschreibung</div>
+                                        <p className="text-base leading-8 text-slate-300 whitespace-pre-wrap">{selectedItem.summary}</p>
+                                    </section>
+
+                                    <section className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42 mb-4">Tags & Metadaten</div>
+                                        <div className="flex flex-wrap gap-2 mb-4">
+                                            {selectedItem.tags?.map(tag => (
+                                                <span key={tag} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-black text-cyan-100">
+                                                    {tag}
+                                                    <button onClick={() => removeTagFromItem(selectedItem, tag)} className="hover:text-rose-400 transition-colors">
+                                                        <X size={12} weight="bold" />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input
+                                                value={tagDrafts[selectedItem.id] || ''}
+                                                onChange={(e) => setTagDrafts(c => ({ ...c, [selectedItem.id]: e.target.value }))}
+                                                className={fieldClassName}
+                                                placeholder="Tags hinzufuegen..."
+                                                onKeyDown={(e) => e.key === 'Enter' && addTagToItem(selectedItem)}
+                                            />
+                                            <button onClick={() => addTagToItem(selectedItem)} className="rounded-2xl bg-white/5 px-4 text-white/80 hover:bg-white/10">
+                                                <Sparkle size={18} />
+                                            </button>
+                                        </div>
+                                    </section>
+
+                                    <section className="space-y-4">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42">Diskussion ({selectedItem.comments?.length || 0})</div>
+                                        <div className="space-y-3">
+                                            {selectedItem.comments?.map(comment => (
+                                                <div key={comment.id} className="rounded-[20px] border border-white/5 bg-white/[0.02] p-4 text-sm">
+                                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.1em] text-white/50 mb-2">
+                                                        <span>{comment.user?.name}</span>
+                                                        <span>{comment.created_at}</span>
+                                                    </div>
+                                                    <p className="text-slate-300 leading-6">{comment.body}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-2">
+                                            <textarea
+                                                value={commentDrafts[selectedItem.id] || ''}
+                                                onChange={(e) => setCommentDrafts(c => ({ ...c, [selectedItem.id]: e.target.value }))}
+                                                className={`${fieldClassName} min-h-[100px] resize-none`}
+                                                placeholder="Deine Gedanken hier..."
+                                            />
+                                            <div className="mt-3 flex justify-end">
+                                                <button
+                                                    onClick={() => submitComment(selectedItem.id)}
+                                                    className="inline-flex items-center gap-2 rounded-2xl bg-cyan-400/10 border border-cyan-300/20 px-6 py-3 text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100 hover:bg-cyan-400/15"
+                                                >
+                                                    <ChatCircleDots size={16} />
+                                                    Kommentieren
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <section className="rounded-[28px] border border-white/8 bg-black/40 p-5 space-y-4">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42">Eigenschaften anpassen</div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[10px] font-black text-white/30 uppercase block mb-2">Status</label>
+                                                <select
+                                                    value={selectedItem.status}
+                                                    onChange={(e) => updateItem(selectedItem.id, 'status', e.target.value)}
+                                                    className={fieldClassName}
+                                                >
+                                                    {statusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] font-black text-white/30 uppercase block mb-2">Prioritaet</label>
+                                                    <select
+                                                        value={selectedItem.priority}
+                                                        onChange={(e) => updateItem(selectedItem.id, 'priority', Number(e.target.value))}
+                                                        className={fieldClassName}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>P{v}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-black text-white/30 uppercase block mb-2">Aufwand</label>
+                                                    <select
+                                                        value={selectedItem.effort}
+                                                        onChange={(e) => updateItem(selectedItem.id, 'effort', Number(e.target.value))}
+                                                        className={fieldClassName}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>E{v}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-3">
+                                                <InfoTile label="Score" value={`${normalizeScore(selectedItem.weighted_score)}%`} />
+                                                <InfoTile label="Groesse" value={sizeLabel[selectedItem.size_bucket] || selectedItem.size_bucket} />
+                                                <InfoTile label="Erstellt von" value={selectedItem.creator?.name || 'Unbekannt'} />
+                                                <InfoTile label="Update" value={selectedItem.updated_at || 'Just now'} />
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <div className="rounded-[24px] border border-emerald-300/10 bg-emerald-400/5 p-5 text-center">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/50 mb-2">Item Key</div>
+                                        <div className="text-sm font-mono text-emerald-100/40 break-all">{selectedItem.key}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div className="px-3 py-2 sm:px-4">
-                        {orderedStatuses.map((statusKey) => (
-                            <RoadmapStatusGroup
-                                key={statusKey}
-                                title={statusLabel[statusKey]}
-                                items={filteredGroups[statusKey] || []}
-                                openItems={openItems}
-                                toggleItem={toggleItem}
-                                onUpdate={updateItem}
-                                onSubmitComment={submitComment}
-                                commentDrafts={commentDrafts}
-                                setCommentDrafts={setCommentDrafts}
-                                tagDrafts={tagDrafts}
-                                setTagDrafts={setTagDrafts}
-                                addTagToItem={addTagToItem}
-                                removeTagFromItem={removeTagFromItem}
-                                statusOptions={statusOptions}
-                            />
-                        ))}
-                    </div>
-                </section>
-            </div>
+                </div>
+            )}
         </RoadmapLayout>
+    );
+}
+
+function SortableItem({ item, onClick }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="group relative h-full"
+        >
+            <div
+                className="flex h-full flex-col rounded-[24px] border border-white/8 bg-white/[0.04] p-5 transition-all hover:border-white/16 hover:bg-white/[0.06] hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+                onClick={onClick}
+            >
+                <div className="flex items-start justify-between gap-3">
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${categoryTone[item.category] || categoryTone.mid}`}>
+                        {categoryLabel[item.category] || item.category}
+                    </span>
+                    <button
+                        {...attributes}
+                        {...listeners}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/20 hover:bg-white/5 hover:text-white/60 cursor-grab active:cursor-grabbing"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <DotsSixVertical size={18} weight="bold" />
+                    </button>
+                </div>
+
+                <h3 className="mt-4 text-[15px] font-black leading-tight text-white group-hover:text-emerald-300 transition-colors">
+                    {item.title}
+                </h3>
+
+                <p className="mt-3 line-clamp-2 text-[13px] leading-6 text-slate-400">
+                    {item.summary}
+                </p>
+
+                <div className="mt-auto pt-5">
+                    <div className="flex items-center justify-between border-t border-white/6 pt-4">
+                        <div className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusTone[item.status] || statusTone.planned}`}>
+                            {statusLabel[item.status] || item.status}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-amber-200/80">
+                            <TrendUp size={14} weight="bold" />
+                            <span className="text-[11px] font-black">{normalizeScore(item.weighted_score)}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -366,191 +560,11 @@ function SummaryCard({ icon: Icon, label, value }) {
     );
 }
 
-function RoadmapStatusGroup({ title, items, openItems, toggleItem, onUpdate, onSubmitComment, commentDrafts, setCommentDrafts, tagDrafts, setTagDrafts, addTagToItem, removeTagFromItem, statusOptions }) {
-    return (
-        <div className="mb-4">
-            <div className="px-2 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/38">
-                {title} · {items.length}
-            </div>
-            <div className="overflow-hidden rounded-[24px] border border-white/8 bg-black/15">
-                {items.length === 0 ? (
-                    <div className="px-5 py-6 text-sm text-white/40">Keine Eintraege in diesem Bereich.</div>
-                ) : items.map((item, index) => (
-                    <RoadmapListRow
-                        key={item.id}
-                        item={item}
-                        isOpen={openItems.has(item.id)}
-                        toggleItem={toggleItem}
-                        onUpdate={onUpdate}
-                        onSubmitComment={onSubmitComment}
-                        commentDrafts={commentDrafts}
-                        setCommentDrafts={setCommentDrafts}
-                        tagDrafts={tagDrafts}
-                        setTagDrafts={setTagDrafts}
-                        addTagToItem={addTagToItem}
-                        removeTagFromItem={removeTagFromItem}
-                        statusOptions={statusOptions}
-                        bordered={index !== items.length - 1}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function RoadmapListRow({ item, isOpen, toggleItem, onUpdate, onSubmitComment, commentDrafts, setCommentDrafts, tagDrafts, setTagDrafts, addTagToItem, removeTagFromItem, statusOptions, bordered }) {
-    return (
-        <article className={bordered ? 'border-b border-white/8' : ''}>
-            <div className="flex items-start gap-4 px-4 py-4 sm:px-5">
-                <button type="button" onClick={() => toggleItem(item.id)} className="min-w-0 flex-1 text-left">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${categoryTone[item.category] || categoryTone.mid}`}>
-                            {categoryLabel[item.category] || item.category}
-                        </span>
-                        <h3 className="text-base font-black tracking-[-0.02em] text-white">{item.title}</h3>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-slate-300">
-                        <RowMeta icon={ClockClockwise} label={item.updated_at ? `aktualisiert ${item.updated_at}` : 'kuerzlich aktualisiert'} />
-                        <RowScore value={normalizeScore(item.weighted_score)} />
-                        <RowMeta icon={User} label={item.creator?.name || item.updater?.name || 'Team'} />
-                        <RowMeta icon={ChatCircleDots} label={`${item.comments_count} Kommentare`} />
-                        <RowMeta icon={Lightning} label={`Prioritaet ${item.priority} · Aufwand ${item.effort}`} />
-                    </div>
-                </button>
-
-                <div className="flex items-center gap-3">
-                    <div className={`hidden rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] sm:inline-flex ${statusTone[item.status] || statusTone.planned}`}>
-                        {statusLabel[item.status] || item.status}
-                    </div>
-                    <button type="button" onClick={() => toggleItem(item.id)} className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-emerald-300/15 bg-emerald-400/10 text-emerald-100 transition-all hover:border-emerald-300/25 hover:bg-emerald-400/15">
-                        {isOpen ? <CaretDown size={18} weight="bold" /> : <CaretRight size={18} weight="bold" />}
-                    </button>
-                </div>
-            </div>
-
-            {isOpen ? (
-                <div className="border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-4 py-4 sm:px-5">
-                    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                        <div className="space-y-4">
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42">Beschreibung</div>
-                                <p className="mt-2 text-sm leading-7 text-slate-300">{item.summary}</p>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                <MetaTag label={sizeLabel[item.size_bucket] || item.size_bucket} />
-                                <MetaTag label={`Key ${item.key}`} />
-                            </div>
-
-                            <div className="rounded-[20px] border border-white/8 bg-white/[0.03] p-3">
-                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42">Tags</div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {(item.tags || []).length === 0 ? (
-                                        <span className="text-sm text-white/38">Keine Tags hinterlegt.</span>
-                                    ) : (
-                                        item.tags.map((tag) => (
-                                            <button key={tag} type="button" onClick={() => removeTagFromItem(item, tag)} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-black text-cyan-100 transition-all hover:border-rose-300/25 hover:bg-rose-400/10 hover:text-rose-100">
-                                                {tag}
-                                                <span className="text-white/60">x</span>
-                                            </button>
-                                        ))
-                                    )}
-                                </div>
-
-                                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                                    <input value={tagDrafts[item.id] || ''} onChange={(event) => setTagDrafts((current) => ({ ...current, [item.id]: event.target.value }))} className={fieldClassName} placeholder="Neue Tags mit Komma trennen" />
-                                    <button type="button" onClick={() => addTagToItem(item)} className="inline-flex items-center justify-center gap-2 rounded-[16px] border border-cyan-300/18 bg-cyan-400/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-cyan-100 transition-all hover:border-cyan-300/30 hover:bg-cyan-400/15">
-                                        <Sparkle size={14} weight="bold" />
-                                        Tags hinzufuegen
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                {item.comments.map((comment) => (
-                                    <div key={comment.id} className="rounded-[18px] border border-white/8 bg-black/20 px-3 py-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="text-[11px] font-black uppercase tracking-[0.14em] text-white">{comment.user?.name || 'User'}</div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">{comment.created_at}</div>
-                                        </div>
-                                        <p className="mt-2 text-sm leading-6 text-slate-300">{comment.body}</p>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="rounded-[20px] border border-white/8 bg-white/[0.03] p-3">
-                                <textarea value={commentDrafts[item.id] || ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [item.id]: event.target.value }))} className={`${fieldClassName} min-h-[92px]`} placeholder="Kommentar, Entscheidung, Hinweis oder Bedenken hinzufuegen..." />
-                                <div className="mt-3 flex justify-end">
-                                    <button type="button" onClick={() => onSubmitComment(item.id)} className="inline-flex items-center gap-2 rounded-[16px] border border-white/10 bg-white/[0.05] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-white/85 transition-all hover:border-white/20 hover:bg-white/[0.08]">
-                                        <ChatCircleDots size={14} weight="bold" />
-                                        Kommentar speichern
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-3 self-start rounded-[22px] border border-white/8 bg-black/15 p-4">
-                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/42">Steuerung</div>
-                            <select value={item.status} onChange={(event) => onUpdate(item.id, 'status', event.target.value)} className={fieldClassName}>
-                                {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                            </select>
-                            <select value={item.priority} onChange={(event) => onUpdate(item.id, 'priority', Number(event.target.value))} className={fieldClassName}>
-                                {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>Prioritaet {value}</option>)}
-                            </select>
-                            <select value={item.effort} onChange={(event) => onUpdate(item.id, 'effort', Number(event.target.value))} className={fieldClassName}>
-                                {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>Aufwand {value}</option>)}
-                            </select>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <InfoTile label="Score" value={`${normalizeScore(item.weighted_score)}%`} />
-                                <InfoTile label="Status" value={statusLabel[item.status] || item.status} />
-                                <InfoTile label="Kategorie" value={categoryLabel[item.category] || item.category} />
-                                <InfoTile label="Groesse" value={sizeLabel[item.size_bucket] || item.size_bucket} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
-        </article>
-    );
-}
-
-function RowMeta({ icon: Icon, label }) {
-    return (
-        <div className="inline-flex items-center gap-2">
-            <Icon size={15} weight="regular" className="text-white/55" />
-            <span>{label}</span>
-        </div>
-    );
-}
-
-function RowScore({ value }) {
-    const isHigh = value >= 70;
-    const isMid = value >= 45;
-    const tone = isHigh ? 'text-emerald-300' : isMid ? 'text-amber-300' : 'text-rose-300';
-
-    return (
-        <div className={`inline-flex items-center gap-2 font-black ${tone}`}>
-            <TrendUp size={15} weight="bold" />
-            {value}%
-        </div>
-    );
-}
-
-function MetaTag({ label }) {
-    return (
-        <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/68">
-            {label}
-        </span>
-    );
-}
-
 function InfoTile({ label, value }) {
     return (
-        <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3 py-3">
+        <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3 py-3 text-left">
             <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">{label}</div>
-            <div className="mt-1 text-sm font-black text-white">{value}</div>
+            <div className="mt-1 text-sm font-black text-white truncate">{value}</div>
         </div>
     );
 }
@@ -560,16 +574,12 @@ function normalizeScore(score) {
 }
 
 function parseTags(input) {
-    if (Array.isArray(input)) {
-        return uniqueTags(input);
-    }
-
+    if (Array.isArray(input)) return uniqueTags(input);
     return uniqueTags(String(input || '').split(','));
 }
 
 function uniqueTags(tags) {
     const seen = new Set();
-
     return tags
         .map((tag) => String(tag).trim())
         .filter((tag) => tag.length > 0)

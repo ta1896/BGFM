@@ -14,76 +14,91 @@ class LiveOverviewService
 
     public function overview(): array
     {
-        $onlineManagers = $this->onlineManagers();
-        $liveMatches = $this->liveMatches();
+        $onlineManagersQuery = ManagerPresence::query()
+            ->where('last_seen_at', '>=', now()->subMinutes($this->onlineWindowMinutes()))
+            ->whereHas('user', fn ($query) => $query->where('is_admin', false));
+
+        $liveMatchesQuery = GameMatch::query()->where('status', 'live');
+
+        // Only fetch details for the top 10 items to keep payload small
+        $onlineManagers = $this->transformManagers($onlineManagersQuery->clone()->orderByDesc('last_seen_at')->limit(12)->get());
+        $liveMatches = $this->transformMatches($liveMatchesQuery->clone()->orderByDesc('live_minute')->limit(12)->get());
 
         return [
             'onlineManagers' => $onlineManagers,
-            'onlineManagersCount' => count($onlineManagers),
+            'onlineManagersCount' => $onlineManagersQuery->count(),
             'liveMatches' => $liveMatches,
-            'liveMatchesCount' => count($liveMatches),
+            'liveMatchesCount' => $liveMatchesQuery->count(),
             'onlineWindowMinutes' => $this->onlineWindowMinutes(),
         ];
     }
 
+    private function transformManagers($presences): array
+    {
+        return $presences->map(function (ManagerPresence $presence): array {
+            return [
+                'id' => $presence->id,
+                'manager' => $presence->user?->name,
+                'club' => $presence->club ? [
+                    'name' => $presence->club->name,
+                    'logo_url' => $presence->club->logo_url,
+                ] : null,
+                'activity_label' => $presence->activity_label,
+                'route_name' => $presence->route_name,
+                'path' => $presence->path,
+                'last_seen_at' => $presence->last_seen_at?->toIso8601String(),
+                'last_seen_label' => $presence->last_seen_at?->diffForHumans(),
+                'match' => $presence->match ? [
+                    'id' => $presence->match->id,
+                    'status' => $presence->match->status,
+                    'live_minute' => $presence->match->live_minute,
+                    'home_club' => $presence->match->homeClub ? [
+                        'name' => $presence->match->homeClub->name,
+                        'logo_url' => $presence->match->homeClub->logo_url,
+                    ] : null,
+                    'away_club' => $presence->match->awayClub ? [
+                        'name' => $presence->match->awayClub->name,
+                        'logo_url' => $presence->match->awayClub->logo_url,
+                    ] : null,
+                ] : null,
+            ];
+        })->values()->all();
+    }
+
+    private function transformMatches($matches): array
+    {
+        return $matches->map(fn (GameMatch $match) => $this->matchSummary($match))->values()->all();
+    }
+
     public function onlineManagers(): array
     {
-        $onlineWindow = now()->subMinutes($this->onlineWindowMinutes());
-
-        return ManagerPresence::query()
-            ->with([
-                'user:id,name',
-                'club:id,name,logo_path',
-                'match:id,status,live_minute,home_club_id,away_club_id',
-                'match.homeClub:id,name,logo_path',
-                'match.awayClub:id,name,logo_path',
-            ])
-            ->where('last_seen_at', '>=', $onlineWindow)
-            ->whereHas('user', fn ($query) => $query->where('is_admin', false))
-            ->orderByDesc('last_seen_at')
-            ->get()
-            ->map(function (ManagerPresence $presence): array {
-                return [
-                    'id' => $presence->id,
-                    'manager' => $presence->user?->name,
-                    'club' => $presence->club ? [
-                        'name' => $presence->club->name,
-                        'logo_url' => $presence->club->logo_url,
-                    ] : null,
-                    'activity_label' => $presence->activity_label,
-                    'route_name' => $presence->route_name,
-                    'path' => $presence->path,
-                    'last_seen_at' => $presence->last_seen_at?->toIso8601String(),
-                    'last_seen_label' => $presence->last_seen_at?->diffForHumans(),
-                    'match' => $presence->match ? [
-                        'id' => $presence->match->id,
-                        'status' => $presence->match->status,
-                        'live_minute' => $presence->match->live_minute,
-                        'home_club' => $presence->match->homeClub ? [
-                            'name' => $presence->match->homeClub->name,
-                            'logo_url' => $presence->match->homeClub->logo_url,
-                        ] : null,
-                        'away_club' => $presence->match->awayClub ? [
-                            'name' => $presence->match->awayClub->name,
-                            'logo_url' => $presence->match->awayClub->logo_url,
-                        ] : null,
-                    ] : null,
-                ];
-            })
-            ->values()
-            ->all();
+        return $this->transformManagers(
+            ManagerPresence::query()
+                ->with([
+                    'user:id,name',
+                    'club:id,name,logo_path',
+                    'match:id,status,live_minute,home_club_id,away_club_id',
+                    'match.homeClub:id,name,logo_path',
+                    'match.awayClub:id,name,logo_path',
+                ])
+                ->where('last_seen_at', '>=', now()->subMinutes($this->onlineWindowMinutes()))
+                ->whereHas('user', fn ($query) => $query->where('is_admin', false))
+                ->orderByDesc('last_seen_at')
+                ->limit(20)
+                ->get()
+        );
     }
 
     public function liveMatches(): array
     {
-        return GameMatch::query()
-            ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
-            ->where('status', 'live')
-            ->orderByDesc('live_minute')
-            ->get()
-            ->map(fn (GameMatch $match) => $this->matchSummary($match))
-            ->values()
-            ->all();
+        return $this->transformMatches(
+            GameMatch::query()
+                ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
+                ->where('status', 'live')
+                ->orderByDesc('live_minute')
+                ->limit(20)
+                ->get()
+        );
     }
 
     public function matchSummary(GameMatch $match): array

@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
     Route::delete('/settings/passkeys/{id}', [App\Http\Controllers\SettingsController::class, 'destroyPasskey'])->name('settings.passkeys.destroy');
     Route::get('/roadmap-board', [RoadmapBoardController::class, 'index'])->name('roadmap-board.index');
+    Route::post('/roadmap-board/reorder', [RoadmapBoardController::class, 'updateOrder'])->name('roadmap-board.reorder');
     Route::post('/roadmap-board/items', [RoadmapBoardController::class, 'storeItem'])->name('roadmap-board.items.store');
     Route::patch('/roadmap-board/items/{roadmapItem}', [RoadmapBoardController::class, 'updateItem'])->name('roadmap-board.items.update');
     Route::post('/roadmap-board/items/{roadmapItem}/comments', [RoadmapBoardController::class, 'storeComment'])->name('roadmap-board.comments.store');

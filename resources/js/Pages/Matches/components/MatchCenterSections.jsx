@@ -24,6 +24,9 @@ import {
     ArrowsCounterClockwise as Swap,
     Broadcast,
     User,
+    Monitor,
+    CheckCircle,
+    ArrowsClockwise,
 } from '@phosphor-icons/react';
 
 const ACTION_CONFIG = {
@@ -42,7 +45,7 @@ const ACTION_CONFIG = {
     tackle_lost: { Icon: HandFist, color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/15' },
     clearance: { Icon: Wind, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-content)] border-[var(--border-pillar)]' },
     interception: { Icon: CornersOut, color: 'text-teal-400', bg: 'bg-teal-500/15 border-teal-500/20' },
-    shot: { Icon: Lightning, color: 'text-amber-300', bg: 'bg-amber-500/15 border-amber-500/20' },
+    shot: { Icon: Target, color: 'text-slate-400', bg: 'border-slate-500/20 bg-slate-500/10' },
     chance: { Icon: Lightning, color: 'text-amber-300', bg: 'bg-amber-500/15 border-amber-500/20' },
     shot_on_target: { Icon: Crosshair, color: 'text-amber-400', bg: 'bg-amber-500/20 border-amber-500/30' },
     shot_off_target: { Icon: Crosshair, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-content)] border-[var(--border-pillar)]' },
@@ -61,6 +64,8 @@ const ACTION_CONFIG = {
     possession_loss: { Icon: Timer, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
     pressure: { Icon: Wind, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-pillar)] border-[var(--border-pillar)]' },
     assist: { Icon: ArrowRight, color: 'text-amber-500', bg: 'bg-amber-500/15 border-amber-500/20' },
+    var_check: { Icon: Monitor, color: 'text-indigo-400', bg: 'border-indigo-500/30 bg-indigo-500/20' },
+    var_decision: { Icon: CheckCircle, color: 'text-emerald-400', bg: 'border-emerald-500/40 bg-emerald-500/30' },
     default: { Icon: CaretRight, color: 'text-slate-600', bg: 'bg-transparent border-transparent' },
 };
 
@@ -75,6 +80,8 @@ const EVENT_LABELS = {
     injury: 'Verletzung',
     chance: 'Chance',
     shot: 'Schuss',
+    var_check: 'VAR-Check',
+    var_decision: 'VAR-Entscheidung',
     shot_on_target: 'Schuss aufs Tor',
     shot_off_target: 'Schuss daneben',
     shot_blocked: 'Schuss geblockt',
@@ -218,7 +225,7 @@ export const ActionIcon = ({ type, size = 16, className = '' }) => {
     return <Icon size={size} weight="fill" className={`${color} ${className}`} />;
 };
 
-export const isKeyEvent = (type) => ['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution', 'injury', 'penalty'].includes(type);
+export const isKeyEvent = (type) => ['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution', 'injury', 'penalty', 'var_check', 'var_decision'].includes(type);
 
 export const StatBar = ({ label, home, away }) => {
     const total = (home || 0) + (away || 0);
@@ -339,7 +346,7 @@ const styleOptions = [
     { key: 'counter', label: 'Counter' },
 ];
 
-const TIMELINE_TYPES = new Set(['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution']);
+const TIMELINE_TYPES = new Set(['goal', 'own_goal', 'yellow_card', 'red_card', 'yellow_red_card', 'substitution', 'var_check', 'var_decision']);
 
 const getTimelineEvents = (actions = []) => actions
     .filter((action) => TIMELINE_TYPES.has(action.action_type))
@@ -372,6 +379,8 @@ const formatTimelineLabel = (action) => {
     if (action.action_type === 'yellow_card') return 'Yellow';
     if (action.action_type === 'red_card' || action.action_type === 'yellow_red_card') return 'Red';
     if (action.action_type === 'substitution') return 'Sub';
+    if (action.action_type === 'var_check') return 'VAR Check';
+    if (action.action_type === 'var_decision') return 'VAR Decision';
     return EVENT_LABELS[action.action_type] || action.action_type;
 };
 
@@ -491,6 +500,12 @@ export const ModulePanels = ({ panels = [] }) => {
                             </div>
                         )}
 
+                        {panel.key === 'live-center-match-shotmap' && panel.data && (
+                            <div className="mt-5">
+                                <ShotMap data={panel.data} />
+                            </div>
+                        )}
+
                         {panel.data?.players?.length > 0 && (
                             <div className="mt-4 space-y-2.5">
                                 {panel.data.players.map((player) => (
@@ -508,50 +523,93 @@ export const ModulePanels = ({ panels = [] }) => {
                         )}
 
                         {panel.data?.awards?.length > 0 && (
-                            <div className="mt-4 space-y-2.5">
-                                {panel.data.awards.map((award) => (
-                                    <div key={award.award_key} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">
-                                                    {award.label}
-                                                </div>
-                                                <div className="mt-2 flex items-center gap-3">
-                                                    <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[var(--bg-content)]/50">
-                                                        {award.photo_url ? (
-                                                            <img src={award.photo_url} alt={award.player_name || award.label} className="h-full w-full object-cover" />
-                                                        ) : award.club_logo_url ? (
-                                                            <img src={award.club_logo_url} alt={award.club_name || award.label} className="h-full w-full object-contain p-2" />
-                                                        ) : (
-                                                            <Trophy size={18} weight="fill" className="text-amber-300" />
-                                                        )}
+                            <div className="mt-5 space-y-4">
+                                {panel.data.awards.map((award) => {
+                                    const isPotM = award.award_key === 'player_of_the_match';
+                                    const isTurningPoint = award.award_key === 'turning_point';
+                                    const isSave = award.award_key === 'save_of_the_game';
+                                    
+                                    const config = isPotM ? {
+                                        icon: Trophy,
+                                        accent: 'text-amber-400',
+                                        bg: 'bg-amber-400/10 border-amber-400/20 shadow-amber-500/10',
+                                        glow: 'after:bg-amber-400/10'
+                                    } : isTurningPoint ? {
+                                        icon: Lightning,
+                                        accent: 'text-rose-400',
+                                        bg: 'bg-rose-400/10 border-rose-400/20 shadow-rose-500/10',
+                                        glow: 'after:bg-rose-400/10'
+                                    } : {
+                                        icon: ShieldCheck,
+                                        accent: 'text-cyan-400',
+                                        bg: 'bg-cyan-400/10 border-cyan-400/20 shadow-cyan-500/10',
+                                        glow: 'after:bg-cyan-400/10'
+                                    };
+
+                                    return (
+                                        <div 
+                                            key={award.award_key} 
+                                            className={`relative overflow-hidden rounded-[1.5rem] border p-5 transition-all hover:scale-[1.01] ${config.bg} ${config.glow} after:absolute after:inset-0 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-500`}
+                                        >
+                                            <div className="relative z-10 flex items-start justify-between gap-4">
+                                                <div className="flex flex-1 gap-4">
+                                                    <div className="relative shrink-0">
+                                                        <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl">
+                                                            {award.photo_url ? (
+                                                                <img src={award.photo_url} alt={award.player_name} className="h-full w-full object-cover" />
+                                                            ) : award.club_logo_url ? (
+                                                                <img src={award.club_logo_url} alt={award.club_name} className="h-full w-full object-contain p-2.5" />
+                                                            ) : (
+                                                                <config.icon size={24} weight="fill" className={config.accent} />
+                                                            )}
+                                                        </div>
+                                                        <div className={`absolute -right-1.5 -bottom-1.5 rounded-full border border-white/10 bg-[#0a1522] p-1.5 shadow-lg ${config.accent}`}>
+                                                            <config.icon size={12} weight="fill" />
+                                                        </div>
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <div className="truncate text-sm font-black text-white">
-                                                            <PlayerNameLink
-                                                                playerId={award.player_id}
-                                                                name={award.player_name || award.club_name || award.label}
-                                                                className="text-white"
-                                                            />
+                                                    
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${config.accent}`}>
+                                                                {award.label}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1 flex items-center gap-2">
+                                                            <div className="truncate text-lg font-black tracking-tight text-white">
+                                                                <PlayerNameLink
+                                                                    playerId={award.player_id}
+                                                                    name={award.player_name || award.club_name || award.label}
+                                                                    className="text-white hover:text-amber-300 transition-colors"
+                                                                />
+                                                            </div>
+                                                            {award.club_logo_url && (
+                                                                <img src={award.club_logo_url} alt={award.club_name} className="h-4 w-4 shrink-0 object-contain opacity-60" />
+                                                            )}
                                                         </div>
                                                         {award.club_name && (
-                                                            <div className="mt-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                                                                {award.club_logo_url && (
-                                                                    <img src={award.club_logo_url} alt={award.club_name} className="h-4 w-4 object-contain" />
-                                                                )}
-                                                                <span>{award.club_name}</span>
+                                                            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                                                                {award.club_name}
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
+                                                
+                                                <div className={`flex flex-col items-end gap-1 shrink-0`}>
+                                                    <div className={`rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-center min-w-[3.5rem]`}>
+                                                        <div className={`text-[13px] font-black tabular-nums ${config.accent}`}>
+                                                            {award.value_label}
+                                                        </div>
+                                                        <div className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Wert</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
-                                                {award.value_label}
+                                            
+                                            <div className="relative z-10 mt-4 rounded-xl bg-white/[0.03] p-3 text-[12px] font-medium leading-[1.6] text-white/80 border border-white/5 italic">
+                                                "{award.summary}"
                                             </div>
                                         </div>
-                                        <p className="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">{award.summary}</p>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -935,6 +993,76 @@ export const TickerItem = ({ action, homeClubId, resolvedScoreline }) => {
                         </div>
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    if (action.action_type === 'var_check' || action.action_type === 'var_decision') {
+        const isCheck = action.action_type === 'var_check';
+        const outcome = action.metadata?.outcome; // 'confirmed', 'overturned', 'no_change'
+        const originalDecision = action.metadata?.original_decision;
+        const reason = action.metadata?.reason;
+
+        let varIcon = Monitor;
+        let varColor = 'text-indigo-400';
+        let varBg = 'border-indigo-500/30 bg-indigo-500/20';
+        let varLabel = 'VAR-Check';
+
+        if (!isCheck) {
+            if (outcome === 'overturned') {
+                varIcon = Prohibit;
+                varColor = 'text-rose-400';
+                varBg = 'border-rose-500/30 bg-rose-500/20';
+                varLabel = 'VAR-Entscheidung: Aufgehoben';
+            } else if (outcome === 'confirmed') {
+                varIcon = CheckCircle;
+                varColor = 'text-emerald-400';
+                varBg = 'border-emerald-500/40 bg-emerald-500/30';
+                varLabel = 'VAR-Entscheidung: Bestaetigt';
+            } else { // no_change or other
+                varIcon = ArrowsClockwise;
+                varColor = 'text-slate-400';
+                varBg = 'border-slate-500/20 bg-slate-500/10';
+                varLabel = 'VAR-Entscheidung: Keine Aenderung';
+            }
+        }
+
+        return (
+            <div className={`border-b border-white/5 px-4 py-4 ${varBg}`}>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="text-2xl font-black italic tabular-nums text-white">{formatMatchMinute(action.minute, action.display_minute)}</span>
+                    <div className="flex items-center gap-3">
+                        <div className={`text-center text-sm font-black uppercase tracking-[0.08em] ${varColor}`}>
+                            {varLabel}
+                        </div>
+                        <varIcon size={22} weight="fill" className={varColor} />
+                    </div>
+                </div>
+
+                <div className={`rounded-2xl border px-4 py-4 ${varBg}`}>
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/5">
+                            <Monitor size={24} weight="duotone" className={varColor} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            {originalDecision && (
+                                <div className="text-sm text-white/70">Original: <span className="font-semibold">{EVENT_LABELS[originalDecision] || originalDecision}</span></div>
+                            )}
+                            {!isCheck && outcome && (
+                                <div className={`mt-1 text-lg font-black leading-none ${varColor}`}>
+                                    {outcome === 'overturned' ? 'Entscheidung aufgehoben' : outcome === 'confirmed' ? 'Entscheidung bestaetigt' : 'Keine Aenderung'}
+                                </div>
+                            )}
+                            {reason && (
+                                <div className="mt-2 text-xs leading-relaxed text-white/60">{reason}</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {!isCheck && outcome && (
+                    <VARReview outcome={outcome} reason={reason} />
+                )}
             </div>
         );
     }
@@ -1492,6 +1620,7 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                         {events.map((action) => {
                             const isHomeAction = action.club_id === homeClubId;
                             const isCard = ['yellow_card', 'red_card', 'yellow_red_card'].includes(action.action_type);
+                            const isVar = ['var_check', 'var_decision'].includes(action.action_type);
                             const primaryPlayer = action.player_name || action.opponent_player_name || 'Unbekannt';
                             const secondaryPlayer = action.action_type === 'substitution'
                                 ? `${action.opponent_player_name || 'Out'} -> ${action.player_name || 'In'}`
@@ -1500,6 +1629,21 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                             const alignment = isHomeAction ? 'md:pr-[calc(50%+1.75rem)]' : 'md:pl-[calc(50%+1.75rem)]';
                             const position = isHomeAction ? 'md:mr-auto' : 'md:ml-auto';
                             const minutePosition = isHomeAction ? 'md:right-[calc(50%+1.25rem)]' : 'md:left-[calc(50%+1.25rem)]';
+
+                            let varIcon = Monitor;
+                            let varColor = 'text-indigo-400';
+                            if (action.action_type === 'var_decision') {
+                                if (action.metadata?.outcome === 'overturned') {
+                                    varIcon = Prohibit;
+                                    varColor = 'text-rose-400';
+                                } else if (action.metadata?.outcome === 'confirmed') {
+                                    varIcon = CheckCircle;
+                                    varColor = 'text-emerald-400';
+                                } else {
+                                    varIcon = ArrowsClockwise;
+                                    varColor = 'text-slate-400';
+                                }
+                            }
 
                             return (
                                 <div key={`${action.id}-${action.minute}-${action.action_type}`} className={`relative ${alignment}`}>
@@ -1523,6 +1667,11 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                                                             {secondaryPlayer}
                                                         </div>
                                                     )}
+                                                    {isVar && action.metadata?.outcome && (
+                                                        <div className={`mt-1 text-xs font-medium ${varColor}`}>
+                                                            {action.metadata.outcome === 'overturned' ? 'Aufgehoben' : action.metadata.outcome === 'confirmed' ? 'Bestaetigt' : 'Keine Aenderung'}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${teamVisuals.subtleBadge}`}>
                                                     {formatMatchMinute(action.minute, action.display_minute)}
@@ -1535,6 +1684,8 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                                             <div className={`h-3.5 w-3 rounded-sm border border-black/30 ${
                                                 action.action_type === 'yellow_card' ? 'bg-amber-400' : 'bg-rose-500'
                                             }`} />
+                                        ) : isVar ? (
+                                            <varIcon size={14} weight="fill" className={varColor} />
                                         ) : (
                                             <ActionIcon type={action.action_type} size={14} className={teamVisuals.textStrong} />
                                         )}
@@ -1546,6 +1697,107 @@ export const MatchEventTimeline = ({ actions = [], homeClubId }) => {
                             );
                         })}
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const ShotMap = ({ data }) => {
+    const { home_shots = [], away_shots = [], home_logo, away_logo } = data;
+    const allShots = [...home_shots.map(s => ({ ...s, isHome: true })), ...away_shots.map(s => ({ ...s, isHome: false }))];
+
+    const getMarkerColor = (shot) => {
+        if (shot.is_goal) return 'bg-emerald-400 border-emerald-300 shadow-emerald-500/50';
+        if (shot.type === 'save' || shot.type === 'shot_on_target') return 'bg-amber-400 border-amber-300 shadow-amber-500/50';
+        if (shot.type === 'shot_blocked') return 'bg-slate-500 border-slate-400 shadow-slate-500/50';
+        return 'bg-rose-500 border-rose-400 shadow-rose-500/50';
+    };
+
+    const getMarkerSize = (xg) => {
+        const base = 6;
+        const scale = Math.min(18, base + (xg * 25));
+        return scale;
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#08101a] p-1 shadow-2xl">
+                <div className="relative aspect-[100/60] w-full overflow-hidden rounded-[1.8rem] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,rgba(6,15,10,0.98)_100%)]">
+                    <ShotMapPitch />
+                    
+                    {/* Zones / Stripes */}
+                    <div className="pointer-events-none absolute inset-0 flex">
+                        <div className="h-full w-1/3 border-r border-white/5 bg-white/[0.01]" />
+                        <div className="h-full w-1/3 border-r border-white/5 bg-transparent" />
+                        <div className="h-full w-1/3 bg-white/[0.01]" />
+                    </div>
+
+                    {allShots.map((shot, i) => {
+                        const size = getMarkerSize(shot.xg);
+                        const left = shot.isHome ? shot.x : 100 - shot.x;
+                        const top = shot.y;
+
+                        return (
+                            <div
+                                key={`${shot.id || i}`}
+                                className={`group absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all hover:z-20 hover:scale-150 ${getMarkerColor(shot)}`}
+                                style={{
+                                    left: `${left}%`,
+                                    top: `${top}%`,
+                                    width: size,
+                                    height: size,
+                                }}
+                            >
+                                <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/20 bg-black/90 px-2 py-1 text-[10px] font-black text-white shadow-xl group-hover:block">
+                                    <div className="flex items-center gap-2">
+                                        <span className={shot.isHome ? 'text-cyan-300' : 'text-amber-300'}>{shot.player_name}</span>
+                                        <span className="text-white/60">{shot.minute}'</span>
+                                        <span className="text-emerald-400">xG: {shot.xg.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* Team Direction Labels */}
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 -rotate-90 opacity-20">
+                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Heim Angreifer</div>
+                    </div>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 opacity-20">
+                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Gast Angreifer</div>
+                    </div>
+
+                    {/* Team Logos Overlay */}
+                    <div className="pointer-events-none absolute inset-x-8 top-6 flex justify-between">
+                        <img src={home_logo} className="h-10 w-10 opacity-20 grayscale transition-opacity group-hover:opacity-40" />
+                        <img src={away_logo} className="h-10 w-10 opacity-20 grayscale transition-opacity group-hover:opacity-40" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full border-2 border-emerald-300 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Tor</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full border-2 border-amber-300 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Gehalten / On-Target</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full border-2 border-rose-400 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Daneben</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full border-2 border-slate-400 bg-slate-500 shadow-[0_0_8px_rgba(100,116,139,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Geblockt</span>
+                </div>
+                <div className="ml-2 h-4 w-px bg-white/10" />
+                <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-white/40" />
+                    <div className="h-4 w-4 rounded-full bg-white/40" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">xG Groesse</span>
                 </div>
             </div>
         </div>
@@ -2340,3 +2592,61 @@ export const PlayersTab = ({ clubs, finalStats }) => (
         })}
     </div>
 );
+
+export const ShotMapPitch = () => (
+    <svg viewBox="0 0 100 60" className="absolute inset-0 h-full w-full opacity-30">
+        <rect x="0" y="0" width="100" height="60" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <line x1="50" y1="0" x2="50" y2="60" stroke="white" strokeWidth="0.2" />
+        <circle cx="50" cy="30" r="9" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <rect x="0" y="15" width="16" height="30" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <rect x="0" y="24" width="6" height="12" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <rect x="84" y="15" width="16" height="30" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <rect x="94" y="24" width="6" height="12" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <path d="M 16 24 A 9 9 0 0 1 16 36" fill="transparent" stroke="white" strokeWidth="0.2" />
+        <path d="M 84 24 A 9 9 0 0 0 84 36" fill="transparent" stroke="white" strokeWidth="0.2" />
+    </svg>
+);
+
+export const VARReview = ({ outcome, reason }) => {
+    const isOverturned = outcome === 'overturned';
+    const isConfirmed = outcome === 'confirmed';
+    
+    return (
+        <div className="relative mt-2 overflow-hidden rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 shadow-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1)_0%,transparent_70%)]" />
+            
+            <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-4 flex items-center justify-center gap-3">
+                    <div className="h-px w-12 bg-indigo-500/30" />
+                    <Monitor size={24} weight="fill" className="animate-pulse text-indigo-400" />
+                    <div className="h-px w-12 bg-indigo-500/30" />
+                </div>
+                
+                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-indigo-300/80">Video Assistant Referee</h3>
+                
+                <div className="mt-6 flex flex-col items-center gap-2">
+                    <div className={`text-5xl font-black italic tracking-tighter sm:text-7xl ${isOverturned ? 'text-rose-500' : isConfirmed ? 'text-emerald-500' : 'text-white'}`}>
+                        {outcome === 'overturned' ? 'N-O G-O-A-L' : outcome === 'confirmed' ? 'G-O-A-L !' : 'DECISION'}
+                    </div>
+                    <div className={`mt-2 rounded-full border px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${isOverturned ? 'border-rose-500/30 bg-rose-500/10 text-rose-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                        {reason || 'Review Complete'}
+                    </div>
+                </div>
+
+                <div className="mt-8 flex gap-8">
+                    <div className="text-center">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-indigo-300/50">Status</div>
+                        <div className="mt-1 text-xs font-bold text-white uppercase">{outcome}</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-indigo-300/50">Pruefung</div>
+                        <div className="mt-1 text-xs font-bold text-white uppercase">{reason?.includes('Abseits') ? 'Abseits' : 'Elfmeter'}</div>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Scanned Lines Effect */}
+            <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent 2px)' }} />
+        </div>
+    );
+};

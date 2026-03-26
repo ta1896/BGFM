@@ -17,7 +17,8 @@ const tabs = [
     { id: 'overview', label: 'Uebersicht' },
     { id: 'squad', label: 'Kader' },
     { id: 'stats', label: 'Statistiken' },
-    { id: 'history', label: 'Erfolge' },
+    { id: 'trophies', label: 'Trophaenschrank' },
+    { id: 'hall_of_fame', label: 'Hall of Fame' },
 ];
 
 export default function Show({
@@ -30,6 +31,9 @@ export default function Show({
     players,
     trophyCabinet,
     isOwner,
+    hallOfFame,
+    clubRecords,
+    historicalComparison,
 }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [activeTrophyId, setActiveTrophyId] = useState(null);
@@ -255,34 +259,75 @@ export default function Show({
                         </div>
                     )}
 
-                    {activeTab === 'history' && (
-                        <div className="space-y-6 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {activeTab === 'trophies' && (
+                        <div className="space-y-10 animate-in fade-in duration-500">
+                            {/* Hero Section: Historischer Puls */}
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 <HistoryStatCard
-                                    label="Gesamt"
+                                    label="Gesamt-Titel"
                                     value={trophyCabinet?.total || 0}
                                     icon={<Trophy size={20} weight="fill" />}
                                     accent="from-amber-300/25 to-amber-700/10"
                                 />
-                                <HistoryStatCard
-                                    label="Ligatitel"
-                                    value={trophyCabinet?.by_type?.league || 0}
-                                    icon={<Crown size={20} weight="fill" />}
-                                    accent="from-cyan-300/20 to-cyan-700/10"
-                                />
-                                <HistoryStatCard
-                                    label="Pokal + International"
-                                    value={(trophyCabinet?.by_type?.national_cup || 0) + (trophyCabinet?.by_type?.international_cup || 0)}
-                                    icon={<GlobeHemisphereWest size={20} weight="fill" />}
-                                    accent="from-emerald-300/20 to-emerald-700/10"
-                                />
+                                {historicalComparison?.points && (
+                                    <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(8,10,18,0.96))] p-5 shadow-lg">
+                                        <div className="mb-4 inline-flex rounded-full bg-gradient-to-br from-green-300/20 to-green-700/10 p-3 text-green-500">
+                                            <ChartBar size={20} weight="fill" />
+                                        </div>
+                                        <p className="text-3xl font-black text-white">{historicalComparison.points.current} / {historicalComparison.points.record}</p>
+                                        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Punkte-Rekord-Vergleich</p>
+                                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                                            <div 
+                                                className="h-full bg-green-500" 
+                                                style={{ width: `${Math.min(100, (historicalComparison.points.current / historicalComparison.points.record) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {historicalComparison?.goals && (
+                                    <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(8,10,18,0.96))] p-5 shadow-lg">
+                                        <div className="mb-4 inline-flex rounded-full bg-gradient-to-br from-blue-300/20 to-blue-700/10 p-3 text-blue-500">
+                                            <Star size={20} weight="fill" />
+                                        </div>
+                                        <p className="text-3xl font-black text-white">{historicalComparison.goals.current} / {historicalComparison.goals.record}</p>
+                                        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Tore-Rekord-Vergleich</p>
+                                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                                            <div 
+                                                className="h-full bg-blue-500" 
+                                                style={{ width: `${Math.min(100, (historicalComparison.goals.current / historicalComparison.goals.record) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Rekord-Wand */}
+                            <section>
+                                <div className="mb-6 px-4 sm:px-0">
+                                    <h3 className="text-2xl font-black uppercase tracking-tight text-[#fff0c5]">Rekord-Wand</h3>
+                                    <p className="text-sm text-amber-100/60 uppercase tracking-widest font-bold">Historische Bestmarken</p>
+                                </div>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {clubRecords.length > 0 ? (
+                                        clubRecords.map((record) => (
+                                            <div key={record.id} className="rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{record.label}</p>
+                                                <p className="mt-1 text-2xl font-black italic text-amber-500">{record.value}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">{record.achieved_at}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full rounded-2xl border border-dashed border-white/10 bg-white/5 py-12 text-center">
+                                            <p className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)]">Keine Rekorde verzeichnet</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
 
                             <div className="overflow-hidden rounded-[28px] border border-[#6f4a19] bg-[linear-gradient(180deg,#3b2513_0%,#24150c_8%,#120f16_8.1%,#120f16_100%)] shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
                                 <div className="border-b border-[#8b642f] bg-[linear-gradient(180deg,#7d5928,#4f3519)] px-6 py-5 text-center shadow-[inset_0_1px_0_rgba(255,230,168,0.25)]">
                                     <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-100/80">Vereinsmuseum</p>
                                     <h3 className="mt-2 text-3xl font-black uppercase tracking-tight text-[#fff0c5]">Trophaenschrank</h3>
-                                    <p className="mt-2 text-sm text-amber-100/70">Hover auf einen Titel oder tippe mobil auf eine Trophae, um Saison und Wettbewerb zu sehen.</p>
                                 </div>
 
                                 <div className="space-y-0 p-5 sm:p-6">
@@ -318,7 +363,52 @@ export default function Show({
                         </div>
                     )}
 
-                    {activeTab !== 'overview' && activeTab !== 'history' && (
+                    {activeTab === 'hall_of_fame' && (
+                        <div className="space-y-6 animate-in fade-in duration-500">
+                            <div className="mb-8 flex items-end justify-between px-4 sm:px-0">
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight text-[#fff0c5]">Hall of Fame</h3>
+                                    <p className="text-sm text-amber-100/60 uppercase tracking-widest font-bold">Die Legenden des Vereins</p>
+                                </div>
+                                <Crown size={40} weight="fill" className="text-amber-500/20" />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {hallOfFame.length > 0 ? (
+                                    hallOfFame.map((entry) => (
+                                        <div key={entry.id} className="group relative overflow-hidden rounded-2xl border border-amber-500/20 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.1),_rgba(15,23,42,0.95))] p-6 shadow-xl transition-all hover:scale-[1.02] hover:border-amber-500/40">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="h-20 w-20 overflow-hidden rounded-lg border border-amber-500/30 bg-black/40">
+                                                    <img src={entry.player.photo_url} className="h-full w-full object-cover grayscale transition-all group-hover:grayscale-0" alt="" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">{entry.legend_type_label}</p>
+                                                    <h4 className="text-xl font-black text-white">{entry.player.name}</h4>
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-amber-100/40">Aufgenommen {entry.inducted_at}</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-6 border-t border-white/5 pt-4">
+                                                <p className="italic text-sm text-slate-400 line-clamp-3 group-hover:line-clamp-none">
+                                                    "{entry.description}"
+                                                </p>
+                                            </div>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10 transition-opacity group-hover:opacity-30">
+                                                <Crown size={64} weight="fill" className="text-amber-500" />
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full rounded-2xl border border-dashed border-white/10 bg-white/5 py-24 text-center">
+                                        <Users size={64} weight="fill" className="mx-auto mb-4 text-white/10" />
+                                        <p className="text-lg font-bold uppercase tracking-widest text-[var(--text-muted)]">Noch keine Legenden aufgenommen</p>
+                                        <p className="mt-2 text-sm text-slate-500">Diese Galerie wartet auf praegende Persoenlichkeiten deiner Vereinsgeschichte.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab !== 'overview' && activeTab !== 'squad' && activeTab !== 'stats' && activeTab !== 'trophies' && activeTab !== 'hall_of_fame' && (
                         <div className="flex flex-col items-center justify-center rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] py-20 text-[var(--text-muted)] animate-in fade-in transition-all">
                             <p className="mb-4 text-sm font-bold uppercase tracking-widest">Bereich in Vorbereitung</p>
                             <button onClick={() => setActiveTab('overview')} className="text-xs font-bold uppercase text-amber-500 underline">
