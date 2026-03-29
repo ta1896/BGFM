@@ -3,6 +3,8 @@
 namespace App\Modules\DataCenter\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\BulkFindSofascoreIdJob;
+use App\Models\Player;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Queue;
@@ -23,13 +25,17 @@ class LeagueImporterController extends Controller
             ->limit(10)
             ->get();
 
+        $playersWithoutSofascoreId = Player::whereNull('sofascore_id')
+            ->orWhere('sofascore_id', '')
+            ->count();
+
         return Inertia::render('Modules/DataCenter/Admin/LeagueImporter', [
             'status' => session('status'),
             'importedClubs' => $importedClubs,
             'importLogs' => $importLogs,
-            'queueSize' => Queue::size(), 
+            'queueSize' => Queue::size(),
+            'playersWithoutSofascoreId' => $playersWithoutSofascoreId,
         ]);
-
     }
 
     public function store(Request $request)
@@ -55,6 +61,13 @@ class LeagueImporterController extends Controller
         );
 
         return back()->with('status', "Bulk-Import für {$validated['league_id']} ({$validated['season']}) wurde in die Warteschlange gestellt.");
+    }
+
+    public function findSofascoreIds()
+    {
+        BulkFindSofascoreIdJob::dispatch();
+
+        return back()->with('status', 'Sofascore ID Finder wurde in die Warteschlange gestellt.');
     }
 
     public function clear()

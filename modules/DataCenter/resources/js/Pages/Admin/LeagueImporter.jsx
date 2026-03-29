@@ -1,7 +1,7 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Database, Download, Info, CheckCircle, Users, Calendar, ArrowSquareOut, ClockCounterClockwise, Trash } from '@phosphor-icons/react';
+import { Database, Download, Info, CheckCircle, Users, Calendar, ArrowSquareOut, ClockCounterClockwise, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal } from '@/Components/PageReveal';
@@ -24,7 +24,7 @@ function StatusBadge({ status }) {
     );
 }
 
-export default function LeagueImporter({ status, importedClubs = [], importLogs = [], queueSize = 0 }) {
+export default function LeagueImporter({ status, importedClubs = [], importLogs = [], queueSize = 0, playersWithoutSofascoreId = 0 }) {
     // Safety check for logs
     const safeLogs = Array.isArray(importLogs) ? importLogs : [];
 
@@ -235,6 +235,41 @@ export default function LeagueImporter({ status, importedClubs = [], importLogs 
                         </PageReveal>
                     </div>
                 </div>
+
+                <PageReveal delay={0.15}>
+                    <SectionCard title="Sofascore ID Finder" icon={MagnifyingGlass} bodyClassName="p-6">
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                                    Sucht automatisch Sofascore-IDs für alle Spieler, die noch keine haben — über die Sofascore-Suche.
+                                </p>
+                                <p className="text-[11px] text-[var(--text-muted)] italic">
+                                    Nur Spieler ohne bestehende Sofascore-ID werden verarbeitet. Läuft im Hintergrund (~1 Sek./Spieler).
+                                </p>
+                            </div>
+
+                            <div className="flex shrink-0 flex-col items-end gap-3">
+                                <div className="flex items-center gap-2 rounded-xl border border-[var(--card-border)] bg-slate-900/50 px-4 py-2">
+                                    <span className="text-xl font-black text-[var(--text-main)]">{playersWithoutSofascoreId}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">ohne ID</span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    disabled={playersWithoutSofascoreId === 0}
+                                    onClick={() => {
+                                        if (!confirm(`Sofascore ID Finder für ${playersWithoutSofascoreId} Spieler starten?`)) return;
+                                        router.post(route('admin.data-center.sofascore-finder.store'));
+                                    }}
+                                    className="flex h-[40px] items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 text-[11px] font-black uppercase tracking-widest text-white transition-opacity disabled:opacity-40 hover:opacity-90"
+                                >
+                                    <MagnifyingGlass size={16} weight="bold" />
+                                    Finder starten
+                                </button>
+                            </div>
+                        </div>
+                    </SectionCard>
+                </PageReveal>
 
                 <PageReveal delay={0.2}>
                     <SectionCard title="Importierte Vereine" icon={Users} bodyClassName="p-0 overflow-hidden">
