@@ -2112,20 +2112,31 @@ class LiveMatchTickerService
 
     private function broadcastLiveChanges(GameMatch $match): void
     {
-        // Build full live state so clients can update directly without an extra HTTP round-trip
-        $livePayload = $this->matchCenterStateService->buildLiveBroadcastPayload($match);
+        try {
+            // Build full live state so clients can update directly without an extra HTTP round-trip
+            $livePayload = $this->matchCenterStateService->buildLiveBroadcastPayload($match);
 
-        broadcast(new MatchStateUpdated((int) $match->id, array_merge(
-            ['matchId' => (int) $match->id],
-            $livePayload,
-        )));
+            broadcast(new MatchStateUpdated((int) $match->id, array_merge(
+                ['matchId' => (int) $match->id],
+                $livePayload,
+            )));
+        } catch (\Throwable $e) {
+            // Broadcast failures must never crash the simulation.
+            \Illuminate\Support\Facades\Log::warning('broadcastLiveChanges failed (non-fatal): ' . $e->getMessage(), [
+                'match_id' => $match->id,
+            ]);
+        }
 
-        // Deduplicate LiveOverview broadcasts: if multiple matches tick simultaneously
-        // within a 5-second window, only the first call rebroadcasts the overview.
-        $cacheKey = 'live_overview_broadcast_lock';
-        if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
-            \Illuminate\Support\Facades\Cache::put($cacheKey, true, 5);
-            broadcast(new LiveOverviewUpdated(app(LiveOverviewService::class)->overview()));
+        try {
+            // Deduplicate LiveOverview broadcasts: if multiple matches tick simultaneously
+            // within a 5-second window, only the first call rebroadcasts the overview.
+            $cacheKey = 'live_overview_broadcast_lock';
+            if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+                \Illuminate\Support\Facades\Cache::put($cacheKey, true, 5);
+                broadcast(new LiveOverviewUpdated(app(LiveOverviewService::class)->overview()));
+            }
+        } catch (\Throwable) {
+            // non-fatal
         }
     }
 }

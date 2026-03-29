@@ -272,33 +272,25 @@ class MatchCenterStateService
             })
             ->all();
 
+        // Broadcast payload: only mutable per-tick fields to stay under Reverb/Pusher size limits.
+        // Static fields (player_name, photo_url, slot) are already known from the initial HTTP load.
         $playerStates = $match->livePlayerStates
             ->map(function ($state): array {
                 return [
                     'player_id'       => (int) $state->player_id,
                     'club_id'         => (int) $state->club_id,
-                    'player_name'     => $state->player?->full_name,
-                    'slot'            => (string) ($state->slot ?? ''),
                     'is_on_pitch'     => (bool) $state->is_on_pitch,
                     'is_sent_off'     => (bool) $state->is_sent_off,
                     'is_injured'      => (bool) $state->is_injured,
                     'fit_factor'      => (float) $state->fit_factor,
                     'minutes_played'  => (int) $state->minutes_played,
-                    'ball_contacts'   => (int) $state->ball_contacts,
-                    'pass_attempts'   => (int) $state->pass_attempts,
-                    'pass_completions'=> (int) $state->pass_completions,
-                    'tackle_attempts' => (int) $state->tackle_attempts,
-                    'tackle_won'      => (int) $state->tackle_won,
-                    'fouls_committed' => (int) $state->fouls_committed,
-                    'fouls_suffered'  => (int) $state->fouls_suffered,
-                    'shots'           => (int) $state->shots,
-                    'shots_on_target' => (int) $state->shots_on_target,
                     'goals'           => (int) $state->goals,
                     'assists'         => (int) $state->assists,
                     'yellow_cards'    => (int) $state->yellow_cards,
                     'red_cards'       => (int) $state->red_cards,
                     'saves'           => (int) $state->saves,
-                    'photo_url'       => $state->player?->photo_url,
+                    'shots'           => (int) $state->shots,
+                    'shots_on_target' => (int) $state->shots_on_target,
                 ];
             })
             ->values()
