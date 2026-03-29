@@ -349,9 +349,6 @@ class ImportLeagueJob implements ShouldQueue
                 'transfermarkt_id' => $this->extractIdFromUrl($data['URL'] ?? null),
                 'transfermarkt_url' => $data['URL'] ?? null,
                 'sofascore_id' => is_array($sofascore) ? ($sofascore['sofascore_id'] ?? null) : null,
-                'sofascore_url' => is_array($sofascore) && ($sofascore['sofascore_id'] ?? null) 
-                    ? "https://www.sofascore.com/football/player/" . Str::slug($fullName) . "/" . $sofascore['sofascore_id'] 
-                    : ($data['Sofascore URL'] ?? null),
                 'birthday' => !empty($data['Birthday']) ? $data['Birthday'] : null,
                 'attr_attacking' => is_array($sofascore) ? ($sofascore['attacking'] ?? 100) : 100,
                 'attr_technical' => is_array($sofascore) ? ($sofascore['technical'] ?? 100) : 100,

@@ -86,7 +86,6 @@ class SofascoreLinkService
 
         $player->update([
             'sofascore_id' => $id,
-            'sofascore_url' => "https://www.sofascore.com/football/player/" . Str::slug($player->full_name) . "/{$id}",
         ]);
 
         return [

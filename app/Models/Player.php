@@ -208,7 +208,6 @@ class Player extends Model
         'transfermarkt_id',
         'transfermarkt_url',
         'sofascore_id',
-        'sofascore_url',
         'player_style',
         'personality_type',
         'attr_attacking',

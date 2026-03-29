@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use App\Models\PlayerTransferHistory;
 use App\Modules\DataCenter\Services\ScraperService;
 use App\Services\PlayerPerformanceService;
@@ -53,7 +54,9 @@ class PlayerController extends Controller
         $players = $playerQuery->get()->map(function($p) {
             $p->append('photo_url');
             $p->market_value_formatted = number_format($p->market_value, 0, ',', '.') . ' €';
-            $p->display_position = $p->position; // Or use a translation map
+            $p->display_position = $p->position;
+            $p->shirt_number = $p->shirt_number;
+            $p->personality_type = $p->personality_type;
             $activePromise = $p->playtimePromises
                 ->sortByDesc('id')
                 ->first(fn ($promise) => in_array($promise->status, ['active', 'at_risk', 'broken', 'fulfilled'], true));
@@ -217,6 +220,45 @@ class PlayerController extends Controller
                     ->take(5)
                     ->all(),
             ],
+        ]);
+    }
+
+    public function numberManagement(Request $request): \Inertia\Response
+    {
+        $activeClub = app()->has('activeClub') ? app('activeClub') : null;
+        $clubs = $request->user()->isAdmin()
+            ? Club::where('is_cpu', false)->orderBy('name')->get()
+            : $request->user()->clubs()->orderBy('name')->get();
+
+        if (!$activeClub && $clubs->isNotEmpty()) {
+            $activeClub = $clubs->first();
+        }
+
+        $players = collect();
+        if ($activeClub) {
+            $players = Player::where('club_id', $activeClub->id)
+                ->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")
+                ->orderByDesc('overall')
+                ->get(['id', 'first_name', 'last_name', 'position', 'shirt_number', 'overall', 'age'])
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'full_name' => $p->first_name . ' ' . $p->last_name,
+                    'last_name' => $p->last_name,
+                    'first_name' => $p->first_name,
+                    'position' => $p->position,
+                    'overall' => $p->overall,
+                    'age' => $p->age,
+                    'shirt_number' => $p->shirt_number,
+                ]);
+        }
+
+        $takenNumbers = $players->pluck('shirt_number')->filter()->values();
+
+        return \Inertia\Inertia::render('Players/NumberManagement', [
+            'players' => $players->values(),
+            'takenNumbers' => $takenNumbers,
+            'clubs' => $clubs->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values(),
+            'activeClubId' => $activeClub?->id,
         ]);
     }
 
@@ -467,6 +509,7 @@ class PlayerController extends Controller
                     'logo_url' => $player->club->logo_url,
                 ] : null,
                 'squad_role' => $player->squad_role,
+                'personality_type' => $player->personality_type,
                 'leadership_level' => $player->leadership_level,
                 'team_status' => $player->team_status,
                 'expected_playtime' => (int) $player->expected_playtime,
@@ -573,6 +616,13 @@ class PlayerController extends Controller
             'position_third' => ['nullable', 'in:TW,IV,LV,RV,ZM,DM,OM,LM,RM,LF,MS,HS,RF'],
             'photo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'photo_url' => ['nullable', 'url', 'max:255'],
+            'shirt_number' => [
+                'nullable', 'integer', 'min:1', 'max:99',
+                Rule::unique('players', 'shirt_number')
+                    ->where('club_id', $player->club_id)
+                    ->ignore($player->id),
+            ],
+            'personality_type' => ['nullable', 'in:leader,temperamental,team_player,silent_pro,maverick,youngster'],
         ];
 
         // If it's a standard update (from ACP or edit form), we might expect other fields.
@@ -645,7 +695,6 @@ class PlayerController extends Controller
                 'salary' => ['required', 'numeric', 'min:0'],
                 'transfermarkt_id' => ['nullable', 'string'],
                 'sofascore_id' => ['nullable', 'string'],
-                'sofascore_url' => ['nullable', 'string'],
                 'attr_attacking' => ['nullable', 'integer'],
                 'attr_technical' => ['nullable', 'integer'],
                 'attr_tactical' => ['nullable', 'integer'],

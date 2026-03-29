@@ -215,7 +215,6 @@ class PlayerController extends Controller
             'is_imported' => ['sometimes', 'boolean'],
             'transfermarkt_id' => ['nullable', 'string', 'max:50'],
             'sofascore_id' => ['nullable', 'string', 'max:50'],
-            'sofascore_url' => ['nullable', 'url', 'max:255'],
             'birthday' => ['nullable', 'date'],
             'attr_attacking' => ['nullable', 'integer', 'min:0', 'max:100'],
             'attr_technical' => ['nullable', 'integer', 'min:0', 'max:100'],
