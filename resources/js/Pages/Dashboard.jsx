@@ -213,52 +213,93 @@ export default function Dashboard(props) {
                                 </div>
                             )}
 
-                            {recentMatchesSummary?.matches?.length > 0 ? (
-                                <div className="mt-5 border-t border-white/6 pt-5">
-                                    <div className="mb-3 flex items-center justify-between">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">Letzte 5 Spiele</span>
-                                        <div className="flex gap-1.5">
-                                            {[
-                                                { label: 'S', count: recentMatchesSummary.wins, cls: 'bg-emerald-500 text-black' },
-                                                { label: 'U', count: recentMatchesSummary.draws, cls: 'bg-slate-300 text-black' },
-                                                { label: 'N', count: recentMatchesSummary.losses, cls: 'bg-rose-500 text-white' },
-                                            ].map(({ label, count, cls }) => (
-                                                <div key={label} className="flex overflow-hidden rounded-full border border-white/10">
-                                                    <span className={`flex items-center px-2 py-0.5 text-[9px] font-black uppercase ${cls}`}>{label}</span>
-                                                    <span className="flex items-center px-2 py-0.5 text-[11px] font-black text-white">{count}</span>
-                                                </div>
-                                            ))}
+                        </div>
+                    </section>
+                </PageReveal>
+
+                {/* LETZTE 5 SPIELE */}
+                <PageReveal delay={20}>
+                    <section className="rounded-[28px] border border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 p-5">
+                        <div className="mb-5 flex items-center justify-between gap-4">
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Die letzten 5 Spiele</h2>
+                            <Link
+                                href={route('league.matches')}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/80 transition-colors hover:border-white/20 hover:text-white"
+                            >
+                                Alle Termine
+                            </Link>
+                        </div>
+
+                        {recentMatchesSummary?.matches?.length > 0 ? (
+                            <div className="space-y-5">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {[
+                                        { label: 'S', count: recentMatchesSummary.wins, cls: 'bg-emerald-400', border: 'border-emerald-400/20 bg-emerald-400/10', text: 'text-black' },
+                                        { label: 'U', count: recentMatchesSummary.draws, cls: 'bg-slate-100', border: 'border-slate-300/20 bg-slate-300/10', text: 'text-black' },
+                                        { label: 'N', count: recentMatchesSummary.losses, cls: 'bg-rose-500', border: 'border-rose-400/20 bg-rose-400/10', text: 'text-white' },
+                                    ].map(({ label, count, cls, border, text }) => (
+                                        <div key={label} className={`inline-flex overflow-hidden rounded-full border ${border}`}>
+                                            <span className={`inline-flex items-center justify-center ${cls} px-3 text-[11px] font-black uppercase ${text}`}>{label}</span>
+                                            <span className="inline-flex min-w-[40px] items-center justify-center px-3 text-lg font-black text-white">{count}</span>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {recentMatchesSummary.matches.map((match, idx) => (
-                                            <Link
-                                                key={match.id ?? idx}
-                                                href={match?.id ? route('matches.show', match.id) : route('league.matches')}
-                                                className="group flex flex-col items-center gap-1.5"
-                                                title={match.opponent_name}
-                                            >
-                                                <div className={`w-full rounded-md py-0.5 text-center text-[8px] font-black uppercase ${
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-5 gap-3">
+                                    {recentMatchesSummary.matches.map((match, idx) => (
+                                        <Link
+                                            key={match.id ?? `${match.opponent_name}-${idx}`}
+                                            href={match?.id ? route('matches.show', match.id) : route('league.matches')}
+                                            className="group relative flex flex-col items-center gap-2"
+                                            title={match?.id ? `Zum Match gegen ${match.opponent_name}` : 'Zu allen Terminen'}
+                                        >
+                                            <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-52 -translate-x-1/2 rounded-2xl border border-white/10 bg-[var(--bg-content)]/95 p-3 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.75)] group-hover:block">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="min-w-0 text-right text-[11px] font-black uppercase tracking-[0.04em] text-white">
+                                                        <div className="truncate">{activeClub.name}</div>
+                                                        <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                                            {match.is_home ? 'Heim' : 'Auswärts'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="rounded-xl border border-amber-400/15 bg-amber-400/10 px-3 py-1.5 text-lg font-black text-white">
+                                                        {match.score}
+                                                    </div>
+                                                    <div className="min-w-0 text-left text-[11px] font-black uppercase tracking-[0.04em] text-white">
+                                                        <div className="truncate">{match.opponent_name}</div>
+                                                        <div className="mt-1 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                                                            {match.is_home ? 'Gast' : 'Heim'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex w-full overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
+                                                <span className={`inline-flex h-5 w-full items-center justify-center text-[9px] font-black uppercase ${
                                                     match.result_label === 'S' ? 'bg-emerald-500 text-black' :
-                                                    match.result_label === 'N' ? 'bg-rose-500 text-white' :
-                                                    'bg-slate-300 text-black'
+                                                    match.result_label === 'N' ? 'bg-red-600 text-white' :
+                                                    'bg-slate-100 text-black'
                                                 }`}>
                                                     {match.result_label}
-                                                </div>
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-1.5 transition-all group-hover:border-cyan-300/30">
-                                                    {match.opponent_logo_url ? (
-                                                        <img loading="lazy" src={match.opponent_logo_url} alt={match.opponent_name} className="h-full w-full object-contain" />
-                                                    ) : (
-                                                        <span className="text-[8px] font-black text-white/50">{match.opponent_name?.slice(0, 3)}</span>
-                                                    )}
-                                                </div>
-                                                <span className="text-center text-[8px] font-black text-white/50">{match.score}</span>
-                                            </Link>
-                                        ))}
-                                    </div>
+                                                </span>
+                                            </div>
+                                            <div className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[var(--bg-content)]/40 p-2 transition-all group-hover:-translate-y-0.5 group-hover:border-cyan-300/35 group-hover:shadow-[0_12px_24px_-18px_rgba(34,211,238,0.55)]">
+                                                <span className="pointer-events-none absolute -right-1 -top-1 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-cyan-100 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    Match
+                                                </span>
+                                                {match.opponent_logo_url ? (
+                                                    <img loading="lazy" src={match.opponent_logo_url} alt={match.opponent_name} className="h-full w-full object-contain" />
+                                                ) : (
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.08em] text-white/60">
+                                                        {match.opponent_name?.slice(0, 3) || 'N/A'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
                                 </div>
-                            ) : null}
-                        </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm italic text-[var(--text-muted)]">Saison gerade gestartet</p>
+                        )}
                     </section>
                 </PageReveal>
 
@@ -367,7 +408,6 @@ export default function Dashboard(props) {
                                 managerDecisions={managerDecisions}
                                 liveMatches={liveMatches}
                                 onlineManagers={onlineManagers}
-                                recentMatchesSummary={recentMatchesSummary}
                             />
                         </Suspense>
                     ) : (
