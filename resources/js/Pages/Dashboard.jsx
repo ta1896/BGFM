@@ -212,6 +212,52 @@ export default function Dashboard(props) {
                                     Kein Spiel angesetzt.
                                 </div>
                             )}
+
+                            {recentMatchesSummary?.matches?.length > 0 ? (
+                                <div className="mt-5 border-t border-white/6 pt-5">
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">Letzte 5 Spiele</span>
+                                        <div className="flex gap-1.5">
+                                            {[
+                                                { label: 'S', count: recentMatchesSummary.wins, cls: 'bg-emerald-500 text-black' },
+                                                { label: 'U', count: recentMatchesSummary.draws, cls: 'bg-slate-300 text-black' },
+                                                { label: 'N', count: recentMatchesSummary.losses, cls: 'bg-rose-500 text-white' },
+                                            ].map(({ label, count, cls }) => (
+                                                <div key={label} className="flex overflow-hidden rounded-full border border-white/10">
+                                                    <span className={`flex items-center px-2 py-0.5 text-[9px] font-black uppercase ${cls}`}>{label}</span>
+                                                    <span className="flex items-center px-2 py-0.5 text-[11px] font-black text-white">{count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {recentMatchesSummary.matches.map((match, idx) => (
+                                            <Link
+                                                key={match.id ?? idx}
+                                                href={match?.id ? route('matches.show', match.id) : route('league.matches')}
+                                                className="group flex flex-col items-center gap-1.5"
+                                                title={match.opponent_name}
+                                            >
+                                                <div className={`w-full rounded-md py-0.5 text-center text-[8px] font-black uppercase ${
+                                                    match.result_label === 'S' ? 'bg-emerald-500 text-black' :
+                                                    match.result_label === 'N' ? 'bg-rose-500 text-white' :
+                                                    'bg-slate-300 text-black'
+                                                }`}>
+                                                    {match.result_label}
+                                                </div>
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-1.5 transition-all group-hover:border-cyan-300/30">
+                                                    {match.opponent_logo_url ? (
+                                                        <img loading="lazy" src={match.opponent_logo_url} alt={match.opponent_name} className="h-full w-full object-contain" />
+                                                    ) : (
+                                                        <span className="text-[8px] font-black text-white/50">{match.opponent_name?.slice(0, 3)}</span>
+                                                    )}
+                                                </div>
+                                                <span className="text-center text-[8px] font-black text-white/50">{match.score}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     </section>
                 </PageReveal>
