@@ -89,6 +89,34 @@ return [
         'shootout_coinflip_home_wins' => 0.50,
     ],
 
+    // Per-style modifiers applied in ActionEngine::buildModifiers()
+    // tiki_taka: more possession, fewer fouls (disciplined short-pass game)
+    // direct: more physical duels, higher foul chance, raw power style
+    'tactical_style_modifiers' => [
+        'tiki_taka' => [
+            'possession_bonus'       => 12, // +12% possession tendency
+            'foul_chance_multiplier' => 0.82, // Fewer reckless fouls
+            'strength_multiplier'    => 1.02, // Slight technical edge
+        ],
+        'direct' => [
+            'possession_bonus'       => -8, // Less possession (long balls)
+            'foul_chance_multiplier' => 1.18, // More physical duels = more fouls
+            'strength_multiplier'    => 1.03, // Raw physical advantage
+        ],
+    ],
+
+    // Personality type modifiers for card probability in handleFoul()
+    // Values multiply the base yellowThresh and redThresh card chance
+    'personality_card_multipliers' => [
+        'temperamental' => 1.45, // Hot-headed, gets cards easily
+        'maverick'      => 1.20, // Unpredictable, above-average card rate
+        'leader'        => 0.80, // Experienced, avoids reckless fouls
+        'silent_pro'    => 0.85, // Disciplined professional
+        'team_player'   => 1.00, // Neutral
+        'youngster'     => 1.10, // Inexperienced, slightly higher card risk
+        'default'       => 1.00,
+    ],
+
     'position_fit' => [
         'main' => 1.00,
         'second' => 0.92,
@@ -370,9 +398,25 @@ return [
         ],
     ],
 
+    // Per-strategy xG adjustments applied when a corner/free kick leads to a chance
+    // Positive = higher goal threat, negative = safer/less direct
+    'set_piece_strategies' => [
+        'corner' => [
+            'inswinger' => ['xg_modifier' => 0.04,  'label' => 'Hereingabe (Inswinger)'],
+            'short'     => ['xg_modifier' => -0.03, 'label' => 'Kurze Ecke'],
+            'far_post'  => ['xg_modifier' => 0.02,  'label' => 'Langer Ball (Zweiter Pfosten)'],
+        ],
+        'free_kick' => [
+            'direct'    => ['xg_modifier' => 0.06,  'label' => 'Direktschuss'],
+            'cross'     => ['xg_modifier' => 0.03,  'label' => 'Hereingabe'],
+            'short'     => ['xg_modifier' => -0.02, 'label' => 'Kurz abspielen'],
+        ],
+    ],
+
     'scheduler' => [
         'interval_minutes' => 1,
         'default_limit' => 0,
+        'max_concurrency' => 15,
         'default_types' => ['friendly', 'league', 'cup'],
         'default_minutes_per_run' => 5,
         'claim_stale_after_seconds' => 180,
