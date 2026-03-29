@@ -12,6 +12,68 @@ class PatchlogController extends Controller
     {
         $patchlogs = [
             [
+                'version' => '1.6.0',
+                'date' => '29. März 2026',
+                'title' => 'Dashboard-Übersicht & Daten-Sync',
+                'categories' => [
+                    [
+                        'name' => 'Dashboard',
+                        'items' => [
+                            [
+                                'title' => 'Letzte 5 Spiele — eigenständige Sektion',
+                                'description' => 'Die Formkurve der letzten 5 Partien erscheint jetzt als vollbreite Sektion direkt unterhalb des Nächstes-Spiel-Blocks – mit S/U/N-Übersicht, Vereinslogos und Hover-Tooltip (Ergebnis, Heim/Gast).',
+                                'type' => 'ui',
+                            ],
+                            [
+                                'title' => 'Dashboard komplett auf Deutsch',
+                                'description' => 'Alle Bezeichnungen, Karten-Labels und Leertext-Meldungen wurden ins Deutsche übersetzt. Budget, Ligaposition, Fan-Stimmung, Lazarett, Kader-Puls, Live-Spiele, Manager Online.',
+                                'type' => 'ux',
+                            ],
+                            [
+                                'title' => 'Nächstes Spiel als Hero-Block',
+                                'description' => 'Das anstehende Match steht als vollbreiter Hero ganz oben — mit Vereinslogos, Anstoßzeit, Stadionname und Aufstellungs-Status beider Teams.',
+                                'type' => 'ui',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Simulation & Stabilität',
+                        'items' => [
+                            [
+                                'title' => 'Max. 15 parallele Spiele',
+                                'description' => 'Die Simulationsengine verarbeitet jetzt maximal 15 Spiele gleichzeitig. Der Wert ist über config/simulation.php konfigurierbar.',
+                                'type' => 'fix',
+                            ],
+                            [
+                                'title' => 'Broadcast-Fehler nicht mehr spielunterbrechend',
+                                'description' => 'WebSocket-Übertragungsfehler (z. B. Payload zu groß oder Reverb nicht erreichbar) brechen die Simulation nicht mehr ab – sie werden als Warnung geloggt und das Spiel läuft weiter.',
+                                'type' => 'fix',
+                            ],
+                            [
+                                'title' => 'transferHistories Relation ergänzt',
+                                'description' => 'Fehlender Alias transferHistories() im Player-Model ergänzt, der intern an transferHistory() delegiert. Verhinderte zuvor einen Fatal Error während der Simulation.',
+                                'type' => 'fix',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Daten-Center',
+                        'items' => [
+                            [
+                                'title' => 'Sofascore ID Finder (Bulk)',
+                                'description' => 'Neuer Bulk-Job im Daten-Center sucht automatisch Sofascore-IDs für alle Spieler ohne bestehende Verknüpfung — via Sofascore-Suche mit Namens- und Vereins-Abgleich. Fortschritt sichtbar im Import-Journal.',
+                                'type' => 'feature',
+                            ],
+                            [
+                                'title' => 'sofascore_url Referenzen bereinigt',
+                                'description' => 'Die veraltete Spalte sofascore_url wurde vollständig aus Fillable, Validierungsregeln und Import-Jobs entfernt. Verhinderte zuvor das Anlegen neuer Spieler per Import.',
+                                'type' => 'fix',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.5.0',
                 'date' => '29. März 2026',
                 'title' => 'Performance-Optimierungen',
