@@ -29,8 +29,10 @@ export default function Show({
     kickoff_formatted,
     weather,
     type,
+    is_derby,
     actions,
     final_stats,
+    man_of_the_match,
     team_states,
     player_states,
     lineups,
@@ -106,8 +108,32 @@ export default function Show({
         const channelName = `match.${id}`;
         const channel = window.Echo.channel(channelName);
 
-        channel.listen('.match.state.updated', () => {
-            fetchState();
+        channel.listen('.match.state.updated', (data) => {
+            // Use the broadcast payload directly when it contains live state fields,
+            // avoiding an extra HTTP round-trip. Fall back to fetchState() for legacy
+            // broadcasts that only carry minimal info (e.g. from older server versions).
+            if (data && data.team_states && data.player_states && data.actions) {
+                setLiveState((prev) => {
+                    let mergedActions = prev.actions;
+                    if (data.actions?.length) {
+                        const seen = new Set(data.actions.map((a) => a.id));
+                        mergedActions = [...data.actions, ...prev.actions.filter((a) => !seen.has(a.id))].slice(0, 400);
+                    }
+                    return {
+                        ...prev,
+                        status: data.status ?? prev.status,
+                        live_minute: data.live_minute ?? prev.live_minute,
+                        display_minute: data.display_minute ?? prev.display_minute,
+                        home_score: data.home_score ?? prev.home_score,
+                        away_score: data.away_score ?? prev.away_score,
+                        actions: mergedActions,
+                        team_states: data.team_states || prev.team_states,
+                        player_states: data.player_states || prev.player_states,
+                    };
+                });
+            } else {
+                fetchState();
+            }
         });
 
         return () => {
@@ -165,6 +191,19 @@ export default function Show({
         }
     }, [id]);
 
+    const handleStyleChange = useCallback(
+        (clubId, tacticalStyle) => postMatchCommand('matches.live.style', { club_id: clubId, tactical_style: tacticalStyle }),
+        [postMatchCommand],
+    );
+    const handleShout = useCallback(
+        (clubId, shout) => postMatchCommand('matches.live.shout', { club_id: clubId, shout }),
+        [postMatchCommand],
+    );
+    const handleSetPieceStrategy = useCallback(
+        (clubId, type, strategy) => postMatchCommand('matches.live.set-piece-strategy', { club_id: clubId, type, strategy }),
+        [postMatchCommand],
+    );
+
     const homeState = liveState.team_states?.[String(home_club?.id)];
     const awayState = liveState.team_states?.[String(away_club?.id)];
     const homeLineup = liveState.lineups?.[String(home_club?.id)];
@@ -216,6 +255,7 @@ export default function Show({
                     matchday={matchday}
                     weather={weather}
                     type={type}
+                    is_derby={is_derby}
                     actions={allActions}
                 />
 
@@ -251,8 +291,9 @@ export default function Show({
                             livePlayerStates={liveState.player_states}
                             manageableClubIds={manageable_club_ids}
                             teamStates={liveState.team_states}
-                            onStyleChange={(clubId, tacticalStyle) => postMatchCommand('matches.live.style', { club_id: clubId, tactical_style: tacticalStyle })}
-                            onShout={(clubId, shout) => postMatchCommand('matches.live.shout', { club_id: clubId, shout })}
+                            onStyleChange={handleStyleChange}
+                            onShout={handleShout}
+                            onSetPieceStrategy={handleSetPieceStrategy}
                             modulePanels={liveState.module_panels}
                             comparison={comparison}
                             preMatchReport={pre_match_report}
@@ -299,7 +340,7 @@ export default function Show({
 
                     {tab === 'live-table' && liveState.status !== 'scheduled' && <LiveTableTab liveTable={liveState.live_table} />}
 
-                    {tab === 'players' && liveState.status !== 'scheduled' && <PlayersTab clubs={[home_club, away_club]} finalStats={final_stats} />}
+                    {tab === 'players' && liveState.status !== 'scheduled' && <PlayersTab clubs={[home_club, away_club]} finalStats={liveState.final_stats ?? final_stats} motm={liveState.man_of_the_match ?? man_of_the_match} />}
                 </div>
             </div>
 

@@ -22,8 +22,6 @@ use App\Services\MatchEngine\SubstitutionManager;
 use App\Services\MatchEngine\TacticalManager;
 use App\Services\Simulation\DefaultSimulationStrategy;
 use App\Services\Simulation\MatchSimulationExecutor;
-use App\Services\Simulation\Observers\MatchFinishedContext;
-use App\Services\Simulation\Observers\MatchFinishedObserverPipeline;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -59,7 +57,7 @@ class LiveMatchTickerService
         private readonly NarrativeEngine $narrativeEngine,
         private readonly MatchSimulationExecutor $simulationExecutor,
         private readonly DefaultSimulationStrategy $simulationStrategy,
-        private readonly MatchFinishedObserverPipeline $matchFinishedObserverPipeline
+        private readonly MatchCenterStateService $matchCenterStateService,
     ) {
     }
 
@@ -171,7 +169,7 @@ class LiveMatchTickerService
 
     public function setTacticalStyle(GameMatch $match, int $clubId, string $style): GameMatch
     {
-        $allowed = ['balanced', 'offensive', 'defensive', 'counter'];
+        $allowed = ['balanced', 'offensive', 'defensive', 'counter', 'tiki_taka', 'direct'];
         if (!in_array($style, $allowed, true)) {
             return $this->loadState($match);
         }
@@ -257,6 +255,30 @@ class LiveMatchTickerService
         $this->broadcastLiveChanges($state);
 
         return $state;
+    }
+
+    public function setSetPieceStrategy(GameMatch $match, int $clubId, string $type, string $strategy): GameMatch
+    {
+        $allowedTypes = ['corner', 'free_kick'];
+        $allowedStrategies = array_keys(config("simulation.set_piece_strategies.{$type}", []));
+
+        if (!in_array($type, $allowedTypes, true) || !in_array($strategy, $allowedStrategies, true)) {
+            return $this->loadState($match);
+        }
+
+        if (!in_array($clubId, [(int) $match->home_club_id, (int) $match->away_club_id], true)) {
+            return $this->loadState($match);
+        }
+
+        $teamState = $this->stateRepository->teamStateFor($match, $clubId);
+        if (!$teamState) {
+            return $this->loadState($match);
+        }
+
+        $field = $type === 'corner' ? 'corner_strategy' : 'free_kick_strategy';
+        $teamState->update([$field => $strategy]);
+
+        return $this->loadState($match);
     }
 
     public function handleManagerShout(GameMatch $match, int $clubId, string $shout): GameMatch
@@ -895,11 +917,9 @@ class LiveMatchTickerService
         $awayPlayers = $this->matchLineupService->resolveParticipants($finalizedMatch->awayClub, $finalizedMatch, true);
 
         if ((bool) config('simulation.observers.match_finished.enabled', true)) {
-            $this->matchFinishedObserverPipeline->process(new MatchFinishedContext(
-                $finalizedMatch->fresh(),
-                $homePlayers,
-                $awayPlayers
-            ));
+            // Dispatch asynchronously so the simulation tick is not blocked
+            // by post-match processing (stats, standings, finances, etc.)
+            \App\Jobs\ProcessMatchFinishedJob::dispatch((int) $finalizedMatch->id);
         }
     }
 
@@ -1071,6 +1091,20 @@ class LiveMatchTickerService
             $homeStrength,
             $awayStrength
         );
+
+        // Apply set-piece strategy xG modifier if the chance follows a corner or free kick
+        $attackerTeamState = $this->teamStateFor($match, $attackerClubId);
+        $setPieceType = $attackerTeamState?->last_set_piece_type;
+        if (in_array($setPieceType, ['corner', 'free_kick'], true)) {
+            $strategyField = $setPieceType === 'corner' ? 'corner_strategy' : 'free_kick_strategy';
+            $strategyKey   = $attackerTeamState?->$strategyField;
+            $cfgKey        = $setPieceType === 'corner' ? 'corner' : 'free_kick';
+            if ($strategyKey) {
+                $modifier = (float) config("simulation.set_piece_strategies.{$cfgKey}.{$strategyKey}.xg_modifier", 0.0);
+                $xg = max(0.01, $xg + $modifier);
+            }
+        }
+
         $this->incrementTeamState($match, $attackerClubId, [], [
             'expected_goals' => (float) $this->teamStateFor($match, $attackerClubId)->expected_goals + $xg,
         ]);
@@ -2078,14 +2112,20 @@ class LiveMatchTickerService
 
     private function broadcastLiveChanges(GameMatch $match): void
     {
-        broadcast(new MatchStateUpdated((int) $match->id, [
-            'matchId' => (int) $match->id,
-            'status' => (string) $match->status,
-            'live_minute' => (int) ($match->live_minute ?? 0),
-            'home_score' => (int) ($match->home_score ?? 0),
-            'away_score' => (int) ($match->away_score ?? 0),
-        ]));
+        // Build full live state so clients can update directly without an extra HTTP round-trip
+        $livePayload = $this->matchCenterStateService->buildLiveBroadcastPayload($match);
 
-        broadcast(new LiveOverviewUpdated(app(LiveOverviewService::class)->overview()));
+        broadcast(new MatchStateUpdated((int) $match->id, array_merge(
+            ['matchId' => (int) $match->id],
+            $livePayload,
+        )));
+
+        // Deduplicate LiveOverview broadcasts: if multiple matches tick simultaneously
+        // within a 5-second window, only the first call rebroadcasts the overview.
+        $cacheKey = 'live_overview_broadcast_lock';
+        if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, true, 5);
+            broadcast(new LiveOverviewUpdated(app(LiveOverviewService::class)->overview()));
+        }
     }
 }

@@ -210,6 +210,7 @@ class Player extends Model
         'sofascore_id',
         'sofascore_url',
         'player_style',
+        'personality_type',
         'attr_attacking',
         'attr_technical',
         'attr_tactical',
@@ -354,7 +355,10 @@ class Player extends Model
             return $this->photo_path;
         }
 
-        return Storage::url($this->photo_path);
+        // Cache resolved Storage URLs for the request lifetime — Storage::url() can be
+        // expensive when called hundreds of times per live-state poll (44 players × N actions).
+        static $urlCache = [];
+        return $urlCache[$this->photo_path] ??= Storage::url($this->photo_path);
     }
 
     public static function mapPosition(?string $position): ?string

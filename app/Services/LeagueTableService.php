@@ -22,7 +22,7 @@ class LeagueTableService
     {
         return \Illuminate\Support\Facades\Cache::remember(
             "league_table_{$competitionSeason->id}",
-            3600, // 1 hour
+            300, // 5 minutes — keeps data fresh during live matches
             fn() => $competitionSeason->statistics()
                 ->with('club')
                 ->orderByDesc('points')

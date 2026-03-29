@@ -62,6 +62,7 @@ class MatchCenterController extends Controller
             'weather'           => $match->weather,
             'referee'           => $match->referee,
             'type'              => $match->type,
+            'is_derby'          => $match->homeClub->isRival((int) $match->away_club_id),
             'comparison'        => $comparison,
             'pre_match_report'  => $preMatchReport,
             'module_panels'     => $state['module_panels'] ?? [],
@@ -129,6 +130,29 @@ class MatchCenterController extends Controller
 
         $style = (string) $request->input('tactical_style', 'balanced');
         $state = $tickerService->setTacticalStyle($match, $clubId, $style);
+
+        return response()->json($this->statePayload(
+            $request,
+            $state,
+            app(LeagueTableService::class),
+            app(MatchPreviewService::class),
+            app(MatchCenterStateService::class),
+            app(MatchCenterPanelService::class),
+        ));
+    }
+
+    public function liveSetPieceStrategy(
+        Request $request,
+        GameMatch $match,
+        LiveMatchTickerService $tickerService
+    ): JsonResponse {
+        $manageableClubIds = $this->manageableClubIds($request, $match);
+        $clubId = (int) $request->input('club_id');
+        abort_unless(in_array($clubId, $manageableClubIds, true), 403);
+
+        $type = (string) $request->input('type', 'corner');
+        $strategy = (string) $request->input('strategy', '');
+        $state = $tickerService->setSetPieceStrategy($match, $clubId, $type, $strategy);
 
         return response()->json($this->statePayload(
             $request,
@@ -278,6 +302,7 @@ class MatchCenterController extends Controller
         abort_unless(in_array($clubId, $manageableClubIds, true), 403);
 
         $matchLiveLineupService->sync($match, $clubId, $validated);
+        \Illuminate\Support\Facades\Cache::forget("match_lineups_payload_{$match->id}");
         $match->refresh();
         $this->loadMatchStateRelations($match, false);
 
@@ -346,6 +371,8 @@ class MatchCenterController extends Controller
 
     private function loadMatchStateRelations(GameMatch $match, bool $withCompetition): void
     {
+        $isPlayed = $match->status === 'played';
+
         $relations = [
             'homeClub',
             'homeClub.stadium:id,name',
@@ -355,19 +382,32 @@ class MatchCenterController extends Controller
             'events.assister:id,first_name,last_name',
             'events.club',
             'playerStats:id,match_id,player_id,club_id,rating,goals,assists,minutes_played,shots',
-            'playerStats.player:id,first_name,last_name',
-            'liveTeamStates:id,match_id,club_id,tactical_style,phase,possession_seconds,actions_count,dangerous_attacks,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,corners_won,shots,shots_on_target,expected_goals,yellow_cards,red_cards,substitutions_used,tactical_changes_count,last_tactical_change_minute,last_substitution_minute,current_ball_carrier_player_id,last_set_piece_taker_player_id,last_set_piece_type,last_set_piece_minute',
+            'playerStats.player:id,first_name,last_name,photo_path,position',
+            'liveTeamStates:id,match_id,club_id,tactical_style,phase,possession_seconds,actions_count,dangerous_attacks,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,corners_won,shots,shots_on_target,expected_goals,yellow_cards,red_cards,substitutions_used,tactical_changes_count,last_tactical_change_minute,last_substitution_minute,current_ball_carrier_player_id,last_set_piece_taker_player_id,last_set_piece_type,last_set_piece_minute,corner_strategy,free_kick_strategy',
             'livePlayerStates:id,match_id,club_id,player_id,slot,is_on_pitch,is_sent_off,is_injured,fit_factor,minutes_played,ball_contacts,pass_attempts,pass_completions,tackle_attempts,tackle_won,fouls_committed,fouls_suffered,shots,shots_on_target,goals,assists,yellow_cards,red_cards,saves',
             'livePlayerStates.player:id,first_name,last_name,photo_path',
-            'liveActions:id,match_id,club_id,player_id,opponent_player_id,minute,second,sequence,action_type,outcome,narrative,x_coord,y_coord,metadata',
-            'liveActions.club',
-            'liveActions.player:id,first_name,last_name,photo_path',
-            'liveActions.opponentPlayer:id,first_name,last_name,photo_path',
-            'liveMinuteSnapshots:id,match_id,minute,home_score,away_score,home_phase,away_phase,home_tactical_style,away_tactical_style,pending_plans,executed_plans,skipped_plans,invalid_plans',
-            'plannedSubstitutions:id,match_id,club_id,player_out_id,player_in_id,planned_minute,score_condition,target_slot,status,executed_minute,metadata',
-            'plannedSubstitutions.playerOut:id,first_name,last_name',
-            'plannedSubstitutions.playerIn:id,first_name,last_name',
+            // Constrained: load only the 400 most recent actions instead of the full table
+            'liveActions' => fn ($q) => $q->select(['id', 'match_id', 'club_id', 'player_id', 'opponent_player_id', 'minute', 'second', 'sequence', 'action_type', 'outcome', 'narrative', 'x_coord', 'y_coord', 'metadata'])
+                ->orderByDesc('minute')->orderByDesc('second')->orderByDesc('sequence')->limit(400)
+                ->with([
+                    'club:id,name,short_name,logo_path',
+                    'player:id,first_name,last_name,photo_path',
+                    'opponentPlayer:id,first_name,last_name,photo_path',
+                ]),
+            // Constrained: load only the 30 most recent snapshots
+            'liveMinuteSnapshots' => fn ($q) => $q->select(['id', 'match_id', 'minute', 'home_score', 'away_score', 'home_phase', 'away_phase', 'home_tactical_style', 'away_tactical_style', 'pending_plans', 'executed_plans', 'skipped_plans', 'invalid_plans'])
+                ->orderByDesc('minute')->limit(30),
         ];
+
+        // plannedSubstitutions are irrelevant for finished matches
+        if (!$isPlayed) {
+            $relations['plannedSubstitutions'] = fn ($q) => $q->select(['id', 'match_id', 'club_id', 'player_out_id', 'player_in_id', 'planned_minute', 'score_condition', 'target_slot', 'status', 'executed_minute', 'metadata'])
+                ->orderBy('planned_minute')
+                ->with([
+                    'playerOut:id,first_name,last_name',
+                    'playerIn:id,first_name,last_name',
+                ]);
+        }
 
         $relations[] = 'competitionSeason.competition:id,name';
 
@@ -383,10 +423,17 @@ class MatchCenterController extends Controller
         MatchCenterPanelService $matchCenterPanelService
     ): array
     {
+        // Lineups rarely change mid-match — cache for 30 s to avoid redundant queries on every live poll
+        $lineups = \Illuminate\Support\Facades\Cache::remember(
+            "match_lineups_payload_{$match->id}",
+            30,
+            fn () => $matchPreviewService->lineupsPayload($match),
+        );
+
         $payload = $matchCenterStateService->build(
             $match,
             $leagueTableService,
-            $matchPreviewService->lineupsPayload($match),
+            $lineups,
             $this->canSimulate($request, $match),
             $this->manageableClubIds($request, $match),
         );

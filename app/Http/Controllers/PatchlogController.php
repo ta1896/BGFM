@@ -12,6 +12,83 @@ class PatchlogController extends Controller
     {
         $patchlogs = [
             [
+                'version' => '1.5.0',
+                'date' => '29. März 2026',
+                'title' => 'Performance-Optimierungen',
+                'categories' => [
+                    [
+                        'name' => 'Datenbank & Backend',
+                        'items' => [
+                            [
+                                'title' => 'Composite DB-Indexes',
+                                'description' => 'Neue zusammengesetzte Indizes auf match_live_actions (match_id, minute), match_live_player_states (match_id, club_id, player_id) und matches (status, type) für deutlich schnellere Abfragen während der Live-Simulation.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'Constrained Eager Loading',
+                                'description' => 'Datenbankabfragen für Live-Aktionen und Minuten-Snapshots werden jetzt direkt auf DB-Ebene auf 400 bzw. 30 Einträge begrenzt – keine nachträgliche PHP-Filterung mehr.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'Lineup-Payload Caching',
+                                'description' => 'Der aufwendig berechnete Aufstellungs-Payload wird für 30 Sekunden im Cache gehalten und nur bei einer Live-Änderung invalidiert.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'League Table Cache-TTL reduziert',
+                                'description' => 'Die Livetabelle wird nun alle 5 statt 60 Minuten neu berechnet – aktuellere Daten bei vergleichbarer Last.',
+                                'type' => 'fix',
+                            ],
+                            [
+                                'title' => 'Storage URL Request-Cache',
+                                'description' => 'Wiederholte Storage::url()-Aufrufe für dasselbe Spielerfoto werden innerhalb eines Requests gecacht, was bei 44 Spielern pro Live-Poll-Zyklus deutlich Rechenzeit spart.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'Match-Abschluss als Queue-Job',
+                                'description' => 'Die Nachbearbeitungs-Pipeline nach Spielende (Statistiken, Tabelle, Bewertungen) läuft jetzt asynchron als idempotenter Queue-Job, damit der letzte Simulations-Tick nicht blockiert wird.',
+                                'type' => 'performance',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Realtime & WebSocket',
+                        'items' => [
+                            [
+                                'title' => 'Broadcast Delta-Payload',
+                                'description' => 'Pro WebSocket-Tick werden nur noch die 20 neuesten Aktionen übertragen statt bis zu 400. Der Client merged die eingehenden Daten mit seiner lokalen Historie – identische Darstellung, ~95 % kleinerer Payload.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'Live-State direkt aus Broadcast',
+                                'description' => 'Das Match-Center wertet den WebSocket-Payload jetzt direkt aus und vermeidet so einen zweiten HTTP-Request pro Tick. Fallback auf HTTP bleibt für ältere Broadcasts erhalten.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'LiveOverview Broadcast-Deduplication',
+                                'description' => 'Dashboard-Broadcasts werden innerhalb eines 5-Sekunden-Fensters gebündelt, um redundante Übertragungen bei schnell aufeinanderfolgenden Match-Ticks zu verhindern.',
+                                'type' => 'performance',
+                            ],
+                        ],
+                    ],
+                    [
+                        'name' => 'Frontend',
+                        'items' => [
+                            [
+                                'title' => 'React.memo auf allen Match-Center-Komponenten',
+                                'description' => 'TickerTab, HighlightsTab, StatsTab, LiveTableTab, PlayersTab, OverviewTab, ScoreHero, LineupPitch, Live2DTab und weitere Komponenten werden nur noch neu gerendert, wenn sich ihre Props tatsächlich geändert haben.',
+                                'type' => 'performance',
+                            ],
+                            [
+                                'title' => 'Stabile Handler-Referenzen (useCallback)',
+                                'description' => 'Taktik-Handler (Spielstil, Anfeuerungen, Set-Piece-Strategie) in Show.jsx sind jetzt mit useCallback stabilisiert und lösen keine unnötigen Re-Renders in OverviewTab aus.',
+                                'type' => 'performance',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'version' => '1.4.0',
                 'date' => '26. März 2026',
                 'title' => 'Match-Center Stabilität & Immersion',
