@@ -129,16 +129,16 @@ export default function DashboardDeferredSections({
                     {medicalDesk && (medicalDesk.injured_count > 0 || medicalDesk.monitoring_count > 0 || medicalDesk.return_count > 0) ? (
                         <section className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-6 shadow-xl">
                             <div className="mb-4 flex items-center justify-between gap-3">
-                                <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Medical Desk</h2>
+                                <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Lazarett</h2>
                                 <Link href={route('medical.index')} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-rose-200 hover:text-white">
                                     <FirstAidKit size={12} weight="fill" />
-                                    {medicalDesk.injured_count} out
+                                    {medicalDesk.injured_count} verletzt
                                 </Link>
                             </div>
                             <div className="mb-4 grid grid-cols-3 gap-2">
-                                <MiniDeskStat label="Out" value={medicalDesk.injured_count} tone="rose" />
-                                <MiniDeskStat label="Monitor" value={medicalDesk.monitoring_count} tone="amber" />
-                                <MiniDeskStat label="Return" value={medicalDesk.return_count} tone="emerald" />
+                                <MiniDeskStat label="Verletzt" value={medicalDesk.injured_count} tone="rose" />
+                                <MiniDeskStat label="Beobachtung" value={medicalDesk.monitoring_count} tone="amber" />
+                                <MiniDeskStat label="Rückkehr" value={medicalDesk.return_count} tone="emerald" />
                             </div>
                             <div className="space-y-2.5">
                                 {medicalDesk.critical_cases.map((player) => (
@@ -172,7 +172,7 @@ export default function DashboardDeferredSections({
 
                     {squadPulse && (squadPulse.manual_roles_count > 0 || squadPulse.promise_pressure_count > 0) ? (
                         <section className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-6 shadow-xl">
-                            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Squad Pulse</h2>
+                            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Kader-Puls</h2>
                             <div className="space-y-4">
                                 {squadPulse.manual_roles_count > 0 ? (
                                     <div>
@@ -223,7 +223,7 @@ export default function DashboardDeferredSections({
                 <section className="rounded-3xl border border-emerald-400/12 bg-[linear-gradient(160deg,rgba(8,25,24,0.94),rgba(5,15,17,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(16,185,129,0.35)]">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live Matches</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/65">Live-Spiele</div>
                             <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.liveMatchesCount}</div>
                         </div>
                         {hasLiveTickerRoute ? (
@@ -238,7 +238,7 @@ export default function DashboardDeferredSections({
                             <LiveMatchRow key={match.id} match={match} />
                         )) : (
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                                Derzeit laeuft kein Match live.
+                                Kein Spiel läuft gerade live.
                             </div>
                         )}
                     </div>
@@ -247,8 +247,8 @@ export default function DashboardDeferredSections({
                 <section className="min-h-[22rem] rounded-3xl border border-[var(--border-muted)] bg-[var(--bg-pillar)]/34 p-5">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Priorities</div>
-                            <div className="mt-1 text-lg font-black text-white">What needs attention</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Prioritäten</div>
+                            <div className="mt-1 text-lg font-black text-white">Handlungsbedarf</div>
                         </div>
                         {assistantTasks?.length > 0 ? (
                             <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
@@ -278,7 +278,7 @@ export default function DashboardDeferredSections({
                         ))}
                         {(!assistantTasks || assistantTasks.length === 0) ? (
                             <div className="rounded-2xl border border-dashed border-[var(--border-pillar)] px-4 py-8 text-sm text-[var(--text-muted)]">
-                                No urgent tasks right now.
+                                Keine dringenden Aufgaben.
                             </div>
                         ) : null}
                     </div>
@@ -355,13 +355,13 @@ export default function DashboardDeferredSections({
                             </div>
                         </div>
                     ) : (
-                        <p className="text-sm italic text-[var(--text-muted)]">Season just started</p>
+                        <p className="text-sm italic text-[var(--text-muted)]">Saison gerade gestartet</p>
                     )}
                 </section>
 
                 {managerDecisions?.length > 0 ? (
                     <section className="rounded-3xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)]/40 p-6 shadow-xl">
-                        <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Manager Decisions</h2>
+                        <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Manager-Entscheidungen</h2>
                         <div className="space-y-3">
                             {managerDecisions.map((decision, idx) => (
                                 <PlayerLink key={`${decision.kind}-${decision.player_id}-${idx}`} id={decision.player_id} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/20">
@@ -414,7 +414,7 @@ export default function DashboardDeferredSections({
                 <section className="rounded-3xl border border-cyan-400/12 bg-[linear-gradient(160deg,rgba(10,20,35,0.94),rgba(8,15,28,0.98))] p-5 shadow-[0_25px_50px_-30px_rgba(14,165,233,0.35)]">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Online Manager</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">Manager Online</div>
                             <div className="mt-1 text-3xl font-black tracking-tight text-white">{liveOverview.onlineManagersCount}</div>
                         </div>
                         {hasManagerLiveRoute ? (
@@ -429,7 +429,7 @@ export default function DashboardDeferredSections({
                             <ManagerLiveRow key={manager.id} manager={manager} />
                         )) : (
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                                Aktuell ist kein Manager online.
+                                Kein Manager gerade online.
                             </div>
                         )}
                     </div>
