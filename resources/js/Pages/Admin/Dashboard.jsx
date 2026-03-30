@@ -4,7 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import {
     Users, UserGear, Shield, Robot, UserCircle, ListNumbers,
     CalendarCheck, Suitcase, Warehouse, Play, ArrowsClockwise, CaretRight,
-    Trophy, Gear, Wrench, FileText, Activity, List, Package, Gauge,
+    Trophy, Gear, Wrench, FileText, Pulse, List, Package, Gauge,
 } from '@phosphor-icons/react';
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal } from '@/Components/PageReveal';
@@ -154,7 +154,7 @@ export default function Dashboard({ stats, latestUsers, latestClubs, activeCompe
                                 <div>
                                     <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">System</p>
                                     <div className="grid grid-cols-3 gap-3">
-                                        <QuickCard href={route('admin.monitoring.index')} icon={Activity} label="Monitoring" tone="secondary" />
+                                        <QuickCard href={route('admin.monitoring.index')} icon={Pulse} label="Monitoring" tone="secondary" />
                                         <QuickCard href={route('admin.navigation.index')} icon={List} label="Navigation" />
                                         <QuickCard href={route('admin.modules.index')} icon={Package} label="Module" />
                                     </div>
