@@ -469,6 +469,21 @@ export const PlayerContractTab = React.memo(function PlayerContractTab({ player,
                     <InfoRow label="Marktwert" value={player.market_value_formatted} />
                     <InfoRow label="Kaderrolle" value={player.squad_role} />
                     <InfoRow label="Hierarchie" value={player.leadership_level} />
+                    {player.personality_type && (
+                        <InfoRow
+                            label="Persönlichkeit"
+                            value={
+                                {
+                                    leader: '👑 Leader',
+                                    temperamental: '🔥 Temperamentvoll',
+                                    team_player: '🤝 Teamplayer',
+                                    silent_pro: '🧊 Silent Pro',
+                                    maverick: '⚡ Maverick',
+                                    youngster: '🌱 Youngster',
+                                }[player.personality_type] ?? player.personality_type
+                            }
+                        />
+                    )}
                     <InfoRow label="Erwartete Spielzeit" value={`${player.expected_playtime}%`} />
                     <InfoRow label="Medizin" value={player.medical_status} />
                 </div>

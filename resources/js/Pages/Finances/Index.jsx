@@ -15,9 +15,52 @@ import {
     Coin,
     Wallet,
     WarningCircle,
+    ChartPie,
 } from '@phosphor-icons/react';
 
-export default function Finances({ activeClub, transactions }) {
+const CONTEXT_LABELS = {
+    match_income: 'Spieleinnahmen',
+    transfer: 'Transfers',
+    salary: 'Gehälter',
+    sponsor: 'Sponsoren',
+    stadium: 'Stadion',
+    training: 'Training',
+    admin_adjustment: 'Admin',
+    other: 'Sonstige',
+};
+
+function SummaryRow({ item }) {
+    const label = CONTEXT_LABELS[item.context_type] ?? item.context_type;
+    const net = item.net;
+    const maxBar = Math.max(item.income, item.expense);
+
+    return (
+        <div className="grid grid-cols-[8rem_1fr_1fr_6rem] gap-4 items-center border-b border-white/5 px-6 py-4 hover:bg-white/[0.02] transition-colors">
+            <div className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)]">{label}</div>
+            <div className="flex items-center gap-2">
+                <div className="h-1.5 rounded-full bg-emerald-500/20 flex-1 overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: maxBar > 0 ? `${(item.income / maxBar) * 100}%` : '0%' }} />
+                </div>
+                <span className="text-[10px] font-black text-emerald-400 w-20 text-right">
+                    +{item.income.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                </span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="h-1.5 rounded-full bg-rose-500/20 flex-1 overflow-hidden">
+                    <div className="h-full bg-rose-500 rounded-full" style={{ width: maxBar > 0 ? `${(item.expense / maxBar) * 100}%` : '0%' }} />
+                </div>
+                <span className="text-[10px] font-black text-rose-400 w-20 text-right">
+                    -{item.expense.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                </span>
+            </div>
+            <div className={`text-right text-sm font-black italic ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {net >= 0 ? '+' : ''}{net.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+            </div>
+        </div>
+    );
+}
+
+export default function Finances({ activeClub, transactions, summary = [] }) {
     usePage();
 
     if (!activeClub) {
@@ -72,6 +115,36 @@ export default function Finances({ activeClub, transactions }) {
                         </div>
                     </div>
                 </StaggerGroup>
+
+                {summary.length > 0 && (
+                    <PageReveal delay={100}>
+                        <SectionCard title="Einnahmen & Ausgaben nach Kategorie" icon={ChartPie} bodyClassName="overflow-hidden">
+                            <div className="grid grid-cols-[8rem_1fr_1fr_6rem] gap-4 border-b border-[var(--border-muted)] bg-[var(--bg-pillar)]/40 px-6 py-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                <div>Kategorie</div>
+                                <div className="flex items-center gap-2 text-emerald-400">Einnahmen</div>
+                                <div className="flex items-center gap-2 text-rose-400">Ausgaben</div>
+                                <div className="text-right">Netto</div>
+                            </div>
+                            {summary.map((item) => <SummaryRow key={item.context_type} item={item} />)}
+                            <div className="grid grid-cols-[8rem_1fr_1fr_6rem] gap-4 items-center border-t border-white/10 bg-[var(--bg-pillar)]/40 px-6 py-4">
+                                <div className="text-[10px] font-black uppercase tracking-wider text-[var(--text-main)]">Gesamt</div>
+                                <div className="text-right pr-0">
+                                    <span className="text-[10px] font-black text-emerald-400">
+                                        +{summary.reduce((s, i) => s + i.income, 0).toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                                <div className="text-right pr-0">
+                                    <span className="text-[10px] font-black text-rose-400">
+                                        -{summary.reduce((s, i) => s + i.expense, 0).toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                                <div className={`text-right text-sm font-black italic ${summary.reduce((s, i) => s + i.net, 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {summary.reduce((s, i) => s + i.net, 0) >= 0 ? '+' : ''}{summary.reduce((s, i) => s + i.net, 0).toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                                </div>
+                            </div>
+                        </SectionCard>
+                    </PageReveal>
+                )}
 
                 <PageReveal delay={140}>
                     <SectionCard title="Transaktionshistorie" icon={ArrowsLeftRight}>

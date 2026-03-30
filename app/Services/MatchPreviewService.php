@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Lineup;
+use App\Models\MatchEvent;
 use App\Models\Player;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -42,6 +43,10 @@ class MatchPreviewService
             'absentees' => $this->absentees($match),
             'key_duels' => $this->keyDuels($match, $keyPlayers),
             'expected_lineup_preview' => $this->expectedLineupPreview($match),
+            'opponent_stats' => [
+                'home' => $this->opponentStats($match->home_club_id, $match->id),
+                'away' => $this->opponentStats($match->away_club_id, $match->id),
+            ],
         ];
     }
 
@@ -339,6 +344,73 @@ class MatchPreviewService
             'draws' => $form->where('result', 'D')->count(),
             'losses' => $form->where('result', 'L')->count(),
             'points' => ($form->where('result', 'W')->count() * 3) + $form->where('result', 'D')->count(),
+        ];
+    }
+
+    private function opponentStats(int $clubId, int $currentMatchId): array
+    {
+        $matches = GameMatch::query()
+            ->where('status', 'played')
+            ->where('id', '!=', $currentMatchId)
+            ->where(function (Builder $query) use ($clubId) {
+                $query->where('home_club_id', $clubId)
+                    ->orWhere('away_club_id', $clubId);
+            })
+            ->orderByDesc('kickoff_at')
+            ->take(5)
+            ->get(['id', 'home_club_id', 'away_club_id', 'home_score', 'away_score']);
+
+        if ($matches->isEmpty()) {
+            return [
+                'games' => 0,
+                'avg_goals_scored' => 0.0,
+                'avg_goals_conceded' => 0.0,
+                'clean_sheets' => 0,
+                'yellow_cards' => 0,
+                'red_cards' => 0,
+                'attack_rating' => 'neutral',
+                'defense_rating' => 'neutral',
+            ];
+        }
+
+        $matchIds = $matches->pluck('id')->all();
+        $totalGoalsFor = 0;
+        $totalGoalsAgainst = 0;
+        $cleanSheets = 0;
+
+        foreach ($matches as $m) {
+            $isHome = (int) $m->home_club_id === $clubId;
+            $gf = (int) ($isHome ? $m->home_score : $m->away_score);
+            $ga = (int) ($isHome ? $m->away_score : $m->home_score);
+            $totalGoalsFor += $gf;
+            $totalGoalsAgainst += $ga;
+            if ($ga === 0) {
+                $cleanSheets++;
+            }
+        }
+
+        $cardCounts = MatchEvent::query()
+            ->whereIn('match_id', $matchIds)
+            ->where('club_id', $clubId)
+            ->whereIn('event_type', ['yellow_card', 'red_card'])
+            ->selectRaw('event_type, COUNT(*) as cnt')
+            ->groupBy('event_type')
+            ->get()
+            ->keyBy('event_type');
+
+        $count = $matches->count();
+        $avgFor = round($totalGoalsFor / $count, 1);
+        $avgAgainst = round($totalGoalsAgainst / $count, 1);
+
+        return [
+            'games' => $count,
+            'avg_goals_scored' => $avgFor,
+            'avg_goals_conceded' => $avgAgainst,
+            'clean_sheets' => $cleanSheets,
+            'yellow_cards' => (int) ($cardCounts['yellow_card']->cnt ?? 0),
+            'red_cards' => (int) ($cardCounts['red_card']->cnt ?? 0),
+            'attack_rating' => $avgFor >= 2.0 ? 'strong' : ($avgFor >= 1.2 ? 'moderate' : 'weak'),
+            'defense_rating' => $avgAgainst <= 0.8 ? 'strong' : ($avgAgainst <= 1.5 ? 'moderate' : 'weak'),
         ];
     }
 

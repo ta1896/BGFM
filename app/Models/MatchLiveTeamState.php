@@ -37,6 +37,8 @@ class MatchLiveTeamState extends Model
         'last_set_piece_taker_player_id',
         'last_set_piece_type',
         'last_set_piece_minute',
+        'corner_strategy',
+        'free_kick_strategy',
     ];
 
     protected function casts(): array

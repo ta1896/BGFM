@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         function () {
             Route::resource('clubs', ClubController::class)->except(['create', 'store']);
             Route::get('/players/hierarchy', [PlayerController::class, 'hierarchy'])->name('squad-hierarchy.index');
+            Route::get('/players/numbers', [PlayerController::class, 'numberManagement'])->name('players.numbers.index');
             Route::post('/players/{player}/sync-history', [PlayerController::class, 'syncTransferHistory'])->name('players.sync-history');
             Route::post('/players/{player}/sync-sofascore', [PlayerController::class, 'syncSofascore'])->name('players.sync-sofascore');
             Route::resource('players', PlayerController::class)->only(['index', 'show', 'update']);
@@ -74,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/matches/{match}/live/start', [MatchCenterController::class, 'liveStart'])->name('matches.live.start');
             Route::post('/matches/{match}/live/resume', [MatchCenterController::class, 'liveResume'])->name('matches.live.resume');
             Route::post('/matches/{match}/live/style', [MatchCenterController::class, 'liveSetStyle'])->name('matches.live.style');
+            Route::post('/matches/{match}/live/set-piece-strategy', [MatchCenterController::class, 'liveSetPieceStrategy'])->name('matches.live.set-piece-strategy');
             Route::post('/matches/{match}/live/lineup/sync', [MatchCenterController::class, 'liveSyncLineup'])->name('matches.live.lineup.sync');
             Route::post('/matches/{match}/live/substitute', [MatchCenterController::class, 'liveSubstitute'])->name('matches.live.substitute');
             Route::post('/matches/{match}/live/substitute/plan', [MatchCenterController::class, 'livePlanSubstitute'])->name('matches.live.substitute.plan');
@@ -127,6 +129,8 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('seasons', \App\Http\Controllers\Admin\SeasonController::class);
         Route::resource('competition-seasons', \App\Http\Controllers\Admin\CompetitionSeasonController::class)->only(['edit', 'update']);
         Route::resource('clubs', AdminClubController::class);
+        Route::get('/rivals', [AdminClubController::class, 'rivals'])->name('clubs.rivals');
+        Route::patch('/rivals/{club}', [AdminClubController::class, 'updateRivals'])->name('clubs.rivals.update');
         Route::post('/players/bulk-sync', [AdminPlayerController::class, 'bulkSyncSofascore'])->name('players.bulk-sync');
         Route::delete('/players/bulk-sync/clear', [AdminPlayerController::class, 'clearBulkSyncLogs'])->name('players.bulk-sync.clear');
         Route::post('/players/{player}/sync-history', [AdminPlayerController::class, 'syncTransferHistory'])->name('players.sync-history');

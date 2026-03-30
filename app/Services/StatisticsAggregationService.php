@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Club;
 use App\Models\CompetitionSeason;
 use App\Models\GameMatch;
+use App\Models\MatchPlayerStat;
 use App\Models\SeasonClubStatistic;
 use Illuminate\Support\Facades\DB;
 
@@ -44,6 +45,8 @@ class StatisticsAggregationService
                     'home_points',
                     'away_points',
                     'form_last5',
+                    'yellow_cards',
+                    'red_cards',
                     'updated_at',
                 ]
             );
@@ -664,6 +667,8 @@ class StatisticsAggregationService
                 'home_points' => 0,
                 'away_points' => 0,
                 'form_last5' => '',
+                'yellow_cards' => 0,
+                'red_cards' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -708,9 +713,21 @@ class StatisticsAggregationService
             );
         }
 
+        // Aggregate yellow/red cards per club from match player stats
+        $cardsByClub = MatchPlayerStat::query()
+            ->join('game_matches', 'match_player_stats.match_id', '=', 'game_matches.id')
+            ->where('game_matches.competition_season_id', $competitionSeason->id)
+            ->whereIn('match_player_stats.club_id', $clubIds)
+            ->selectRaw('match_player_stats.club_id, SUM(yellow_cards) as total_yellow, SUM(red_cards) as total_red')
+            ->groupBy('match_player_stats.club_id')
+            ->get()
+            ->keyBy('club_id');
+
         foreach ($stats as $clubId => $row) {
             $row['goal_diff'] = (int) $row['goals_for'] - (int) $row['goals_against'];
             $row['form_last5'] = implode('', array_slice($forms[$clubId], -5));
+            $row['yellow_cards'] = (int) ($cardsByClub[$clubId]->total_yellow ?? 0);
+            $row['red_cards'] = (int) ($cardsByClub[$clubId]->total_red ?? 0);
             $stats[$clubId] = $row;
         }
 

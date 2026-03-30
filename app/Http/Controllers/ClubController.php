@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\GameMatch;
 use App\Models\Season;
+use App\Models\CompetitionSeason;
 use App\Services\ClubFinanceLedgerService;
+use App\Services\LeagueTableService;
 use App\Services\StatisticsAggregationService;
 use App\Services\ClubHistoryService;
 use Illuminate\Http\Request;
@@ -117,10 +119,11 @@ class ClubController extends Controller
      * Display the specified resource.
      */
     public function show(
-        Request $request, 
-        Club $club, 
+        Request $request,
+        Club $club,
         StatisticsAggregationService $statisticsAggregationService,
-        ClubHistoryService $historyService
+        ClubHistoryService $historyService,
+        LeagueTableService $leagueTableService
     ): Response {
         $club->load([
             'players' => fn($query) => $query->orderByRaw("FIELD(position, 'TW', 'LV', 'IV', 'RV', 'DM', 'LM', 'ZM', 'RM', 'OM', 'LF', 'HS', 'MS', 'RF')")->orderByDesc('overall'),
@@ -185,6 +188,44 @@ class ClubController extends Controller
                 ];
             });
 
+        // --- Season Objective ---
+        $objectiveStatus = null;
+        $objectivePosition = null;
+        $objectiveTotalTeams = null;
+        $objective = $club->season_objective;
+
+        if ($objective && $objective !== 'cup_run') {
+            $currentSeason = Season::where('is_current', true)->first();
+            if ($currentSeason) {
+                $compSeason = CompetitionSeason::whereHas('competition', fn($q) => $q->where('type', 'league'))
+                    ->whereHas('statistics', fn($q) => $q->where('club_id', $club->id))
+                    ->where('season_id', $currentSeason->id)
+                    ->first();
+
+                if ($compSeason) {
+                    $leagueTableService->rebuild($compSeason);
+                    $table = $leagueTableService->table($compSeason);
+                    $total = $table->count();
+                    $pos = $table->search(fn($row) => ($row->club_id ?? $row->club?->id) === $club->id);
+                    $pos = $pos !== false ? (int) $pos + 1 : null;
+                    $objectivePosition = $pos;
+                    $objectiveTotalTeams = $total;
+
+                    if ($pos !== null) {
+                        $objectiveStatus = match ($objective) {
+                            'title' => $pos === 1 ? 'achieved' : ($pos <= 2 ? 'on_track' : ($pos <= 4 ? 'at_risk' : 'critical')),
+                            'promotion' => $pos <= 3 ? ($pos <= 2 ? 'on_track' : 'on_track') : ($pos <= 5 ? 'at_risk' : 'critical'),
+                            'mid_table' => ($pos > 3 && $pos <= $total - 3) ? 'on_track' : 'at_risk',
+                            'avoid_relegation' => $pos <= $total - 3 ? 'on_track' : ($pos === $total - 2 ? 'at_risk' : 'critical'),
+                            default => 'on_track',
+                        };
+                    }
+                }
+            }
+        } elseif ($objective === 'cup_run') {
+            $objectiveStatus = 'cup';
+        }
+
         return Inertia::render('Clubs/Show', [
             'club' => $club,
             'seasons' => $seasons,
@@ -205,6 +246,12 @@ class ClubController extends Controller
             'hallOfFame' => $historyService->getHallOfFame($club),
             'clubRecords' => $historyService->getRecords($club),
             'historicalComparison' => $historyService->getHistoricalComparison($club, $seasonStats),
+            'seasonObjective' => [
+                'type'        => $objective,
+                'status'      => $objectiveStatus,
+                'position'    => $objectivePosition,
+                'total_teams' => $objectiveTotalTeams,
+            ],
         ]);
     }
 

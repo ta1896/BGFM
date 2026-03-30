@@ -23,6 +23,63 @@ const tabs = [
     { id: 'hall_of_fame', label: 'Hall of Fame' },
 ];
 
+const OBJECTIVE_CONFIG = {
+    title:              { label: 'Meistertitel',          color: 'amber',   need: 'Platz 1' },
+    promotion:          { label: 'Aufstieg / Top 3',      color: 'emerald', need: 'Top 3' },
+    mid_table:          { label: 'Gesichertes Mittelfeld', color: 'cyan',    need: 'Mittelfeld' },
+    avoid_relegation:   { label: 'Klassenerhalt',         color: 'slate',   need: 'Nicht Abstieg' },
+    cup_run:            { label: 'Pokalerfolg',           color: 'indigo',  need: 'Pokal' },
+};
+
+const STATUS_CONFIG = {
+    achieved:  { label: 'Erreicht',   cls: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' },
+    on_track:  { label: 'Auf Kurs',   cls: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300' },
+    at_risk:   { label: 'Gefährdet',  cls: 'bg-amber-500/15 border-amber-500/30 text-amber-300' },
+    critical:  { label: 'Kritisch',   cls: 'bg-rose-500/15 border-rose-500/30 text-rose-300' },
+    cup:       { label: 'Im Rennen',  cls: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' },
+};
+
+function SeasonObjectiveWidget({ seasonObjective }) {
+    if (!seasonObjective?.type) return null;
+    const obj = OBJECTIVE_CONFIG[seasonObjective.type] ?? { label: seasonObjective.type, color: 'slate', need: '' };
+    const status = STATUS_CONFIG[seasonObjective.status] ?? STATUS_CONFIG['on_track'];
+    const { position, total_teams } = seasonObjective;
+
+    return (
+        <div className="sim-card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+                <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.18em]">Saisonziel</div>
+                {seasonObjective.status && (
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${status.cls}`}>
+                        {status.label}
+                    </span>
+                )}
+            </div>
+            <div className="text-sm font-black uppercase tracking-tight text-[var(--text-main)]">{obj.label}</div>
+            {position && total_teams && seasonObjective.type !== 'cup_run' && (
+                <div>
+                    <div className="flex justify-between text-[9px] font-bold text-[var(--text-muted)] uppercase mb-1.5">
+                        <span>Aktuelle Position: {position} / {total_teams}</span>
+                        <span>Ziel: {obj.need}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-[var(--bg-content)] overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all ${
+                                seasonObjective.status === 'on_track' || seasonObjective.status === 'achieved'
+                                    ? 'bg-emerald-500'
+                                    : seasonObjective.status === 'at_risk'
+                                        ? 'bg-amber-500'
+                                        : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${Math.max(5, Math.min(100, ((total_teams - position + 1) / total_teams) * 100))}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Show({
     auth,
     club,
@@ -36,6 +93,7 @@ export default function Show({
     hallOfFame,
     clubRecords,
     historicalComparison,
+    seasonObjective,
 }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [activeTrophyId, setActiveTrophyId] = useState(null);
@@ -138,6 +196,8 @@ export default function Show({
                                         <InfoRow label="Prestige" value={`${club.reputation} / 99`} />
                                     </div>
                                 </div>
+
+                                <SeasonObjectiveWidget seasonObjective={seasonObjective} />
 
                                 <div className="overflow-hidden rounded-2xl border border-amber-500/20 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_rgba(15,23,42,0.95)_58%)] shadow-lg shadow-amber-950/20">
                                     <div className="border-b border-amber-400/10 px-5 py-4">

@@ -148,6 +148,16 @@ class ActionEngine
             $mods['away_strength_multiplier'] += 0.05;
         }
 
+        // Per-team style modifiers (tiki_taka, direct) from config
+        $styleMods = config('simulation.tactical_style_modifiers', []);
+        foreach ([['home', $homeStyle], ['away', $awayStyle]] as [$side, $style]) {
+            if (isset($styleMods[$style])) {
+                $mods["{$side}_possession_bonus"] += $styleMods[$style]['possession_bonus'];
+                $mods["{$side}_strength_multiplier"] *= $styleMods[$style]['strength_multiplier'];
+                $mods['foul_chance_multiplier'] *= $styleMods[$style]['foul_chance_multiplier'];
+            }
+        }
+
         // 2. Weather
         if ($match->weather === 'rain') {
             $mods['intensity_multiplier'] *= 1.1; // Slick pitch, more sliding
@@ -414,9 +424,14 @@ class ActionEngine
 
         $cardRoll = mt_rand(1, 100);
 
-        // Increase card chances if rivalry/weather exists
-        $yellowThresh = 15 * $modifiers['foul_chance_multiplier'];
-        $redThresh = 2 * $modifiers['foul_chance_multiplier']; // e.g. 2 * 1.3 = 2.6%
+        // Personality type affects individual card probability
+        $personalityMultipliers = config('simulation.personality_card_multipliers', []);
+        $personalityType = $fouler->player->personality_type ?? 'default';
+        $personalityMod = (float) ($personalityMultipliers[$personalityType] ?? $personalityMultipliers['default'] ?? 1.0);
+
+        // Increase card chances if rivalry/weather exists, further adjusted by fouler personality
+        $yellowThresh = 15 * $modifiers['foul_chance_multiplier'] * $personalityMod;
+        $redThresh = 2 * $modifiers['foul_chance_multiplier'] * $personalityMod;
 
         $card = null;
         if ($cardRoll <= $yellowThresh)

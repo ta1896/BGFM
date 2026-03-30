@@ -179,6 +179,30 @@ class ClubController extends Controller
             ->with('status', 'Verein wurde geloescht.');
     }
 
+    public function rivals(): \Inertia\Response
+    {
+        $clubs = Club::orderBy('name')->get(['id', 'name', 'short_name', 'logo_url', 'rival_id_1', 'rival_id_2']);
+
+        return \Inertia\Inertia::render('Admin/Clubs/Rivals', [
+            'clubs' => $clubs,
+        ]);
+    }
+
+    public function updateRivals(Request $request, Club $club): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'rival_id_1' => ['nullable', 'integer', 'exists:clubs,id', 'different:rival_id_2'],
+            'rival_id_2' => ['nullable', 'integer', 'exists:clubs,id'],
+        ]);
+
+        $club->update([
+            'rival_id_1' => $validated['rival_id_1'] ?: null,
+            'rival_id_2' => $validated['rival_id_2'] ?: null,
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
     private function validatePayload(Request $request, ?Club $club): array
     {
         $captainRules = ['nullable'];

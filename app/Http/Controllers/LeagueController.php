@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CompetitionSeason;
 use App\Models\Competition;
 use App\Models\GameMatch;
+use App\Models\MatchPlayerStat;
 use App\Models\Season;
 use App\Services\FixtureGeneratorService;
 use App\Services\LeagueTableService;
@@ -129,6 +130,7 @@ class LeagueController extends Controller
                     'short_name' => $match->awayClub->short_name,
                     'logo_url' => $match->awayClub->logo_url,
                 ] : null,
+                'is_derby' => $match->homeClub && $match->homeClub->isRival((int) $match->away_club_id),
             ];
         });
 
@@ -179,6 +181,33 @@ class LeagueController extends Controller
         $table = $competitionSeason ? $tableService->table($competitionSeason) : collect();
         $ownedClubIds = $request->user()->clubs()->pluck('id')->all();
 
+        $topScorers = $competitionSeason
+            ? MatchPlayerStat::query()
+                ->join('game_matches', 'match_player_stats.match_id', '=', 'game_matches.id')
+                ->where('game_matches.competition_season_id', $competitionSeason->id)
+                ->where('game_matches.status', 'played')
+                ->selectRaw('match_player_stats.player_id, match_player_stats.club_id, SUM(match_player_stats.goals) as total_goals, SUM(match_player_stats.assists) as total_assists, COUNT(DISTINCT match_player_stats.match_id) as matches_played')
+                ->groupBy('match_player_stats.player_id', 'match_player_stats.club_id')
+                ->having('total_goals', '>', 0)
+                ->orderByDesc('total_goals')
+                ->orderByDesc('total_assists')
+                ->limit(20)
+                ->with(['player:id,first_name,last_name,photo_url,display_position', 'club:id,name,short_name,logo_url'])
+                ->get()
+                ->map(fn($row) => [
+                    'player_id'     => $row->player_id,
+                    'player_name'   => $row->player?->full_name,
+                    'player_photo'  => $row->player?->photo_url,
+                    'position'      => $row->player?->display_position,
+                    'club_id'       => $row->club_id,
+                    'club_name'     => $row->club?->short_name ?? $row->club?->name,
+                    'club_logo'     => $row->club?->logo_url,
+                    'goals'         => (int) $row->total_goals,
+                    'assists'       => (int) $row->total_assists,
+                    'matches'       => (int) $row->matches_played,
+                ])
+            : collect();
+
         return \Inertia\Inertia::render('League/Table', [
             'competitionSeasons' => CompetitionSeason::with(['competition', 'season'])->orderByDesc('id')->get(),
             'competitions' => Competition::orderBy('name')->get(),
@@ -186,6 +215,7 @@ class LeagueController extends Controller
             'activeCompetitionSeason' => $competitionSeason,
             'table' => $table->values(),
             'ownedClubIds' => $ownedClubIds,
+            'topScorers' => $topScorers->values(),
         ]);
     }
 

@@ -19,6 +19,7 @@ class FinanceController extends Controller
         }
 
         $transactions = collect();
+        $summary = [];
         if ($activeClub) {
             $transactions = ClubFinancialTransaction::query()
                 ->where('club_id', $activeClub->id)
@@ -37,6 +38,30 @@ class FinanceController extends Controller
                         'booked_at_formatted' => $tx->booked_at?->format('d.m.Y H:i'),
                     ];
                 });
+
+            $raw = ClubFinancialTransaction::query()
+                ->where('club_id', $activeClub->id)
+                ->where('asset_type', 'budget')
+                ->selectRaw('context_type, direction, SUM(amount) as total')
+                ->groupBy('context_type', 'direction')
+                ->get();
+
+            $grouped = [];
+            foreach ($raw as $row) {
+                $grouped[$row->context_type] ??= ['income' => 0.0, 'expense' => 0.0];
+                $grouped[$row->context_type][$row->direction] = (float) $row->total;
+            }
+
+            foreach ($grouped as $type => $values) {
+                $summary[] = [
+                    'context_type' => $type,
+                    'income'  => $values['income'],
+                    'expense' => $values['expense'],
+                    'net'     => $values['income'] - $values['expense'],
+                ];
+            }
+
+            usort($summary, fn($a, $b) => abs($b['net']) <=> abs($a['net']));
         }
 
         return \Inertia\Inertia::render('Finances/Index', [
@@ -47,6 +72,7 @@ class FinanceController extends Controller
                 'coins' => $activeClub->coins,
             ] : null,
             'transactions' => $transactions,
+            'summary' => $summary,
         ]);
     }
 }

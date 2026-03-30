@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { SoccerBall, FunnelSimple, X, CaretRight, Broadcast, CalendarBlank, ShieldCheck, Sparkle } from '@phosphor-icons/react';
+import { SoccerBall, FunnelSimple, X, CaretRight, Broadcast, CalendarBlank, ShieldCheck, Sparkle, Flame } from '@phosphor-icons/react';
 import PageHeader from '@/Components/PageHeader';
 import { PageReveal, StaggerGroup } from '@/Components/PageReveal';
 import SectionCard from '@/Components/SectionCard';
@@ -27,10 +27,21 @@ function MatchCard({ match, ownedClubIds }) {
     return (
         <Link
             href={route('matches.show', match.id)}
-            className={`flex items-center gap-6 border-b border-white/5 px-6 py-5 transition-all hover:bg-white/[0.03] ${isOwned ? 'bg-[var(--accent-primary)]/[0.03]' : ''}`}
+            className={`flex items-center gap-6 border-b border-white/5 px-6 py-5 transition-all hover:bg-white/[0.03] ${
+                match.is_derby
+                    ? 'bg-rose-500/[0.03] hover:bg-rose-500/[0.06]'
+                    : isOwned ? 'bg-[var(--accent-primary)]/[0.03]' : ''
+            }`}
         >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-[9px] font-black uppercase text-[var(--text-muted)]">
-                {match.competition_season?.competition?.code || 'LG'}
+            <div className="flex flex-col items-center gap-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-pillar)] bg-[var(--bg-pillar)] text-[9px] font-black uppercase text-[var(--text-muted)]">
+                    {match.competition_season?.competition?.code || 'LG'}
+                </div>
+                {match.is_derby && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full border border-rose-500/30 bg-rose-500/15 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-rose-400">
+                        <Flame size={8} weight="fill" />Derby
+                    </span>
+                )}
             </div>
 
             <div className="flex min-w-0 flex-1 items-center gap-6">

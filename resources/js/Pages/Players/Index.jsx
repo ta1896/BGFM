@@ -13,6 +13,7 @@ import {
     Crown,
     Handshake,
     FlagPennant,
+    TShirt,
 } from '@phosphor-icons/react';
 
 const PlayerListItem = ({ player }) => (
@@ -39,10 +40,15 @@ const PlayerListItem = ({ player }) => (
 
             <div className="flex-1 min-w-0">
                 <Link href={route('players.show', player.id)} className="block">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em] px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
                             {player.player_style || 'Allrounder'}
                         </span>
+                        {player.personality_type && (
+                            <span className="text-[7px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                {{'leader':'Leader','temperamental':'Temp.','team_player':'Teampl.','silent_pro':'Pro','maverick':'Maverick','youngster':'Young'}[player.personality_type] ?? player.personality_type}
+                            </span>
+                        )}
                     </div>
                     <h4 className="font-black text-[var(--text-main)] group-hover:text-[var(--accent-primary)] transition-colors uppercase tracking-tight truncate leading-none mb-1.5">
                         {player.last_name}
@@ -55,8 +61,14 @@ const PlayerListItem = ({ player }) => (
                 </Link>
             </div>
 
-            <div className="text-right shrink-0">
-                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Marktwert</div>
+            <div className="text-right shrink-0 space-y-1">
+                {player.shirt_number && (
+                    <div className="flex items-center justify-end gap-1 mb-1">
+                        <TShirt size={10} className="text-[var(--text-muted)]" />
+                        <span className="text-[10px] font-black text-[var(--text-muted)] italic">#{player.shirt_number}</span>
+                    </div>
+                )}
+                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Marktwert</div>
                 <div className="text-xs font-black text-emerald-400">{player.market_value_formatted}</div>
             </div>
         </div>
@@ -134,6 +146,15 @@ export default function Index({ groupedPlayers, squadStats, clubs, activeClubId 
                                 <Plus size={24} weight="bold" />
                             </Link>
                         )}
+                        <Link
+                            href={route('players.numbers.index')}
+                            className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-white"
+                        >
+                            <span className="flex items-center gap-2">
+                                <TShirt size={16} weight="fill" className="text-indigo-400" />
+                                Nummern
+                            </span>
+                        </Link>
                         <Link
                             href={route('squad-hierarchy.index')}
                             className="rounded-2xl border border-[var(--border-pillar)] bg-[var(--bg-content)] px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-white"
