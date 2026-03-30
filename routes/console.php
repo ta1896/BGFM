@@ -328,6 +328,148 @@ Artisan::command('game:simulation-health {--limit=20} {--strict}', function () {
     return 0;
 })->purpose('Zeigt Betriebskennzahlen der letzten Simulationslaeufe inkl. Warnindikatoren.');
 
+Artisan::command('game:simulation-debug {--limit=10}', function () {
+    $limit = max(1, min(50, (int) $this->option('limit')));
+    $claimStaleAfterSeconds = max(30, (int) config('simulation.scheduler.claim_stale_after_seconds', 180));
+    $runnerLockSeconds = max(30, (int) config('simulation.scheduler.runner_lock_seconds', 120));
+    $runningStaleAfterSeconds = max(60, (int) config('simulation.scheduler.health.running_stale_after_seconds', 600));
+    $now = now();
+
+    $this->info('Simulation Debug Snapshot');
+    $this->table(
+        ['Key', 'Value'],
+        [
+            ['now', $now->format('Y-m-d H:i:s')],
+            ['app_env', (string) config('app.env')],
+            ['cache_store', (string) config('cache.default')],
+            ['queue_connection', (string) config('queue.default')],
+            ['claim_stale_after_seconds', $claimStaleAfterSeconds],
+            ['runner_lock_seconds', $runnerLockSeconds],
+            ['running_stale_after_seconds', $runningStaleAfterSeconds],
+        ]
+    );
+
+    $runnerLock = Cache::lock('simulation:scheduler:runner', $runnerLockSeconds);
+    $runnerLockAvailable = $runnerLock->get();
+    if ($runnerLockAvailable) {
+        $runnerLock->release();
+    }
+
+    $this->newLine();
+    $this->info('Runner Lock');
+    $this->table(
+        ['Check', 'Value'],
+        [
+            ['lock_available_now', $runnerLockAvailable ? 'yes' : 'no'],
+        ]
+    );
+
+    try {
+        $recentRuns = SimulationSchedulerRun::query()
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        $this->newLine();
+        $this->info('Recent Scheduler Runs');
+
+        if ($recentRuns->isEmpty()) {
+            $this->line('Keine Scheduler-Laufdaten vorhanden.');
+        } else {
+            $this->table(
+                ['ID', 'Status', 'Processed', 'Failed', 'Started', 'Finished', 'Message'],
+                $recentRuns->map(fn(SimulationSchedulerRun $run): array => [
+                    (string) $run->id,
+                    (string) $run->status,
+                    (int) $run->processed_matches,
+                    (int) $run->failed_matches,
+                    optional($run->started_at)->format('Y-m-d H:i:s') ?? '-',
+                    optional($run->finished_at)->format('Y-m-d H:i:s') ?? '-',
+                    Str::limit((string) ($run->message ?? ''), 80),
+                ])->all()
+            );
+        }
+    } catch (Throwable $exception) {
+        $this->newLine();
+        $this->warn('Scheduler-Runs konnten nicht geladen werden: ' . $exception->getMessage());
+    }
+
+    try {
+        $liveMatches = \App\Models\GameMatch::query()
+            ->whereIn('status', ['scheduled', 'live'])
+            ->where(function ($query): void {
+                $query
+                    ->where('status', 'scheduled')
+                    ->orWhere(function ($liveQuery): void {
+                        $liveQuery->where('status', 'live');
+                    });
+            })
+            ->whereNotNull('kickoff_at')
+            ->where('kickoff_at', '<=', now())
+            ->with(['homeClub:id,name,short_name', 'awayClub:id,name,short_name'])
+            ->orderBy('kickoff_at')
+            ->limit($limit)
+            ->get();
+
+        $this->newLine();
+        $this->info('Eligible / Active Matches');
+
+        if ($liveMatches->isEmpty()) {
+            $this->line('Keine faelligen scheduled/live Matches gefunden.');
+        } else {
+            $this->table(
+                ['ID', 'Type', 'Status', 'Minute', 'Paused', 'Claim', 'Claim Age', 'Last Tick Age', 'Fixture'],
+                $liveMatches->map(function (\App\Models\GameMatch $match) use ($now): array {
+                    $claimAge = $match->live_processing_started_at
+                        ? $match->live_processing_started_at->diffInSeconds($now)
+                        : null;
+                    $lastTickAge = $match->live_last_tick_at
+                        ? $match->live_last_tick_at->diffInSeconds($now)
+                        : null;
+
+                    return [
+                        (string) $match->id,
+                        (string) $match->type,
+                        (string) $match->status,
+                        (int) $match->live_minute,
+                        $match->live_paused ? 'yes' : 'no',
+                        $match->live_processing_token ? 'yes' : 'no',
+                        $claimAge !== null ? $claimAge . 's' : '-',
+                        $lastTickAge !== null ? $lastTickAge . 's' : '-',
+                        trim(
+                            (($match->homeClub?->short_name ?: $match->homeClub?->name ?: 'Home')
+                            . ' vs '
+                            . ($match->awayClub?->short_name ?: $match->awayClub?->name ?: 'Away'))
+                        ),
+                    ];
+                })->all()
+            );
+        }
+
+        $pausedMatches = $liveMatches
+            ->filter(fn(\App\Models\GameMatch $match): bool => $match->status === 'live' && (bool) $match->live_paused)
+            ->values();
+
+        if ($pausedMatches->isNotEmpty()) {
+            $this->newLine();
+            $this->warn('Paused Matches');
+            $this->table(
+                ['ID', 'Minute', 'Error'],
+                $pausedMatches->map(fn(\App\Models\GameMatch $match): array => [
+                    (string) $match->id,
+                    (int) $match->live_minute,
+                    Str::limit((string) ($match->live_error_message ?? $match->live_processing_last_error ?? ''), 120),
+                ])->all()
+            );
+        }
+    } catch (Throwable $exception) {
+        $this->newLine();
+        $this->warn('Match-Debug konnte nicht geladen werden: ' . $exception->getMessage());
+    }
+
+    return 0;
+})->purpose('Zeigt Locks, letzte Scheduler-Laeufe sowie pausierte oder haengende Simulationsspiele fuer VPS-Debugging.');
+
 Artisan::command('game:simulation-health-check {--limit=} {--strict}', function () {
     $defaultLimit = max(5, min(200, (int) config('simulation.scheduler.health.check_limit', 60)));
     $limitOption = $this->option('limit');

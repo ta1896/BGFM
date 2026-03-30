@@ -52,6 +52,10 @@ jobs:
             # Debugging: Show logs if something failed early
             echo "--- App Logs (Startup) ---"
             sudo docker compose logs app --tail=20
+            echo "--- Scheduler Logs (Startup) ---"
+            sudo docker compose logs scheduler --tail=20
+            echo "--- Queue Logs (Startup) ---"
+            sudo docker compose logs queue --tail=20
             echo "--- MySQL Logs (Startup) ---"
             sudo docker compose logs mysql --tail=20
 
@@ -77,6 +81,12 @@ jobs:
             
             # Restart Horizon
             sudo docker compose exec -T app php artisan horizon:terminate
+
+            # Simulation diagnostics
+            echo "--- Simulation Health ---"
+            sudo docker compose exec -T app php artisan game:simulation-health --limit=10 || true
+            echo "--- Simulation Debug ---"
+            sudo docker compose exec -T app php artisan game:simulation-debug --limit=10 || true
             
             # --- 6. Final Permission Polish & Refresh Services ---
             # Ensure the web server (www-data / 33) can write to storage
@@ -87,6 +97,14 @@ jobs:
             
             # Restart Portainer to reset the security setup timeout
             sudo docker restart portainer
+
+            # Final service state for scheduler/queue verification
+            echo "--- Final Container Status ---"
+            sudo docker compose ps
+            echo "--- Final Scheduler Logs ---"
+            sudo docker compose logs scheduler --tail=30
+            echo "--- Final Queue Logs ---"
+            sudo docker compose logs queue --tail=30
             
             # --- 7. Cleanup ---
             # Remove unused Docker images to save disk space
