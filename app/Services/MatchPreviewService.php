@@ -212,13 +212,10 @@ class MatchPreviewService
     private function comparisonMetrics(Club $club): array
     {
         $scoreColumns = $this->availablePlayerScoreColumns();
-        $selects = ['market_value', 'age', 'overall'];
-
-        foreach (['morale', 'happiness', 'stamina', 'sharpness', 'fatigue'] as $column) {
-            if (in_array($column, $scoreColumns, true)) {
-                $selects[] = $column;
-            }
-        }
+        // Always select happiness (morale fallback) + whatever fitness columns exist.
+        $selects = array_values(array_unique(
+            array_merge(['market_value', 'age', 'overall', 'happiness'], $scoreColumns)
+        ));
 
         $players = $club->players()
             ->where('status', 'active')
@@ -250,10 +247,10 @@ class MatchPreviewService
 
     private function availablePlayerScoreColumns(): array
     {
-        // Hardcoded: only these columns are ever checked by resolve*Metric* methods.
-        // 'morale' was dropped in migration remove_legacy_attributes_from_players_table;
-        // the code falls back to 'happiness' when morale is absent (see comparisonMetrics).
-        return ['stamina', 'sharpness', 'fatigue'];
+        // Hardcoded: only columns that actually exist in the players table.
+        // 'stamina' and 'morale' were dropped in remove_legacy_attributes_from_players_table.
+        // Fitness is derived from sharpness/fatigue; morale falls back to happiness.
+        return ['sharpness', 'fatigue'];
     }
 
     private function resolveFitnessMetric(Collection $players, array $scoreColumns): float
