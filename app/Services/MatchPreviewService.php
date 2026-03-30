@@ -250,9 +250,10 @@ class MatchPreviewService
 
     private function availablePlayerScoreColumns(): array
     {
-        // Hardcoded: only these 4 columns are ever checked by resolve*Metric* methods.
-        // Avoids a Schema::getColumnListing DB introspection call entirely.
-        return ['stamina', 'morale', 'sharpness', 'fatigue'];
+        // Hardcoded: only these columns are ever checked by resolve*Metric* methods.
+        // 'morale' was dropped in migration remove_legacy_attributes_from_players_table;
+        // the code falls back to 'happiness' when morale is absent (see comparisonMetrics).
+        return ['stamina', 'sharpness', 'fatigue'];
     }
 
     private function resolveFitnessMetric(Collection $players, array $scoreColumns): float
