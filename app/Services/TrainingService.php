@@ -154,8 +154,10 @@ class TrainingService
 
                 $player->update($updates);
 
-                $this->playerLoadService->applyTrainingLoad($player->fresh(), $session, $staminaDelta);
-                $this->playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
+                // update() syncs attributes in-memory; fresh() would re-query the DB unnecessarily.
+                $this->playerLoadService->applyTrainingLoad($player, $session, $staminaDelta);
+                $player->loadMissing(['playtimePromises', 'injuries']);
+                $this->playerMoraleService->refresh($player);
             }
 
             $this->squadHierarchyService->refreshForClub($session->club);

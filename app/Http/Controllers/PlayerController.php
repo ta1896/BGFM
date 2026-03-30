@@ -141,8 +141,6 @@ class PlayerController extends Controller
             $activeClub->loadMissing(['players.playtimePromises', 'players.injuries']);
             $squadHierarchyService->refreshForClub($activeClub);
 
-            $activeClub->loadMissing(['players.playtimePromises', 'players.injuries']);
-
             $minuteShares = MatchPlayerStat::query()
                 ->whereIn('player_id', $activeClub->players->pluck('id'))
                 ->latest('id')
@@ -155,10 +153,11 @@ class PlayerController extends Controller
 
             foreach ($activeClub->players->sortByDesc('overall')->values() as $player) {
                 $injuryManagementService->syncCurrentInjury($player);
-                $playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
+                $player->loadMissing(['playtimePromises', 'injuries']);
+                $playerMoraleService->refresh($player);
 
                 $mappedPlayer = $this->mapHierarchyPlayer(
-                    $player->fresh()->loadMissing(['playtimePromises', 'injuries']),
+                    $player,
                     $playerLoadService,
                     (int) ($minuteShares[$player->id] ?? 0)
                 );

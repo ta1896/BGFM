@@ -20,14 +20,30 @@ class LiveOverviewService
 
         $liveMatchesQuery = GameMatch::query()->where('status', 'live');
 
-        // Only fetch details for the top 10 items to keep payload small
-        $onlineManagers = $this->transformManagers($onlineManagersQuery->clone()->orderByDesc('last_seen_at')->limit(12)->get());
-        $liveMatches = $this->transformMatches($liveMatchesQuery->clone()->orderByDesc('live_minute')->limit(12)->get());
+        // Fetch with eager loading to avoid N+1 on user/club/match relations.
+        // Count is derived from the loaded collection to avoid a second COUNT query.
+        $managersCollection = $onlineManagersQuery->clone()
+            ->with([
+                'user:id,name',
+                'club:id,name,logo_path',
+                'match:id,status,live_minute,home_club_id,away_club_id',
+                'match.homeClub:id,name,logo_path',
+                'match.awayClub:id,name,logo_path',
+            ])
+            ->orderByDesc('last_seen_at')
+            ->limit(12)
+            ->get();
+
+        $matchesCollection = $liveMatchesQuery->clone()
+            ->with(['homeClub:id,name,logo_path', 'awayClub:id,name,logo_path'])
+            ->orderByDesc('live_minute')
+            ->limit(12)
+            ->get();
 
         return [
-            'onlineManagers' => $onlineManagers,
+            'onlineManagers' => $this->transformManagers($managersCollection),
             'onlineManagersCount' => $onlineManagersQuery->count(),
-            'liveMatches' => $liveMatches,
+            'liveMatches' => $this->transformMatches($matchesCollection),
             'liveMatchesCount' => $liveMatchesQuery->count(),
             'onlineWindowMinutes' => $this->onlineWindowMinutes(),
         ];

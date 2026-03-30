@@ -41,6 +41,9 @@ class LiveMatchTickerService
 
     private const MIN_MINUTES_AHEAD_FOR_PLANNED_SUBSTITUTION = 2;
 
+    /** In-memory cache for player full_name lookups within a single simulation run. */
+    private array $playerNameCache = [];
+
     public function __construct(
         private readonly CpuClubDecisionService $cpuDecisionService,
         private readonly PlayerPositionService $positionService,
@@ -1818,6 +1821,15 @@ class LiveMatchTickerService
         $state->save();
     }
 
+    private function cachedPlayerName(int $playerId): ?string
+    {
+        if (!array_key_exists($playerId, $this->playerNameCache)) {
+            $this->playerNameCache[$playerId] = Player::where('id', $playerId)->value('full_name');
+        }
+
+        return $this->playerNameCache[$playerId];
+    }
+
     private function recordAction(
         GameMatch $match,
         int $minute,
@@ -1835,14 +1847,14 @@ class LiveMatchTickerService
     ): void {
         $data = $metadata ?? [];
         if ($playerId) {
-            $player = Player::find($playerId);
-            $data['player'] = $player?->full_name ?? 'Spieler';
-            $data['player_name'] = $player?->full_name;
+            $name = $this->cachedPlayerName($playerId);
+            $data['player'] = $name ?? 'Spieler';
+            $data['player_name'] = $name;
         }
         if ($opponentPlayerId) {
-            $opp = Player::find($opponentPlayerId);
-            $data['opponent'] = $opp?->full_name ?? 'Gegenspieler';
-            $data['opponent_name'] = $opp?->full_name;
+            $name = $this->cachedPlayerName($opponentPlayerId);
+            $data['opponent'] = $name ?? 'Gegenspieler';
+            $data['opponent_name'] = $name;
         }
         if ($clubId) {
             $club = ($clubId === (int) $match->home_club_id) ? $match->homeClub : $match->awayClub;

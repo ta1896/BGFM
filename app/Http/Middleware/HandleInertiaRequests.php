@@ -12,6 +12,10 @@ use Illuminate\Support\Collection;
 
 class HandleInertiaRequests extends Middleware
 {
+    /** Memoized per-request result of resolveUserClubs() to avoid double DB query. */
+    private ?Collection $memoizedClubs = null;
+    private ?bool $memoizedClubsAdmin = null;
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -110,23 +114,33 @@ class HandleInertiaRequests extends Middleware
 
     private function resolveUserClubs(Request $request, bool $isAdmin): Collection
     {
+        // Memoize within the same request: sharedActiveClub() and sharedUserClubs()
+        // both call this method, so without memoization it would run two DB queries.
+        if ($this->memoizedClubs !== null && $this->memoizedClubsAdmin === $isAdmin) {
+            return $this->memoizedClubs;
+        }
+
         $user = $request->user();
 
         if (!$user) {
-            return collect();
+            return $this->memoizedClubs = collect();
         }
 
         if ($isAdmin) {
-            return Club::query()
+            $result = Club::query()
+                ->where('is_cpu', false)
+                ->orderBy('name')
+                ->get();
+        } else {
+            $result = $user->clubs()
                 ->where('is_cpu', false)
                 ->orderBy('name')
                 ->get();
         }
 
-        return $user->clubs()
-            ->where('is_cpu', false)
-            ->orderBy('name')
-            ->get();
+        $this->memoizedClubsAdmin = $isAdmin;
+
+        return $this->memoizedClubs = $result;
     }
 
     private function formatClubForShare(Club $club): array

@@ -6,6 +6,7 @@ use App\Events\LiveOverviewUpdated;
 use App\Models\ManagerPresence;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class TrackManagerPresence
@@ -46,7 +47,13 @@ class TrackManagerPresence
             ]
         );
 
-        broadcast(new LiveOverviewUpdated(app(\App\Services\LiveOverviewService::class)->overview()));
+        // Throttle: broadcast at most once every 10 seconds per user to avoid
+        // hammering LiveOverviewService::overview() on every page navigation.
+        $broadcastKey = "presence_broadcast_{$user->id}";
+        if (!Cache::has($broadcastKey)) {
+            Cache::put($broadcastKey, true, 10);
+            broadcast(new LiveOverviewUpdated(app(\App\Services\LiveOverviewService::class)->overview()));
+        }
 
         return $response;
     }
