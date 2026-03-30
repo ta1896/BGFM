@@ -66,25 +66,38 @@ class StatisticsAggregationService
      */
     public function clubSummaryForClub(Club $club, ?int $seasonId = null): array
     {
-        $matches = GameMatch::query()
+        $id = (int) $club->id;
+        $row = DB::table('matches')
             ->where('status', 'played')
-            ->when($seasonId !== null, fn ($query) => $query->where('season_id', $seasonId))
-            ->where(function ($query) use ($club): void {
-                $query->where('home_club_id', $club->id)
-                    ->orWhere('away_club_id', $club->id);
-            })
-            ->get(['home_club_id', 'away_club_id', 'home_score', 'away_score']);
+            ->when($seasonId !== null, fn ($q) => $q->where('season_id', $seasonId))
+            ->where(fn ($q) => $q->where('home_club_id', $id)->orWhere('away_club_id', $id))
+            ->selectRaw(
+                'COUNT(*) as matches,
+                 SUM(CASE WHEN (home_club_id = ? AND home_score > away_score) OR (away_club_id = ? AND away_score > home_score) THEN 1 ELSE 0 END) as wins,
+                 SUM(CASE WHEN home_score = away_score THEN 1 ELSE 0 END) as draws,
+                 SUM(CASE WHEN (home_club_id = ? AND home_score < away_score) OR (away_club_id = ? AND away_score < home_score) THEN 1 ELSE 0 END) as losses,
+                 SUM(CASE WHEN home_club_id = ? THEN home_score ELSE away_score END) as goals_for,
+                 SUM(CASE WHEN home_club_id = ? THEN away_score ELSE home_score END) as goals_against',
+                [$id, $id, $id, $id, $id, $id]
+            )
+            ->first();
 
-        $summary = $this->blankClubSummary();
-
-        foreach ($matches as $match) {
-            $isHome = (int) $match->home_club_id === (int) $club->id;
-            $gf = (int) ($isHome ? $match->home_score : $match->away_score);
-            $ga = (int) ($isHome ? $match->away_score : $match->home_score);
-            $this->applyClubResult($summary, $gf, $ga);
+        if (!$row || (int) ($row->matches ?? 0) === 0) {
+            return $this->blankClubSummary();
         }
 
-        return $summary;
+        $wins  = (int) ($row->wins ?? 0);
+        $draws = (int) ($row->draws ?? 0);
+
+        return [
+            'matches'       => (int) $row->matches,
+            'wins'          => $wins,
+            'draws'         => $draws,
+            'losses'        => (int) ($row->losses ?? 0),
+            'goals_for'     => (int) ($row->goals_for ?? 0),
+            'goals_against' => (int) ($row->goals_against ?? 0),
+            'points'        => ($wins * 3) + $draws,
+        ];
     }
 
     /**
@@ -162,10 +175,25 @@ class StatisticsAggregationService
      */
     public function clubSeasonHistoryForClub(Club $club, int $limit = 5): array
     {
+        // Pre-select only the most recent $limit season IDs to avoid loading all-time history.
+        $recentSeasonIds = DB::table('matches as m')
+            ->where('m.status', 'played')
+            ->whereNotNull('m.season_id')
+            ->where(fn ($q) => $q->where('m.home_club_id', $club->id)->orWhere('m.away_club_id', $club->id))
+            ->distinct()
+            ->orderByDesc('m.season_id')
+            ->limit(max(1, $limit))
+            ->pluck('m.season_id');
+
+        if ($recentSeasonIds->isEmpty()) {
+            return [];
+        }
+
         $matches = DB::table('matches as m')
             ->join('seasons as s', 's.id', '=', 'm.season_id')
             ->where('m.status', 'played')
             ->whereNotNull('m.season_id')
+            ->whereIn('m.season_id', $recentSeasonIds)
             ->where(function ($query) use ($club): void {
                 $query->where('m.home_club_id', $club->id)
                     ->orWhere('m.away_club_id', $club->id);

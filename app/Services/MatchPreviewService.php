@@ -9,7 +9,6 @@ use App\Models\MatchEvent;
 use App\Models\Player;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 
 class MatchPreviewService
 {
@@ -31,10 +30,14 @@ class MatchPreviewService
     {
         $keyPlayers = $this->keyPlayers($match);
 
+        // Fetch once per club, reused by both recentForm() and opponentStats() to avoid 4 separate queries.
+        $homeMatches = $this->fetchRecentMatches($match->home_club_id, $match->id);
+        $awayMatches = $this->fetchRecentMatches($match->away_club_id, $match->id);
+
         return [
             'recent_form' => [
-                'home' => $this->recentForm($match->home_club_id, $match->id),
-                'away' => $this->recentForm($match->away_club_id, $match->id),
+                'home' => $this->recentForm($homeMatches, $match->home_club_id),
+                'away' => $this->recentForm($awayMatches, $match->away_club_id),
             ],
             'league_snapshot' => $this->leagueSnapshot($match, $leagueTableService),
             'head_to_head' => $this->headToHead($match),
@@ -44,10 +47,29 @@ class MatchPreviewService
             'key_duels' => $this->keyDuels($match, $keyPlayers),
             'expected_lineup_preview' => $this->expectedLineupPreview($match),
             'opponent_stats' => [
-                'home' => $this->opponentStats($match->home_club_id, $match->id),
-                'away' => $this->opponentStats($match->away_club_id, $match->id),
+                'home' => $this->opponentStats($homeMatches, $match->home_club_id),
+                'away' => $this->opponentStats($awayMatches, $match->away_club_id),
             ],
         ];
+    }
+
+    private function fetchRecentMatches(int $clubId, int $currentMatchId): \Illuminate\Database\Eloquent\Collection
+    {
+        return GameMatch::query()
+            ->where('status', 'played')
+            ->where('id', '!=', $currentMatchId)
+            ->where(function (Builder $query) use ($clubId) {
+                $query->where('home_club_id', $clubId)->orWhere('away_club_id', $clubId);
+            })
+            ->with([
+                'homeClub:id,name,short_name,logo_path',
+                'awayClub:id,name,short_name,logo_path',
+                'competitionSeason:id,competition_id',
+                'competitionSeason.competition:id,name',
+            ])
+            ->orderByDesc('kickoff_at')
+            ->take(5)
+            ->get();
     }
 
     public function lineupsPayload(GameMatch $match): array
@@ -228,13 +250,9 @@ class MatchPreviewService
 
     private function availablePlayerScoreColumns(): array
     {
-        static $columns = null;
-
-        if ($columns !== null) {
-            return $columns;
-        }
-
-        return $columns = Schema::getColumnListing('players');
+        // Hardcoded: only these 4 columns are ever checked by resolve*Metric* methods.
+        // Avoids a Schema::getColumnListing DB introspection call entirely.
+        return ['stamina', 'morale', 'sharpness', 'fatigue'];
     }
 
     private function resolveFitnessMetric(Collection $players, array $scoreColumns): float
@@ -300,20 +318,8 @@ class MatchPreviewService
             ->all();
     }
 
-    private function recentForm(int $clubId, int $currentMatchId): array
+    private function recentForm(\Illuminate\Database\Eloquent\Collection $matches, int $clubId): array
     {
-        $matches = GameMatch::query()
-            ->where('status', 'played')
-            ->where('id', '!=', $currentMatchId)
-            ->where(function (Builder $query) use ($clubId) {
-                $query->where('home_club_id', $clubId)
-                    ->orWhere('away_club_id', $clubId);
-            })
-            ->with(['homeClub:id,name,short_name,logo_path', 'awayClub:id,name,short_name,logo_path'])
-            ->orderByDesc('kickoff_at')
-            ->take(5)
-            ->get();
-
         $form = $matches->map(function (GameMatch $pastMatch) use ($clubId): array {
             $isHome = (int) $pastMatch->home_club_id === $clubId;
             $goalsFor = (int) ($isHome ? $pastMatch->home_score : $pastMatch->away_score);
@@ -347,19 +353,8 @@ class MatchPreviewService
         ];
     }
 
-    private function opponentStats(int $clubId, int $currentMatchId): array
+    private function opponentStats(\Illuminate\Database\Eloquent\Collection $matches, int $clubId): array
     {
-        $matches = GameMatch::query()
-            ->where('status', 'played')
-            ->where('id', '!=', $currentMatchId)
-            ->where(function (Builder $query) use ($clubId) {
-                $query->where('home_club_id', $clubId)
-                    ->orWhere('away_club_id', $clubId);
-            })
-            ->orderByDesc('kickoff_at')
-            ->take(5)
-            ->get(['id', 'home_club_id', 'away_club_id', 'home_score', 'away_score']);
-
         if ($matches->isEmpty()) {
             return [
                 'games' => 0,

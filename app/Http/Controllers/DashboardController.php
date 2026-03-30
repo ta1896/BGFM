@@ -143,11 +143,8 @@ class DashboardController extends Controller
             $activeLineup = Lineup::query()
                 ->where('club_id', $activeClub->id)
                 ->with('players')
-                ->where('is_active', true)
-                ->first() ?? Lineup::query()
-                                ->where('club_id', $activeClub->id)
-                                ->with('players')
-                                ->first();
+                ->orderByDesc('is_active')
+                ->first();
 
             if ($activeLineup) {
                 $metrics = $calculator->calculate($activeLineup);

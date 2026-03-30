@@ -16,14 +16,12 @@ class MatchLineupService
 
     public function resolvePreferredLineup(Club $club, GameMatch $match): ?Lineup
     {
+        // Single query: match-specific lineup ordered first, active lineup as fallback.
         return $club->lineups()
             ->with('players')
-            ->where('match_id', $match->id)
-            ->first()
-            ?? $club->lineups()
-                ->with('players')
-                ->where('is_active', true)
-                ->first();
+            ->where(fn ($q) => $q->where('match_id', $match->id)->orWhere('is_active', true))
+            ->orderByRaw('CASE WHEN match_id = ? THEN 0 ELSE 1 END', [$match->id])
+            ->first();
     }
 
     public function ensureMatchLineup(GameMatch $match, Club $club): Lineup
@@ -38,17 +36,14 @@ class MatchLineupService
             return $lineup;
         }
 
+        // Collapse active + template fallback into one query; active scores higher via sort.
         $source = $club->lineups()
             ->with('players')
             ->whereNull('match_id')
-            ->where('is_active', true)
-            ->first()
-            ?? $club->lineups()
-                ->with('players')
-                ->whereNull('match_id')
-                ->where('is_template', true)
-                ->orderBy('id')
-                ->first();
+            ->where(fn ($q) => $q->where('is_active', true)->orWhere('is_template', true))
+            ->orderByDesc('is_active')
+            ->orderBy('id')
+            ->first();
 
         $defaultFormation = $this->formationPlannerService->defaultFormation();
 
