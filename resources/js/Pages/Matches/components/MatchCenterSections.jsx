@@ -1215,18 +1215,29 @@ const HalfPitchSVG = () => (
     </svg>
 );
 
-const LineupToken = ({ player, accent, livePlayerStates }) => {
+const ratingColor = (r) => {
+    if (!r) return 'bg-slate-700/80 text-slate-300';
+    if (r >= 8.5) return 'bg-amber-400 text-black';
+    if (r >= 7.5) return 'bg-emerald-500/80 text-white';
+    if (r >= 6.5) return 'bg-lime-600/80 text-white';
+    if (r >= 5.5) return 'bg-slate-600/80 text-slate-200';
+    return 'bg-rose-600/80 text-white';
+};
+
+const LineupToken = ({ player, accent, livePlayerStates, finalStats }) => {
     const state = livePlayerStates?.find((entry) => entry.player_id === player.id);
+    const stat = finalStats?.find((s) => s.player_id === player.id);
     const isOff = state?.is_sent_off || state?.is_injured;
     const hasGoal = (state?.goals || 0) > 0;
     const hasYellow = (state?.yellow_cards || 0) > 0;
     const isRed = state?.is_sent_off;
+    const rating = stat?.rating ? parseFloat(stat.rating) : null;
     const profileHref = route('players.show', player.id);
 
     return (
         <Link
             href={profileHref}
-            className="group relative flex flex-col items-center gap-1 rounded-xl px-1.5 py-1 transition-transform duration-150 hover:z-10 hover:scale-110 focus:z-10 focus:scale-110 focus:outline-none"
+            className="group relative flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 transition-transform duration-150 hover:z-10 hover:scale-110 focus:z-10 focus:scale-110 focus:outline-none"
             title={`${player.name} ansehen`}
         >
             <div className={`absolute inset-0 rounded-xl opacity-0 blur-md transition-opacity duration-150 group-hover:opacity-100 group-focus:opacity-100 ${
@@ -1242,16 +1253,21 @@ const LineupToken = ({ player, accent, livePlayerStates }) => {
                 )}
                 {hasYellow && !isRed && <div className="absolute -top-1 -right-0.5 h-2.5 w-2 rounded-[2px] border border-black bg-amber-400" />}
                 {isRed && <div className="absolute -top-1 -right-0.5 h-2.5 w-2 rounded-[2px] border border-black bg-rose-500" />}
-                {hasGoal && <div className="absolute -bottom-1 -left-0.5 text-[9px]">O</div>}
+                {hasGoal && <div className="absolute -bottom-1 -left-0.5 text-[9px]">⚽</div>}
             </div>
             <span className={`max-w-[52px] truncate text-center text-[7px] font-black uppercase leading-none transition-colors duration-150 text-${accent}-200/80 group-hover:text-white group-focus:text-white`}>
                 {player.name?.split(' ').pop()?.slice(0, 9)}
             </span>
+            {rating !== null && (
+                <span className={`rounded px-1 py-0.5 text-[7px] font-black leading-none ${ratingColor(rating)}`}>
+                    {rating.toFixed(1)}
+                </span>
+            )}
         </Link>
     );
 };
 
-const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
+const HalfPitch = ({ club, lineup, accent, livePlayerStates, finalStats }) => {
     const starters = lineup?.starters || [];
     const bench = lineup?.bench || [];
     const bgColor = accent === 'amber' ? '#0a0a0a' : '#0d0d0d';
@@ -1294,7 +1310,7 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
                                 className="absolute -translate-x-1/2 -translate-y-1/2"
                                 style={{ left: `${left}%`, top: `${top}%` }}
                             >
-                                <LineupToken player={player} accent={accent} livePlayerStates={livePlayerStates} />
+                                <LineupToken player={player} accent={accent} livePlayerStates={livePlayerStates} finalStats={finalStats} />
                             </div>
                         );
                     })}
@@ -1305,13 +1321,20 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
                 <div className="space-y-1">
                     <p className={`text-[8px] font-black uppercase tracking-widest text-${accent}-800`}>Bank</p>
                     <div className="flex flex-wrap gap-1.5">
-                        {bench.map((player) => (
-                            <div key={player.id} className={`flex items-center gap-1.5 rounded-lg border border-${accent}-500/10 bg-${accent}-500/5 px-2 py-1`}>
-                                <span className={`text-[8px] font-black text-${accent}-400`}>{player.overall}</span>
-                                <span className="max-w-[60px] truncate text-[8px] font-bold text-[var(--text-muted)]">{player.name?.split(' ').pop()}</span>
-                                <span className="text-[7px] font-black uppercase text-slate-700">{player.position}</span>
-                            </div>
-                        ))}
+                        {bench.map((player) => {
+                            const stat = finalStats?.find((s) => s.player_id === player.id);
+                            const rating = stat?.rating ? parseFloat(stat.rating) : null;
+                            return (
+                                <div key={player.id} className={`flex items-center gap-1.5 rounded-lg border border-${accent}-500/10 bg-${accent}-500/5 px-2 py-1`}>
+                                    <span className={`text-[8px] font-black text-${accent}-400`}>{player.overall}</span>
+                                    <span className="max-w-[60px] truncate text-[8px] font-bold text-[var(--text-muted)]">{player.name?.split(' ').pop()}</span>
+                                    <span className="text-[7px] font-black uppercase text-slate-700">{player.position}</span>
+                                    {rating !== null && (
+                                        <span className={`rounded px-1 py-0.5 text-[7px] font-black leading-none ${ratingColor(rating)}`}>{rating.toFixed(1)}</span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -1319,12 +1342,12 @@ const HalfPitch = ({ club, lineup, accent, livePlayerStates }) => {
     );
 };
 
-export const LineupPitch = React.memo(function LineupPitch({ homeClub, awayClub, homeLineup, awayLineup, livePlayerStates }) {
+export const LineupPitch = React.memo(function LineupPitch({ homeClub, awayClub, homeLineup, awayLineup, livePlayerStates, finalStats, motm }) {
     return (
         <div className="flex flex-col gap-8 lg:flex-row">
-            <HalfPitch club={homeClub} lineup={homeLineup} accent="amber" livePlayerStates={livePlayerStates} />
+            <HalfPitch club={homeClub} lineup={homeLineup} accent="cyan" livePlayerStates={livePlayerStates} finalStats={finalStats} />
             <div className="hidden w-px shrink-0 self-stretch bg-white/5 lg:block" />
-            <HalfPitch club={awayClub} lineup={awayLineup} accent="gold" livePlayerStates={livePlayerStates} />
+            <HalfPitch club={awayClub} lineup={awayLineup} accent="amber" livePlayerStates={livePlayerStates} finalStats={finalStats} />
         </div>
     );
 });
@@ -1576,10 +1599,13 @@ export const Live2DTab = React.memo(function Live2DTab({ homeClub, awayClub, liv
                             </div>
                         </div>
 
-                        <div className="absolute left-4 top-4 rounded-2xl border border-cyan-400/15 bg-black/30 px-3 py-2 backdrop-blur">
-                            <div className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-200">Heim greift nach rechts an</div>
-                            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/65">Gast spiegelt die Formation</div>
-                        </div>
+                        {attackingClub && (
+                            <div className="absolute left-3 top-3 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 backdrop-blur">
+                                <div className={`text-[9px] font-black uppercase tracking-[0.14em] ${attackingClubId === homeClub?.id ? 'text-cyan-300' : 'text-amber-300'}`}>
+                                    {attackingClub.short_name || attackingClub.name} greift an
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -2051,19 +2077,17 @@ const FormTrendBoard = ({ club, form, accent = 'cyan' }) => {
                     style={{ gridTemplateColumns: `repeat(${matches.length || 1}, minmax(0, 1fr))` }}
                 >
                     {matches.map((entry, index) => (
-                        <div key={`${entry.id || index}-${entry.score}`} className="rounded-[1.7rem] border border-white/8 bg-white/[0.04] px-4 py-5 text-center">
-                            <div className="text-xs text-white/45">{entry.relative_label || entry.kickoff_label}</div>
-                            <div className="mt-4 flex justify-center">
-                                <img loading="lazy" src={entry.opponent_logo_url} alt={entry.opponent_name} className="h-14 w-14 object-contain" />
+                        <div key={`${entry.id || index}-${entry.score}`} className="rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-4 text-center">
+                            <div className="text-[9px] text-white/40">{entry.relative_label || entry.kickoff_label}</div>
+                            <div className="mt-3 flex justify-center">
+                                <img loading="lazy" src={entry.opponent_logo_url} alt={entry.opponent_name} className="h-10 w-10 object-contain" />
                             </div>
-                            <div className="mt-4 text-[1.05rem] font-black text-white">
-                                {entry.opponent_name} <span className="text-white/45">({entry.is_home ? 'H' : 'A'})</span>
+                            <div className="mt-2 text-[10px] font-black text-white leading-tight">
+                                {entry.opponent_name?.split(' ').slice(0, 2).join(' ')}
+                                <span className="ml-1 text-white/40">({entry.is_home ? 'H' : 'A'})</span>
                             </div>
-                            <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white/70">
-                                {entry.competition_name}
-                            </div>
-                            <div className={`mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-lg font-black ${formResultTone(entry.result)}`}>
-                                <span className="inline-flex h-3.5 w-3.5 rounded-full border border-current/20 bg-current/90" />
+                            <div className={`mt-3 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-black ${formResultTone(entry.result)}`}>
+                                <span className="inline-flex h-2.5 w-2.5 rounded-full border border-current/20 bg-current/90" />
                                 {entry.score}
                             </div>
                         </div>
@@ -2402,108 +2426,118 @@ const OpponentAnalysisPanel = ({ homeClub, awayClub, opponentStats }) => {
 };
 
 const PreMatchReport = ({ homeClub, awayClub, comparison, report }) => (
-    <div className="space-y-6">
-        <OpponentAnalysisPanel homeClub={homeClub} awayClub={awayClub} opponentStats={report?.opponent_stats} />
+    <div className="space-y-5">
 
+        {/* Kadervergleich – kompakter Strip */}
         <div className="sim-card overflow-hidden p-0">
-            <div className="border-b border-white/6 bg-[linear-gradient(90deg,rgba(34,211,238,0.08),rgba(217,177,92,0.06),transparent)] px-6 py-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent-primary)]">Vorbericht</div>
-                <div className="mt-1 text-xl font-black text-white">So gehen die Teams ins Spiel</div>
+            <div className="border-b border-white/6 px-5 py-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <img loading="lazy" src={homeClub?.logo_url} alt={homeClub?.name} className="h-6 w-6 object-contain" />
+                        <span className="text-xs font-black text-cyan-200">{homeClub?.short_name || homeClub?.name}</span>
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Kadervergleich</span>
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-black text-amber-200">{awayClub?.short_name || awayClub?.name}</span>
+                        <img loading="lazy" src={awayClub?.logo_url} alt={awayClub?.name} className="h-6 w-6 object-contain" />
+                    </div>
+                </div>
             </div>
-
-            <div className="grid gap-5 p-6 xl:grid-cols-[1.25fr_0.75fr]">
-                <div className="space-y-4">
-                    <FormTrendBoard club={homeClub} form={report?.recent_form?.home} accent="cyan" />
-                    <FormTrendBoard club={awayClub} form={report?.recent_form?.away} accent="amber" />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <KeyPlayersPanel club={homeClub} players={report?.key_players?.home} accent="cyan" />
-                        <KeyPlayersPanel club={awayClub} players={report?.key_players?.away} accent="amber" />
-                    </div>
-
-                    <ExpectedLineupLight homeClub={homeClub} awayClub={awayClub} lineupPreview={report?.expected_lineup_preview} />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <ClubFormCard club={homeClub} form={report?.recent_form?.home} tone="text-cyan-200" />
-                        <ClubFormCard club={awayClub} form={report?.recent_form?.away} tone="text-amber-200" />
-                    </div>
-
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                        <ComparisonDuelRow label="Kaderstaerke" homeValue={comparison?.home?.strength} awayValue={comparison?.away?.strength} formatter={(value) => Number(value || 0).toFixed(1)} />
-                        <ComparisonDuelRow label="Marktwert" homeValue={comparison?.home?.market_value} awayValue={comparison?.away?.market_value} formatter={(value) => `${(Number(value || 0) / 1000000).toFixed(1)}M`} />
-                        <ComparisonDuelRow label="Alter" homeValue={comparison?.home?.avg_age} awayValue={comparison?.away?.avg_age} formatter={(value) => Number(value || 0).toFixed(1)} />
-                        <ComparisonDuelRow label="Moral" homeValue={comparison?.home?.morale} awayValue={comparison?.away?.morale} formatter={(value) => Number(value || 0).toFixed(1)} />
-                        <ComparisonDuelRow label="Fitness" homeValue={comparison?.home?.fitness} awayValue={comparison?.away?.fitness} formatter={(value) => Number(value || 0).toFixed(1)} />
-                    </div>
-
-                    <SimulationDebugPanel homeClub={homeClub} awayClub={awayClub} comparison={comparison} />
-                </div>
-
-                <div className="space-y-4">
-                    <AbsenteesPanel homeClub={homeClub} awayClub={awayClub} absentees={report?.absentees} />
-                    <KeyDuelsPanel duels={report?.key_duels} />
-
-                    {report?.league_snapshot && (
-                        <div className="sim-card p-5">
-                            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                                Tabelle {report.league_snapshot.competition ? `· ${report.league_snapshot.competition}` : ''}
-                            </div>
-                            <div className="grid gap-3">
-                                {[
-                                    { club: homeClub, row: report.league_snapshot.home, tone: 'text-cyan-200' },
-                                    { club: awayClub, row: report.league_snapshot.away, tone: 'text-amber-200' },
-                                ].map(({ club, row, tone }) => row ? (
-                                    <div key={club?.id} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className={`truncate text-sm font-black ${tone}`}>{club?.name}</div>
-                                                <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                                                    Platz {row.position} · {row.points} Punkte
-                                                </div>
-                                            </div>
-                                            <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75">
-                                                TD {row.goal_diff > 0 ? '+' : ''}{row.goal_diff}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : null)}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="sim-card p-5">
-                        <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Direktvergleich</div>
-                        <div className="mb-4 grid grid-cols-3 gap-3">
-                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
-                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200">Heim</div>
-                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.home_wins ?? 0}</div>
-                            </div>
-                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
-                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-200">Remis</div>
-                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.draws ?? 0}</div>
-                            </div>
-                            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
-                                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-300">Gast</div>
-                                <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.away_wins ?? 0}</div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            {(report?.head_to_head?.matches || []).length > 0 ? report.head_to_head.matches.map((entry) => (
-                                <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{entry.date}</span>
-                                    <span className="text-sm font-black text-white">{entry.score}</span>
-                                </div>
-                            )) : (
-                                <div className="rounded-xl border border-dashed border-[var(--border-pillar)] px-3 py-4 text-sm text-[var(--text-muted)]">
-                                    Noch kein Direktvergleich vorhanden.
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            <div className="grid gap-2 p-4 sm:grid-cols-2 xl:grid-cols-5">
+                <ComparisonDuelRow label="Kaderstaerke" homeValue={comparison?.home?.strength} awayValue={comparison?.away?.strength} formatter={(v) => Number(v || 0).toFixed(1)} />
+                <ComparisonDuelRow label="Marktwert" homeValue={comparison?.home?.market_value} awayValue={comparison?.away?.market_value} formatter={(v) => `${(Number(v || 0) / 1000000).toFixed(1)}M`} />
+                <ComparisonDuelRow label="Alter" homeValue={comparison?.home?.avg_age} awayValue={comparison?.away?.avg_age} formatter={(v) => Number(v || 0).toFixed(1)} />
+                <ComparisonDuelRow label="Moral" homeValue={comparison?.home?.morale} awayValue={comparison?.away?.morale} formatter={(v) => Number(v || 0).toFixed(1)} />
+                <ComparisonDuelRow label="Fitness" homeValue={comparison?.home?.fitness} awayValue={comparison?.away?.fitness} formatter={(v) => Number(v || 0).toFixed(1)} />
             </div>
         </div>
 
+        {/* Formkurven */}
+        <div className="grid gap-4 xl:grid-cols-2">
+            <FormTrendBoard club={homeClub} form={report?.recent_form?.home} accent="cyan" />
+            <FormTrendBoard club={awayClub} form={report?.recent_form?.away} accent="amber" />
+        </div>
+
+        {/* Analyse-Grid */}
+        <div className="grid gap-4 lg:grid-cols-3">
+            {/* Gegner-Analyse */}
+            <div className="lg:col-span-2 space-y-4">
+                <OpponentAnalysisPanel homeClub={homeClub} awayClub={awayClub} opponentStats={report?.opponent_stats} />
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    <KeyPlayersPanel club={homeClub} players={report?.key_players?.home} accent="cyan" />
+                    <KeyPlayersPanel club={awayClub} players={report?.key_players?.away} accent="amber" />
+                </div>
+
+                <ExpectedLineupLight homeClub={homeClub} awayClub={awayClub} lineupPreview={report?.expected_lineup_preview} />
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+                {/* Tabellenstand */}
+                {report?.league_snapshot && (
+                    <div className="sim-card p-4">
+                        <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                            Tabelle{report.league_snapshot.competition ? ` · ${report.league_snapshot.competition}` : ''}
+                        </div>
+                        <div className="space-y-2">
+                            {[
+                                { club: homeClub, row: report.league_snapshot.home, tone: 'text-cyan-200' },
+                                { club: awayClub, row: report.league_snapshot.away, tone: 'text-amber-200' },
+                            ].map(({ club, row, tone }) => row ? (
+                                <div key={club?.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
+                                    <div className="min-w-0">
+                                        <div className={`truncate text-sm font-black ${tone}`}>{club?.short_name || club?.name}</div>
+                                        <div className="mt-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                                            Platz {row.position} · {row.points} Pkt
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0 rounded-lg border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-black text-white/70">
+                                        {row.goal_diff > 0 ? '+' : ''}{row.goal_diff}
+                                    </div>
+                                </div>
+                            ) : null)}
+                        </div>
+                    </div>
+                )}
+
+                {/* Direktvergleich */}
+                <div className="sim-card p-4">
+                    <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">Direktvergleich</div>
+                    <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-xl border border-white/8 bg-white/[0.03] py-3">
+                            <div className="text-[9px] font-black uppercase text-cyan-200">Heim</div>
+                            <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.home_wins ?? 0}</div>
+                        </div>
+                        <div className="rounded-xl border border-white/8 bg-white/[0.03] py-3">
+                            <div className="text-[9px] font-black uppercase text-[var(--text-muted)]">Remis</div>
+                            <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.draws ?? 0}</div>
+                        </div>
+                        <div className="rounded-xl border border-white/8 bg-white/[0.03] py-3">
+                            <div className="text-[9px] font-black uppercase text-amber-200">Gast</div>
+                            <div className="mt-1 text-xl font-black text-white">{report?.head_to_head?.away_wins ?? 0}</div>
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        {(report?.head_to_head?.matches || []).length > 0 ? report.head_to_head.matches.map((entry) => (
+                            <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                                <span className="text-[10px] text-[var(--text-muted)]">{entry.date}</span>
+                                <span className="text-sm font-black text-white">{entry.score}</span>
+                            </div>
+                        )) : (
+                            <div className="rounded-xl border border-dashed border-[var(--border-pillar)] px-3 py-3 text-center text-xs text-[var(--text-muted)]">
+                                Noch kein Direktvergleich
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <AbsenteesPanel homeClub={homeClub} awayClub={awayClub} absentees={report?.absentees} />
+                <KeyDuelsPanel duels={report?.key_duels} />
+            </div>
+        </div>
+
+        {/* Insights */}
         {(report?.insights || []).length > 0 && (
             <div className="grid gap-3 md:grid-cols-3">
                 {report.insights.map((insight, index) => (

@@ -9,7 +9,6 @@ import {
     Live2DTab,
     LiveTableTab,
     MatchTabs,
-    PlayersTab,
     ScoreHero,
     StatsTab,
     TickerTab,
@@ -228,7 +227,6 @@ export default function Show({
             ...(canManageLiveLineup ? [{ key: 'live-lineup', label: 'Live-Taktik' }] : []),
             { key: 'stats', label: 'Statistiken' },
             ...(liveState.live_table?.rows?.length ? [{ key: 'live-table', label: 'Livetabelle' }] : []),
-            { key: 'players', label: 'Spieler' },
         ]),
     ];
 
@@ -318,6 +316,8 @@ export default function Show({
                                 homeLineup={homeLineup}
                                 awayLineup={awayLineup}
                                 livePlayerStates={liveState.player_states}
+                                finalStats={liveState.final_stats ?? final_stats}
+                                motm={liveState.man_of_the_match ?? man_of_the_match}
                             />
                         </div>
                     )}
@@ -340,7 +340,6 @@ export default function Show({
 
                     {tab === 'live-table' && liveState.status !== 'scheduled' && <LiveTableTab liveTable={liveState.live_table} />}
 
-                    {tab === 'players' && liveState.status !== 'scheduled' && <PlayersTab clubs={[home_club, away_club]} finalStats={liveState.final_stats ?? final_stats} motm={liveState.man_of_the_match ?? man_of_the_match} />}
                 </div>
             </div>
 
