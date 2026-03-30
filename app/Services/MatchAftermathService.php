@@ -149,7 +149,10 @@ class MatchAftermathService
 
                 $this->playerLoadService->applyMatchLoad($player, $stat, $match);
                 $this->refreshActivePromise($player);
-                $this->playerMoraleService->refresh($player->fresh()->loadMissing(['playtimePromises', 'injuries']));
+                // Unset cached relations so loadMissing fetches the post-update state;
+                // avoids a redundant full-model reload via fresh().
+                $player->unsetRelation('playtimePromises')->unsetRelation('injuries');
+                $this->playerMoraleService->refresh($player->loadMissing(['playtimePromises', 'injuries']));
             }
         });
     }

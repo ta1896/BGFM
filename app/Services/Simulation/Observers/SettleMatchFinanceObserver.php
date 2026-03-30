@@ -19,6 +19,6 @@ class SettleMatchFinanceObserver implements MatchFinishedObserver
             return;
         }
 
-        $this->financeCycleService->settleMatch($context->match->fresh());
+        $this->financeCycleService->settleMatch($context->match);
     }
 }

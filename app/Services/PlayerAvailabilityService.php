@@ -194,13 +194,19 @@ class PlayerAvailabilityService
             })
             ->get();
 
-        foreach ($players as $player) {
+        if ($players->isEmpty()) {
+            return;
+        }
+
+        // Compute all updates in PHP, then write in a single upsert instead of N individual UPDATE queries.
+        $rows = $players->map(function (Player $player) use ($suspensionColumn): array {
             $injuryRemaining = max(0, (int) $player->injury_matches_remaining - 1);
             $contextSuspensionRemaining = max(0, (int) $player->{$suspensionColumn} - 1);
             $player->{$suspensionColumn} = $contextSuspensionRemaining;
             $legacySuspension = $this->maxContextSuspensionRemaining($player);
 
-            $player->update([
+            return [
+                'id' => $player->id,
                 'injury_matches_remaining' => $injuryRemaining,
                 $suspensionColumn => $contextSuspensionRemaining,
                 'suspension_matches_remaining' => $legacySuspension,
@@ -209,8 +215,10 @@ class PlayerAvailabilityService
                     $legacySuspension,
                     (string) $player->status
                 ),
-            ]);
-        }
+            ];
+        })->all();
+
+        Player::upsert($rows, ['id'], ['injury_matches_remaining', $suspensionColumn, 'suspension_matches_remaining', 'status']);
     }
 
     private function suspensionColumnForContext(string $context): string

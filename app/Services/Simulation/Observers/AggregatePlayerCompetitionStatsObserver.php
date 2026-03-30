@@ -19,6 +19,6 @@ class AggregatePlayerCompetitionStatsObserver implements MatchFinishedObserver
             return;
         }
 
-        $this->playerCompetitionStatsService->rebuildForMatchPlayers($context->match->fresh());
+        $this->playerCompetitionStatsService->rebuildForMatchPlayers($context->match);
     }
 }
