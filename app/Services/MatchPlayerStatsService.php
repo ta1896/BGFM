@@ -20,11 +20,16 @@ class MatchPlayerStatsService
     {
         $match->playerStats()->delete();
 
-        $goalEvents = $match->events()->whereIn('event_type', ['goal', 'penalty_scored'])->get();
-        $yellowEvents = $match->events()->where('event_type', 'yellow_card')->get();
-        $redEvents = $match->events()->where('event_type', 'red_card')->get();
-        $homeSubstitutions = $this->substitutionMinutes($match, (int) $match->home_club_id);
-        $awaySubstitutions = $this->substitutionMinutes($match, (int) $match->away_club_id);
+        // Single query for all relevant event types instead of 3 separate ones.
+        $allEvents = $match->events()
+            ->whereIn('event_type', ['goal', 'penalty_scored', 'yellow_card', 'red_card', 'substitution'])
+            ->get();
+        $goalEvents   = $allEvents->whereIn('event_type', ['goal', 'penalty_scored']);
+        $yellowEvents = $allEvents->where('event_type', 'yellow_card');
+        $redEvents    = $allEvents->where('event_type', 'red_card');
+        $subEvents    = $allEvents->where('event_type', 'substitution');
+        $homeSubstitutions = $this->substitutionMinutesFromCollection($subEvents, (int) $match->home_club_id);
+        $awaySubstitutions = $this->substitutionMinutesFromCollection($subEvents, (int) $match->away_club_id);
         $stateByPlayerId = MatchLivePlayerState::query()
             ->where('match_id', $match->id)
             ->get()
@@ -111,16 +116,18 @@ class MatchPlayerStatsService
         ));
     }
 
-    private function substitutionMinutes(GameMatch $match, int $clubId): array
+    /**
+     * Build substitution minute maps from an already-loaded collection of substitution events.
+     * Avoids an extra DB query compared to querying match->events() directly.
+     *
+     * @param \Illuminate\Support\Collection $subEvents
+     */
+    private function substitutionMinutesFromCollection(\Illuminate\Support\Collection $subEvents, int $clubId): array
     {
         $in = [];
         $out = [];
-        $subEvents = $match->events()
-            ->where('event_type', 'substitution')
-            ->where('club_id', $clubId)
-            ->get();
 
-        foreach ($subEvents as $event) {
+        foreach ($subEvents->where('club_id', $clubId) as $event) {
             $playerInId = (int) ($event->metadata['player_in_id'] ?? 0);
             $playerOutId = (int) ($event->metadata['player_out_id'] ?? 0);
             if ($playerInId > 0 && !isset($in[$playerInId])) {

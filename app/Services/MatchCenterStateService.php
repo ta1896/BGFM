@@ -87,9 +87,11 @@ class MatchCenterStateService
             ->values()
             ->all();
 
+        // liveActions are pre-sorted and limited to 400 by the eager-load constraint in
+        // MatchCenterController::loadMatchStateRelations(). For the events fallback (played
+        // matches without live actions) we rely on the DB ordering from the eager load, so
+        // no in-memory sort or take() is needed here.
         $actions = ($match->liveActions->isNotEmpty() ? $match->liveActions : $match->events)
-            ->sortByDesc(fn ($item) => ($item->minute * 100000) + ($item->second * 1000) + ($item->sequence ?? 0))
-            ->take(400)
             ->values()
             ->map(function ($item): array {
                 $isAction = isset($item->action_type);

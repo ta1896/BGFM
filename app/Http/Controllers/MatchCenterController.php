@@ -377,7 +377,8 @@ class MatchCenterController extends Controller
             'homeClub',
             'homeClub.stadium:id,name',
             'awayClub',
-            'events:id,match_id,minute,second,event_type,club_id,player_id,assister_player_id,narrative,metadata',
+            'events' => fn ($q) => $q->select(['id', 'match_id', 'minute', 'second', 'event_type', 'club_id', 'player_id', 'assister_player_id', 'narrative', 'metadata'])
+                ->orderByDesc('minute')->orderByDesc('second')->limit(400),
             'events.player:id,first_name,last_name,photo_path',
             'events.assister:id,first_name,last_name',
             'events.club',
